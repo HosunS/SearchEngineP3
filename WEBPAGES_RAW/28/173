@@ -1,0 +1,123 @@
+
+###########################################################
+# Part One: Loading packages in to R
+###########################################################
+
+# To use access additional functions in R, you need to (1) Install packages and then (2) Load the package
+# You only have to do step (1) once!
+# If you close RStudio and then re-open it all you'll have to do is step (2)
+
+# There are three easy ways to install in R:
+# Method 1:
+# Use Tools -> Install.packages...
+# Method 2:
+# Type install.packages("file name", dependencies = TRUE) in the console
+# Be sure to use the quotation marks, but change file name to the appropriate package name
+# Method 3: 
+# Go to lower right window and change to the packages tab then click install
+
+# There are two easy ways to load packages in R:
+# Method 1:
+# in your script file type library(file name) and run that line
+# DO NOT use quotation marks here, but you will need to change the file name to the appropriate package
+# Method 2:
+# In the lower right window, in the packages tab, find the package and click the box
+
+# For the homework,
+install.packages("car", dependencies = TRUE)
+library(car)
+
+###########################################################
+# Part Two: Polynomials, Interactions and higher order regression models
+###########################################################
+
+# Let's use the diamonds example from the textbook
+Diamonds <- read.delim("~/Documents/Class Work/Teaching/UC Irvine - STAT 110 (Fall 2015)/Stat2Data2012TXT/Diamonds.txt")
+View(Diamonds)
+
+# Building a polynomial regression model
+# We have several ways to make a polynomial model
+# Let's build a model where we predict TotalPrice based on Carat, Carat^2, Depth and Depth^2
+
+# (1) We can add the variable to the dataset
+CaratSq <- Diamonds$Carat^2
+DepthSq <- Diamonds$Depth^2
+Diamonds <- cbind(Diamonds, CaratSq, DepthSq)
+model.1 <- lm(TotalPrice ~ Carat + CaratSq + Depth + DepthSq, data = Diamonds)
+summary(model.1)
+
+# (2) We can use the polynomial() function
+model.2 <- lm(TotalPrice ~ poly(Carat, degree = 2, raw = TRUE) + poly(Depth, degree = 2, raw = TRUE), data = Diamonds)
+# you must include raw = TRUE (otherwise it will orthogonalize the vectors)
+summary(model.2)
+
+# (3) You can use the I(), aka inhibit, function
+model.3 <- lm(TotalPrice ~ Carat + I(Carat^2) + Depth + I(Depth^2), data = Diamonds)
+summary(model.3)
+
+# Each way works, but notice that we only have Carat, Carat^2, Depth, and Depth^2 in our model
+# We do not have ANY interaction terms
+
+# Let's make a model with Carat, Depth, and the interaction between them
+# There are multiple ways to do this:
+
+# (1) Add the interaction directly
+model.4 <- lm(TotalPrice ~ Carat + Depth + Carat:Depth, data = Diamonds)
+summary(model.4)
+
+# (2) Use * to indicate the first order and interaction terms
+model.5 <- lm(TotalPrice ~ Carat * Depth, data = Diamonds)
+summary(model.5)
+
+# (3) Use the ()^2 to add the higher order terms
+model.6 <- lm(TotalPrice ~ (Carat + Depth)^2, data = Diamonds)
+summary(model.6)
+
+# Note that each of these methods does not include Carat^2 and Depth^2
+# However, to make a complete second-order model using Carat and Depth you have to combine methods
+model.7 <- lm(TotalPrice ~ (Carat + Depth)^2 + I(Carat^2) + I(Depth^2), data = Diamonds)
+summary(model.7)
+
+
+###########################################################
+# Part Three: automatic selection procedures
+###########################################################
+
+# You need several packages to carry out the automatic procedures
+# Within leaps is the best subsets procedure
+# The HH package contains a way to summarize the best subsets procedure
+library(leaps)
+library(HH)
+
+# Let's load a complicated data set
+Fertility <- read.delim("~/Documents/Class Work/Teaching/UC Irvine - STAT 110 (Fall 2015)/Stat2Data2012TXT/Fertility.txt")
+View(Fertility)
+
+# I picked this dataset because I have no idea what these variables are! In this case a best subsets approach MAY inform me as to which models are good
+# Suppose we are predicting MeanAFC from the predictors of Age, FSH, E2, MaxE2, MaxDailyGn, TotalGn, Oocytes, Embryos
+models <- regsubsets(MeanAFC ~ Age + FSH + E2 + MaxDailyGn + Oocytes + Embryos, data = Fertility, nbest=2 )
+# Let's look at summary(models)
+summary(models)
+# Not very helpful =(
+
+# To get a better summary, use summaryHH()
+summaryHH(models)
+
+# The HH package overwrites some of important functions so let's unload the HH package
+detach("package:HH", unload=TRUE)
+
+# To carryout the forward, backwards or stepwise regression we need to define the smallest possible model and largest possible model
+smallest <- lm(MeanAFC ~ 1, data = Fertility)
+largest <- lm(MeanAFC ~ Age + FSH + E2 + MaxDailyGn + Oocytes + Embryos, data = Fertility)
+# In order to see Mallow's Cp we need to change the scale parameter in the step() function
+MSE.full <- summary(largest)$sigma
+# Note the procedure will use AIC, something Prof. Utts mentioned, to determine the steps
+
+# This will carry out the forward procedure
+models.forward <- step( smallest , direction = "forward", scope = list(upper = largest, lower = smallest), scale = MSE.full)
+
+# This will carry out the backwards procedure
+models.backward <- step(largest, direction = "backward", scope = list(upper = largest, lower = smallest), scale = MSE.full)
+
+# This will carry out stepwise procedure
+models.stepwise <- step( smallest , direction = "both", scope = list(upper = largest, lower = smallest), scale = MSE.full)

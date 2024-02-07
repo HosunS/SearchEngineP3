@@ -1,0 +1,455 @@
+WebDAV Advanced Collections Minutes October 6, 1999
+
+ATTENDING: Judy Slein, Geoff Clemm, Tyson Chihaya, Jason Crawford, 
+Jim Whitehead, Chuck Fay
+
+ACTION ITEMS
+
+Geoff: Resend to the design team earlier e-mail on new value for Overwrite.
+
+Geoff: Write up the proposal of a header containing the lock token as an
+alternative to protecting the lock request-URI, and send to mailing list.
+
+Judy: Revise specs by Friday COB.
+
+LOGISTICS
+
+Judy will send out revised specs Friday evening.  Next week's meeting
+will be devoted to collection comments from the team.  We'll try to have
+drafts to Internet-Drafts on Friday, October 15.
+
+ISSUE 20: BIND ERROR CODES
+
+Agreed: We'll use new error codes for cycles not permitted and cross-server
+binding not permitted.
+
+Jim: Putting XML explanations in the response body is in effect creating 
+a subclass (suberror code).  We risk getting into a larger discussion 
+about the proper way to extend HTTP error codes.  We don't want to get into
+that discussion. It's defensible to create new codes.  That's the 
+extension mechanism that was defined by HTTP, and there are still lots
+of 5xx codes still available. 
+
+No objections.
+
+Judy: Do we have to coordinate with anyone to claim codes?
+
+Jim: No. Just write it up. Check RFC 2616 for next available code.  Maybe
+state in the IANA considerations section that we are claiming new codes,
+even though IANA hasn't been asked to administer HTTP status codes.
+
+ISSUE 23: WHETHER TO SWITCH THE MEANING OF REQUEST-URI AND DESTINATION
+HEADER IN BIND REQUESTS
+
+Agreed: Request-URI will identify the resource, Destination header will
+identify the collection and segment of the binding relationship being
+created.
+
+Judy: We had decided to make the switch to be consistent with MOVE and COPY.
+Then the Request-URI would identify the resource being bound, and the
+Destination header would identify the collection and segment.  But Jason
+pointed out that there may be a problem with doing this.  Normally, the
+Request-URI identifies the resource for which authentication is needed.
+That won't be the case if we switch the meanings.
+
+Jim: The HTTP philosophy is that you issue a request to an object, and the
+object performs the method on your behalf. Normally you try to design your
+methods so that they go to an existing object.  This model breaks down in 
+creation methods where the object doesn't exist.
+
+Geoff: COPY and MOVE have the same problem, both about authentication, and
+about having the resource the method is really addressed to in the
+Destination header.  Let's just try to be consistent with MOVE and COPY.
+
+Jason: The cross-server case is a concern for authentication.
+
+Geoff: It's already a concern for MOVE and COPY, so let's just be 
+consistent with them. 
+
+We'll stand by our previous decision.
+
+ISSUE 22: WHETHER TO ALLOW BIND OF "/"
+
+Agreed: We will disallow BIND of "/".
+
+We like Geoff's rationale from his mailnote.
+
+ISSUE 11: SECTION 10 BINDINGS AND OTHER METHODS
+
+Judy: The problem is how to say anything specific enough to be useful
+and still allow bindings to dynamic resources.  Geoff proposed a solution.
+
+Geoff: Really we should just say that you can't create bindings to dynamic
+resources. 
+
+John Stracke's case: I may want to be able to write a script once and place 
+bindings to it in different places that behave differently according to 
+their location.  In fact, I *have* written such a script.  On my personal 
+site, I don't have access to the logs, so I've placed index.cgi scripts in 
+various directories that I want to monitor; they log the hit and return 
+a 302 to redirect to Index.html.  Since I didn't want to maintain N copies 
+of the script, most of them are symlinks.  Since the 302 requires an 
+absolute URI, the script looks at the Request-URI to figure out where to 
+redirect to.
+
+Geoff: It's too confusing to try to specify for dynamic resource, and it's 
+worth losing the functionality of creating bindings to dynamic resources in
+order to be able to say something clear.
+
+Geoff: If the focus is on authoring, you want to author the script itself.
+So stick with static resources.  Don't muddy the protocol by trying to
+define bindings to dynamic resources.
+
+Jim: The current language is ok.
+
+Geoff: We want to say that a change made in one location must be visible 
+at all locations.  Otherwise, you can't distinguish between creating a
+new binding and doing a COPY.  There will be no guidance to the server, and
+no semantic utility in performing a BIND rather than a COPY.  We need to be
+able to determine by examining what's on the wire whether a BIND or a COPY
+was performed.
+
+Jim: Any attempt to define bindings too closely will be counterproductive.
+The usefulness of HTTP has been largely in dynamic resources, so we don't 
+want to cut ourselves off from that.
+
+Geoff: Just wants to constrain the use of BIND to be only on static
+resources.  If we can't give a good definition of the behavior of bindings, 
+somebody would interpret it in unpredictable ways or ways we wouldn't want
+(for example, in a way indistinguishable from COPY).
+
+How do we determine whether a resource is static or dynamic?  We could have
+a property whose value tells you that, and BIND can only be used if the 
+property is set to "static".
+
+Jim: Doesn't agree that allowing bind to dynamic resources will lead to 
+problems.
+
+Geoff: What if somebody then says, I'll implement bind as copy? What could
+we appeal to to say this is not allowed?
+
+Jim: The definition of the behavior of PUT with bindings would prevent
+that.
+
+Judy: But that's the definition some people have said is too strong.  It's
+inconsistent with John's example.
+
+Geoff: If the results of PUT can depend on the URL used to access the
+resource, we can't distinguish between COPY and BIND.  Wants to constrain
+what PUT can do.
+
+The difference between COPY and BIND is clear.  COPY creates a new resource.
+BIND does not create a new resource.  It makes available a new URI for 
+an existing resource.
+
+Jim: Keep only last sentence of the paragraph about PUT: "The change made
+by a PUT via one URI mapping MUST affect the resource that generates the GET
+response for all URI mappings to the same resource."
+
+Geoff: Then if you did implement BIND as COPY, it would not be discernible.
+This is so weakly defined that it does not provide enough guidance to
+a well-intentioned implementer.
+
+Geoff: The utility of being able to BIND to dynamic resource is not enough 
+to offset loss of clarity.
+
+Jim: The definition of CGI says that when you pass any method into a CGI
+script, the script can interpret that method however it wants.  Then you
+could have any implementation of PUT within the script. John's argument is 
+correct.
+
+Judy: We could say explicit things for static resources, and let people 
+interpret them, extrapolate from them for dynamic resources.
+
+We could say that the first PUT sentence "If the Request-URI of a PUT
+identifies an existing resource, then a PUT via one URI mapping to this
+resource MUST produce the same result as a PUT with the same headers and
+request entity body via any other URI mapping to the same resource" applies 
+only to static resources, and the second applies to both static and dynamic.
+
+Geoff: Should we define a DAV:static property that you can look at to 
+determine whether a resource is static or dynamic? Jim: No.
+
+What is the definition of static? If a request succeeds, you get the same 
+result every time, no matter which binding is used to access the resource.
+(A request might fail for some bindings, succeed for others, but the 
+resource still be a static resource.)
+
+We need to use "static" consistently throughout, and make clear what we had 
+in mind.
+
+Chuck: Prefers to delete the first sentence on PUT, and keep the second.
+Otherwise, we'll have problems trying to define static, and we'll be pushed
+to add a property, which is even worse.
+
+Jim: Keep the first sentence, and say its only for static.  Hint at
+a definition right there by giving examples of dynamic resources (CGI,
+active server pages).
+
+Judy will draft this section based on this guidance.
+
+ISSUE 15: WHETHER TO SIMPLIFY THE SEMANTICS OF REDIRECT REFERENCES
+
+Agreed: We will simplify the redirect references spec by getting rid of all
+special cases.  Redirect references will always respond with 302 by default.
+
+Geoff proposed having redirect references always respond with 302 by 
+default -- no exceptions.
+
+Jim: Let's just make sure we understand the implications.  Using Web Folders,
+if you did a COPY on a redirect reference, instead of getting a copy of the
+reference you would get an error (302).  Web Folders will not know how to
+handle a 302, or if they do, they will not do anything special for 302 from
+a redirect reference.
+
+Web Folders don't know how to do depth operations, so they won't run into
+the case where you encounter a redirect reference during depth processing.
+
+Goliath doesn't do depth operations yet, but we can expect it to be good
+about extending as new functionality is defined.
+
+In general, down-level clients will have problems with depth operations.  We
+have to accept that.
+
+Jim is ok with getting rid of special cases.
+
+We will simplify the redirect references spec.
+
+ISSUE 16: WHETHER TO MAKE DAV:orderingtype OPTIONAL
+
+Agreed: We will keep it required.
+
+Jim: There's no big win in making it optional. 
+
+Geoff: no preference
+
+How would you know whether the collection just doesn't support ordering
+or does support it but is unordered?  You can find out whether it supports
+ordering by doing OPTIONS.
+
+Making it optional could lead to interoperability problems. [How? JS]
+
+We'll keep DAV:orderingtype required.
+
+ISSUE 17: CHANGING THE ORDERING SEMANTICS OF A COLLECTION
+
+Agreed: We will leave the Ordered header in MKCOL, add a way to change 
+the ordering semantics with ORDERPATCH, make DAV:orderingtype readonly.
+
+Currently you would have to do a PROPPATCH on DAV:orderingtype, then
+do an ORDERPATCH to change the order of members to conform to the new
+semantics (for client-maintained orderings). Jim Amsden pointed out 
+that there is opportunity for something to go wrong between these 2
+steps.  So maybe we should add an element to ORDERPATCH to allow
+the semantics to be changed in the same operation where the order of
+members is updated.  (Then we should probably make DAV:orderingtype
+readonly.)
+
+This is a rare case.  Changes in ordering type will be infrequent.
+
+But there might some day be an application where there would be frequent 
+changes in orderingtype and contention over it.
+
+Adding an element into orderpatch seems reasonable and low cost.
+
+Do we want to allow DAV:orderingtype to be modified thorugh PROPPATCH? 
+No, take away that ability if we provide a way to change the ordering
+semantics in ORDERPATCH.
+
+What about MKCOL with the Ordered header?  Do we keep the Ordered header
+there?  It does seem reasonable to submit an ordering semantics with
+MKCOL.  The collection will be empty at that point.  If you really need
+atomicity when creating and ordering a collection, you can get that by
+locking the parent of the collection, creating the ordered collection,
+adding members, and doing ORDERPATCH, then unlock.
+
+We will leave the Ordered header in MKCOL, add a way to change the ordering
+semantics with ORDERPATCH, make DAV:orderingtype readonly.
+
+ISSUE 18: WHETHER TO REQUIRE THE Position HEADER WHEN ADDING MEMBERS TO
+AN ORDERED COLLECTION
+
+Agreed: The Position header remains optional.
+
+Doing this would prevent existing clients from interacting with an 
+ordered collection.
+
+Is it more important to maintain the ordering or to allow down-level clients
+to add collection members?  This will depend on the application.
+
+We'll keep the current statement: The Position header is optional, and if
+it is not present for a collection with a client-maintained ordering, the
+server must place the new member at the end of the ordering.
+
+ISSUE 19: MOVE WITH MULTIPLE BINDINGS CAN CAUSE A RESOURCE TO "SPLIT"
+
+Kevin described a scenario where it looks as if we get the wrong results.
+When you COPY a resource to a destination where there were multiple 
+bindings to the same resource, you end up with one binding attached to
+the new resource and the rest still attached to the original resource.
+This is inconsistent with what people expect. COPY B3 to B2.
+
+Before:
+
+B1     B2     B3
+\      /      |
+ \    /       |
+  \  /        |
+   R1         R2
+
+After:
+
+B1     B2     B3
+|      |      |
+|      |      |
+R1     R3     R2
+
+where R3 is a duplicate of R2.
+
+
+Geoff: We can use a new value of the Overwrite header to solve this problem.
+In earlier e-mail he proposed a new value "merge".  (The name doesn't really
+apply very well to this case.)
+
+The current Overwrite semantics says that if the value is "false", the
+operation fails.  If the value is "true", the resource at the Destination
+gets deleted (that is, binding B2 is deleted), then the resource gets
+duplicated and a new binding B2 gets created to it.  So this is the scenario
+Kevin describes, and it's inconsistent with the file system semantics
+that people expect.
+
+We can avoid changing RFC 2518 by adding a new value for Overwrite.
+The semantics for this new value would be to leave the destination
+resource there, and do a PUT and PROPPATCH to it.  It would mean COPY = 
+PUT + PROPPATCH.  Then both of the old bindings would point to the new
+resource.
+
+Would this new value of Overwrite apply only to COPY, or also to MOVE?
+
+No one implements MOVE this way now, so it would give surprising results.
+
+This wouldn't have any bad effects on the current behavior of Microsoft
+Web Folders.
+
+Don't call it "merge".  Call it "multiple-bindings".  It states whether
+I want to affect all bindings or just one.
+
+Geoff: It determines more than that.  It affects which locks you need 
+to have. If you do a copy with overwrite=t, you only need a lock on 
+the collection containing the destination.  If you do a copy with
+overwrite=merge, you will be doing a put and proppatch to the existing 
+resource, and so need a lock on the resource rather than on its parent
+collection.
+
+How would you do depth copy with merge? You do put/proppatch recursively 
+(and appropriate mkcol's).  You leave the existing hierarchy there.  (That's
+where the name "merge" came from.)
+
+Jim: We need to write this up and think about it some more before adding to 
+the spec. Geoff will forward his earlier mail to the design team.
+
+Some use cases will want to affect one binding, others will want all bindings.
+So we need a way to allow the client to specify which it wants.
+
+HOW TO HANDLE CONFLICTS WITH RFC 2518
+
+Where we see things in the binding spec that conflict with RFC 2518, we
+should say so explicitly.  In our specification, we should explicitly 
+identify the passages that need to be changed in RFC 2518.
+
+PROTECTING THE LOCK REQUEST-URI
+
+Geoff: Favors a new header whose value will be the lock token.  When you
+include this header in a request, then the Request-URI will be mapped
+as necessary to insure that the lock owner can continue to access the
+resource for the duration of the lock.  We could use the versioning header 
+Target-Selector for this. 
+
+Only down'level clients will have problems. (It won't help the MS Office
+clients.)
+
+It's ok for a server to refuse to MOVE things if it can't protect the URL, 
+or keep track of where the resource has moved.
+
+Jim: Don't have a header. Just say that the server can refuse to move a
+collection if one of its members is locked. If the server does allow 
+a move, then the client will discover that the resource has moved and
+can do a propfind on lock token to locate it.
+
+Jason: Making it optional doesn't sound good.  That results in too many code
+paths for a client.
+
+It's worse to require the server to allow the move.
+
+Geoff: What we care about is that LOCK-GET-PUT works. That's the constraint, 
+and otherwise we give servers freedom as to how they make it so.
+
+Jim: The client does a MOVE and just gets success or failure.  That's no 
+different from today.  The path is already there.
+
+Jason: The additional code path is for someone trying to access the resource
+after it has moved.
+
+Geoff agrees, Jim can live with the header proposal.
+
+Jason: Still prefers protecting the URI, and doesn't think it's that 
+difficult, but can live with the header proposal.
+
+What if the lock is on a parent? With a depth lock, someone moves a tree and 
+you are trying to access something in that tree.
+
+Do we want to require support for depth locks: jim strongly favors, geoff and
+chuck opposed, judy and jason not strong either way.
+
+Depth would add complexity to the proposal for a lock token header.  It's
+simple for a single resource.
+
+This could be an argument againstt the proposal or an argument against
+depth locking.
+
+Jim: What happens if the resource gets moved twice?
+
+Geoff: Once you have a target selector, it's bound to the resource forever.
+
+This issue is related to versioning because they want a down-level client's
+lock to be interpreted as a checkout.  So the semantics of lock and checkout
+need to be consistent.
+
+Maybe we can restrict the proposal to locks on individual resources.
+
+Geoff will write up his proposal of adding a header to contain the lock
+token, try to take into account how it would work with depth locking.
+
+WHETHER TO KEEP SECTION 8.1 OF THE BINDINGS SPEC
+
+Agreed: We keep the section.
+
+Judy suggests removing this section, which tries to show that our MOVE
+semantics are equivalent to the definition of MOVE in RFC 2518.  It's
+becoming clear that they are not equivalent, as we explore the problems
+of LOCK/MOVE.
+
+Jim: The language on MOVE and bindings is useful.  We could take out the
+claim that the MOVE semantics we give are consistent with RFC 2518.
+
+Geoff: on the fence
+
+Jim: We didn't put this in to show equivalence with RFC 2518 semantics.  We
+put it in because we were thinking about cross-server MOVEs.
+
+Be sure we say that for cross-server MOVEs, if the resource is locked, 
+the server should feel free to fail the request.
+
+Geoff: The section is interesting, but people will think it's more 
+complicated than it really is.
+
+People don't seem to find it troublesome so far.
+
+Agreed: We keep the section.
+
+IMPROVING THE TERMINOLOGY SECTION
+
+Jim: People get hung up in terminology.  Start the terminology section
+with a scenario with real URLs, creating new bindings and URI mappings.
+Use the terminology that will be defined. A scenario that creates a new
+binding to a collection resource, and to a non-collection resource.

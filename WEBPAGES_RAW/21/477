@@ -1,0 +1,237 @@
+			A Lecture on Using Lists
+
+There is a special Interface in Java and two Classes that implement
+it, which allow us to use an "ordered collection" more easily.
+
+The Interface is List. The classes implementing it are ArrayList and
+LinkedList. The ArrayList class implements the List Interface by using
+an array, just as we have seen for Stacks and Queues and Portofolios: its
+instance variables store an array and an indication of how much of the array
+is used, and it doubles the length of the underlying array when necessary. The
+LinkedList implementation is used a slightly more advanced technique to
+implement this Interface (discussed in ICS-22 as a self-referential class).
+
+Fundamentally, a List (like an array) allows us to store/process values in
+a collection where order is important. Unlike an array, we can store only
+references to Objects (not primitive values) with Lists (although we can always
+use wrapper-classes to store the equivalent of primitive values). First we will
+see how to declare and intialize lists, then examine the methods that we can
+use to operate on them.
+
+There is a new syntax (called generic classes) that we use to declare and
+initialize lists. Unlike with arrays, we write the type of the values stored
+in the arrays in angle-braces. We often use the Interface as the type of
+the variable. To declare an initialy empty List, where each value in the
+list can refer to an object constructed from the Stock class, we would write
+the following (which could appear in the Portfolio class)
+
+  List<Stock> stocks = new ArrayList<Stock>();
+
+The ArrayList object (like Stack, Queue, and Portfolio objects) internally
+stores an array (a Stock[]) and an instance variable to keep track of how many
+values in the array are used. Operations that "add" values to the array (just
+like push, enqueue, and buy -for Portfolio) double the array lengh when
+necessary.
+
+Fundamental methods for List<E> and ArrayList<E>
+
+  boolean  add        (E e) 
+  void     add        (int index, E element) 
+  void     clear      () 
+  boolean  contains   (Object o) 
+  boolean  equals     (Object o) 
+  E        get        (int index) 
+  int      indexOf    (Object o) 
+  boolean  isEmpty    () 
+  int      lastIndexOf(Object o) 
+  E        remove     (int index) 
+  boolean  remove     (Object o) 
+  E        set        (int index, E element) 
+  int      size       () 
+  Object[] toArray    () 
+
+------------------------------------------------------------------------------
+Other, more advance and less useful methods for List<E> and ArrayList<E>
+
+  boolean addAll(Collection<? extends E> c) 
+  boolean addAll(int index, Collection<? extends E> c) 
+  boolean containsAll(Collection<?> c) 
+  int hashCode() 
+  Iterator<E> iterator() 
+  ListIterator<E> listIterator() 
+  ListIterator<E> listIterator(int index) 
+  boolean removeAll(Collection<?> c) 
+  boolean retainAll(Collection<?> c) 
+  List<E> subList(int fromIndex, int toIndex) 
+  <T> T[] toArray(T[] a) 
+------------------------------------------------------------------------------
+ 
+We will talk about these fundamental methods during lecture (discussing their
+semantics). You can read their Javadoc (see either List or ArrayList). The
+"E" that appears in the prototype specifies the type that appears in
+angle-brackets. So, if we declare List<Stock> then the method
+
+  add(E d)
+
+really means
+
+  add(Stock e)
+
+Note that some methods still use Object, meaning that any reference to an
+object is allowed, not just references to Stock.
+
+The most fundamental operations on Lists mirror arrays: getting a value from
+a list by specifying its position and storing a values in a list by specifying
+its position. We can also easily get the size of any List (the number of values
+actually stored in the list)
+
+Of course, standard object/class syntax uses method calls, not [], so these
+operations are a built unwieldy when compared with arrays. The following
+loop prints every value in an List. Notice the calls to .size and .get
+
+for (int i=0; i<stocks.size(); i++)
+  System.out.println( stocks.get(i) );
+
+To exchange the values in positions i and j in a List, we could write the
+swap method below
+
+  public static void swap (int i, int j, List<Stock> l) {
+    Stock temp = l.get(i);          //Array version: temp = l[i]
+    l.set(i, l.get(j) );            //               l[i] = l[j];
+    l.set(j, temp);                 //               l[j] = temp;
+  }
+
+Notice that we can easily transform any expression using array notation
+([]) into one using List notation (.get and .set), but the resulting code
+is harder to read. Note that [] throws an exception if we access the array
+outside its physical bounds (<0 or >=.length); .get and .set throw an exception
+if we access the list outside its size ((<0 or >=.size), which is a bit more
+useful: so, accessing a length 5 array (which stores just 3 values, in indexes
+0, 1, and 2) at index 4 is legal; but not so for a List (whose .size() is 3).
+
+Also in this example, we specify the the parameter as List<Stock> instead of
+ArrayList<Stock>; this allows either an ArrayList<Stock> or LinkedList<Stock>
+object to be passed (both implement List<Stock>). So, we can specify and write
+this method independently of what choice of class we make to actually store
+our List (recall List is a interface: ArrayList and LinkedList are classes).
+
+In fact, we can even more generally write a swap method using 
+
+  public static void swap (int i, int j, List<Object> l) {
+    Object temp = l.get(i);
+    l.set(i, l.get(j) );
+    l.set(j, temp);
+  }
+
+I will briefly discuss the rest of the fundamental methods above:
+add (two forms), clear, contains, equals, indexOf, isEmpty, lastIndexOf,
+remove (two forms),and toArray.
+
+All these methods go beyond what we can do with arrays (although we
+could write most of these methods fairly easily, using our own loops,).
+But, it is easier to use Lists since we get this code automatically (see
+especially the second form of add and both forms of remove).
+
+At the end of this lecture is the implementation of SimpleQueue using
+an ArrayList. Compare its methods with the ones that process arrays.
+Notably, the remove method is much simpler (since List support
+"remove(0);" which both removes/returns the value stored at index
+0 in the List. Also note that enqueue just calls "add(o);" which
+handles array doubling if necessary.
+
+The Iterator interface is much like StringTokenizer: primarily it has methods
+hasNext and next. We can construct an Iterator for any list and use it
+to get every value from the List, one after another. With standard Java
+iterators we can rewrite the code to print every value in a List as
+
+for (Iterator<Stock> i=stocks.iterator(); i.hasNext(); /* see next in body*/)
+  System.out.println( i.next(); );
+
+Here we have done away with indexing and any notion of counting how big the
+array is (programmers consider the indexes a distraction in this case).
+
+In fact, starting with Java 1.5 we can write this loop even more simply.
+
+for (Stock s : stocks)
+  System.out.println( s );
+
+which uses a very simple syntax and translates to the iterator above. The for
+loop stores into s every values in stocks (one new one for each loop iteration,
+as long as their are unseen values in stock). The body of the loop just prints
+each s.
+
+The class Collections in Java (see its Javadoc) stores a huge number of
+static methods which operate on Lists and Collections (a List is a special
+kind of Collection -we will study inheritnace soon, with codifies "special
+kind of"- so you can pass a List to any parameter that specifies collection.
+
+Notable methods are max and min (typically given a comparator), reverse,
+rotate, and shuffle.
+
+Finally, my preference is to delay coverage of List and ArrayList until ICS-22,
+where it can be covered more systematically and completely, but UCI requires
+me toat least briefly discuss this material in ICS-21.
+
+------------------------------------------------------------------------------
+
+import java.util.List;
+import java.util.ArrayList;
+
+public class SimpleQueue  { //Implemented with List/ArrayList, not array
+
+
+  //Constructors
+  public SimpleQueue (int initialSize) throws IllegalArgumentException {
+    q = new ArrayList<Object>(initialSize);
+  }
+
+  public SimpleQueue ()
+  {this(1);}
+
+
+
+  //Mutators  
+  public void makeEmpty () {
+    q.clear();
+  }
+
+  public void enqueue (Object o) {
+    q.add(o);
+  }
+
+  public Object dequeue () throws IllegalStateException {
+    if ( q.isEmpty() )
+      throw new IllegalStateException("SimpleQueue dequeue: queue is empty");
+
+    return q.remove(0);
+  }
+
+
+  //Accessors
+  public Object peek () throws IllegalStateException {
+    if ( q.isEmpty() )
+      throw new IllegalStateException("SimpleQueue peek: queue is empty");
+
+    return q.get(0);  
+  }
+
+  public boolean isEmpty ()
+  {return q.isEmpty();}
+
+  public int getSize ()
+  {return q.size();}
+
+  public String toString () {
+    String answer = "SimpleQueue[size="+q.size();
+    for (int i=0; i<=q.size(); i++)
+      answer += ";q["+i+"]="+q.get(i);
+    answer +=  "]";
+
+    return answer;
+  }
+
+
+
+  //Instance Variables  
+  private List<Object> q;
+}

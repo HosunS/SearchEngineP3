@@ -1,0 +1,359 @@
+<HTML><HEAD>
+<TITLE>Geometry in Action</TITLE>
+<META name="Owner" value="eppstein">
+<META name="Reply-To" value="eppstein@ics.uci.edu">
+</HEAD><BODY BGCOLOR="#FFFFFF" FGCOLOR="#000000">
+<!--#config timefmt="%d %h %Y, %T %Z" -->
+<H1>
+<CENTER><A HREF="http://www.ics.uci.edu/~eppstein/geom.html"><IMG src="gina.gif" ALIGN=center WIDTH="493" HEIGHT="52" ALT="Geometry in Action" BORDER=0></A></CENTER>
+</H1>
+<HR><P>
+<CENTER>Scot Drysdale<BR>
+Dartmouth College</CENTER>
+
+<P><CENTER><H2>Voronoi Diagrams: Applications from Archaology to
+Zoology</H2></CENTER>
+
+<P><CENTER>Regional Geometry Institute, Smith College
+<BR>July 19, 1993</CENTER>
+
+<OL>
+<LI><A HREF="#app">Applications</A>
+<LI><A HREF="#dna">Definitions</A>
+<LI><A HREF="#dt">Delaunay Triangulations</A>
+<LI><A HREF="#var">Variations</A>
+<LI><A HREF="#alg">Algorithms</A>
+<LI><A HREF="#ref">References</A>
+</OL>
+
+<A NAME="app">
+<P><CENTER><H3><HR>Applications of Voronoi Diagrams<HR></H3></CENTER>
+</A>
+
+<P>Scot listed about twenty fields in which Voronoi diagrams are in
+common use (although often not by that name).  
+
+<UL>
+
+<P><LI>Anthropology and Archeology -- Identify the parts of a region under
+the influence of different neolithic clans, chiefdoms, ceremonial
+centers, or hill forts.
+
+<P><LI>Astronomy -- Identify clusters of stars and clusters of galaxies
+(Here we saw what may be the earliest picture of a Voronoi diagram,
+drawn by Descartes in 1644, where the regions described the regions
+of gravitational influence of the sun and other stars.) 
+
+<P><LI>Biology, Ecology, Forestry -- Model and analyze plant competition
+("Area potentially available to a tree", "Plant polygons")
+
+<P><LI>Cartography -- Piece together satellite photographs into large
+"mosaic" maps
+
+<P><LI>Crystallography and Chemistry -- Study chemical properties of
+metallic sodium ("Wigner-Seitz regions"); Modelling alloy structures
+as sphere packings ("Domain of an atom") 
+
+<P><LI>Finite Element Analysis -- Generating finite element meshes which
+avoid small angles
+
+<P><LI>Geography -- Analyzing patterns of urban settlements
+
+<P><LI>Geology -- Estimation of ore reserves in a deposit using information
+obtained from bore holes; modelling crack patterns in basalt due to
+contraction on cooling
+
+<P><LI>Geometric Modeling -- Finding "good" triangulations of 3D surfaces
+
+<P><LI>Marketing -- Model market of US metropolitan areas; market area
+extending down to individual retail stores
+
+<P><LI>Mathematics -- Study of positive definite quadratic forms
+("Dirichlet tesselation", "Voronoi diagram") 
+
+<P><LI>Metallurgy -- Modelling "grain growth" in metal films
+
+<P><LI>Meteorology -- Estimate regional rainfall averages, given data at
+discrete rain gauges ("Thiessen polygons")
+
+<P><LI>Pattern Recognition -- Find simple descriptors for shapes that
+extract 1D characterizations from 2D shapes ("Medial axis" or
+"skeleton" of a contour) 
+
+<P><LI>Physiology -- Analysis of capillary distribution in cross-sections
+of muscle tissue to compute oxygen transport ("Capillary domains")
+
+<P><LI>Robotics -- Path planning in the presence of obstacles
+
+<P><LI>Statistics and Data Analysis -- Analyze statistical clustering
+("Natural neighbors" interpolation) 
+
+<P><LI>Zoology -- Model and analyze the territories of animals
+
+</UL>
+
+<P>In addition to all these "real world" applications, Voronoi diagrams
+have several applications within the field of computer science, in
+particular, computational geometry.
+
+<P><UL>
+
+<P><LI>Knuth's Post Office Problem -- Given a set of locations for post
+offices, how do you determine the closest post office to a given
+house?  (Apparently, Knuth was ignoring the existence of ZIP codes.)
+
+<P><LI>Closest Pair -- Given a set of points, which two are closest
+together?
+
+<P><LI>All Nearest Neighbors -- Given a set of points, find each point's
+nearest neighbor
+
+<P><LI>Euclidean Minimum Spanning Tree
+
+<P><LI>Largest Empty Circle, also known as the Toxic Waste Dump Problem
+
+<P><LI>Fixed Radius Near Neighbors -- Find all pairs of points closer than
+a given distance apart.
+
+<P><LI>All k Nearest Neighbors -- Find each point's k closest neighbors
+
+<P><LI>Enumerating interpoint distances in increasing order -- Find the
+closest pair, then the next closest pair, then the next closest
+pair, and so on.
+
+</UL>
+
+<P>[A quick search through recent computational geometry literature finds
+about 300 papers, almost all published in the last decade, with either
+"Voronoi" or "Delaunay" in the title.  Over a third of those papers
+were published since 1990.]
+
+<A NAME="dna">
+<P><CENTER><H3><HR>Voronoi Diagrams -- Definitions and Examples<HR></H3></CENTER>
+</A>
+
+<P>A Voronoi diagram of a set of "sites" (points) is a collection of
+regions that divide up the plane.  Each region corresponds to one of
+the sites, and all the points in one region are closer to the
+corresponding site than to any other site.
+
+<P>All of the Voronoi regions are convex polygons.  Some of them are
+infinite -- these correspond to the sites on the convex hull.  The
+boundary between two adjacent regions is a line segment, and the line
+that contains it is the perpendicular bisector of the segment joining
+the two sites.  Usually, Voronoi regions meet three at at time at
+Voronoi points.  If three sites determine Voronoi regions that meet at
+a Voronoi point, the circle through those three sites is centered at
+that Voronoi point, and there are no other sites in the circle.
+
+<P>So how would this be useful for solving, say Knuth's Post Office
+Problem?  Suppose we had the Voronoi diagram of the post office
+locations.  Then the find the closest post office to a given house,
+all we need to do is figure out which Voronoi region the house is in.
+This is an example of the "point location" problem.
+
+<P>Once we have the Voronoi diagram, we can solve the post office problem
+as follows.  (This is not the best solution, but it's reasonably
+simple.)  Draw a vertical line through each of the Voronoi points.
+These lines split the plane into vertical slabs.  To locate a point p,
+first do a binary search to find the slab containing p.  Within each
+slab, there are no Voronoi points, so the Voronoi edges that cross
+each slab do so nicely.  To find the Voronoi region containing p, we
+just do another binary search, this time on the spaces between the
+Voronoi edges in our slab.  Altogether, the search takes O(log n)
+steps, where n is the number of sites.
+
+<P>Now let's look at the toxic waste dump problem.  You are given n
+points in the plane, representing cities, and you want to put a toxic
+waste dump as far from the cities as possible.  Obviously, the best
+solution is to put the dump far away from ALL the points, but to make
+the problem interesting, let's suppose we have to put the dump inside
+the convex hull of the points.  With this contraint, the best place to
+put the waste dump is either (1) on a Voronoi vertex, or (2) on the
+midpoint of a convex hull edge, which must be on a Voronoi edge.
+
+
+<A NAME="dt">
+<P><CENTER><H3><HR>Delaunay Triangulations<HR></H3></CENTER>
+</A>
+
+<P>The Delaunay triangulation is the dual of the Voronoi diagram.  To
+build the Delaunay triangulation, draw a line segment between any two
+sites whose Voronoi regions share an edge.  This procedure splits the
+convex hull of the sites into triangles.
+
+<P>The Delaunay triangulation has a number of nice properties.  For
+example, each point is connected to its nearest neighbor by an edge in
+the triangulation.  Since the Delaunay triangulation is a planar
+graph, it has at most 3n-6 edges, where n is the number of sites.  So
+once you have the Dealunay triangulation, if you want to find the
+closest pair of sites, you only have to look at 3n-6 pairs, instead of
+all n(n-1)/2 possible pairs.
+
+<P>Here are some nice properties of the Delaunay triangulation:
+
+<P><UL>
+
+<P><LI>It's dual to the Voronoi diagram, so computing one automatically
+gives you the other.
+
+<P><LI>The Empty Circle Property -- If you draw a circle through the
+vertices of ANY Delaunay triangle, no other sites will be inside
+that circle.
+
+<P><LI>It's a planar graph.  By Euler's formula, it has at most 3n-6 edges
+and at most 2n-5 triangles.  This property can be used to reduce
+many problems with quadratic size (like closest pair) down to linear
+size in the time it takes to construct the triangulation.
+
+<P><LI>It contains "fat" triangles, in the sense that the minimum angle of
+any Delaunay triangle is as large as possible.  In fact, if you
+write down the list of all angles in the Delaunay triangulation, in
+increasing order, then do the same thing for any other triangulation
+of the same set of points, the Delaunay list is guaranteed to be
+lexicographically smaller.
+
+</UL>
+
+<A NAME="var">
+<P><CENTER><H3><HR>Variations on Voronoi Diagrams<HR></H3></CENTER>
+</A>
+
+<P>One way of getting Voronoi diagrams is by growing crystals.  If you
+start a number of crystals, all growing at the same rate, and all
+starting at the same time, you get a number of growing circles.  As
+these circles meet, straight line boundaries appear between them.
+Eventually, the entire plane will be filled up.  Each crystal will
+exactly fill up the Voronoi region of its point of origin.
+
+<P>This is a little too simple.  In reality, crystals start growing at
+different times.  Even if they still grow at the same rate, if they
+start at different times, they will no longer meet in straight lines.
+Instead, they will meet in hyperbolic segments.  The diagram you get
+is called the "additively weighted Voronoi diagram".  It's defined
+just like the usual Voronoi diagram, but each site has a weight, and
+you measure distance to a site, you add its weight to the usual
+Euclidean distance.
+
+<P>Now suppose instead that all the crystals start at the same time, but
+grow at different rates.  Now you get what's called the
+"multiplicatively weighted Voronoi diagram".  Once again, each site is
+given a weight, but when you measure the distance to a site, you
+<I>multiply</I> by its weight.  Now the boundaries between different regions
+are segments of circles.
+
+<P>This model still has some problems.  For example, in a multiplic-
+atively weighted Voronoi diagram, it's possible for a region to be
+disconnected.  Obviously, this can't happen with real crystals.  So
+there's yat another version which treats existing crystals as
+obstacles, and lets fast-growing crstals grow around the slower ones.
+Now the boundaries between neighboring regions are sort of
+tear-shaped.  This variation is called the "multiplicatively weighted
+crystal growth Voronoi diagram."
+
+<P>There are several other variations.  You can change the metric from
+the normal Euclidean distance to L<sub>1</sub>, or L<sub>p</sub>, or
+L<sub>infinity</sub>, or even stranger distance functions.  You can
+weight the sites additively <I>and</I> mulitplicatively.  You can change the
+sites from points to line segments or circles or polygons.  You can
+generalize to higher dimensions.  You can associate points with the
+farthest site, instead of their nearest site.  And so on.
+
+<P>Different applications of Voronoi diagrams require different
+variations.  For example, motion planning algorithims for circular
+robots often use the Voronoi diagram of the obstacles.  If there is a
+path from one location to another, then there must be a path that
+follows the edges of the Voronoi diagram, since those edges are by
+definition as far from the obstacles as possible.
+
+<A NAME="alg">
+<P><CENTER><H3><HR>Algorithms for Computing Voronoi Diagrams<HR></H3></CENTER>
+</A>
+
+<P>There are literally hundreds of different algorithms for constructing
+various types of Voronoi diagrams.  I will describe two of the
+simplest.
+
+<P>The first algorithm inserts the points one at a time into the diagram.
+Whenever a new point comes in, we need to do three things.  First, we
+need to figure out which of the existing Voronoi cells contains the
+new site.  Second, we need to "walk around" the boundary of the new
+site's Voronoi region, inserting new edges into the diagram.  Finally,
+we delete all the old edges sticking into the new region.
+
+<P>The second and third steps are the harder ones.  It's possible that
+each new site's Voronoi cell will touch all the old cells.  Thus, in
+the worst case, we end up spending linear time on each cell, or
+O(n<sup>2</sup>)
+time overall.  However, it has been proven that if you insert the
+points in random order, the expected time is only O(n log n),
+regardless of which set of points we're given.
+
+A divide and conquer algorithm for constructing Voronoi diagrams was
+discovered by Shamos and Hoey.  Split the points into two halves, the
+leftmost n/2 points, which we'll color bLue, and the rightmost n/2
+points, which we'll color Red.  Recursively compute the Voronio
+diagram of the two halves.  Finally, merge the two diagrams by finding
+the edges that separate the bLue points from the Red points
+
+The last step can be done in linear time by the "walking ant" method.
+An ant starts down at -infinity, walking upward along the path halfway
+between some blue point and some red point.  The ant wants to walk all
+the way up to +infinity, staying as far away from the points as
+possible.  Whenever the ant gets to a red Voronoi edge, it turns away
+from the new red point.  Whenever it hits a blue edge, it turns away
+from the new blue point.
+
+There are a few surprisingly difficult details left to deal with, like
+how does the ant know where to start, and how do you know which edge
+the ant will hit next.  (The interested reader is strongly encouraged
+to consult the standard computational geometry literature for
+solutions to these details.)
+
+<A NAME="ref">
+<P><CENTER><H3><HR>References for Further Reading<HR></H3></CENTER>
+</A>
+
+<P><OL>
+
+<P><LI>Okabe, Boots, and Sugihara, <I>Spatial Tesselations: Concepts and
+Applications of Voronoi Diagrams</I>, Wiley, 1992.  This book describes
+everything mentioned in this talk, including an excellent survey of
+Voronoi applications in dozens of different fields.
+
+<P><LI>Aurenhammer, "Voronoi Diagrams: A Survey of a Fundamental
+Geometric Data Structure", <I>ACM Computing Surveys</I> 23 (1991), page
+345-405.  This is an excellent survey of recent technical results and
+a few applications, with several hundred references into the
+computational geometry literature.
+
+<P>Also suggested are a few of the standard computational geometry texts:
+
+<P><LI>Preparata and Shamos, <I>Computational Geometry: An Introduction</I>,
+Springer-Verlag, 1985.  Excellent introduction, at about the graduate
+student level, but somewhat out of date.
+
+<P><LI>Edelsbrunner, <I>Algorithms in Combinatorial Geometry</I>,
+Springer-Verlag, 1987.  Much more thorough and technical than P&S.
+Not for the faint of heart.  Again, slightly out of date.
+
+<P><LI>O'Rourke, <I>Computational Geometry in C</I>, to appear late this year.
+Joe's book will be a gentler (and more up-to-date) introduction than
+P&S, specifically designed for undergraduates.
+
+</OL>
+
+<P><HR>
+<P>[Lightly formatted by DE from notes typed for geometry.forum by <A HREF="http://www.cs.duke.edu/~jeffe/">Jeff Erickson</A>.]
+
+<P>
+Part of
+<A HREF="http://www.ics.uci.edu/~eppstein/geom.html">Geometry in Action</A>,
+a collection of applications of computational geometry.<BR>
+<A HREF="http://www.ics.uci.edu/~eppstein/">David Eppstein</A>,
+<A HREF="http://www.ics.uci.edu/~theory/">Theory Group</A>,
+<A HREF="http://www.ics.uci.edu/">ICS</A>,
+<A HREF="http://www.uci.edu/">UC Irvine</A>.
+
+<P><SMALL>Last update: <!--#flastmod file="scot.drysdale.html" -->.</SMALL>
+</BODY></HTML>

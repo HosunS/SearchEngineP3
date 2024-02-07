@@ -1,0 +1,586 @@
+<html>
+<head>
+<title>JUNG Framework Tech Report</title>
+<link	rel = STYLESHEET
+	href = "jung.css"
+	Type = "text/css"	>
+</head>
+<body>
+<center>
+<h1>The JUNG (Java Universal Network/Graph) Framework</h1>
+
+<p class="authors">Technical Report UCI-ICS 03-17
+<br/>School of Information and Computer Science
+<br/>University of California, Irvine</p> 
+
+<p class="authors">Joshua O'Madadhain, Danyel Fisher, Scott White, and Yan-Biao Boey
+<br/>School of Information and Computer Science
+<br/>University of California, Irvine
+<br/>Irvine, CA 92697-3425
+<br/>jmadden@ics.uci.edu, danyelf@acm.org, scottw@eml.cc, yboey@uci.edu</p>
+
+</center>
+
+<hr/>
+
+<h2>Table of Contents</h2>
+
+<ul>
+<li/><h3><a href="#intro">Introduction</a></h3>
+  <ul>
+  <li/><a href="#overview">Overview</a>
+  <li/><a href="#related">Related Work</a>
+  </ul>
+<li/><h3><a href="#gve">Graphs, Vertices, and Edges</a></h3>
+  <ul>
+  <li/><a href="#properties">Basic Properties and Operations</a>
+  <li/><a href="#types">Types</a>
+  <li/><a href="#create">Creating and Adding</a>
+  <li/><a href="#copy">Copying and Equivalency</a>
+  <li/><a href="#remove">Removing Vertices and Edges</a>
+  </ul>
+<li/><h3><a href="#data">User Data</a></h3>
+  <ul>
+  <li/><a href="#extension">Class Extension</a>
+  <li/><a href="#annotation">User Data Repositories</a>
+  </ul>
+<li/><h3><a href="#filter">Filtering</a></h3>
+<li/><h3><a href="#viz">Visualization</a></h3>
+<li/><h3><a href="#algorithms">Algorithms</a></h3>
+  <ul>
+  <li/><a href="#clustering">Clustering</a>
+  <li/><a href="#topology">Topology, Paths, and Flows</a>
+  <li/><a href="#importance">Importance</a>
+  <li/><a href="#statistics">Statistics</a>
+  </ul>
+<li/><h3><a href="#future">Future Work</a></h3>
+<li/><h3><a href="#acknowledgements">Acknowledgements</a></h3>
+<li/><h3><a href="#references">References</a></h3>
+</ul>
+
+<hr/>
+
+<h2><a name="intro">Introduction</a></h2>
+
+<blockquote>
+
+<h3><a name="overview">Overview</a></h3>
+
+<blockquote>
+
+<p class="indented">JUNG is an open-source software library that provides a common and extendible language for the modeling,  analysis, and visualization of data that can be represented as a graph or network.  It is written in Java, which allows JUNG-based applications to make use of the extensive built-in capabilities of the Java API, as well as those of other existing third-party Java libraries.</p>
+
+<p class="indented">The JUNG architecture is designed to support a variety of  representations of entities and their relations, such as directed and  undirected graphs, multi-modal graphs, graphs with parallel edges, and  hypergraphs.  It provides a mechanism for annotating graphs, entities, and relations with metadata.  This facilitates the creation of analytic  tools for complex data sets that can examine the relations between entities as well as the metadata attached to each entity and relation.</p>
+
+<p class="indented">The current distribution of JUNG includes implementations of a number of algorithms from graph theory, data mining, and social network analysis, such as routines for clustering, decomposition,  optimization, random graph generation, statistical analysis, and calculation of network distances, flows, and importance measures  (centrality, PageRank, HITS, etc.).</p>
+
+<p class="indented">JUNG also provides a visualization framework that makes it easy to construct tools for the interactive exploration of network data.  Users  can use one of the layout algorithms provided, or use the framework to  create their own custom layouts.  In addition, filtering mechanisms are  provided which allow users to focus their attention, or their algorithms,  on specific portions of the graph.</p>
+
+</blockquote>
+
+<h3><a name="related">Related Work</a></h3>
+
+<blockquote>
+<p class="indented">JUNG was created out of a perceived need for a general, flexible, and powerful API for manipulating, analyzing, and visualizing graphs and networks.  There exist several other tools for visualizing and manipulating networks, some of the more
+prominent of which are UCINET, Pajek, R, and GFC.</p>
+
+<p class="indented">UCINet (<a href="http://www.analytictech.com/ucinet_5_description.htm">http://www.analytictech.com/ucinet_5_description.htm</a>) and Pajek (<a href="http://vlado.fmf.uni-lj.si/pub/networks/pajek/">http://vlado.fmf.uni-lj.si/pub/networks/pajek/</a>) are stand-alone applications that each provide a number of tools for visualizing and analyzing networks.  However, they cannot be conveniently addressed programmatically by other applications, which makes them not well-suited to process large numbers of graphs.  Furthermore, they are tools rather than libraries, so users cannot write their own routines that take advantage of the capabilities of existing code.</p>
+
+<p class="indented">R (<a href="http://www.r-project.org">http://www.r-project.org</a>) is a programming language geared primarily towards the statistics community, which provides many advanced statistical routines. However, it doesn't have convenient access to the extensive Java API (for such functions as database connectivity, and Web support), and therefore it is difficult to build real-world applications on top of R.  Furthermore, R does not currently provide native sparse graph data structures, which are necessary to write efficient algorithms for large networks, which are often found in real-world data sets.</p>
+
+<p class="indented">GFC (<a href="http://www.alphaworks.ibm.com/tech/gfc">http://www.alphaworks.ibm.com/tech/gfc</a>) is a Java graph drawing-oriented API released by IBM. It is specific to using Java's AWT/Swing mechanisms for rendering, contains few graph manipulation algorithms, is no longer actively supported, and is not open-source.  (In this, it is similar to a number of other network-related software libraries.)</p>
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+
+<hr/>
+
+
+<h2><a name="gve">Graphs, Vertices, and Edges</a></h2>
+
+<blockquote>
+
+<h3><a name="properties">Basic Properties and Operations</a></h3>
+
+<blockquote>
+<p class="indented">Graphs, vertices, and edges each have several properties that can be extracted from 
+them, and operations that they can perform (or have performed upon them).  The operations listed below are all guaranteed to be defined and to behave as specified for all JUNG graphs, vertices, and edges.  Depending on the specific type of graph, vertex, or edge, and on the implementation used, a given graph, vertex, or edge object may have other available properties and/or operations.</p>
+
+<p class="indented">Graphs:</p>
+<ul class=indented>
+<li/><code>newInstance()</code>: Returns a graph of the same type as the graph on which this method is invoked.
+<li/><code>addVertex(v)</code>: Adds the vertex <code>v</code> to this graph, and returns a reference to the added vertex.
+<li/><code>addEdge(e)</code>: Adds the edge <code>e</code> to this graph, and returns a reference to the added edge. 
+<li/><code>getVertices()</code>: Returns the set of all vertices in this graph.
+<li/><code>getEdges()</code>: Returns the set of all edges in this graph.
+<li/><code>numVertices()</code>: Returns the number of vertices in this graph.
+<li/><code>numEdges()</code>: Returns the number of edges in this graph.
+<li/><code>removeVertex(v)</code>: Removes the vertex <code>v</code> from this graph.
+<li/><code>removeEdge(e)</code>: Removes the edge <code>e</code> from this graph.
+<li/><code>removeVertices(s)</code>: Removes all vertices in the set <code>s</code> from this graph.
+<li/><code>removeEdges(s)</code>: Removes all edges in the set <code>s</code> from this graph.
+<li/><code>copy()</code>: Performs a deep copy of the graph and its contents.
+</ul>
+
+<p class="indented">Vertices:</p>
+<ul class=indented>
+<li/><code>getGraph()</code>: Returns a reference to the graph that contains this vertex.
+<li/><code>getNeighbors()</code>: Returns the set of vertices which are connected to this vertex (by edges).
+<li/><code>getIncidentEdges()</code>: Returns the set of edges which are incident to this vertex.
+<li/><code>degree()</code>: Returns the number of edges incident to this vertex.
+<li/><code>getEquivalentVertex(g)</code>: Returns the vertex in the specified graph <code>g</code>, if any, that is equivalent to this vertex.
+<li/><code>isNeighbor(v)</code>: Returns <code>true</code> if the specified vertex <code>v</code> and this vertex are both incident to at least one edge, and <code>false</code> otherwise.
+<li/><code>isIncident(e)</code>: Returns <code>true</code> if the specified edge <code>e</code> is incident to this vertex, and <code>false</code> otherwise.
+<li/><code>copy(g)</code>: Creates a copy of this vertex in the specified graph <code>g</code>.
+</ul>
+
+<p class="indented">Edges:</p>
+<ul class=indented>
+<li/><code>getGraph()</code>: Returns a reference to the graph that contains this edge.
+<li/><code>getIncidentVertices()</code>: Returns the set of vertices that are incident to this edge.
+<li/><code>getEquivalentEdge(g)</code>: Returns the edge in graph <code>g</code>, if any, that is equivalent to this edge.
+<li/><code>numVertices()</code>: Returns the number of vertices that are incident to this edge.
+<li/><code>isIncident(v)</code>: Returns <code>true</code> if the specified vertex <code>v</code> is incident to this edge, and <code>false</code> otherwise.
+<li/><code>copy(g)</code>: Creates a copy of this edge in the specified graph <code>g</code>.
+</ul>
+
+</blockquote>
+
+<h3><a name="types">Types</a></h3>
+
+<blockquote>
+
+<p class="indented">JUNG defines types using Java interfaces (which specify what methods 
+any implementations of the interface must provide), abstract classes (which provide generalized skeletal implementations of the interfaces to speed the development of new implementations, but which cannot be instantiated by users), and implementation classes (which are what users create and use). </p>
+
+<p class="indented">The <code>graph</code> package contains specifications (in the form of Java interfaces), at various levels of abstraction, for graphs, vertices, and edges.  </p>
+
+<h4>Interfaces</h4>
+
+<blockquote>
+<p class="indented">The <code>ArchetypeGraph</code>, <code>ArchetypeVertex</code>, and <code>ArchetypeEdge</code> interfaces specify the behavior of generalized graphs, vertices, and edges; they are designed to encompass all types of graphs, including directed and undirected graphs, graphs with attached data (e.g., weighted edges), hypergraphs, and graphs with parallel edges.  All graph, vertex, and edge implementations should implement the appropriate one of these interfaces (or an interface which inherits from these interfaces).  The methods listed above are those available to objects which implement one of these interfaces.</p>
+
+<p class="indented">The <code>Graph</code>, <code>Vertex</code>, and <code>Edge</code>
+interfaces inherit from the <code>Archetype</code> interfaces, and specify the behavior for (binary) graphs in which each edge connects exactly two vertices; this specialization allows a number of additional methods to be defined.</p>
+
+<p class="indented">The <code>Directed</code> and interfaces specify the
+behavior and capabilities of directed graphs and edges.  A <code>DirectedEdge</code> is a type of <code>Edge</code> which imposes an ordering on its incident vertices.  <code>DirectedGraph</code> is a tagging interface for implementations of <code>Graph</code> whose edge set consists
+of implementations of <code>DirectedEdge</code>.</p>
+
+<p class="indented">The <code>UndirectedGraph</code> and <code>UndirectedEdge</code> interfaces are the corresponding interfaces for undirected graphs and edges.</p>
+</blockquote>
+
+<h4>Abstract Classes</h4>
+
+<blockquote>
+<p class="indented">The <code>AbstractSparseGraph</code>, <code>AbstractSparseVertex</code>, and <code>AbstractSparseEdge</code> classes are designed for sparse graphs (ones in which the number of edges is only a few times as large as the number of vertices).  They may not be the best implementations for representing and manipulating dense graphs (ones in which most vertices are connected to most other vertices).</p>
+
+</blockquote>
+
+<h4>Implementation Classes</h4>
+
+<blockquote>
+
+<p class="indented">The <code>DirectedSparse{Graph, Edge, Vertex}</code> and <code>UndirectedSparse{Graph, Edge, Vertex}</code> classes extend the <code>Abstract</code> classes for strictly directed and strictly undirected graphs; the graph and edge classes implement the <code>DirectedGraph</code> and <code>DirectedEdge</code> interfaces, respectively.</p>
+</blockquote>
+
+</blockquote>
+
+
+<h3><a name="create">Creating and Adding</a></h3>
+
+<blockquote>
+<p class="indented">Creating a graph may be done in three ways.  First, one can call the constructor for the desired type of graph:</p>
+
+<pre>
+	DirectedGraph g = new DirectedSparseGraph();
+</pre>
+
+<p class="indented">which creates a new directed sparse graph and assigns it to a variable of type <code>DirectedGraph</code>.</p>
+
+<p class="indented">Second, one can also create a graph by reading it in from a file.  Currently, JUNG can read simple Pajek and GraphML (http://graphml.graphdrawing.org/) files, and can write Pajek files.</p>
+
+<p class="indented">Third, one can generate a graph algorithmically, either with a user-defined
+method, or with one of the classes that JUNG provides for creating random graphs.</p>
+
+<p class="indented">Once you have created a graph, you can create vertices and add them to this graph:</p>
+
+<pre>
+	Vertex v1 = (Vertex) g.addVertex(new DirectedSparseVertex());
+	Vertex v2 = (Vertex) g.addVertex(new DirectedSparseVertex());
+</pre>	
+
+<p class="indented">and once you have vertices, you can connect them with edges:</p>
+
+<pre>
+	DirectedEdge e = (DirectedEdge) g.addEdge(new DirectedSparseEdge(v1, v2));
+</pre>
+
+<p class="indented">Note that creating vertices/edges and adding them to a graph are actually two different
+operations, which we combine here into a single line of code.  The two-stage nature of this process makes it possible to create "orphaned" vertices/edges that are not part of a graph.  
+This was done as a compromise between common practices in Java APIs 
+regarding the side effects of constructors, and the semantics of graphs.
+However, the behavior of the JUNG edge and vertex methods, with the 
+exception of <code>getGraph()</code>, is unspecified on orphaned vertices/edges.  
+The JUNG Project implementations will never create orphaned vertices/edges,
+and we strongly recommend that users follow this practice by nesting the call to the
+vertex/edge constructor inside the call to the graph method that adds its argument to
+the graph (as in the examples above).</p>
+
+<p class="indented">Some constraints to keep in mind:</p>
+<ul class=indented>
+<li/>A vertex/edge may only be in one graph at a time.
+<li/>A vertex/edge may only be added to a given graph once.
+<li/>An edge may not be created incident to "orphaned" vertices.
+<li/>An edge may not be created which joins vertices in different graphs.  
+<li/>The directionality of a vertex must match that of the graph to which it is being added.
+(Thus, for example, you may not add a <code>DirectedSparseVertex</code> to an implementation of <code>UndirectedGraph</code>.)
+<li/>The directionality of an edge must match that of the vertices that it is connecting, and that of the graph to which it is being added. 
+</ul>
+
+<p class="indented">If any of these constraints are violated, the error will be caught at runtime, and a <code>FatalException</code> will be thrown.  These constraints are not guaranteed to be "fail-fast" (that is, violations may not be reported immediately), although several of them are fail-fast.</p>
+
+</blockquote>
+
+<h3><a name="copy">Copying and Equivalency</a></h4>
+
+<blockquote>
+<p class="indented">You can make a copy of a graph, or copy a vertex or edge from one graph (the <i>original</i> graph) to another graph (the <i>target</i> graph).</p>
+
+<p class="indented">Copying a vertex or edge does three things:</p>
+<ul class=indented>
+<li/>A new vertex or edge is created in the target graph, of the same type as the original vertex or edge.
+<li/>Any user data which is preserved by copying will be copied from the original vertex/edge to the copy.  (The behavior of user data when its host is copied is discussed in the section called <a href="#data">"User Data"</a>.)
+<li/>An equivalence relation is created between the original vertex/edge (and any vertices/edges to which the original vertex is equivalent) and the copy.
+</ul>
+
+<p class="indented">Copying a graph does three things:</p>
+<ul class=indented>
+<li/>A new graph is created, of the same type as the original graph.
+<li/>Any user data which is preserved by copying will be copied from the original vertex/edge to the copy.  (The behavior of user data when its host is copied is discussed in the section called <a href="#data">"User Data"</a>.)
+<li/>Each vertex and edge of the original graph is copied (as defined above) to the target graph.
+</ul>
+
+<p class="indented">The following code creates a graph, creates two vertices and an edge and adds them to this graph, then copies each vertex and edge from the original graph to a new target graph.</p>
+
+<pre>
+	Graph original = new DirectedSparseGraph();
+	Vertex v1_orig = original.addVertex(new DirectedSparseVertex());
+	Vertex v2_orig = original.addVertex(new DirectedSparseVertex());
+	DirectedEdge e_orig = original.addEdge(new DirectedSparseEdge(v1, v2));
+
+	Graph target = new DirectedSparseGraph();
+	Vertex v1_copy = v1.copy(target);
+	Vertex v2_copy = v2.copy(target);
+	DirectedEdge e_copy = e_orig.copy(target);
+</pre>
+
+<p class="indented">The vertices <code>v1_copy</code> and <code>v2_copy</code> are equivalent to the vertices <code>v1_orig</code> and <code>v2_orig</code>, respectively, and the edge <code>e_copy</code> is equivalent to the edge <code>e_orig</code>.  Thus, for example, the statement 
+
+<pre>
+	v1_orig == v1_copy.getEquivalentVertex(original);
+</pre>
+
+<p class="indented">evaluates to <code>true</code> in the context of the code given above.  Furthermore, as a convenience, the Java <code>equals</code> method has been implemented to respect this equivalence relation, so</p>
+
+<pre>
+	v1_orig.equals(v1_copy);
+</pre>
+
+<p class="indented">also evaluates to <code>true</code>.</p>	
+
+<p class="indented">There are some restrictions that govern when and where vertices and edges may be copied:</p>
+<ul class=indented>
+<li/>The original graph and the target graph may not be the same.
+<li/>The vertices incident to an edge must have equivalents in the target graph before the edge can be copied into that graph.  (Thus, in the example above, we could not have copied the edge <code>e_orig</code> until its incident vertices <code>v1_orig</code> and <code>v2_orig</code> had been copied.)
+<li/>Two equivalent vertices (or two equivalent edges) may not exist in the same graph.  Thus, a vertex or edge cannot be copied into a graph if it already has an equivalent in that graph.
+</ul>
+
+
+</blockquote>
+
+<h3><a name="remove">Removing Vertices and Edges</a></h3>
+
+<blockquote>
+<p class="indented">To remove a vertex or edge from a graph, call the appropriate removal method:</p>
+
+<pre>
+	g.removeEdge(e);
+	g.removeVertex(v1);
+</pre>
+
+<p class="indented">Removing an edge from a graph will not affect any other part of the graph.  Removing a vertex from a graph may cause the edges that are incident to that vertex to be removed if these edges would otherwise become ill-formed.  (An ill-formed edge is one that is incident to the wrong number of vertices.  In graphs where edges are defined to connect exactly two vertices, removing a vertex will result in the removal of all of its incident edges.)</p>
+
+<p class="indented">Removing an element from a graph does not free the memory used by that
+object.  (In fact, you can remove an element from a graph and then re-insert it in that graph or in a different graph).  As with all Java programs, the Java garbage collector is responsible for freeing the memory for an object once it is no longer being used.  Removing an element from a graph also does not remove it from any user data structures (discussed in the section entitled <a href="#data">"User Data"</a>); users are responsible for updating the user data as necessary.</p>
+</blockquote>
+
+</blockquote>
+
+
+<hr/>
+
+
+<h2><a name="data">User Data</a></h2>
+
+<blockquote>
+<p class="indented">Users can associate data with graphs, edges, or vertices in two ways: class extension and the built-in JUNG annotation mechanism.</p>  
+
+<h3><a name="extension">Class Extension</a></h3>
+
+<blockquote>
+<p class="indented">Users can extend the classes provided so that they include the variables/properties (and methods for manipulating those fields) that the user desires.  This mechanism is most appropriate for applications which are designed to operate on a specific data set, each of whose elements have known properties.  For instance, a network representing a highway system might store, for each segment of highway between interchanges (i.e., edge), the length of that segment.</p>
+
+<p class="indented">The ability to extend the JUNG classes is a feature of the Java language, and is not specific to JUNG. However, class extenders should note that the AbstractSparse classes use the Java <code>Object.clone()</code> method to copy <code>Vertices</code>, <code>Edges</code>, and <code>Graphs</code>; therefore, copies of such objects will be "shallow" copies, as defined by Java.</p>
+
+<p class="indented">This sample code creates a class that extends <code>DirectedSparseVertex</code> and carries with it some data. </p>
+
+<pre>
+	class Person extends DirectedSparseVertex 
+	{
+    	    private String name;
+    	    private List publications;     
+
+	    public Person( String name, List publications ) 
+	    {
+       		this.name = name;
+	        this.publications = publications;
+    	    }
+
+	    public List getPublications() { return publications; }
+	}
+</pre>
+
+</blockquote>
+
+<h3><a name="annotation">User Data Repositories</a></h3>
+
+<blockquote>
+<p class="indented">JUNG provides a built-in mechanism, the <code>UserData</code> class, for annotating graph elements with data.  This mechanism is most appropriate for handling data which is either temporary or idiosyncratic (i.e., data which not every graph element of that type will have or need).</p>
+
+<p class="indented">Each of the JUNG graph, vertex, and edge implementations extends <code>UserData</code>, which provides the following operations:</p>
+
+<ul class=indented>
+<li/><code>addUserDatum(key, datum, copyaction)</code>: Adds the specified object <code>datum</code> with the specified retrieval <code>key</code> to this object's user data repository, with the specified <code>copyaction</code>. 
+<li/><code>getUserDatum(key)</code>: Retrieves the object that has the specified retrieval <code>key</code> from this object's user data repository. 
+<li/><code>removeUserDatum(key)</code>: Removes the object that has the specified retrieval <code>key</code> from this object's user data repository.
+<li/><code>setUserDatum(key, datum, copyaction)</code>: Replaces the object (if any) which has the specified retrieval <code>key</code> with the specified object <code>datum</code> and <code>copyaction</code>.  If there is no such object, then this method is equivalent to <code>addUserDatum(key, datum, copyaction)</code>. 
+<li/><code>importUserData(udc)</code>: Takes the user data stored in <code>udc</code> (the user data repository of another graph element) and copies it to this object's user data repository, according to the constraints of each datum's copy action.
+<li/><code>getUserDatumKeyIterator()</code>: Provides an iterator over this object's user data repository key set; this allows a user to examine the contents of the user data repository of this object.
+<li/><code>getUserDatumCopyAction(key)</code>: Retrieves the copy action for the datum with the specified retrieval <code>key</code> from this object's user data repository.
+</ul>
+
+<p class="indented">(The purpose and semantics of copy actions are discussed in the section below entitled <a href="#copyaction">Copying User Data</a>.)</p>
+
+<p class="indented">Here is a simple example of how data may be stored, accessed, modified, and removed using the user data repositories:</p>
+
+<pre>
+	Vertex v = (Vertex) g.addVertex(new DirectedSparseVertex());
+	Vertex w = (Vertex) g.addVertex(new DirectedSparseVertex());
+	String name_key = "name";
+	String current_address_key = "address";
+	String current_student_key = "student";
+	v.addUserDatum(name_key, "Carl Jung", UserData.SHARED);
+	w.addUserDatum(name_key, "Sigmund Freud", UserData.SHARED);
+	v.addUserDatum(current_address_key, "Vienna, Austria", UserData.SHARED);
+	v.addUserDatum(current_student_key, w, UserData.REMOVE);  // Freud is a student of Jung
+	...
+	String v_name = v.getUserDatum(namekey);
+	v.setUserDatum(current_address_key, "Basel, Switzerland", UserData.SHARED);
+	v.removeUserDatum(current_student_key);  // Freud is now no longer Jung's student
+</pre>
+
+<p class="indented">This example shows that userdata can contain any Java object, including other vertices.</p>
+
+<h4><a name="copyaction">Copying User Data</a></h4>
+
+<blockquote>
+<p class="indented">When a graph element <code>a</code> is copied (with the <code>copy</code> method), the newly created element <code>b</code> calls <code>importUserData(a)</code>, which attempts to copy each of the objects in <code>a</code>'s user data repository to <code>b</code>'s user data repository.  The behavior of each such copy attempt will depend on the copy action that was specified when the corresponding user data element was created.</p>
+
+<p class="indented">The interface <code>UserDataContainer</code> contains an interface called <code>CopyAction</code>, which consists of a single method signature, <code>onCopy(value, source, target)</code>.  <code>importUserData(a)</code> retrieves the copy action (which is an implementation of <code>CopyAction</code>) for each element in <code>a</code>'s user data repository.  This copy action then calls <code>onCopy(datum, a, b)</code>, and based on the result, decides what to do with the specified <code>datum</code>.</p>
+
+<p class="indented">JUNG provides three different implementations of <code>CopyAction</code>: <code>UserData.CLONE</code>, <code>UserData.REMOVE</code>, and <code>UserData.SHARED</code>.</p>
+
+<p class="indented"><code>UserData.CLONE</code>'s version of <code>onCopy()</code> returns a copy of the user datum, as defined by the Java <code>clone()</code> method; <code>importUserData</code> then places this copy in the target graph element's user data repository.  This clone is completely independent of the original.  (If the user datum does not support the <code>clone()</code> method, <code>onCopy</code> will throw the Java <code>CloneNotSupportedException</code>.)</p>
+
+<p class="indented"><code>UserData.SHARED</code>'s version of <code>onCopy()</code> returns a reference to the original user datum; <code>importUserData</code> then places this reference in the target graph element's user data repository.  Thus, any changes to this user datum that are made by one of the graph elements that share this user datum will be reflected in all such graph elements.</p>
+
+<p class="indented"><code>UserData.REMOVE</code>'s version of <code>onCopy()</code> returns null; that is, user data that is created with this copy action will not be copied by the <code>copy()</code> method.</p>
+
+</blockquote>
+
+<h4><a name="deco">Decorators, Indexers, and Labellers</a></h4>
+
+<blockquote>
+<p class="indented">JUNG includes a few classes that show how the user data repositories may be used in a structured fashion; two of these classes are <code>Indexer</code> and <code>StringLabeller</code>.</p>
+
+<p class="indented">An <code>Indexer</code> contains methods that create a mapping between the vertices of a graph and the integers <code>{0, 1, ... n-1}</code> (where <code>n</code> is the number of vertices in the graph).  It provides mechanisms to get the index of a given vertex (<code>getIndex(v)</code>) and to get the vertex with a specified index (<code>getVertex(i)</code>).  Among other things, <code>Indexer</code> thus makes it convenient to arrange a set of vertices in an array, using each vertex's index as an index into the array.</p>
+
+<p class="indented">A <code>StringLabeller</code> is similar to an <code>Indexer</code>; it provides facilities for fetching vertices given strings (labels) and vice versa.   However, the labels are user-defined and thus need not follow any particular pattern. Vertices that have not been labelled simply will not be accessible by the indexer.</p>
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+
+<hr/>
+
+<h2><a name="filter">Filtering</a></h2>
+
+<blockquote>
+<p class="indented">
+The JUNG filtering mechanism removes selected vertices and edges from input graphs, and returns new graphs. 
+These new graphs are copies of the original, containing all the same vertices and edges except for those that have been removed. 
+A <code>Filter</code> takes in a <code>Graph</code>, and returns an <code>UnassembledGraph</code>.</p>
+
+<p class="indented">An <code>UnassembledGraph</code> is a temporary storage mechanism for vertices and edges: it holds all the vertices (and at least all the edges) that will be placed into the final, filtered graph.  In some circumstances, just knowing which vertices pass the filter is sufficient; this information can be accessed directly from the <code>UnassembledGraph</code> with the calls <code>getUntouchedEdges()</code> and <code>getUntouchedVertices()</code>, which return the set of edges that passed the filter, and the set of vertices that passed the filter, respectively.  However, most of the time, one wants to access the new graph that passes the filter; this is done with the <code>UnassembledGraph</code> method called <code>assemble()</code>, which builds the new graph. <code>assemble()</code> copies every vertex that passed the filter into the new graph, and then copies each edge that passed the original filter into the new graph if both of its incident vertices also passed the filter (thus ensuring that the resulting graph is well-formed).  Note that this means that some edges returned by <code>getUntouchedEdges()</code> will not be copied into the new graph.</p>
+
+<p class="indented"><code>assemble()</code> can be slow, so it is sometimes desirable to string together several filters in a row, and not call <code>assemble</code> until the last <code>Filter</code> has been run. This is done by creating a filter that implements the <code>EfficientFilter</code> interface. An <code>EfficientFilter</code> is a type of <code>Filter</code> that can filter an <code>UnassembledGraph</code>, and return another <code>UnassembledGraph</code>.  A filter which examines structural properties of graphs is probably not appropriate to implement as an <code>EfficientFilter</code>, because <code>UnassembledGraph</code>s may contain incorrect topology information (in particular, as noted above, the edge set may include some ill-formed edges).  It is the responsibility of the user to determine whether a given filtering mechanism can be implemented as an <code>EfficientFilter</code>.</p>
+
+<p class="indented"> While a user can write a custom filter merely by implementing the interface, it is often easiest to extend one of the two provided base <code>Filter</code> classes, <code>VertexAcceptFilter</code> and <code>EdgeAcceptFilter</code>. Both of these require the user to write a method--<code>boolean acceptVertex(vertex)</code> or <code>boolean acceptEdge(edge)</code>, respectively. By default, these are not declared to be <code>EfficientFilter</code>s; however, users may certainly create extensions of these filters that are <code>EfficientFilter</code>s. 
+</p>
+<p class="indented">
+The <code>SerialFilter</code> mechanism applies a series of filters sequentially to a specified graph, in the order in which they were added to the <code>SerialFilter</code>.  As the filters are applied, it checks to see whether each one is an <code>EfficientFilter</code>, and calls <code>assemble</code> as necessary.
+</p>
+<p class="indented">The <code>LevelFilter</code> interface was designed to be used in conjunction with the <code>GraphDraw</code> mechanism (described in the section on visualization). <code>LevelFilter</code>s are filters that take an integer parameter, which is used to determine the operation of the filter (for instance, filtering all edges with weight less than the value of this parameter). With a <code>LevelFilter</code>, a slider on a visualization can be tied directly into the <code>Filter</code>, and thus can allow the user to control this parameter directly, and generate a dynamically changing graph.</p>
+
+</blockquote>
+
+<hr/>
+
+<h2><a name="viz">Visualization</a></h2>
+
+<blockquote>
+<p class="indented">JUNG provides mechanisms for laying out and rendering graphs. The current renderer implementations use the Java Swing API to display graphs, but they may be implemented using other toolkits.</p>
+
+<p class="indented">In general, a visualization is accomplished with</p>
+
+<ul class=indented>
+<li/>A <code>Layout</code>, which takes a graph and determines the location at which each of its vertices will be drawn.
+<li/>A (Swing) Component, into which the data is rendered.  (Current implementations use a <code>VisualizationViewer</code>, which is an extension of the Swing <code>JPanel</code> class.)
+<li/>A <code>Renderer</code>, which takes the data provided by the <code>Layout</code> and paints the vertices and edges into the provided Component. 
+</ul>
+
+<p class="indented">Thus, by selecting one of each of these three, it is possible to coordinate drawing. The default implementation traverses the <code>Layout</code>, asking it for locations of vertices, and then paints them individually with the <code>Renderer</code> inside the Swing component. In addition, the <code>GraphDraw</code> infrastructure simplifies many of these transformations by packaging the VisualizationViewer, the Renderer, and the <code>Layout</code> together. Users may then customize this viewer as appropriate. (Sample code is available in the <code>GraphDraw</code> documentation.)</p> 
+
+<p class="indented">JUNG also includes utilities and support classes that facilitate customization of a graph visualization.  For instance, <code>FadingVertexLayout</code> provides a mechanism that can be used to create fading effects when vertices are filtered out and subsequently restored.</p>
+</blockquote>
+
+<hr/>
+
+<h2><a name="algorithms">Algorithms</a></h2>
+
+<blockquote>
+
+<p class="indented">JUNG provides several different categories of different graph and network algorithms.  A selection of them is listed here.</p>
+
+<h3><a name="clustering">Clustering</a></h3>
+
+<blockquote>
+
+<p class="indented">A cluster is a collection of objects that are all similar to each other in some way.  In a network, similarity is often based on topological properties such as connectivity, but can also be based on the properties of vertices or edges in the network.  Clustering algorithms provided by JUNG include <code>EdgeBetweennessClusterer</code>, which computes clusters for a graph based on the betweenness property of the edges, and <code>WeakComponentClusterer</code>, which finds all weak components in a given graph, where a weak component is defined as a maximal weakly connected subgraph of that graph.</p>
+
+</blockquote>
+
+<h3><a name="topology">Topology, Paths, and Flows</a></h3>
+
+<blockquote>
+<p class="indented">These algorithms perform operations on (and calculate properties of) graphs that relate to the graph's topology (that is, the structures and substructures formed by the ways that the vertices are linked together by edges).  Topological algorithms that JUNG provides include <code>BFSDistanceLabeler</code>, which labels each vertex in a graph with the length of the shortest unweighted path from a specified vertex in that graph; <code>KNeighborhoodExtractor</code>, which returns the subgraph of a graph whose vertices are separated by no more than <code>k</code> edges from a specified vertex; <code>EdmondsKarpMaxFlow</code>, which labels each edge in a directed, edge-weighted graph with the flow along that edge which is consistent with the maximum flow for the graph; and <code>DijkstraShortestPath</code>, which calculates the length of the shortest weighted path from a specified vertex to that of each vertex in that vertex's graph. </p>
+
+</blockquote>
+
+<h3><a name="importance">Importance</a></h3>
+
+<blockquote>
+<p class="indented">Network importance algorithms measure the importance of each vertex (or edge) according to a set of criteria that is usually based on the positioning of the vertex/edge relative to the rest of the graph.</p>
+
+<p class="indented">Some of the provided algorithms assume that they are given a Markov network: a directed weighted graph in which the vertices represent states, the edges represent possible state transitions, and the edge weights represent transition probabilities.  The stationary probability for a vertex <code>v</code> in such a network is the limiting probability that, given an arbitrary starting state and a large number of transitions, the current state will be that of <code>v</code>.</p>
+
+<p class="indented">Importance-based algorithms that JUNG provides include <code>BetweennessCentrality</code>, which labels each vertex and edge in a graph with a value that is derived from the number of shortest paths that pass through them; <code>PageRankWithPriors</code>, which ranks each vertex in a modified Markov network according to its stationary probability, relative to a specified set of root vertices; <code>HITS</code>, which ranks each vertex in a graph according to the "hubs-and-authorities" importance measures; and <code>KStepMarkov</code>, which ranks each vertex according to a fast approximation of the <code>PageRankWithPriors</code> algorithm.
+
+</blockquote>
+
+<h3><a name="statistics">Statistics</a></h3>
+
+<blockquote>
+<p class="indented">JUNG provides several classes that analyze graphs and calculate various statistical measures on them, including <code>DegreeDistributions</code> and <code>GraphStatistics</code>.
+</blockquote>
+
+</blockquote>
+
+<hr/>
+
+<h2><a name="future">Future Work</a></h2>
+
+<blockquote>
+
+<p class="indented">The first JUNG release provided many of the tools and elements that are most commonly required for writing software that manipulates, analyzes, and visualizes graphs.  Future releases are expected to include the following features, several of which are currently under development.  These features should significantly expand the set of available tools and enhance users' abilities to write robust code.</p>
+
+<ul class=indented>
+<li/>parallel edge support
+<li/>bipartite, k-partite, and multimodal graphs
+<li/>hypergraphs
+<li/>database connectivity support
+<li/>additional analysis tools
+<li/>event-dispatching system for managing changes to graphs and graph elements
+</ul>
+
+</blockquote>
+
+<hr/>
+
+<h2><a name="acknowledgements">Acknowledgements</a></h2>
+
+<blockquote>
+
+<p class="indented">The authors of JUNG wish to thank their research advisers (Padhraic Smyth and Paul Dourish) for their support during this project, as it evolved from a few weeks' project in support of other research into a full open-source development effort which has lasted several months.  We would also like to thank Sourceforge (<a href="http://sourceforge.net">http://sourceforge.net</a>) for their hosting of this project, and IBM for providing the Eclipse (<a href="http://www.eclipse.org">http://www.eclipse.org</a>) IDE for Java; these free services and tools allowed us to concentrate on development rather than infrastructure.
+
+This material is based upon work that was supported
+in part by the National Science
+Foundation under Grant No. IIS-0083489 and by the Knowledge
+Discovery and Dissemination (KD-D) Program.
+</p>
+
+</blockquote>
+
+<hr/>
+
+<h2><a name="references">References</a></h2>
+
+<p class="indented">Vlado Batagelj and Andrej Mrvar.  <i>Pajek: Program for Large Network Analysis</i>.  <a href="http://vlado.fmf.uni-lj.si/pub/networks/pajek/">http://vlado.fmf.uni-lj.si/pub/networks/pajek/</a></p>
+
+<p class="indented">Steve Borgatti, Martin Everett and Lin Freeman.  <i>UCINET: Software for Social Network Analysis</i>.  <a href="http://www.analytictech.com/ucinet_5_description.htm">http://www.analytictech.com/ucinet_5_description.htm</a></p>
+
+<p class="indented">Ulrik Brandes, Markus Eiglsperger, Michael Kaufmann, and J&#252;rgen Lerner.  <i>The GraphML File Format</i>.  <a href="http://graphml.graphdrawing.org/">http://graphml.graphdrawing.org/</a></p>
+
+<p class="indented">Giuseppe Di Battista, Peter Eades, Roberto Tamassia, and Ioannis G. Tollis.  <i>Graph Drawing: Algorithms for the Visualization of Graphs</i>.  Prentice Hall, 1999.
+
+<p class="indented">Edsger W. Dijkstra. <i>A note on two problems in connexion with graphs</i>.  Numerische Mathematik 1 (1959), 269-271.</p>
+
+<p class="indented">Jack Edmonds and Richard Karp.  <i>Theoretical improvements in algorithmic efficiency for network flow problems</i>.  Journal of the ACM, 19(2):248-264, April 1972.</p>
+
+<p class="indented">Robert Gentleman and Ross Ihaka.  <i>The R Project for Statistical Computing</i>.  <a href="http://www.r-project.org">http://www.r-project.org</a></p>
+
+<p class="indented">Michelle Girvan and Mark Newman. <i>Community structure in social and biological networks</i>.  <a href="http://www.santafe.edu/sfi/publications/wpabstract/200112077">http://www.santafe.edu/sfi/publications/wpabstract/200112077</a></p>
+
+<p class="indented">IBM Corporation.  <i>GFC: Graph Foundation Classes for Java</i>.  <a href="http://www.alphaworks.ibm.com/tech/gfc">http://www.alphaworks.ibm.com/tech/gfc</a></p>
+
+<p class="indented">Jon Kleinberg.  <i>Authoritative sources in a hyperlinked environment</i>.  <a href="www.cs.cornell.edu/home/kleinber/auth.ps">www.cs.cornell.edu/home/kleinber/auth.ps</a></p>
+
+<p class="indented">Mark Newman.  <i>Who is the best connected scientist? A study of scientific coauthorship networks</i>.  <a href="http://www.santafe.edu/sfi/publications/wpabstract/200012064">http://www.santafe.edu/sfi/publications/wpabstract/200012064</a></p>
+
+<p class="indented">Joshua O'Madadhain, Danyel Fisher, Scott White, and Yan-Biao Boey.  <i>JUNG: The Java Universal Network/Graph Framework</i>.  <a href="http://jung.sourceforge.net">http://jung.sourceforge.net</a></p>
+
+<p class="indented">Sun Microsystems.  <i>The Java Platform</i>.  <a href="http://java.sun.com">http://java.sun.com</a></p>
+
+<p class="indented">Scott White and Padhraic Smyth.  <i>Algorithms for discovering relative importance in graphs</i>.  Proceedings of Ninth ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, Washington D.C., 2003</p>
+
+
+
+</body>
+</html>

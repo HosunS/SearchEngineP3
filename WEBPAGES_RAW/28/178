@@ -1,0 +1,201 @@
+// Test of closest pair algorithms
+// David Eppstein, UC Irvine, 19 Apr 1997
+//
+// Conga line closest pair algorithm
+
+#include "MultiConga.h"
+#include "Error.h"
+
+// add an edge to the graph
+inline void MultiConga::AddEdge(point in, point out, double d)
+{
+	if (how_many_edges == 2*max_points)
+		error("CongaLine: too many edges");
+	edges[how_many_edges].in = in;
+	edges[how_many_edges].out = out;
+	edges[how_many_edges].d = d;
+	how_many_edges++;
+}
+
+// remove an edge from the graph
+inline void MultiConga::RemoveEdge(unsigned long e)
+{
+	if (e >= how_many_edges) error("CongaLine: removing the same edge twice");
+	edges[e] = edges[--how_many_edges];	// copy struct
+}
+
+// move a point to a new subset, leaving all edges in place
+// caller is responsible for calling subset_sizes.Update(p)
+inline void MultiConga::MoveToSubset(point p, unsigned long & subset_size)
+{
+	if (where_are_the_points[p] < subset_size) return;	// already there
+	points[where_are_the_points[p]] = points[subset_size];
+	where_are_the_points[points[subset_size]] = where_are_the_points[p];
+	points[subset_size] = p;
+	where_are_the_points[p] = subset_size;
+	subset_size++;
+}
+
+// reset all data structures by inserting all points into a single conga line
+inline void MultiConga::CleanAllGraphs()
+{
+	how_many_edges = 0;			// forget existing edges
+	FindSubsetEdges(npoints);	// make conga line for all points
+}
+
+// initialize all data structures
+MultiConga::MultiConga(long np, long mp, Distance & d)
+  : BruteForceCP(np, mp, d), edges(new CongaEdge[2*mp]),
+    how_many_edges(0), max_points(mp)
+{	
+	if (edges == 0) error("CongaLine: unable to create edge array");
+	CleanAllGraphs();			// reset data structure
+}
+
+// get rid of allocated space
+MultiConga::~MultiConga()
+{
+	delete edges;
+}
+
+// scan edges to find closest pair
+double MultiConga::operator () (point & a, point & b)
+{
+	gPairs++;
+	if (how_many_edges < 1) error("CongaLine: no more edges");
+	unsigned long best_edge = 0;
+	for (unsigned long i = 1; i < how_many_edges; i++)
+		if (edges[i].d < edges[best_edge].d) best_edge = i;
+	a = edges[best_edge].in;
+	b = edges[best_edge].out;
+	return edges[best_edge].d;
+}
+
+// Compute new conga line for a given subset.
+// We assume the subset is in points[0]..points[ns-1].
+// Our computation completely messes up the order of points[],
+// so after we're done, we recompute where_are_the_points[].
+void MultiConga::FindSubsetEdges(unsigned long ns)
+{	
+	if (ns == 0) return;	// nothing to do?
+
+	// is there enough room for the new edges we might have?
+	// max # new edges = min(2ns, tp)-1
+	// Note we compare to max_points not npoints;
+	// I tried npoints and it ended up being a little slower...
+	unsigned long tp = npoints;	
+	unsigned long max_edges = 2*ns - 1;
+	if (tp - 1 < max_edges) max_edges = tp - 1;
+	if (how_many_edges + max_edges > 2*max_points) {
+		CleanAllGraphs();					// run out of room, rebuild
+		return;
+	}
+	
+	// now do Conga line
+	point current = points[0];
+	int was_in_subset = 1;
+	unsigned long i;
+	point * p = points+1;
+	ns--; tp--;			// account for removal of first element
+	for (;;) {
+		double d;	// find nbr s.t. either current or nbr is in s
+		if (was_in_subset) {			// current is in s
+			if (tp <= 0) break;		// any points left?  if not, done
+			i = NeighborInList(current, p, tp, d);	// search all points in p
+		} else { 
+			if (ns <= 0) break;
+			i = NeighborInList(current, p, ns, d);	// not in s, search only in s
+		}
+		AddEdge(current, p[i], d);
+		current = p[i];
+		if (i < ns) {		// neighbor is also in same subset?
+			p[i] = p[0];	// yes, switch to front of list
+			p[0] = current;
+			p++; ns--; tp--;	// shorten list to exclude it
+			was_in_subset = 1;	// and remember to look everywhere next time
+		} else {
+			p[i] = p[--tp];	// not in same subset, switch to end of list
+			p[tp] = current;
+			was_in_subset = 0;
+		}
+	}
+	
+	// Conga line all built, but points[] scrambled, recompute where_are...
+	for (i = 0; i < npoints; i++)
+		where_are_the_points[points[i]] = i;
+}
+
+// find index of nearest neighbor in a list, subroutine for building conga lines
+unsigned long MultiConga::NeighborInList(point pt, point * ptlist,
+										 unsigned long listlen, double & d)
+{
+	unsigned long retval = 0;
+	d = dist(pt, ptlist[0]);
+	for (unsigned long i = 1; i < listlen; i++) {
+		double dd = dist(pt, ptlist[i]);
+		if (dd < d) {
+			d = dd;
+			retval = i;
+		}
+	}
+	return retval;
+}
+
+// Point has changed. Have to treat as if newly inserted.
+// Sigh, this is slow, but it's incorrect just to move p to a new set
+// (because now some edges x->p might have become longer than x->something else)
+void MultiConga::UpdatePoint(point p)
+{
+	(*this) -= p;
+	(*this) += p;
+	gInsertions--;
+	gDeletions--;
+}
+
+// Distance has changed. Move both points to new subset, get rid of old pq edges.
+// Unlike UpdatePoint this is reasonably fast.
+// Note that it's safe to remove all edges p->x and q->x, not just p->q and q->p
+void MultiConga::UpdateDistance(point p, point q)
+{
+	// flush any existing edges involving this pair of points
+	unsigned long i = 0;
+	while (i < how_many_edges) {
+		if (edges[i].in == p || edges[i].in == q) RemoveEdge(i);		   
+		else i++;
+	}
+
+	// now move p and q to new subset and make edges for it
+	unsigned long s = 0;
+	MoveToSubset(p,s);
+	MoveToSubset(q,s);
+	FindSubsetEdges(s);
+}
+
+// insert new point
+void MultiConga::operator += (point p)
+{
+	BruteForceCP::operator+=(p);	// add to points[]
+	unsigned long s = 0;
+	MoveToSubset(p,s);				// move to front of list and count
+	FindSubsetEdges(s);				// make edge to nearest neighbor
+}
+
+// delete point
+void MultiConga::operator -= (point p)
+{
+	BruteForceCP::operator-=(p);
+	
+	// delete edges involving p and send neighbors to new subset
+	unsigned long s = 0;
+	unsigned long i = 0;
+	while (i < how_many_edges) {
+		if (edges[i].out == p) {
+			MoveToSubset(edges[i].in,s);
+			RemoveEdge(i);
+		} else if (edges[i].in == p) RemoveEdge(i);
+		else i++;
+	}
+	
+	// If anything was moved, make new conga line and clean up
+	FindSubsetEdges(s);
+}

@@ -1,0 +1,128 @@
+/*
+    $Id: ed.cc 1109 2007-04-17 00:04:26Z rvernica $
+
+    Copyright (C) 2007 by The Regents of the University of California
+
+    Redistribution of this file is permitted under the terms of the
+    GNU Public License (GPL).
+
+    Date: 01/30/2007
+    Author: Rares Vernica <rvernica@ics.uci.edu>
+*/
+
+#include "ed.h"
+#include "misc.h"
+
+unsigned ed(const string &s1, const string &s2)
+{ 
+  unsigned i, iCrt, iPre, j;
+  unsigned
+    n = s1.length(), 
+    m = s2.length();
+
+  if (n == 0)
+    return m;
+  if (m == 0)
+    return n;
+
+  unsigned d[2][m + 1];
+
+  for (j = 0; j <= m; j++)
+    d[0][j] = j;
+
+  iCrt = 1;
+  iPre = 0;
+  for (i = 1; i <= n; i++) {
+    d[iCrt][0] = i;
+    for (j = 1; j <= m; j++)
+      d[iCrt][j] = min(d[iPre][j] + 1, 
+                        d[iCrt][j - 1] + 1, 
+                        d[iPre][j - 1] + (s1[i - 1] == s2[j - 1] ? 0 : 1));
+    iPre = !iPre;
+    iCrt = !iCrt;
+  }
+  
+  return d[iPre][m];
+}
+
+bool ed(const string &s1, const string &s2, unsigned threshold) 
+{
+  unsigned i, j, ii, jj;
+  unsigned
+    n = s1.length(), 
+    m = s2.length();
+
+  if (n == 0)
+    return m <= threshold;
+  if (m == 0)
+    return n <= threshold;
+  if ((n > m && n - m > threshold) ||  
+      (m > n &&  m - n > threshold))
+    return false;
+
+  unsigned d[n + 1][m + 1], dmin, dmax = threshold + 1;
+
+  for (i = 0; i <= n; i++)
+    d[i][0] = i;
+  for (j = 1; j <= m; j++)
+    d[0][j] = j;
+
+  for (ii = 1; ii <= n; ii++) {
+    dmin = dmax;
+    for (j = 1; j <= min(ii, m); j++) {
+      i = ii - j + 1;
+      d[i][j] = min(d[i - 1][j] + 1,
+                    d[i][j - 1] + 1,
+                    d[i - 1][j - 1] + (s1[i - 1] == s2[j - 1] ? 0 : 1));
+      dmin = min(dmin, d[i][j], d[i - 1][j]);
+    }
+    if (dmin > threshold)
+      return false;
+  }
+  
+  for (jj = 2; jj <= m; jj++) {
+    dmin = dmax;
+    for (j = jj; j <= min(n + jj - 1, m); j++) {
+      i = n - (j - jj);
+      d[i][j] = min(d[i - 1][j] + 1,
+                    d[i][j - 1] + 1,
+                    d[i - 1][j - 1] + (s1[i - 1] == s2[j - 1] ? 0 : 1));
+      dmin = min(dmin, d[i][j], d[i - 1][j]);
+    }
+    if (dmin > threshold)
+      return false;
+  }
+
+  return d[n][m] <= threshold;
+}
+
+unsigned edSwap(const string &s1, const string &s2)
+{ 
+  unsigned i, iCrt, iPre, j;
+  unsigned
+    n = s1.length(), 
+    m = s2.length();
+  unsigned d[2][m + 1];
+
+  for (j = 0; j <= m; j++)
+    d[0][j] = j;
+
+  iCrt = 1;
+  iPre = 0;
+  for (i = 1; i <= n; i++) {
+    d[iCrt][0] = i;
+    for (j = 1; j <= m; j++)
+      d[iCrt][j] = min(d[iPre][j] + 1,
+                       d[iCrt][j - 1] + 1,
+                       d[iPre][j - 1] + ((s1[i - 1] == s2[j - 1] ||
+                                          (i > 1 &&
+                                           j > 1 &&
+                                           s1[i - 1] == s2[j - 2] &&
+                                           s1[i - 2] == s2[j - 1])) ? 0 : 1));
+    iPre = !iPre;
+    iCrt = !iCrt;
+  }
+  
+  return d[iPre][m];
+}
+

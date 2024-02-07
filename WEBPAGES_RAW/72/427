@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>4.123 OEReadPDBFile</title>
+<META NAME="description" CONTENT="4.123 OEReadPDBFile">
+<META NAME="keywords" CONTENT="api">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="api.css">
+<link rel="first" href="api.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node501.html">
+<LINK REL="previous" HREF="node499.html">
+<LINK REL="up" HREF="node377.html">
+<LINK REL="next" HREF="node501.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node499.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node377.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node501.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - API Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node499.html">4.122 OEReadOldBinary</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node377.html">4. OEChem Functions</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node501.html">4.124 OEReadXYZFile</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION02212300000000000000000">
+4.123 OEReadPDBFile</A>
+</H1>
+
+<P>
+<dl><dd><pre class="verbatim">
+bool OEReadPDBFile(oemolistream &amp;ifs, OEMolBase &amp;mol,
+                   unsigned int flavor = OEPDBIFlag::DEFAULT)
+</pre></dl>
+
+<P>
+Read a molecule from the specified input stream, ifs, in Brookhaven
+PDB file format.  A number of different PDB format variants are
+supported by the use of the bits in the ``flavor'' parameter.  This
+function returns true if the operation was successful, and false if
+an end-of-file was encountered.
+
+<P>
+The <code>OEPDBIFlag::TER</code>, <code>OEPDBIFlag::END</code> and
+<code>OEPDBIFlag::ENDM</code> flags are used
+to inform the OEChem PDB file reader of the records used to separate
+consecutive molecules in a single PDB file.  The flags correspond to
+the PDB file format's TER, END and ENDMOD records respectively.  If all
+of these flags are turned off, all of the ATOM and HETATM records in a
+single PDB file will be read into a single OEMolBase.  By default, only
+<code>OEPDBIFlag::END</code> and <code>OEPDBIFlag::ENDM</code> are on (and
+<code>OEPDBIFlag::TER</code> is off),
+meaning that different chains are read into the a single molecule, but
+different NMR models and concatenated PDB files are treated as sequential
+molecules.
+
+<P>
+The <code>OEPDBIFlag::ALL</code> flag is used to indicate that all of the
+atom records in the input file should be read into the OEMolBase.  By
+default, the <code>OEReadPDBFile</code> function ignores/omits ATOM and HETATM
+records that represent pseudo or dummy atoms and/or alternate conformations.
+Without <code>OEPDBIFlag::ALL</code>, the PDB file reader ignores all atoms whose
+alternate location indicator is other than <code>' '</code>, <code>A</code> or <code>1</code>,
+all atoms with atom names begining <code>" Q"</code>, all atoms with residue name
+<code>"DUM"</code>, and all atoms with co-ordinates 9999.000, 9999.000, 9999.000
+(as used by XPLOR/CNS to represent dummy atoms).
+
+<P>
+The <code>OEPDBIFlag::DATA</code> flag is used to instruct the OEChem PDB file
+reader to preserve the PDB file's header data in the OEMolBase's generic
+data.  This option currently preserves AUTHOR, CAVEAT, COMPND, CRSYT1,
+EXPDTA, FORMUL, HEADER, HELIX, HET, HETNAM, HETSYM, JRNL, KEYWDS, MODRES,
+OBSLTE, ORIGX1, ORIGX2, ORIGX3, REMARK, REVDAT, SCALE1, SCALE2, SCALE3,
+SEQRES, SHEET, SITE, SOURCE, SPRSDE, SSBOND, TITLE and TURN records.
+Note that modifying or reordering the molecule may invalidate the atom
+serial numbers used in some of the PDB records.
+
+<P>
+The <code>OEPDBIFlag::CHARGE</code> flag is used to indicate that the contents
+of the b-factor column in the input PDB file contains a partial charge,
+and should be stored in the `partial charge' property of an atom, instead
+of the `b-factor' property.  This value can then be retrieved using the
+<code>OEAtomBase::GetPartialCharge</code> method.
+
+<P>
+The <code>OEPDBIFlag::RADIUS</code> flag is used to indicate the the contents
+of the occupancy column in the input PDB file contains a radius, and
+should be stored in the `radius' property of an atom instead of the
+`occupancy' property.  This value can then be retrieved using the
+<code>OEAtomBase::GetRadius</code> method.
+
+<P>
+The <code>OEPDBIFlag::DELPHI</code> flag is just the combination of the
+<code>OEPDBIFlag::CHARGE</code> and <code>OEPDBIFlag::RADIUS</code> flags above.
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node499.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node377.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node501.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - API Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node499.html">4.122 OEReadOldBinary</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node377.html">4. OEChem Functions</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node501.html">4.124 OEReadXYZFile</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

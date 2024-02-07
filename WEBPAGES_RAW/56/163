@@ -1,0 +1,281 @@
+<!-- This document automatically created using nb2html -->
+<!--         nb2html is Copyright T.D.Robb 1994        -->
+<H1><CENTER>
+Algorithms for Egyptian Fractions
+</CENTER></H1>
+<P>
+<HR><H2><IMG SRC="mmaSection.gif" ALT="o">
+Continued Fraction Methods
+</H2>
+<P>
+<A NAME="cfrac"><H3><IMG SRC="mmaSubSection.gif" ALT="+">
+The Continued Fraction Method
+</H3>
+<P>
+</A>One can derive a good Egyptian fraction algorithm from
+<I>continued fractions:
+</I>the algorithm is quick, generates reasonably few terms, and uses fractions with very small denominators
+<A HREF="refs.html#Ble72">[Ble72]</A>.
+<P>
+Any real number q can be represented as a continued fraction:
+<BLOCKQUOTE><PRE>
+                        1
+x = a[0] + ----------------------------
+                            1
+           a[1] + ---------------------
+                               1
+                  a[2] + --------------
+                                   1
+                         a[3] + -------
+                                a[4]...
+</PRE></BLOCKQUOTE>
+<P>
+in which all the values a[i] are integers.   This terminates in a finite sequence if and only if q is rational.
+<P>
+The
+<I>convergents
+</I>of q are formed by truncating the sequence; they are alternately above and below q, and are useful for finding good rational approximations to the original number.
+(For instance the famous approximation 355/113 ~= pi can be found as a convergent in this way.)  Successive convergents have differences that are unit fractions.  The sequence of these differences gives something like an Egyptian fraction representation of q, but unfortunately every other fraction in the sequence is negative.
+<P>
+If h[i]/k[i] denotes the ith convergent, we can define a sequence of
+<I>secondary convergents:
+</I><BLOCKQUOTE><PRE>
+h[i - 1] + j h[i]
+-----------------
+k[i - 1] + j k[i]
+</PRE></BLOCKQUOTE>
+<P>
+As j ranges from 0 to a[n+1] the secondary convergents give an increasing sequence ranging from the (i-1)st convergent to the (i+1)st convergent
+<A HREF="refs.html#NZ80">[NZ80]</A>. As with the primary convergents, successive secondary convergents differ by a unit fraction.  If we interleave the sequence of every other primary convergent, connected by the appropriate sequences of secondary convergents, the differences of this interleaved sequence give an Egyptian fraction representation of q.
+<P>
+We first find the continued fraction representation of q=x/y.
+<I>Mathematica
+</I>provides a package for continued fractions, but one must supply a bound on the number of terms to compute.  We don't need or want such a bound, so we use our own code.  In order to use this method, the continued fraction must have an odd number of terms, so if necessary we replace the last term a[i] with two terms a[i]-1 and 1.
+<BLOCKQUOTE><PRE><B>
+CFNextTerm[q_Integer] := 0;
+CFNextTerm[q_Rational] := 1/(q-Floor[q])
+
+ContinuedFractionList[q_] :=
+    Floor /@ Drop[FixedPointList[CFNextTerm, q],-2];
+
+CFMakeOdd[l_] :=
+    If[OddQ[Length[l]],l,Join[Drop[l,-1],{Last[l]-1,1}]]
+</B></PRE></BLOCKQUOTE>
+<P>
+We next find the primary and secondary sequences of unit fractions from these continued fraction representations.
+<BLOCKQUOTE><PRE><B>
+CFPSAux[{a_,b_},c_] := {b + a c, a};
+CFPrimarySeq[l_] :=
+    Transpose[Drop[FoldList[CFPSAux,{0,1},l],1]][[1]];
+       
+CFSecondarySeq[l_] :=
+    If[Length[l] &lt; 3, l,
+       Table[l[[1]] + i l[[2]],
+       		 {i, 0, (l[[3]]-l[[1]])/l[[2]]-1}] ~Join~
+		  CFSecondarySeq[Drop[l,2]]]
+</B></PRE></BLOCKQUOTE>
+<P>
+As described above, our final representation is formed by hooking together secondary sequences.  We first separate out the integer part of the input, which we leave as is.  The remaining fractions are formed by multiplying pairs of values in the secondary sequence.
+<BLOCKQUOTE><PRE><B>
+EgyptContinuedFraction[q_] :=
+	CFSecondarySeq[CFPrimarySeq[CFMakeOdd[
+						ContinuedFractionList[q]]]] //
+    1/(Drop[#,1] Drop[#,-1])&amp; //
+    If[Floor[q]==0, #, Prepend[#, Floor[q]]]&amp;
+</B></PRE></BLOCKQUOTE>
+<P>
+Termination of the algorithm follows from the termination of the continued fraction representation algorithm, which is essentially the same as Euclid's algorithm for integer GCD's.  It is clear from the construction of the secondary sequence, and from the fact that the final result has denominators that are products of pairs of numbers in the secondary sequence, that all fractions are distinct.  The fact that the sum of the fractions is the original input number
+is a straightforward but tedious exercise in algebraic manipulation.  The number of terms in the Egyptian fraction representation of x/y is the sum of the odd terms after the first in the continued fraction list,  which is at most x.  Each fraction is a difference between two secondary convergents with denominator at most y, so each fraction has denominator at most y^2.
+<BLOCKQUOTE><PRE><B>
+EgyptContinuedFraction[18/23]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+ 1  1  1   1    1
+{-, -, --, --, ---}
+ 2  6  12  36  207
+</PRE></BLOCKQUOTE>
+<P>
+<A NAME="grouped"><H3><IMG SRC="mmaSubSection.gif" ALT="+">
+The Grouped Continued Fraction Method
+</H3>
+<P>
+</A>The worst case for the continued fraction method above occurs when the continued fraction representation has only three terms producing a long secondary sequence.  In this case the Egyptian fraction representation will involve long sequences of fractions of the form
+1/(a+b i)(a+b(i+1)).  If we add k consecutive values in such a sequence, we get
+k/(a+b i)(a + b(i + k)); it may happen that this can be simplified to a unit fraction again.  By performing several simplifications, we both reduce the number of terms in the overall representation and also reduce some denominators.  For instance, the continued fraction method for 7/15 gives
+<BLOCKQUOTE><PRE>
+ 1  1   1   1   1    1    1
+{-, --, --, --, --, ---, ---}
+ 3  15  35  63  99  143  195
+</PRE></BLOCKQUOTE>
+<P>
+But 1/15 + 1/35 + 1/63 = 1/9, and 1/99 + 1/143 + 1/195 = 1/45, so we can replace these triples and find the shorter representation 
+<BLOCKQUOTE><PRE>
+ 1  1  1
+{-, -, --}
+ 3  9  45
+</PRE></BLOCKQUOTE>
+<P>
+This phenomenon is not unusual, and Bleicher
+<A HREF="refs.html#Ble72">[Ble72]</A> showed how to take advantage of it to dramatically reduce the number of terms produced by the continued fraction method.  Some care is required: if in the above list we instead group the last five terms, we get
+<BLOCKQUOTE><PRE>
+ 1  1   1
+{-, --, --}
+ 3  15  15
+</PRE></BLOCKQUOTE>
+<P>
+which is not an Egyptian fraction representation.
+<P>
+Our implementation finds all shortest representations rather than a single representation, so if they had distinct fractions we would return both representations above.  We partition the secondary sequence into blocks of arithmetic progressions and find groupings separately within each progression; this is safe as the sum of all fractions from one progression is smaller than half of any fraction in a previous progression.  Within a progression, we determine which groups of terms can be combined to form a unit fraction, and represent each group as an edge in a graph, labelled with the corresponding unit fraction.  For the example above, the graph has eight vertices and ten edges, as follows:
+<CENTER><IMG SRC="egypt_5_2_0^1.gif" WIDTH=337 HEIGHT=102></CENTER>
+<P>
+Each edge is directed from left to right.  The horizontal edges represent the original terms produced by the continued fraction method, while the longer edges represent the groupings that result in unit fractions.  Our task then becomes one of finding the shortest path through this graph, with the restriction that we cannot use two edges with the same label.
+<P>
+Unfortunately finding paths without repeated labels is NP-complete, so an efficient algorithm for this subproblem is unlikely to exist.  Fortunately most of the time our graphs have few repeated labels and the problem is not as hard as its worst case.  We use the following heuristic: for increasing values of k, find all paths of k or fewer edges, and filter out the paths with repeated labels; if not all paths are filtered out, return the remaining list of paths.  The theoretically fastest algorithm for listing all short paths takes constant time per path, after preprocessing time proportional to the time to find a single shortest path
+<A HREF="refs.html#Epp94">[Epp94]</A>, however for ease of implementation we use a simpler method invented by Byers and Waterman
+<A HREF="refs.html#BW84">[BW84]</A>. (The motivation of both papers was not Egyptian fractions, but rather comparison of DNA and protein sequences; this also turns out to be equivalent to a certain shortest path problem.)
+<P>
+First we include code to make an adjacency matrix for a graph, containing in each entry either the fraction corresponding to an edge in the graph, or the empty set if no such edge exists (i.e. if the corresponding sum of terms does not reduce to a unit fraction).  The input to this routine is the secondary sequence of the continued fraction.
+<BLOCKQUOTE><PRE><B>
+ECFMakeGraph[l_] :=
+	Table[If[i&lt;j, (If[Numerator[#]===1,#,{}]&amp;)
+					[Rational[j-i, l[[i]] l[[j]] ]],
+			 {}],
+   		  {i,1,Length[l]},
+    	  {j,1,Length[l]}]
+</B></PRE></BLOCKQUOTE>
+<P>
+Next we include a shortest path algorithm, which takes as input the adjacency matrix above and produces a vector of distances from vertices to the last vertex.  This vector is needed for our bounded length path search.
+<BLOCKQUOTE><PRE><B>
+ECFPathLengths[g_] := ECFPathLengths[g,Length[g]-1,{0}];
+ECFPathLengths[g_,i_,vec_] :=
+	Prepend[vec, Min@@Table[If[g[[i,j]]==={},
+    		 					Infinity,
+    							vec[[j-i]]+1],
+    						{j,i+1,i+Length[vec]}]] //
+    (If[i===1,#,ECFPathLengths[g,i-1,#]]&amp;);
+</B></PRE></BLOCKQUOTE>
+<P>
+We now implement Byers and Waterman's algorithm for finding all paths that contain at most b more edges than are in the shortest path itself.  We will call this algorithm repeatedly, using larger and larger values of b, until we find a path without repeated labels.  Our implementation takes as input the graph, the value of b, the vertex to start at, the number of vertices, and the vector of distances produced above, but all but the first two can be omitted (in which case we supply appropriate values automatically).
+<P>
+The technique is simply to build the path one edge at a time.  At each step we compute a value d measuring the amount by which the path length would increase if we followed the given edge instead of keeping to the shortest path (d=0 for shortest path edges).  We subtract d from b and continue recursively as long as the result is nonnegative.
+<BLOCKQUOTE><PRE><B>
+ECFBoundedPaths[g_,b_] :=
+	ECFBoundedPaths[g,b,1,Length[g],ECFPathLengths[g]];
+ECFBoundedPaths[g_,b_,i_,l_,v_] :=
+    If[i===l,{{}},
+       Join@@Table[If[g[[i,j]]==={},Infinity,
+       								1+v[[j]]-v[[i]]] //
+       			   (If[#&gt;b,{},(Prepend[#,g[[i,j]]]&amp;) /@
+       					  	  ECFBoundedPaths[g,b-#,j,l,v]]&amp;),
+       			   {j,i+1,l}]]
+       					  	 	 
+</B></PRE></BLOCKQUOTE>
+<P>
+We next include code for removing from the list those paths that contain a duplicated fraction.
+It is not clear that the paths will have the fractions listed in sorted order, so we sort them first.
+<BLOCKQUOTE><PRE><B>
+ECFContainsDupl[{___,q_,q_,___}] := True;
+ECFContainsDupl[l_] := False;
+   		 
+ECFFilterDuplSub[x_] :=
+   If[ECFContainsDupl[x],{},{x}];
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE><B>
+ECFFilterDupls[l_] :=
+   Join @@ (ECFFilterDuplSub[Reverse[Sort[#]]]&amp;) /@ l;
+   
+ECFShortFilter[g_] := ECFShortFilter[g,ECFPathLengths[g],0];
+ECFShortFilter[g_,v_,b_] :=
+	ECFFilterDupls[ECFBoundedPaths[g,b,1,Length[g],v]] //
+   	(If[#==={},ECFShortFilter[g,v,b+1],#]&amp;);
+</B></PRE></BLOCKQUOTE>
+<P>
+The next function applies all of the above steps for three-term continued fractions.  The final algorithm applies this to several three-term subsequences of the whole continued fraction.
+<BLOCKQUOTE><PRE><B>
+ECFArithSeq[a_,b_,c_]:=ECFShortFilter[
+					  	  ECFMakeGraph[CFSecondarySeq[{a,b,c}]]]
+</B></PRE></BLOCKQUOTE>
+<P>
+The next function takes two lists of lists, and forms all pairwise concatenations of one item from the first list and one from the second.  The obvious approach of using Outer[Join,...] doesn't work since Outer interprets lists of lists as tensors, so we use an alternate method based on Distribute.
+<BLOCKQUOTE><PRE><B>
+OuterJoin[ll_,mm_] :=
+	Distribute[{ll,mm},List,List,List,Join];
+</B></PRE></BLOCKQUOTE>
+<P>
+We are finally ready to define the overall modified continued fraction method, which breaks the primary sequence into subsequences and calls ECFArithSeq on each one.
+<BLOCKQUOTE><PRE><B>
+ECFSecondaryPaths[l_] :=
+    If[Length[l]&lt;3,{{}},
+       OuterJoin[ECFArithSeq[l[[1]],l[[2]],l[[3]]],
+       			 ECFSecondaryPaths[Drop[l,2]]]]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE><B>
+EgyptGroupedCF[q_] :=
+    ECFSecondaryPaths[CFPrimarySeq[
+    	CFMakeOdd[ContinuedFractionList[q]]]]
+</B></PRE></BLOCKQUOTE>
+<P>
+Every step involves a fixed number of nested loops with indices bounded by the length of the secondary sequence, so (with the possible exception of finding a short repetition-free path) the overall time is polynomial in the numerator of the original rational number given as input.
+It is not hard to see that the algorithm produces sequences of fractions formed by grouping the results of the continued fraction method, so the sum of the sequence is correct.  It remains to verify that no fraction is duplicated.  This is checked explicitly within each subsequence, and the entire sum of any subsequence is less than half any single fraction in previous subsequences, so no two separate subsequences can produce duplications.
+<P>
+As in the continued fraction method, the largest denominator in the representation of x/y is O[y^2].  The number of terms is still O[x] but it can also be analyzed in terms of y.
+Bleicher [Ble72] shows that by choosing a prime p with gcd(a,p)=1 and p=O(log a),
+and using groups with sizes equal to powers of p, one can find a representation with
+O(p Log[b]/Log[p]) = O(Log[x]Log[y]/Log Log[y]) terms.
+Since the actual representation is chosen to have minimum length, it can be no longer than this.
+It remains unclear whether the implementation above really takes polynomial time, or whether there can be sufficiently many repeated labels that the algorithm for listing short paths has to list a large number of paths and slows down to exponential.  However in practice this method seems to work well.  (Bleicher's method of grouping can apparently be done in polynomial time.)
+<BLOCKQUOTE><PRE><B>
+EgyptGroupedCF[31/311]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+  1    1    1     1      1
+{{--, ---, ----, ----, -----}}
+  11  121  2541  9933  93611
+</PRE></BLOCKQUOTE>
+<P>
+The graph constructed for 31/311 is too complicated to depict here.  It has two paths of length five; however one of the paths is eliminated because it has two copies of the label 1/231.
+<H3><IMG SRC="mmaSubSection.gif" ALT="+">
+A Hybrid Pairing / Continued Fraction Method
+</H3>
+<P>
+We can use potentially even fewer terms than the grouped continued fraction method, at the expense of possibly increasing the maximum denominator in the representation.  We simply find shortest paths in the same graph constructed by that method, ignoring the possibility of repeated labels, and then make the unit fractions in the resulting representation distinct by applying
+<A HREF="conflict.html#pair">EgyptPairList</A>.
+<BLOCKQUOTE><PRE><B>
+EHArithSeq[a_,b_,c_] := ECFBoundedPaths[
+	ECFMakeGraph[CFSecondarySeq[{a,b,c}]],0]
+
+EHSecondaryPaths[l_] :=
+    If[Length[l]&lt;3,{{}},
+       OuterJoin[EHArithSeq[l[[1]],l[[2]],l[[3]]],
+       			 EHSecondaryPaths[Drop[l,2]]]]
+
+EgyptHybrid[q_] := EgyptPairList /@
+    EHSecondaryPaths[CFPrimarySeq[
+    	CFMakeOdd[ContinuedFractionList[q]]]];
+</B></PRE></BLOCKQUOTE>
+<P>
+This method uses O(Log[x]Log[y]/Log Log[y]) terms to represent any number x/y.  In the following example, we see representations corresponding to both shortest paths in the graph constructed for 31/311.
+<BLOCKQUOTE><PRE><B>
+EgyptHybrid[31/311]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+  1    1    1      1      1
+{{--, ---, ----, -----, -----}, 
+  11  116  9933  26796  93611
+ 
+   1    1    1     1      1
+  {--, ---, ----, ----, -----}}
+   11  121  2541  9933  93611
+</PRE></BLOCKQUOTE>
+<P>
+<P><HR><P><A HREF="http://www.ics.uci.edu/~eppstein/numth/egypt/">Egyptian Fractions,
+</A><A HREF="http://www.ics.uci.edu/~eppstein/numth/">Number Theory,
+</A><A HREF="http://www.ics.uci.edu/~eppstein/">David Eppstein,
+</A><A HREF="http://www.ics.uci.edu/">ICS,
+</A><A HREF="http://www.uci.edu/">UC Irvine
+</A><P><SMALL>Formatted by
+<A HREF="http://www.hallym.ac.kr/~physics/education/Math/tdr/nbks/sourceCode.html">nb2html</A> and
+<A HREF="http://www.ics.uci.edu/~eppstein/pubs/filter.html">filter</A>.
+<!--#config timefmt="%d %h %Y, %T %Z" -->Last update:
+<!--#flastmod file="egypt.ma" -->.
+</SMALL>

@@ -1,0 +1,324 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>10.23.1 Parameter record format</title>
+<META NAME="description" CONTENT="10.23.1 Parameter record format">
+<META NAME="keywords" CONTENT="api">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="api.css">
+<link rel="first" href="api.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node915.html">
+<LINK REL="previous" HREF="node913.html">
+<LINK REL="up" HREF="node913.html">
+<LINK REL="next" HREF="node915.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node913.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node913.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node915.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - API Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node913.html">10.23 OEConfigure</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node913.html">10.23 OEConfigure</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node915.html">10.23.2 Category record format</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION0322310000000000000000">
+10.23.1 Parameter record format</A>
+</H2>
+
+<P>
+When OEConfigure encounters a parameter record, it adds an
+OEParameter object to the OEInterface.  A parameter record
+takes the following form.
+
+<P>
+<dl><dd><pre class="verbatim">
+!PARAMETER &lt;name&gt; [order priority]
+  !TYPE &lt;type&gt;
+  !ALIAS &lt;alias&gt;
+  !BRIEF &lt;brief description&gt;
+  !DEFAULT &lt;default value&gt;
+  !REQUIRED &lt;true or false&gt;
+  !VISIBILITY &lt;visibility&gt;
+  !KEYLESS &lt;keyless setting&gt;
+  !LEGAL_VALUE &lt;value&gt;
+  !ILLEGAL_VALUE &lt;value&gt;
+  !LEGAL_RANGE &lt;hi value&gt; &lt;low value&gt;
+  !ILLEGAL_RANGE &lt;hi_value&gt; &lt;low_value&gt;
+  !DETAIL
+    &lt;detailed description line 1&gt;
+    &lt;detailed description line 2&gt;
+    &lt;detailed description line 3&gt;
+    .
+    .
+    .
+!END
+</pre></dl>
+
+<P>
+The order individual fields appear within the parameter record is unimportant.
+Each parameter record must begin with <code>!PARAMETER</code> and end with
+<code>!END</code>, and each record must have a <code>!TYPE</code> field.  All
+other fields within the parameter record are optional.  So the simplest
+possible parameter record is.
+
+<P>
+<dl><dd><pre class="verbatim">
+!PARAMETER &lt;name&gt; [order priority]
+  !TYPE &lt;type&gt;
+!END
+</pre></dl>
+
+<P>
+When OEConfigure parses this record it does the equivilant of the following
+C++ code.
+
+<P>
+<dl><dd><pre class="verbatim">
+OEParameter* param = itf.AddParameter(&lt;type&gt;);
+param-&gt;SetName(&lt;name&gt;);
+param-&gt;SetOrderPriority([order priority]);
+</pre></dl>
+
+<P>
+If [order priority] isn't specified, zero is assumed.
+
+<P>
+Legitamate values of &lt;type&gt; are
+
+<P>
+<DL>
+<DT><STRONG><code>string</code></STRONG></DT>
+<DD>Creates a <code>std::string</code> parameter
+</DD>
+<DT><STRONG><code>double</code></STRONG></DT>
+<DD>Creates a <code>double</code> parameter
+</DD>
+<DT><STRONG><code>float</code></STRONG></DT>
+<DD>Creates a <code>float</code> parameter
+</DD>
+<DT><STRONG><code>bool</code></STRONG></DT>
+<DD>Creates a <code>bool</code> parameter
+</DD>
+<DT><STRONG><code>int</code></STRONG></DT>
+<DD>Creates a <code>int</code> parameter
+</DD>
+<DT><STRONG><code>file</code></STRONG></DT>
+<DD>Creates a <code>OEPlatform::oeisstream</code> parameter
+</DD>
+<DT><STRONG><code>param_file</code></STRONG></DT>
+<DD>Creates a <code>OEPlatform::oeisstream</code> parameter
+that is recognized as a text file holding parameter settings, by
+OEParseCommandLine.
+
+<P>
+</DD>
+</DL>
+
+<P>
+The remaining fields in a parameter record are optional have do the following.
+
+<P>
+<DL>
+<DT><STRONG><code>!ALIAS</code> &lt;alias&gt;</STRONG></DT>
+<DD><P>
+<dl><dd><pre class="verbatim">
+param-&gt;AddAlias(&lt;alias&gt;);
+</pre></dl>
+
+<P>
+This field can appear multiple times.
+
+<P>
+</DD>
+<DT><STRONG><code>!BRIEF</code> &lt;brief description&gt;</STRONG></DT>
+<DD><P>
+<dl><dd><pre class="verbatim">
+param-&gt;SetBrief(&lt;brief description&gt;);
+</pre></dl>
+
+<P>
+This field can only appear once.
+
+<P>
+</DD>
+<DT><STRONG><code>!DEFAULT</code> &lt;default value&gt;</STRONG></DT>
+<DD><P>
+<dl><dd><pre class="verbatim">
+param-&gt;SetStringDefault(&lt;default value&gt;);
+</pre></dl>
+
+<P>
+This field can only appear once.
+
+<P>
+</DD>
+<DT><STRONG><code>!REQUIRED</code> &lt;true or false&gt;</STRONG></DT>
+<DD><P>
+<dl><dd><pre class="verbatim">
+param-&gt;SetRequired(&lt;true or false&gt;);
+</pre></dl>
+
+<P>
+This field can only appear once in a parameter record.
+
+<P>
+</DD>
+<DT><STRONG><code>!VISIBILITY</code> &lt;visibility&gt;</STRONG></DT>
+<DD>Visibility must be either "simple",
+"normal" or "hidden" (without quotes).  This causes either
+
+<P>
+<dl><dd><pre class="verbatim">
+param-&gt;SetVisiblity(ParamVis::Simple);
+param-&gt;SetVisiblity(ParamVis::Normal);
+param-&gt;SetVisiblity(ParamVis::Hidden);
+</pre></dl>
+
+<P>
+to be called respectively.  This field can only appear once in a parameter
+record.
+
+<P>
+</DD>
+<DT><STRONG><code>!KEYLESS</code> &lt;keyless setting&gt;</STRONG></DT>
+<DD><P>
+<dl><dd><pre class="verbatim">
+param-&gt;SetKeyless(&lt;keyless setting&gt;);
+</pre></dl>
+
+<P>
+The &lt;keyless setting&gt; must be a non-negative integer.  This field can
+only appear once in a parameter record.
+
+<P>
+</DD>
+<DT><STRONG><code>!LEGAL_VALUE</code> &lt;value&gt;</STRONG></DT>
+<DD><P>
+<dl><dd><pre class="verbatim">
+param-&gt;AddLegalValue(&lt;value&gt;);
+</pre></dl>
+
+<P>
+Parameters of type <code>bool</code> cannot have a <code>!LEGAL_VALUE</code> field.
+This field can appear multiple times in a parameter record.
+
+<P>
+</DD>
+<DT><STRONG><code>!ILLEGAL_VALUE</code> &lt;value&gt;</STRONG></DT>
+<DD><P>
+<dl><dd><pre class="verbatim">
+param-&gt;AddIllegalValue(&lt;value&gt;);
+</pre></dl>
+
+<P>
+Parameters of type <code>bool</code> cannot have an <code>!ILLEGAL_VALUE</code> field.
+This field can appear multiple times in a parameter record.
+
+<P>
+</DD>
+<DT><STRONG><code>!LEGAL_RANGE</code> &lt;hi value&gt; &lt;low value&gt;</STRONG></DT>
+<DD><P>
+<dl><dd><pre class="verbatim">
+param-&gt;AddLegalRange(&lt;hi value&gt;, &lt;low value&gt;);
+</pre></dl>
+
+<P>
+Parameters of type <code>bool</code>, <code>string</code>, <code>file</code> and
+<code>file_param</code> cannot have a <code>!LEGAL_RANGE</code> field.
+This field can appear multiple times in a parameter record.
+
+<P>
+</DD>
+<DT><STRONG><code>!ILLEGAL_RANGE</code></STRONG></DT>
+<DD>&lt;hi value&gt; &lt;low value&gt;
+
+<P>
+<dl><dd><pre class="verbatim">
+param-&gt;AddIllegalRange(&lt;hi value&gt;, &lt;low value&gt;);
+</pre></dl>
+
+<P>
+Parameters of type <code>bool</code>, <code>string</code>, <code>file</code> and
+<code>file_param</code> cannot have an <code>!ILLEGAL_RANGE</code> field.
+This field can appear multiple times in a parameter record.
+
+<P>
+</DD>
+<DT><STRONG><code>!DETAIL</code></STRONG></DT>
+<DD>Detail
+
+<P>
+All lines following the !DETAIL keyword up until this next line
+begining with another parameter record keyword are added to the
+parameter via
+
+<P>
+<dl><dd><pre class="verbatim">
+param-&gt;AddDetail(&lt;detail line&gt;);
+</pre></dl>
+
+<P>
+This field can appear once in a parameter record.
+
+<P>
+</DD>
+</DL>
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node913.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node913.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node915.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - API Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node913.html">10.23 OEConfigure</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node913.html">10.23 OEConfigure</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node915.html">10.23.2 Category record format</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

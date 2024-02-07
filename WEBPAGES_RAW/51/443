@@ -1,0 +1,103 @@
+/*
+    $Id: misc.cc 1109 2007-04-17 00:04:26Z rvernica $
+
+    Copyright (C) 2007 by The Regents of the University of California
+
+    Redistribution of this file is permitted under the terms of the
+    GNU Public License (GPL).
+
+    Date: 01/30/2007
+    Author: Rares Vernica <rvernica@ics.uci.edu>
+*/
+
+#include "misc.h"
+
+#include <iostream>
+#include <sstream>
+
+unsigned pow(unsigned x, unsigned y) 
+{
+  unsigned r = 1;
+  while (y > 0) {
+    r *= x;
+    y--;
+  }
+  return r;
+}
+
+vector<vector<unsigned> > subsets(unsigned n, unsigned k) 
+{
+  if (k == 0) {
+    cerr << "subsets: k cannot be 0" << endl;
+    exit(EXIT_FAILURE);
+  }
+  vector<vector<unsigned> > subs;
+  vector<unsigned> sub(k);
+
+  unsigned i;
+  for (i = 0; i < k; i++)
+    sub[i] = i;
+  subs.push_back(sub);
+
+  while (sub[0] < n - k) {
+    for (i = 0; i < k; i++)
+      if (sub[k - i - 1] < n - i - 1)
+        break;
+    i = k - i - 1;
+    sub[i]++;
+    i++;
+    for (; i < k; i++)
+      sub[i] = sub[i - 1] + 1;
+    subs.push_back(sub);
+  }
+
+  return subs;
+}
+
+string utos(unsigned i) 
+{
+  stringstream s;
+  s << i;
+  return s.str();
+}
+
+string utosh(unsigned i) 
+{
+  string str;
+  if (i < 1000)
+    str = utos(i);
+  else
+    str = utos(i / 1000) + "k";
+  return str;
+}
+
+UnsignedSeq::UnsignedSeq(unsigned initialValue): value(initialValue)
+{
+}
+
+unsigned UnsignedSeq::operator() ()
+{
+  return value++;
+}
+
+string removeExt(const string filename)
+{
+  const string exts[] = {"txt", "bin"};
+  for (unsigned i = 0; i < sizeof(exts) / sizeof(string); i++)
+    if (filename.substr(filename.size() - 4) == "." + exts[i])
+      return filename.substr(0, filename.size() - 4);
+  return filename;
+}
+
+void writeerror(const string filename) 
+{
+  cerr << "can't write to file \"" << filename << "\"" << endl;
+  exit(EXIT_FAILURE);
+}
+
+void readerror(const string filename) 
+{
+  cerr << "can't read from file \"" << filename << "\"" << endl;
+  exit(EXIT_FAILURE);
+}
+

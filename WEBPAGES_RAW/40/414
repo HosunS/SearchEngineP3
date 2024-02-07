@@ -1,0 +1,299 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html id="html">    
+    <head>
+        <title>CircadiOmics</title>        
+        <!-- Load stylesheet -->        
+        <link rel="StyleSheet" href="/css/index.css" type="text/css" media="screen">        
+        <!-- JSON support for IE (needed to use JS API) -->
+        <script type="text/javascript" src="/js/min/json2.min.js"></script>        
+        <!-- Flash embedding utility (needed to embed Cytoscape Web) -->
+        <script type="text/javascript" src="/js/min/AC_OETags.min.js"></script>        
+        <!-- Cytoscape Web JS API (needed to reference org.cytoscapeweb.Visualization) -->
+        <script type="text/javascript" src="/js/min/cytoscapeweb.min.js"></script>
+        <!-- AJAX support (needed to grab data from SIF file)-->        
+        <script type="text/javascript" src="/js/min/jquery-1.5.1.min.js"></script>                    
+        <!-- Cytoscape implementation -->
+        <script type="text/javascript">
+            window.onload=function(){                            
+            	document.getElementById('body').style.height="100%";
+            	document.getElementById('html').style.height="100%";
+                $.ajax({
+                    type: "post",
+                    url: "data/liver_MOUSE_gene/6427.xgmml",                    
+                    success: function(network_xgmml){                                      
+                        // Define html id where cytoscape app will live  
+                        div_id = "cytoscapeweb";                    
+                        
+                        // initialization options
+                        var options = {
+                            // where you have the Cytoscape Web SWF
+                            swfPath: "/swf/CytoscapeWeb",
+                            // where you have the Flash installer SWF
+                            flashInstallerPath: "/swf/playerProductInstall"
+                        };
+    
+                        // init and draw                       
+                        var vis = new org.cytoscapeweb.Visualization(div_id, options);
+                        
+                        // Describe style of network
+                        var visual_style = {
+    global: {                            
+            backgroundColor: "#FFFFFF",
+            },
+    
+    nodes: {
+            labelVerticalAnchor:"bottom",                            
+            image: { passthroughMapper: {attrName: "_CustomGraphics"}},                                
+            
+            shape: {
+                defaultValue: "TRIANGLE",
+                discreteMapper: {
+                attrName: "generic_type",
+                entries: [
+                        { attrValue: "dna", value: "PARALLELOGRAM" },
+                        { attrValue: "rna", value: "RECTANGLE" },
+                        { attrValue: "protein", value: "RECTANGLE" },
+                        { attrValue: "protein-tf", value: "RECTANGLE" },
+                        { attrValue: "protein-enzyme", value: "RECTANGLE" },
+                        { attrValue: "compound", value: "ROUNDRECT" },
+                        { attrValue: "annotation", value: "TRIANGLE" },
+
+                    ]
+                    }
+                },
+                
+            label: { passthroughMapper: {attrName: "name"}},
+            color: {
+                defaultValue: "#FFFFFF",
+                discreteMapper: {
+                    attrName: "generic_type",
+                    entries: [
+                        { attrValue: "dna", value: "#000000" },                                    
+                    ]
+                }},
+            
+            hoverGlowStrength: 20,
+            size: {
+                defaultValue: 35,
+                discreteMapper: {
+                attrName: "image",
+                entries: [
+                    { attrValue: "true", value: 70 },
+                    { attrValue: "special", value: 70 },
+                    { attrValue: "true_protein", value: 55 },
+                    { attrValue: "true_protein-enzyme", value: 70 },
+                    { attrValue: "true_protein-tf", value: 55 },
+
+                    ]
+                    }
+                },
+
+            selectionGlowColor: "#000000",
+            opacity: 1,
+        
+            borderWidth : {
+                defaultValue: 3.5,
+                    discreteMapper: {
+                        attrName: "image",
+                        entries: [
+                            { attrValue: "true", value: 3},                    
+			    { attrValue: "true_protein", value: 3 },
+          		    { attrValue: "true_protein-enzyme", value: 3 },
+                    	    { attrValue: "true_protein-tf", value: 3 },
+                            ]
+                            }
+                        },
+                
+    borderColor : {
+        defaultValue: "#C0C0C0",
+            discreteMapper: {                                
+                attrName: "generic_type",
+                entries: [
+                        { attrValue: "dna", value: "black" },
+                        { attrValue: "rna", value: "#006000" },
+                    	{ attrValue: "compound", value: "#91BFDB" },                                    
+                    	{ attrValue: "protein", value: "#D73027" },
+                    	{ attrValue: "protein-enzyme", value: "#D73027" },
+                    	{ attrValue: "protein-tf", value: "#784E3D" },
+                    ]
+                    }
+                }
+        },    
+        
+    edges: {
+
+    opacity: 1,
+    label: { passthroughMapper: {attrName: "interactiontype"}},
+    
+	style: {
+	    defaultValue: "SOLID",
+            discreteMapper: {
+                attrName: "interactiontype",
+                entries: [
+                    { attrValue: "interacts_with", value: "EQUAL_DASH" },
+                    { attrValue: "coreacts_with", value: "DOT" },
+                    ]
+            }
+	},
+              
+	width: {
+            defaultValue: 1.5,
+            discreteMapper: {
+                attrName: "interactiontype",
+                entries: [
+                    { attrValue: "regulates_with_dnase", value: 3},
+                    { attrValue: "regulates", value: 1.5}, 
+                    { attrValue: "transcription", value: 3 },
+                    { attrValue: "chip-seq", value: 3.25 },
+                    { attrValue: "translation", value: 4 },
+                    { attrValue: "produces", value: 4 },
+                    { attrValue: "pp", value: 2.25 },
+                    { attrValue: "interacts_with", value: 3.25 },
+                    { attrValue: "em", value: 2.25 },
+                    { attrValue: "mt", value: 1.5 },
+                    { attrValue: "binding_site", value: 1.9 },
+                    { attrValue: "is_Enzyme_of", value: 3 },
+                    { attrValue: "is_enzyme_of", value: 3 },
+                    { attrValue: "mm", value: 1.5 },
+                    { attrValue: "coreacts_with", value: 3 },
+                ]
+            }
+        },
+
+        color: {
+            defaultValue: "#0B94B1",
+            discreteMapper: {   
+                attrName: "interactiontype",
+                entries: [
+
+                    { attrValue: "transcription", value: "#5C4033" },
+                    { attrValue: "translation", value: "#99AA99" },
+                    { attrValue: "produces", value: "#101010" },
+
+                    { attrValue: "pp", value: "#4e3d78" },                                    
+                    { attrValue: "interacts_with", value: "#D73027" },
+
+                    { attrValue: "em", value: "#000000" },
+                    { attrValue: "is_Enzyme_of", value: "black" },
+                    { attrValue: "is_enzyme_of", value: "black" },
+
+                    { attrValue: "metabolic", value: "#91BFDB" },
+                    { attrValue: "coreacts_with", value: "#91BFDB" },
+                    { attrValue: "mt", value: "#91BFDB" },
+
+                    { attrValue: "binding_site", value: "#909090" },
+                    { attrValue: "regulates", value: "#909090" },
+                    { attrValue: "regulates_with_dnase", value: "#6a6a6a" },
+                ]
+            }
+        },
+        
+        sourceArrowShape: "NONE",
+        
+        targetArrowShape: {
+            defaultValue: "DELTA",
+            discreteMapper: {                                
+                attrName: "interactiontype",
+                entries: [
+                    { attrValue: "transcription", value: "DELTA" },
+                    { attrValue: "translation", value: "DELTA" },
+                    { attrValue: "transcription", value: "DELTA" },
+
+                    { attrValue: "pp", value: "NONE" },
+                    { attrValue: "interacts_with", value: "NONE" },
+
+                    { attrValue: "ec", value: "T" },
+                    { attrValue: "is_Enzyme_of", value: "T" },
+                    { attrValue: "is_enzyme_of", value: "T" },
+
+                    { attrValue: "metabolic", value: "NONE" },
+                    { attrValue: "mt", value: "NONE" },
+                    { attrValue: "coreacts_with", value: "NONE"},
+
+                ]
+            }
+        }
+    }
+
+};
+                                                 
+
+var draw_options = {                    
+    network: network_xgmml,
+    edgeLabelsVisible: false,
+    visualStyle: visual_style,
+    layout: { name:    "ForceDirected", options: {minWeight: 4, maxWeight:4, mass: 4, gravity: -900, maxTime: 2000} },
+    panZoomControlVisible: true,
+    preloadImage: false,
+};
+                                                     
+                        
+                        var draw_options = {                    
+                            network: network_xgmml,
+                        //layout: {name: "Tree", options: {orientation: "topToBottom"}},
+                            edgeLabelsVisible: false,
+                            visualStyle: visual_style,
+                            panZoomControlVisible: true,
+                            preloadImage: false,
+                        };
+
+                        vis.addListener("dblclick", "nodes", function(evt) {                            
+                            var linkout = evt.target.data.linkout;                            
+    	                    window.open(linkout);    	                    
+                        });
+                        
+                        vis.draw(draw_options);
+                    },
+                    
+                    error: function (request, status, error) {                        
+                        document.getElementById('cytoscapeweb').innerHTML='<p id="message">Sorry, no network available for "data/liver_MOUSE_gene/6427.xgmml".</p>';
+                    }
+                });
+            };
+
+            function toggle_visibility(obj_id){				
+	            var obj = document.getElementById(obj_id+"-wrapper");
+	            if (obj.style.display == 'block'){
+					// Hide content
+	            	obj.style.display='none';
+
+	            	// Remove transparent layer 	            	
+	            	obj = document.getElementById('transparent-layer');	            
+	            	obj.style.display = "none";	
+	            }
+	            else{										
+		            // Show content
+	            	obj.style.display='block';
+	            	
+	            	// Add transparent layer
+	            	obj = document.getElementById('transparent-layer');	            
+	            	obj.style.display = "block";	
+	            }
+			}
+        </script>          
+    </head>
+    
+   	<body id="body">
+   		<div id="transparent-layer"></div>
+   		<div id="menu-content-wrapper">
+		    <div id="menu-wrapper">
+		    	<div class="float-left menu-pad">CircadiOmics</div>
+		    	<div id="menu-links" class="menu-pad">
+    				<a onclick="toggle_visibility('help')">Legend / Help</a>
+    			</div>
+    		</div>
+    		
+	    	<div id="help-wrapper" class="content-wrapper" style="margin-top: 25px; overflow:visible !important;">
+                <div id="help" style="height: 100%; margin: auto; overflow: auto; width: 850px;">
+	    			<div class="hide-content" style="width: 800px" onclick="toggle_visibility('help')">[X]</div>
+				    <img id="example-img" width="800px" src="/images/legend.png"/>
+    			</div>
+			</div>
+		</div>
+		
+        <div id="cytoscapeweb">
+            <img id="loading-image" src="/images/loading.gif"></img>
+        </div>            
+    </body>
+    
+</html>

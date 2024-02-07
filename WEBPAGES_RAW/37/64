@@ -1,0 +1,138 @@
+<!-- received="Wed May 29 06:45:00 1996 PDT" -->
+<!-- sent="Wed, 29 May 1996 09:45:49 -0400" -->
+<!-- name="David J. Fiander" -->
+<!-- email="davidf@worf.mks.com" -->
+<!-- subject="Re: Version identifier in URL" -->
+<!-- id="ade24ff30c0210040484@[128.195.21.209]" -->
+<!-- inreplyto="Version identifier in URL" -->
+<title>Archive of Working Group on Versioning and Configuration Management of World Wide Web Content: Re: Version identifier in URL</title>
+<h1>Re: Version identifier in URL</h1>
+<b>David J. Fiander</b> (<a href="mailto:davidf@worf.mks.com"><i>davidf@worf.mks.com</i></a>)<br>
+<i>Wed, 29 May 1996 09:45:49 -0400</i>
+<p>
+<ul>
+<li> <b>Messages sorted by:</b> <a href="index.html#9">[ date ]</a><a href="thread.html#9">[ thread ]</a><a href="subject.html#9">[ subject ]</a><a href="author.html#9">[ author ]</a>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0010.html">David J. Fiander: "Re: Version identifier in URL"</a>
+<li> <b>Previous message:</b> <a href="0008.html">Marty Cagan/Continuus Software Corporation: "Re: Version identifier in URL"</a>
+<li> <b>Maybe in reply to:</b> <a href="0002.html">Jim Whitehead: "Version identifier in URL"</a>
+<!-- nextthread="start" -->
+<li> <b>Next in thread:</b> <a href="0010.html">David J. Fiander: "Re: Version identifier in URL"</a>
+<!-- reply="end" -->
+</ul>
+<hr>
+<!-- body="start" -->
+<pre>
+I think, since Jim has generously offered the MKS implementation
+as the "working hypothesis" for the group, that I should give a
+little bit of the history and rationale behind it.
+
+Last fall, a small group of MKS put this together, mostly as a
+proof of concept.  The requirements of the time were that it had
+to integrate into the server easily (using the Netscape Server
+APIs), and it had to provide a basic level of version control
+(VC) functionality for unmodified clients.  This latter
+requirement was the more onerous--it's why we went with the
+"decorated" URL syntax for everything, including things that
+should be methods, as Larry pointed out in his mail of Tue, 14
+May 1996 10:54:18 PDT.
+
+I, too, am uncomfortable with Dan's "heavy-weight" proposal for
+dealing with versioning, because I still feel that, for the truly
+basic functionality of "get me revision 'foo' of this URL", we
+need to ensure that existing, unmodified clients work.  This does
+not disallow Kenji's "Content-Version" implementation, which I
+expect to be supported as an alternative access method in the
+future, and which will probably be critical for the more advanced
+document management (DM) and VC functionality that we're probably
+going to be working towards in this group.
+
+Robert's suggestion of creating a new attribute "VERSION"
+similarly requires version-aware clients before we can proceed.
+The other problem is that creating new HTML/SGML attributes is
+not as simple as just making up a new unique name for the
+attribute; there are tools out there today that won't allow you
+do do this sort of thing without modifying the HTML DTD.
+
+We selected the ";version=..." syntax because both the HTTP 1.0
+and HTTP 1.1 specification have included, since the earliest
+drafts, the concept of the "URL parameter" (see section 7.2.1 of
+HTTP 1.1 draft 3).  The URL parameters appear between the path
+and any appended query, and are separated from the path by a ';'.
+Kenji's concern about semicolons embedded in UNIX filenames is
+valid but, because the URL syntax has always reserved the
+semicolon, any such filename semicolons must be encoded
+in the URL, using the character escape mechanism, as "%3B".
+
+I'm not sure that I understand Chris's concerns about "version"
+being a "meta identifier".  It's the name of the URL parameter
+string that we're providing, nothing more.
+
+Robert asks some good questions:
+
+&gt;Is the versioning model constrained to be single threaded?  (i.e. unique
+&gt;answers to the queries below)
+
+I don't know.  I think that for some of the particulars the
+answer will be yes, and for other it will be no.  In the
+following, when I say "the version "URL(x)", I mean "the version
+specified by URL(x)".
+
+&gt;Fetch the version previous to URL(x).
+
+if "URL(x)" is a versioned URL, this boils down to
+
+        Fetch the version previous to the version "foo"
+
+which will clearly give the same answer all the time, since every
+version of the document will only have one immediate predecessor.
+
+If the question is, "get me the version of this file that was
+active before the "current" version, then I would say that there
+are always going to be race conditions.
+
+&gt;Fetch the version subsequent to URL(x).
+
+This one is tricky.  Suppose there's a branch in the version
+history at the version URL(x).  Then which of the two or more
+different descendants of URL(x) is "the version subsequent"?
+
+&gt;Fetch the version of URL(x) current at time t.
+Given second granularity, this should always be deterministic.
+
+&gt;Fetch the version of URL(x) current as of the creation time of URL(y)
+
+Given the answer to the previous question, this boils down to
+
+        Find t = the creation time of URL(y)
+        Fetch the version of URL(x) current at time t.
+
+&gt;Fetch the most recent version of URL(y)
+
+This will be indeterminate, given that updates will always be
+asynchronous.
+
+Jim said:
+
+&gt;Note that this convention only specifies the version of the entity, and
+&gt;does not specify the version of each directory in the heirarchy leading to
+&gt;that entity.
+
+We should also note that the VC/DM work may also interact with
+the content negotiation and generic/specific resource language in
+HTTP 1.1.  We need to ensure that we play well with that text.
+
+- David
+</pre>
+<!-- body="end" -->
+<hr>
+<p>
+<ul>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0010.html">David J. Fiander: "Re: Version identifier in URL"</a>
+<li> <b>Previous message:</b> <a href="0008.html">Marty Cagan/Continuus Software Corporation: "Re: Version identifier in URL"</a>
+<li> <b>Maybe in reply to:</b> <a href="0002.html">Jim Whitehead: "Version identifier in URL"</a>
+<!-- nextthread="start" -->
+<li> <b>Next in thread:</b> <a href="0010.html">David J. Fiander: "Re: Version identifier in URL"</a>
+<!-- reply="end" -->
+</ul>

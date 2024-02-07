@@ -1,0 +1,1098 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+  <title>Abstract Classes</title>
+</head>
+
+<body BGCOLOR="white">
+
+<center>
+<h1>Abstract Classes</h1>
+<p>
+<h2>Introduction to Computer Science I-III<br>
+ICS-21/-22/-23<br>
+</h2>
+<p>
+</center>
+
+
+<!-- Introduction -->
+
+<a name="Introduction"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Introduction</b></td>
+<td width ="80%">
+  In this lecture we will continue our discussion of inheritance features by 
+    examing <b>abstract</b> classes.
+  Once again, in many ways abstract classes are a simple concept (involving
+    only one new keyword that can be used in two places) that has deep
+    ramifications when designing complex class hierarchies.
+  We will discuss this Java language feature in the context of the
+    <a href="../../programs/positionalshapedemo.zip">
+      Positional Shape Inheritance Demo</a>, which you should
+      download, run, and examine.
+  In this lecture we will compare abstract classes to interfaces (which seem
+    closely related: for example we can extend interfaces via inheritance too)
+    and see multiple ways to accomplish approximate the same result -and 
+    compare them.
+  Finally, we will examine some general principles for designing classes in
+    inheritance hierarchies..
+</td>
+</tbody>
+</table>
+
+
+<!-- Definition -->
+
+<a name="Definition"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Defining Abstract Methods and Classes</b></td>
+<td width ="80%">
+  Sometimes a class should define a method that logically belongs in the class,
+    but that class cannot specify how to implement the method.
+  For example, the <b>Shape</b> class is used as a superclass for 2-dimensional
+    shapes (like circles, rectangles, etc).
+  Logically, every shape should have a <b>getArea</b> method, because every
+    shape has an area.
+  But, every shape would compute its area using a different formula, and there
+    is no way to specify one <b>getArea</b> method in the <b>Shape</b> class
+    that is correct for all its possible subclasses.
+  <p>
+  In an application, we might want to declare a <b>Shape</b> array, fill it
+    with references to objects constructed from actual shapes (subclasses of
+    <b>Shape</b>), and then ask each shape to return its area.
+  We would like Java to call the correct <b>getShape</b> method for each object
+    to compute the result correctly; again, this illustrate how Java implements
+    polymorphism to solve such a problem.
+  <p>
+  We accomplish this in Java by defining the <b>getArea</b> method in the
+    <b>Shape</b> class, but by specfying the <b>abstract</b> keyword in its 
+    list of access modifiers (as a syntax constraint this keyword can be used
+    when defining only classes and methods) and then specifying no
+    implementation (no method body, just like in an interface).
+  We would specify it in the <b>Shape</b> class as follows
+  <pre><b>  public abstract double getArea();</b></pre>
+  By defining this method, we are telling the Java  compiler that it should
+    allows us to call the <b>getArea</b> method using any variable declared
+    with the type <b>Shape</b>, or declared with any class that is a subclass
+    of <b>Shape</b> (where the definition of <b>getArea</b> will really
+    appear).
+  For example, we can define the <b>toString</b> method in the <b>Shape</b>
+    class as
+
+  <pre><b>  public String toString( )
+  {return "Shape[id="+id+",area="+getArea()+"]";}</b></pre>
+
+  This method calls <b>getArea</b> and returns (as a <b>String</b>) the area of
+    the shape.
+  Our first big rule about using <b>abstract</b> concerns where abstract
+    methods can be called.
+  <ol>
+    <li>Any method in a class can be declared <b>abstract</b>.
+        Such a method has no body (<b>{...}</b> is replaced by just <b>;</b>,
+          as in interfaces) and can be called in other methods defined in that
+          class, or be called in methods defined in any of its subclasses, or
+          be called using any variables whose type is this class or any of its
+          subclasses.  
+  </ol>
+  <p>
+  Our second big rule about using <b>abstract</b> concerns the relationship
+    between abstract method and the classes in which the are defined.
+  <ol start="2">
+    <li>
+      If a class defines any abstract methods (or, as we will see, inherits
+        any abstract methods and doesn't override them), that class must be
+        defined using the <b>abstract</b> keyword in its access modifiers.
+  </ol>
+  If this second rule is violated, the Java compiler will detect and report an
+    error, so if we forget to make a class abstract, Java will just remind us
+    with no harm caused..
+  <p>
+  In fact, we will define the <b>Shape</b> class (using an <b>id</b> instance
+    variable and constructor) throughout the examples in this lecture as
+  <pre><b>  public abstract class Shape {
+
+    public Shape (String id)
+    {this.id = id;}
+
+    //This abstract method must be defined in a concrete subclass.
+    //Note that it is called in this class in the toString method.
+    public abstract double getArea();
+
+    public String getId()
+    {return id;}
+    
+    public String toString( )
+    {return "Shape[id="+id+",area="+getArea()+"]";}
+
+    private String id;
+  }</b></pre>
+  Generally, abstract classes can specify all the standard class components:
+    constructors, methods, and instance variables.
+  Again, a class must be defined with the keyword <b>abstract</b> (as is the
+    case above) if any of its methods is defined with the keyword
+    <b>abstract</b> (as is the case above).
+  Note that we can call the <b>abstract</b> method in other methods defined in
+    the class, even if its body isn't defined yet.
+  <p>
+  Again, logically this method belongs in the class, even if it cannot
+    be written there (because <b>Shape</b> is too high in the hierarchy).
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Use -->
+
+<a name="Use"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Using Abstract Classes (as Superclasses)</b></td>
+<td width ="80%">
+  Now, it should be  obvious that it would make no sense to write
+  <pre><b>  Shape s = new Shape("s1");
+  System.out.println(s);</pre></b>
+  because although we are allowed to call the <b>getArea</b> method (Java
+    knows the prototype of this method), its implementation
+    HAS NOT BEEN SPECIFIED.
+  Java would have no idea what code to execute to compute <b>getArea</b>
+    inside <b>toString</b>.
+  <p>
+  But the problem is not in the method call, it is in the construction.
+  This issue brings us to our third big rule about using <b>abstract</b> for
+    classes, concerning the restriction on calling constructors ONLY IN
+    SUBCLASSES.
+  <ol start ="3">
+    <li>
+    If a class is defined with the keyword <b>abstract</b>, we may call its
+      constructor only via <b>super</b> in a class that extends it, not
+      via the <b>new</b> operator.
+    That is, we cannot explicitly construct an object using an <b>abstract</b>
+      class, but we can use it to help construct an object from a subclass.
+  </ol>
+  Thus the Java compiler would detect and report an error in the statement
+    <b>Shape s = new Shape("s1");</b> and never even get to compiling the
+    call to the <b>getArea</b> method.
+  <p>
+  If we cannot construct an object with an abstract class, what can we do with
+    one?
+  We can definine a subclass that extends it.
+  If the subclass overrides every abstract method that it inherits, then that
+    subclass is not abstract.
+  But, if it inherits any abstract methods and doesn't override them, then the 
+    subclass also has abstract methods and must itself also be defined
+    abstract.
+  We call a "non-abstract" class concrete, although there is no keyword with
+    this name.
+  <p>
+  For example, we can define a concrete <b>Circle</b> subclass by extending
+    <b>Shape</b> as follows
+  <pre><b>  public class Circle extends Shape {
+
+    public Circle (String name, double r)
+    { 
+      super(name);
+      radius = r;
+    }
+    
+    //Overide the abstract method declared in shape
+    public double getArea()
+    {return Math.PI * radius * radius;}
+    
+    public double getRadius()
+    {return radius;}
+    
+    public void setRadius(double newRadius)
+    {radius = newRadius;}
+    
+    public String toString( )
+    {return "Circle["radius="+radius+","+super.toString()+"];}
+
+    private double radius;
+  }</b></pre>
+  Here the <b>Circle</b> subclass does override the one abstract method
+    that it inherits from <b>Shape</b>; it defines a few new methods, but none
+    of them is abstract; so, it is a concrete class -and therefore not defined
+    with the <b>abstract</b> keyword.
+  Also notice that its constructor must be supplied a radius that is stored in
+     an instance variable in this class, and is used to compute the area.
+  As we described above, although we cannot constuct a new object from the
+    class <b>Shape</b>, we can call the constructor for this class
+    <b>inside</b> the constructor for a subclass (as the <b>Circle</b> class
+    does with its call of <b>super(name);</b> in its constructor).
+  <p>
+  Because the <b>Circle</b> class is concrete, we can construct new objects
+    from this class.
+  So, we can write
+
+  <pre><b>  Circle c = new Circle("c1",1.0);
+  System.out.println(c.toString());  //or just ...(c);</pre></b>
+
+  Which will print
+    <b>Circle[radius=1.0,Shape[id=c1,,area=3.141592653589793]]</b>
+  <p>
+  In fact, we can even write
+  <pre><b>  Shape s = new Circle("c1",1.0);    //Note the type
+  System.out.println(s.toString());  //or just ...(s);</pre></b>
+  <p>
+  which prints exactly the same thing!
+  Here is the reasoning.
+  Both <b>Shape</b> and <b>Circle</b> define <b>toString</b> methods, Java
+    allows us to call <b>toString</b> on such variables.
+  In both cases the object to which <b>c</b>/<b>s</b> refer is constructed
+    from the <b>Circle</b> class, so it is the method DEFINED IN THIS CLASS
+    that is called.
+  <p>
+  Stop and think hard!
+  Many students reason that since <b>s</b> is DEFINED to be of type
+    <b>Shape</b> then calling <b>s.toString</b> calls the <b>toString</b>
+    method defined in the <b>Shape</b> class.
+  THIS IS INCORRECT THINKING!
+  Recall that Java's rule say that the TYPE determines WHAT methods can be
+    called, but the CLASS OF THE OBJECT determines WHICH method is called!
+  This is polymorphism in action.
+  <p>
+  Of course, if we wrote <b>Shape s = new Circle("c1",1.0);</b> then we
+    COULD NOT call <b>s.setRadius(2.0);</b> because the type <b>Shape</b>
+    defines no <b>setRadius</b> method.
+  But if we wrote <b>Circle c = new Circle("c1",1.0);</b> then we
+    COULD call <b>c.setRadius(2.0);</b> because the type <b>Circle</b>
+    does define this method.
+  <p>
+  Finally we learn our fourth, and last, big rule about using <b>abstract</b>.
+  <ol start="4">
+    <li>
+     We can treat an abstract class as a superclass and extend it; its
+       subclasses can override some or all of its inherited abstract methods.
+     If through this overriding a subclass contains no more abstract methods,
+       that class is concrete (and we can construct objects directly from it).
+     If it still abstract, it too can be used as a superclass ... (until
+       eventually a subclass of a subclass ... is concrete).
+  </ol>
+  <p>
+  We can also easily define a simlar subclass for rectangles.
+  <pre><b>  public class Rectangle extends Shape {
+    public Rectangle (String name, double w, double h)
+    { 
+      super(name);
+      width  = w;
+      height = h;
+    }
+    
+    //Overide the abstract method declared in Shape
+    public double getArea()
+    {return width*height;}
+    
+    public double getWidth()
+    {return width;}
+    
+    public double getHeight()
+    {return height;}
+    
+    public void setWidthHeight(double newWidth, double newHeight)
+    {
+      width  = newWidth;
+      height = newHeight;
+    }
+    
+    public String toString( )
+    {return "Rectangle["width="+width+",height="+height+",+super.toString()+"];}
+
+    private double width, height;
+  }</b></pre>
+  Because the <b>Rectangle</b> class is also concrete, we can construct new
+    objects from this class too.
+  We can write, for example
+  <pre><b>  Shape s = new Rectangle("r1",2.0,3.0); //Note the type
+  System.out.println(s);</pre></b>
+  Which will print
+    <b>Rectangle[width=2.0,height=3.0,Shape[id=r1,area=6.0]]</b>
+  <p>
+  We can picture such an object using our standard notation.
+</table>
+   <img src="images/rectangle.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  <p>
+  Of course, it is very simple to add more shapes (square, triangle, etc.)
+    to this hierarchy by extending the <b>Shape</b> class.
+  Neither the <b>Shape</b> class, nor <b>Circle</b> and <b>Rectangle</b>
+    need to know any information about such newly added shapes.
+  <p>
+  Now, lets look at a more complicated example: writing parts of a model
+    class that uses arrays, abstract classes interfaces.
+  Suppose that we wanted to store an array of ten object that were each
+    constructed from subclasses of <b>Shape</b>.
+  We could declare <b>Shape[] allShapes = new Shape[10];</b> and then
+    initialize this array.
+  Some member migh index circles and some rectangles.
+  <p>
+  Now assume that we want to find the two shapes that have the most similar
+    area.
+  We can do this by first sorting the shapes in this array by their areas
+    (smallest to biggest).
+  We can call <b>Arrays.sort</b> using the <b>allShapes</b> array and the
+     following anonymous class (that implements the correct <b>Comparator</b>).
+<b><pre>  Arrays.sort(allShapes,
+    new Comparator () {
+      public int compare(Object o1, Object o2)
+      {
+        double areaDiff = ((Shape)o1).getArea() - ((Shape)o2).getArea();
+        if (areaDiff < 0)
+          return -1;
+        else if (areaDiff > 0)
+          return +1;
+        else return 0;
+      }
+    });</pre></b>
+  Now we can scan the array to find the adjacent shapes that have the most
+    similar areas.<br>
+<b><pre>  int bestIndex  = -1;
+  double minDist = Double.MAX_VALUE;
+  for (int i=0; i&lt;allShapes.length-1; i++) {
+    double newDist = allShapes[i+1].getArea()-allShapes[i].getArea();
+    if (newDist < minDist) {
+      bestIndex = i;
+      minDist   = newDist;
+    }</pre></b>
+  Now, the minimum distance is between <b>bestIndex</b> and <b>bestIndex</b>+1.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Faking It -->
+
+<a name="Fakingit"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Doing Without Abstract Methods/Classes</b></td>
+<td width ="80%">
+  We can get close to the effect of declaring <b>abstract</b> methods and
+    classes by doing the following.
+  <ul>
+    <li>Remove the word <b>abstract</b> from each method and class.
+    <li>Implement each formerly <b>abstract</b> method by a stub.
+         <ul>
+           <li> If the method
+          is <b>void</b> its body should be just <b>{}</b>; if its method
+          returns some primitive value, return <b>0</b>, or <b>0.0</b>, or
+          <b>'?'</b>, or <b>false</b>; and if its method returns some
+          reference to an object, return <b>null</b>.
+           <li> Or, just have each method throw
+          <b>UnsupportedOperationException</b>; in either case the method
+            does nothing useful.
+         </ul>
+    <li>Leave unchanged any methods in a subclass that overrides a formerly
+          <b>abstract</b> method.
+  </ul>
+  Any compiling/working classes will still compile/work after these changes.
+  They will execute identically.
+  But other -not so good- things can also happen.
+  <ul>
+    <li>We can construct objects from the formerly <b>abstract</b> class; when
+          calling their stub methods, bad results are returned.
+    <li>We can extend the formerly <b>abstract</b> class, and forget to
+          override its stub methods; when calling these methods, the usefuless
+          results are also returned.
+  </ul>
+  In the latter case, which is an easy mistake of omission (or even one of
+    misspelling), if we used <b>abstract</b> methods the Java compiler would
+    detect and inform us that the subclass must be defined to be abstract
+    because an abstract method was not overridden: typically this message
+    doesn't really what it says; normally we fix the problem not by defining
+    the class to be <b>abstract</b> but by adding/fixing the appropriate
+    method(s).
+  <p>
+  The designers of Java felt that the possiblity of "messing up" in this way
+    was too big, and introduced the keyword <b>abstract</b> into the language
+    for the purposes explained above.
+  Its purpose is much like <b>final</b> for variables: we can provide the
+    compiler with extra information about our intent; if we do something
+    inconsistant with this intent, we receive an error message from the Java
+    compiler.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- PositionalShape -->
+
+<a name="Positionalshape"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>The Positional Shape Hierarchy</b></td>
+<td width ="80%">
+  Let's now deal with a more complicated example of a positional shape
+    inheritance hierarchy.
+  It is illustrated below graphically; the superscript <b>A</b> is used to
+    denote classes that are abstract.
+  <p>
+   <img src="images/positionalshape.gif"></image>
+  <p>
+  Here the root of the inheritance hierarchy is shown as the concrete
+    <b>Object</b> class.
+  The <b>Shape</b> subclass, defined exactly as shown above, extends this
+    concrete superclass and introduces an abstract method (<b>getArea</b>),
+    so it becomes abstract.
+  The <b>PositionalShape</b> subclass, extends the abstract <b>Shape</b>
+    superclass.
+  <p>
+  It defines a constructor that initializes one new instance variable, a
+    <b>Point</b> (read its Javadoc in the standard Java library) that
+    specifies the position of the center of the shape (an x,y coordinate)
+    on a 2-dimensional plane.
+  This class adds a few new methods that manipulate the position, and adds one
+    additional abstract method that returns the <b>bounding box</b> of the
+     shape
+    (the smallest <b>Rectangle</b> in which the shape can be enclosed; 
+    note, this class has the full name <b>java.awt.Rectange</b> and IS NOT
+    the <b>Rectangle</b> class that we will define; read its Javadoc in the
+    standard Java library).
+  Finally, it adds one additional method that detects whether two shapes
+    "may overlap" by checking for intersection in their bounding boxes: if
+    the bounding boxes don't intersect, there is no possibility of an overlap.
+  <p>
+  So, this class must be abstract because it contains two abstract methods:
+    it specifies <b>getBoundingBox</b> and also inherits (and doesn't override)
+    <b>getArea</b>.
+  Here is a complete the class.
+<b><pre>  public abstract class PositionalShape extends Shape {
+
+    public PositionalShape (String id, int centerX, int centerY)
+    { 
+      super(id);
+      center = new Point(centerX,centerY);
+    }
+    
+    //These abstract methods must be defined in a concrete subclass.
+    public abstract Rectangle getBoundingBox();
+
+    public Point getCenter ()
+    {return center;}
+
+    public double distanceTo (PositionalShape other)
+    {return center.distance(other.center);}
+
+    public void moveCenterTo (Point newCenter)
+    {
+      center.x = newCenter.x;
+      center.y = newCenter.y;
+    }
+
+    public void moveCenterBy (int dx, int dy)
+    {
+      center.x += dx;
+      center.y += dy;
+    }
+
+    public boolean mayOverlap (PositionalShape other)
+    {return getBoundingBox().intersects(other.getBoundingBox());}
+    
+    public String toString ()
+    {return "PositionalShape[center="+center+","+super.toString()+"]";}
+
+    //Fields
+    private Point center;
+  }</pre></b>
+<p>
+Notice that although this class does not know how bounding boxes are
+  constructed from <b>PositionalShape</b>  objects (that method is abstract),
+  it defines a concrete <b>mayOverlap</b> method because it knows that the
+  <b>getBoundingBox</b> method in any concrete subclass of
+  <b>PositionalShape</b> is defined concretely.
+Thus, just as the concrete <b>toString</b> method in the <b>Shape</b> class
+  called the abstract method <b>getArea</b>, the concrete <b>mayOverlap</b>
+  method in the <b>PositionalShape</b> class calls the abstract method
+  <b>getBoundingBox</b>.
+<p>
+Finally, we can define the <b>Circle</b> subclass as follows.
+Note that it is concrete: it extends the abstract <b>PositionalShape</b>
+  class, and overrides both the <b>getArea</b> and <b>getBoundingBox</b>
+  methods.
+<b><pre>  public class Circle extends PositionalShape {
+
+    public Circle (String name, int centerX, int centerY, double r)
+    { 
+      super(name,centerX,centerY);
+      radius = r;
+    }
+    
+    //Overide the abstract method declared in Shape
+    public double getArea()
+    {return Math.PI * radius * radius;}
+
+    //Overide the abstract method declared in PositionalShapee
+    public Rectangle getBoundingBox()
+    {
+      return new Rectangle( (int)(getCenter().x-radius),
+                            (int)(getCenter().y-radius),
+                            (int)(2*radius),
+                            (int)(2*radius) );
+    }
+    
+    public double getRadius()
+    {return radius;}
+  
+    public void setRadius(double newRadius)
+    {radius = newRadius;}
+
+    public String toString( )
+    {return "Circle[radius="+radius+","+super.toString()+"]";}
+
+    //Fields
+    private double radius;
+  }</pre></b>
+  The bounding boxes are specified by the coordinate of the shapes upper-left
+   corner and its width and height.
+  For a circel, here is a picture of its bounding box.
+  <p>
+</table>
+   <img src="images/boundingbox.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+<p>
+  Again, bounding boxes can detect whether two shapes "may overlap" by
+    checking for an intersection: if the bounding boxes don't intersect,
+    there is no possibility of an overlap; if they do intersect, the shapes
+    must be examined more closely.
+  This property is illustrated below.
+<p>
+</table>
+   <img src="images/overlap.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+<p>
+Given all this intheritance, we can picture the result of calling
+  <b>new Circle("c1", 100, 150, 1.0);</b>
+  by the following picture.
+<p>
+</table>
+   <img src="images/circleobject.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+<p>
+If you have not already done so, download
+  <a href="../../programs/positionalshapedemo.zip">
+  Positional Shape Inheritance Demonstration</a> and run this driver
+  program.
+It contains all the code above, as well as the defintion of the
+  <b>Rectangle</b> class.
+Notice in the <b>Rectangle</b> class how we differentiate between the
+  <b>Rectangle</b> class we are defining and the <b>java.awt.Rectangle</b>
+  class that we are using to help define it: no import, full class name
+  (prefixed by its package name).
+<p>
+Finally, notice that the <b>Shape</b> class defines a concrete
+  <b>PromptForInformation</b> method, which is overridden (and called via
+  <b>super</b>) in the <b>PositionalShape</b> class, which is again overridden
+  (and called via <b>super</b>) in the <b>Circle</b> and <b>Rectangle</b>
+  class (a lot like how <b>toString</b> is overridden/called in these same
+  classes).
+The result is that there is no checking <b>instanceof</b> or casting in the
+  application.
+This absence is always desired.
+It ensures that if we add other subclasses of <b>PositionalShape</b> they
+  will all work with this application; we must change only <b>get</b> in
+  the application to allow it to return other subclasses.
+<p>
+If you are writing <b>instanceof</b>, you are probably not defining your
+  classes correctly, making appropriate use of polymorphism.
+For example, if you need to know whether a an object is drawn with only
+  straight lines (a square, rectangle, polygon; not a circle or elipse),
+  don't use <b>instanceof</b> to pick out the right classes.
+Instead define <b>public abstract boolean drawnWithLines()</b> inside the
+  <b>Shape</b> class and then override this method in each subclass.
+<p>
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Inheritance and Interfaces -->
+
+<a name="Interfaces"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Inheritance and Interfaces</b></td>
+<td width ="80%">
+There is another interesting way to design the <b>Circle</b> and
+  <b>Rectangle</b> classes through the use of inheritance of interfaces,
+  combined with inheritance of classes/abstract classes.
+To do so, we must first learn that we can use the keyword <b>extends</b> to
+  specify that one interface extends another.
+In fact, UNLIKE CLASSES, an interface can extend multiple interfaces
+  (much like the way that a class can implement multiple interfaces; recall
+  that a class can extend only one other class).
+The use of subinterfaces and superinterfaces will appear immediately below,
+  including the specification of a subinterface that extend multiple
+  superinterfaces.
+<p>
+We will start by specifying two interfaces separately, <b>Shape</b> and
+  <b>Position</b>, and then one interface that has the properties of
+  both: <b>PositionShape</b>.
+Notice that these interfaces include all the abstract and concrete
+  methods defined in the <b>Shape</b> and <b>PositionalShape</b> CLASSES
+  above (except <b>toString</b>, which is not needed, because every
+  class -whether or not it implements these interfaces- inherits a
+  <b>toString</b> method that it can override).
+  <pre><b>  public interface Shape {
+    public double getArea();
+    public String getId();
+  }
+
+  public interface Position {
+    public Point     getCenter    ();
+    public double    distanceTo   (Position other);
+    public void      moveCenterTo (Point newCenter);
+    public void      moveCenterBy (int dx, int dy);
+  }
+
+  public interface PositionalShape extends Position,Shape {
+    public Rectangle getBoundingBox();
+    public boolean   mayOverlap    (PositionalShape other);
+  }</pre></b>
+Here, the <b>PositionalShape</b> (sub)interface inherits all the methods
+  specified in the <b>Position</b> and <b>Shape</b> (super)interfaces,
+  and specifies two new methods.
+Why are these methods new here and not inherited from other interfaces?
+It WOULD NOT make sense to specify <b>getBoundingBox</b> or <b>mayOverlap</b>
+  in either individual interface, because the concepts of bounding boxes
+  and overlaping shapes don't make sense when applied to just shapes without
+  positions or just positions without shapes.
+It makes sense to specify these methods only within interfaces combining
+   both shape and position properities.
+<p>
+If we declare a variable using the <b>PositionalShape</b> interface,
+  Java allows us to use such a variable to call methods from the <b>Shape</b>,
+  <b>Position</b> and <b>PositionalShape</b> interfaces.
+I guess that we could also call this interfaces <b>ShapelyPosition</b>,
+  and this begins to get at the point.
+There is no obvious reason to have <b>Shape</b> as the superclass and then
+  extend it to <b>PositionalShape</b>; we could have <b>Position</b> as the
+  superclass and then extend it to <b>ShapelyPositional</b>.
+In the original design we needed to make an arbitrary choice: which is the
+  subclass and which is the superclass; in this design we avoid making such
+  a choice, developing each part on its own can combining them on equal terms.
+<p>
+Once we define these interfaces, we can define three "simple" classes
+  that implement them; the last of these classes it implemented using the
+  first two, and will be extended when defining the <b>Circle</b> and
+  <b>Rectangle</b> classes.
+First we define a class that implements the basic part of the
+   <b>Shape</b> interface (all but the abstract method).
+It cannot say that it <b>implements Shape</b> because it defines no
+  <b>getArea</b> method.
+<pre><b>  public class ShapeBasics {
+
+    public ShapeBasics (String id)
+    {this.id = id;}
+
+    public String getId()
+    {return id;}
+  
+    public String toString( )
+    {return "ShapeBasics[id="+id+"]";}
+
+    private String id;
+  }</b></pre>
+Next we similarly define the <b>PositionBasics</b> class.
+It CAN say that it <b>implements Position</b> because it defines all
+  the specified methods (the formerly abstract <b>getBoundingBox</b> method
+  is not specified in the <b>Position</b> interface, but in
+  <b>PositionalShape</b>).
+Because we can, we do specify <b>implements Position</b>.
+  <b><pre>  public class PositionBasics implements Position {
+
+    public PositionBasics (int centerX, int centerY)
+    {center = new Point(centerX,centerY);}
+    
+    public Point getCenter ()
+    {return center;}
+
+    public double distanceTo (Position other)
+    {return center.distance(other.getCenter());}
+
+    public void moveCenterTo (Point newCenter)
+    {
+      center.x = newCenter.x;
+      center.y = newCenter.y;
+    }
+
+    public void moveCenterBy (int dx, int dy)
+    {
+      center.x += dx;
+      center.y += dy;
+    }
+
+    public String toString ()
+    {return "PositionBasic[center="+center+"]";}
+
+    //Fields
+    private Point center;
+  }</pre></b>
+Note one small change in the <b>distanceTo</b> method.
+It now is implemented via
+  <b>{return center.distance(other.getCenter());}</b> instead of
+  <b>{return center.distance(other.center);}</b> because the <b>Position</b>
+  parameter is an interface, and stores no instance variables for this method
+  to access.
+<p>
+Finally, we define an abstract class that implements the basic part of the
+   <b>PositionalShape</b> interface.
+It is this abstract class that our concrete <b>Circle</b> and </b>Rectangle</b>
+  classes will extend.
+The <b>PositionShapeBasics</b> class constructs objects from the
+  <b>ShapeBasics</b> and <b>PositionBasics</b> classes, and uses these
+  objects whenever one of their methods is needed.
+This is called <b>delegation</b>: one object uses another to implement a
+  method.
+<p>
+Thus, this class defines many methods (all those in the <b>Shape</b>,
+  <b>Position</b>, and <b>PositionalShape</b> interfaces), with most being
+  concrete.
+It also has the the same two (from the first design) abstract methods:
+  <b>getArea</b> and <b>getBoundingBox</b>.
+All the concrete methods are implemented by delegation, with one-line bodies
+ that delegate the call to the right object.
+Note that <b>mayOverap</b> can be defined concretely here, knowing that
+  the <b>getBoundingBox</b> method will eventually be defined in a concrete
+  subclass.
+<b><pre>  public abstract class PositionalShapeBasics implements PositionalShape {
+
+    public PositionalShapeBasics (String name, int centerX, int centerY)
+    { 
+      s  = new ShapeBasics(name);
+      p  = new PositionBasics(centerX,centerY);
+    }
+  
+    //These abstracts method must be defined in a concrete subclass.
+    public abstract double    getArea();
+    public abstract Rectangle getBoundingBox();
+    
+    public String getId()
+    {return s.getId();}
+    
+    public double distanceTo(Position other)
+    {return p.distanceTo(other);}
+    
+    public Point getCenter()
+    {return p.getCenter();}
+    
+    public void moveCenterTo(Point newCenter)
+    {p.moveCenterTo(newCenter);}
+    
+    public void moveCenterBy(int dx, int dy)
+    {p.moveCenterBy(dx,dy);}
+    
+    public boolean mayOverlap(PositionalShape other)
+    {return getBoundingBox().intersects(other.getBoundingBox());}
+    
+    public String toString( )
+    {return "PositionalShapeBasics[s="+s+",p="+p+"]";}
+
+    //Fields
+    private ShapeBasics    s;
+    private PositionBasics p;
+  }</pre></b>
+Any class extending the <b>PositionalShapeBasics</b> class in this design
+  can do all the jobs of a class subclassing the <b>PositionalShape</b> class
+  in the previous design.
+A class like <b>Circle</b> is defined almostly identically: the only 
+  difference is on the name of the class it extends (and my comments in
+  the class).
+Recall that by knowing <b>Circle extends PositionalShapeBasics</b> and
+  <b>PositionalShapeBasics implements PositionalShape</b> Java deduces
+  (and we don't have to write) that <b>Circle implements PositionalShape</b>.
+<b><pre>  public class Circle extends PositionalShapeBasics {
+
+    public Circle (String name, int centerX, int centerY, double r)
+    { 
+      super(name,centerX,centerY);
+      radius = r;
+    }
+    
+    //Implement the getArea method,
+    //  specified in the Shape interface
+    public double getArea()
+    {return Math.PI * radius * radius;}
+
+    //Implement the getBoundingBox method,
+    //  specified inthe PositionalShape interface
+    public Rectangle getBoundingBox()
+    {
+      return new Rectangle( (int)(getCenter().x-radius),
+                            (int)(getCenter().y-radius),
+                            (int)(2*radius),
+                            (int)(2*radius) );
+    }
+    
+    public double getRadius()
+    {return radius;}
+    
+    public void setRadius(double newRadius)
+    {radius = newRadius;}
+
+    public String toString( )
+    {return "Circle[radius="+radius+","+super.toString()+"]";}
+
+    //Fields
+    private double radius;
+  }</b></pre>
+With this hierarchy, we would picture a <b>Circle</b> object as follows.
+Recall that the <b>PositionalShapeBasics</b> abstract class delegates
+  all its methods to the objects referred to by either of its its instance
+  variables.
+<p>
+</table>
+   <img src="images/circle2object.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+<p>
+So, what are the advantage to each design, given that by the time we
+  construct <b>Circle</b> and <b>Rectangle</b> subclasses (and other similar
+  ones) we do so identically.
+As stated above, the second design is a bit more symmetrical.
+But the first design is certainly easier to understand (2 abstract classes,
+  2 concrete ones; vs. 3 interfaces, 4 concrete classes, and 1 abstract one).
+There is a general design rule that says to prefer delegation to inheritance,
+  because you can delegate using many classes but directly inherit from only
+  one.
+Other interfaces/classes can more easily be constructed to use properties
+  of these interfaces/classes, and others like them.
+In fact, the pattern used in the second solution, although more complicated,
+  can be used more often to solve other similar (and not so similar) problems.
+<p>
+I think the bottom line is: GOOD DESIGN IS A HARD.
+I DO NOT have a goal for this class that you can design elegant
+  inheritance hierarchies.
+I DO have a goal that given an inheritance hierarchy, you can quickly read,
+  understand, and use it (extend classes it contains).
+<p>
+You can download this alternative code in
+  <a href="../../programs/positionalshapedemo2.zip">
+  Positional Shape Inheritance Demonstration #2</a> and run its driver,
+  which is identical to the first one.
+It contains all the code above, as well as the <b>Rectangle</b> class.
+</td>
+</tbody>
+</table>
+
+
+<!-- General -->
+
+<a name="General"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>General Comments on Inheritance</b></td>
+<td width ="80%">
+In the next lecture we will apply inheritance to acheive a more perfect
+  understanding of exceptions.
+It will introduce no new material.
+<p>
+In this section I'd like to make just a few observations about classes.
+<ul>
+<li>GOOD DESIGN IS A HARD.
+Reread the last part of the previous section.
+Don't try to fix a poor design by hacking it implementation; fix the design.
+<p>
+<li>There are two important relationships between classes: we must be
+  be able to recognize and understand (and differentiate) them.
+The <b>extends</b> mechanism is also know as the IS-A mechanism.
+It is appropriate to use when the subclass IS-A slightly different (extended)
+  class than its superclass.
+The delegation mechanism is known as the HAS-A mechanism.
+It is appropriate to use when an object from one class HAS-A object from 
+  another class to help it do its work (remember state; implement behavior);
+  this second object is stored as an instance variable in the first.
+<p>
+<li>The Liskov subsitution rule:
+<blockquote><i>
+If for each object o1 of type S there is an object o2 of type T such that for
+   all programs P defined in terms of T, the behavior of P is unchanged when
+   o1 is substituted for o2 then S is a subtype of T.
+</i></blockquote>
+Paraphrased: If S it is a subclass of T, then everything you can do to an
+  object from class T should also make sense (and have the same effect)
+  for an object from class S.
+<p>
+An example that is often dragged out is circles and elipses.
+Mathematicians want to say a circle is just a special kind of elipse,
+  but the <b>setAxes(double x, double y)</b> method on elipses makes no
+  sense to apply to a circle (since it has one radius, not a major/minor
+  axis).
+Likewise an elipse is not just a special kind of circle: the relationship
+  between the radius of a circle and its area makes no sense when speaking
+  about an elipses.
+This, at a fundamental level, as appealing as it may be, a circle and an
+  elipses are not IS-A related.
+<p>
+One could, for example, define the <b>Circle</b> and <b>Elipses</b> classes
+  separately, and then implement the <b>Circle</b> class by delegating its
+  behavior to an <b>Elipse</b> stored as an instance variable, ensuring that
+  the major and minor axes are always the same.
+This implementation technique, delegation, is common.
+<p>
+It has been asserted that most inheritance problems boil down to a
+  variant of the circle/elipses scenario, if you are smart enough to
+  spot it.
+If you truly understand this reasoning, you will be able to apply it
+  everywhere.
+For example, should <b>SortedList</b> extend <b>List</b>: no, because
+  we can perform many operations on a <b>List</b> that make no sense
+  for a <b>SortedList</b>: we can call <b>insertFront</b> and <b>insertRear</b>
+  on a <b>List</b> and the inserted value becomes the first/last value
+  respectively in the <b>List</b>;  but, in a <b>SortedList</b>, we cannot put
+  values in these places (when can put values in, but they move to their
+  "naturally sorted" place).
+But one could, for example, specify the <b>List</b> and <b>SortedList</b> class
+  separately, and then implement the <b>SortedList</b> by delegating its
+  behavior to a <b>List</b stored as an instance variable, ensuring that
+  values are always stored in appropriate indexes.
+<p>
+So again, we see delegation (HAS-A relationships) are more common than
+  inheritance (IS-A relationships) between classes.
+<p>
+<li>Generally, "Classes should be closed for modification but open for
+      extension."
+This means that once the specification and implementation of a class
+  stabilizes, we should never change it; instead we can extend it with
+  subclasses that behave similarly but not identically, if we need different
+  state and behavior.
+</ul>
+Again, relationships among classes in a large system is a quite advanced
+  topic.
+We need lots of experience reading classes -noticing their designs and
+  learning how to use them effectively- before we can start creating
+  complicated designs.
+<p>
+Finally, <b>final</b> as an access modifier for class and methods in classes.
+If a method in a class is prefaced by the <b>final</b> access modifier, it
+   means that it cannot be overridden.
+Likewise, if a class is prefaced by the the <b>final</b> access modifier, it
+  means that it cannot be extended (thus, none of its methods can be
+  overridden).
+The <b>String</b> class is defined to be <b>final</b>.
+</ul>
+</td>
+</tbody>
+</table>
+
+
+<!-- Abstract Rules Restated -->
+
+<a name="Abstractrules"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Abstract Rules Review</b></td>
+<td width ="80%">
+  To review, here are the four rules for using the <b>abstract</b> keyword,
+    collected in one place.
+  <ol>
+    <li>Any method in a class can be declared <b>abstract</b>.
+        Such a method has no body (<b>{...}</b> is replaced by just <b>;</b>,
+          as in interfaces) and can be called in other methods defined in that
+          class, or be called in methods defined in any of its subclasses, or
+          be called using any variables whose type is this class or any of its
+          subclasses.  
+      <p>
+ 
+    <li>
+      If a class defines any abstract methods (or, as we will see, inherits
+        any abstract methods and doesn't override them), that class must be
+        defined using the <b>abstract</b> keyword in its access modifiers.
+      <p>
+ 
+    <li>
+    If a class is defined with the keyword <b>abstract</b>, we may call its
+      constructor only via <b>super</b> in a class that extends it, not
+      via the <b>new</b> operator.
+    That is, we cannot explicitly construct an object using an <b>abstract</b>
+      class, but we can use it to help construct an object from a subclass.
+    <p> 
+
+    <li>
+     We can treat an abstract class as a superclass and extend it; its
+       subclasses can override some or all of its inherited abstract methods.
+     If through this overriding a subclass contains no more abstract methods,
+       that class is concrete (and we can construct objects directly from it).
+     If it still abstract, it too can be used as a superclass ... (until
+       eventually a subclass of a subclass ... is concrete).
+   </ol>
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Problem Set -->
+
+<a name="ProblemSet"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Problem Set</b></td>
+<td width ="80%">
+  To ensure that you understand all the material in this lecture, please solve
+    the the announced problems after you read the lecture.
+  <p>
+  If you get stumped on any problem, go back and read the relevant part of the
+     lecture.
+  If you still have questions, please get help from the Instructor, a TA,
+    or any other student.
+
+<ol> 
+<li>Does Java allow us to declare a class <b>abstract</b> even if it define and
+      inherits no <b>abstract</b> methods?
+    If so, what do you expect the properties of the class to be?
+<p>
+<li>Does it make sense to define a <b>final abstract</b> method (use these
+      two access modifiers together)?
+<p>
+<li>Write the <b>ModularCounter</b> class from the previous lecture to
+      implement <b>Counter</b> but not by subclassing <b>IntCounter</b>;
+      instead, store an <b>IntCounter</b> and delegate all the methods to 
+      operate on it.
+<p>
+<li>Explain how a subclass can overload an inherited method (not override it).
+<p>
+<li>Do you think that an abstract class can say that it implements an
+      interface, even if one of the methods in the interface is declared to
+      be abstract in the class?
+    Explain why your answer is reasonable.
+</ol>
+</td>
+</tbody>
+</table>
+</body>
+</html>

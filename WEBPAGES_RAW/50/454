@@ -1,0 +1,1353 @@
+<?xml version='1.1'?>
+<!DOCTYPE html
+     PUBLIC '-//W3C//DTD XHTML 1.0 Strict//EN'
+     'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
+<head>
+  <title>Regular Expressions</title>
+  <meta name='Author' content='Thomas A. Alspaugh'/>
+  <meta name='Description' content="Regular Expressions"/>
+  <meta http-equiv='content-type' content='text/html; charset=ISO-8859-1'/>
+  <meta http-equiv='Content-Style-Type' content='text/css'/>
+  <link href='../../alspaugh-uci.css' rel='stylesheet' type='text/css'/>
+  <!-- <link href='../alspaugh-uci-cls.css' rel='stylesheet' type='text/css'/> -->
+  <style type='text/css'>
+
+    .egList {
+      list-style-type: lower-alpha;
+    }
+    .match {  text-decoration: underline;  }
+    td.no  {  background-color: grey;  }
+    table.center td {  text-align: center;  }
+    table.center th {  text-align: right;  }
+    .pat   {  font-weight: bold;  font-family: sans-serif;  }
+
+    div.toc    {  margin-top: .6ex;  margin-bottom: 1.2ex;  }
+    div.toc>h1 {  font-size: 100%;  margin: 0;  }
+    div.toc>h2 {  font-size: 100%;  margin: 0 0 0 1em;  }
+    div.toc>h3 {  font-size: 100%;  margin: 0 0 0 2em;  }
+    div.toc>h4 {  font-size: 100%;  margin: 0 0 0 3em;  }
+
+    @media screen {
+      body     {  background: url("img/bg-regularExpression.png") repeat-y;  }
+      #TMain   {  margin-left: 10.00em;  }
+    }
+  </style>
+</head>
+<body>
+
+<div id='TBg'>
+
+<div id='THeader'>
+Regular Expressions
+</div>
+
+<div id='TLinks1' class='Links'> <!-- - - - - - - - - - - - - - - - - - - - -->
+<p>  <a class='sc' href='../../index.html'>Home</a>
+</p>
+<div class='hr'> </div>
+<p>  <a href='index.html'>Foundations home</a>
+</p>
+<div class='hr'> </div>
+<p>
+<a href='set.html'>Sets</a><br/>
+<a href='relation.html'>Relations</a><br/>
+<a href='correspondence.html'>Correspondences</a><br/>
+<a href='orderedSet.html'>Ordered Sets</a><br/>
+<a href='lattice.html'>Lattices</a><br/>
+<a href='graph.html'>Graphs</a><br/>
+<a href='powerset.html'>Powersets</a><br/>
+<a href='binaryString.html'>Binary Strings</a><br/>
+<a href='logicConcepts.html'>Logic</a><br/>
+<a href='allen.html'>AIA</a><br/><!-- -spell AIA -->
+<a href='greek.html'>Greek</a><br/>
+</p>
+<div class='hr'> </div>
+<p>
+<a href='glossaryExternal.html'>Glossary</a><br/>
+<a href='goodAbstract.html'>Abstracts</a><br/>
+<a href='argument.html'>Argument</a><br/>
+<a href='ontology.html'>Glossaries</a><br/>
+<a href='inquiryCycle.html'>Inquiry Cycle</a><br/>
+<a href='hohfeld.html'>Legal Relations</a><br/>
+<a href='goodPresentation.html'>Presentations</a><br/>
+</p>
+<div class='hr'> </div>
+<p>
+<a href='quickStart.html'>Elicitation</a><br/>
+<a href='ontology.html'>Glossaries</a><br/>
+<a href='goal.html'>Goals</a><br/>
+<a href='istar.html'>i*</a><br/>
+<a href='SCR.html'>SCR</a><br/>
+<a href='tracing.html'>Tracing</a><br/>
+</p>
+<div class='hr2'> </div>
+<p>
+<a href='alloy.html'>Alloy</a><br/>
+<a href='msc.html'>MSCs</a><br/>
+<a href='regularExpression.html'>Regular Exprs.</a><br/>
+</p><!-- -spell MSCs Exprs -->
+<div class='hr2'> </div>
+<p>
+<a href='java-designPattern.html'>Design Patterns</a><br/>
+<a href='javadoc.html'>Javadoc</a><br/>
+<a href='java-package.html'>Java Packages</a><br/>
+<a href='java-type.html'>Java Types</a><br/>
+</p>
+<div class='hr2'> </div>
+<p>
+<a href='html.html'>(X)HTML</a><br/>
+<a href='xmlSchema.html'>XML Schemas</a><br/>
+<a href='xslt.html'>XSLT</a><br/>
+</p><!-- -spell XSLT -->
+</div>
+
+
+<!-- No right column -->
+<div id='TMain'><!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<!--xhtml -y -->
+
+
+<!--spell Catenated Metacharacters O'Reilly Subpatterns ThIs Thiss -->
+<!--spell aA aB aa aaa abab abb abc abcabc abd aca acd aeiou ai alnum az-->
+<!--spell azazaz ba bb bcb bcd cd cdd ceee cntrl ddc dddd ddeee eee egrep-->
+<!--spell globbing io iss perl punct sed-->
+<!--spell subpattern traIl traill travelled unescaped xdigit zA -->
+
+
+<h1>Table of contents</h1>
+
+<div id='ToC'>
+  <h1 title='intro'><a href='regularExpression.html#intro'>Introduction</a></h1>
+  <h1 title='basics'><a href='regularExpression.html#basics'>The basics</a></h1>
+  <h2 title='literal'><a href='regularExpression.html#literal'>An ordinary character matches itself</a></h2>
+  <h3 title='literal-metacharacter'><a href='regularExpression.html#literal-metacharacter'>Literal metacharacters</a></h3>
+  <h3 title='invisible'><a href='regularExpression.html#invisible'>Characters ordinarily invisible</a></h3>
+  <h2 title='class'><a href='regularExpression.html#class'>A character class matches any character in the class</a></h2>
+  <h3 title='negated-class'><a href='regularExpression.html#negated-class'>Negating a character class</a></h3>
+  <h3 title='class-metacharacters'><a href='regularExpression.html#class-metacharacters'>Metacharacters in a class</a></h3>
+  <h3 title='dot'><a href='regularExpression.html#dot'>Universal character class (<span class='pat'>.</span>)</a></h3>
+  <h3 title='named-class'><a href='regularExpression.html#named-class'>Named character classes</a></h3>
+  <h2 title='catenation'><a href='regularExpression.html#catenation'>Catenated patterns match the first one, then the second</a></h2>
+  <h2 title='alternation'><a href='regularExpression.html#alternation'>Patterns separated by <span class='pat'>|</span> match one or the other</a></h2>
+  <h3 title='hook'><a href='regularExpression.html#hook'><span class='pat'>?</span> or optional match</a></h3>
+  <h3 title='plus'><a href='regularExpression.html#plus'><span class='pat'>+</span> or positive closure</a></h3>
+  <h3 title='star'><a href='regularExpression.html#star'><span class='pat'>*</span> or Kleene closure</a></h3>
+  <h3 title='repetitionrepetition-count'><a href='regularExpression.html#repetition-count'>Numeric repetition counts <span class='pat'>{<i>m</i>}</span>, <span class='pat'>{<i>m,</i>}</span>, and  <span class='pat'>{<i>m,n</i>}</span></a></h3>
+  <h3 title='minimal'><a href='regularExpression.html#minimal'>Minimal closures <span class='pat'>+?</span>, <span class='pat'>*?</span>, <span class='pat'>{<i>m,n</i>&thinsp;}?</span>, and <span class='pat'>{<i>m,</i>&thinsp;}?</span></a></h3>
+  <h2 title='grouping'><a href='regularExpression.html#grouping'>Parenthesized strings match themselves, without the parentheses</a></h2>
+  <h2 title='precedence'><a href='regularExpression.html#precedence'>Precedence of evaluation</a></h2>
+  <h1 title='context'><a href='regularExpression.html#context'>Context</a></h1>
+  <h2 title='line'><a href='regularExpression.html#line'><span class='pat'>^</span> and <span class='pat'>$</span> as line context</a></h2>
+  <h2 title='word'><a href='regularExpression.html#word'>Word context</a></h2>
+  <h2 title='trailing'><a href='regularExpression.html#trailing'>Trailing context with <span class='pat'>/</span></a></h2>
+  <h1 title='extensions'><a href='regularExpression.html#extensions'>Not regular, but sometimes found in pattern languages</a></h1>
+  <h2 title='matched'><a href='regularExpression.html#matched'><span class='pat'>$<i>k</i></span> or <span class='pat'>\<i>k</i></span></a></h2>
+  <h1 title='uses'><a href='regularExpression.html#uses'>Some uses of regular expressions</a></h1>
+  <h2 title='set'><a href='regularExpression.html#set'>Defining a set of strings</a></h2>
+  <h2 title='matching'><a href='regularExpression.html#matching'>Matching a substring within a string</a></h2>
+  <h2 title='replacing'><a href='regularExpression.html#replacing'>Replacing a substring</a></h2>
+  <h1 title='rxlangs'><a href='regularExpression.html#rxlangs'>Comparison of some regular expression notations</a></h1>
+</div>
+
+
+<h1 id='intro' title='intro'>Introduction</h1>
+
+<p>
+A regular expression is a <i>pattern</i> that can match
+repeating characters or strings,
+and alternative characters or strings.&nbsp;
+The repetition and alternation are expressed using
+<i>metacharacters</i> such as <span class='pat'>*</span>,
+<span class='pat'>+</span>, and <span class='pat'>|</span>
+in patterns.&nbsp;
+Since the metacharacters are themselves characters,
+we use <i>escaping</i> with a backslash <span class='pat'>\</span>
+to distinguish when a metacharacter
+is being used as a regular character that matches itself,
+rather than as a metacharacter with special meaning.&nbsp;
+Thus,
+<span class='pat'>*</span> is a metacharacter,
+but <span class='pat'>\*</span> represents an asterisk character;&nbsp;
+and <span class='pat'>\</span> is the escape metacharacter,
+but <span class='pat'>\\</span> represents a single backslash character.&nbsp;
+Escaping is also used to give some regular characters
+a special meaning,
+such as <span class='pat'>\n</span> to represent a newline
+(in pattern languages that allow a newline to be matched explicitly).&nbsp;
+</p>
+
+<p>
+The strings that a regular expression can match
+are sequences of symbols drawn from an
+<dfn id='alphabet' title='alphabet'>alphabet</dfn>.&nbsp;
+Usually this alphabet is the set of all characters
+(which is why regular expression notations use backslash to
+escape a metacharacter
+and use it to represent the corresponding alphabet character),
+but the alphabet of a regular expression can be restricted
+(for example, just letters)
+or can be different
+(for example, Greek letters).&nbsp;
+</p>
+
+<p>
+<b>
+This document presents the <code>perl</code>
+regular expression notation
+</b>
+(see
+<a href='http://www.perl.org/'>perl.org</a>,
+<a href='http://www.perl.com/'>O'Reilly</a>).&nbsp;
+There are a number of similar but not identical regular expression notations;&nbsp;
+the <code>perl</code> regular expression notation
+is an approximate superset of the other common notations,
+so we will present the concepts in terms of <code>perl</code>
+and then contrast the other notations.&nbsp;
+</p>
+
+<p>
+In this document,
+<span class='pat'>patterns</span> are in boldface sans-serif.&nbsp;
+</p>
+
+
+<h1 id='basics' title='basics'>The basics</h1>
+
+<h2 id='literal' title='literal'>An ordinary character matches itself</h2>
+
+<p>
+Each ordinary character is a pattern that matches itself.&nbsp;
+Ordinary characters include letters, digits,
+whitespace such as spaces, tabs, and newlines, and
+other characters that are not metacharacters.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>a</td> <td>a</td></tr>
+</tbody>
+</table>
+
+
+<h3 id='literal-metacharacter' title='literal-metacharacter'>Literal metacharacters</h3>
+
+<p>
+To match a character that is used as a metacharacter
+(such as
+<span class='pat'><a href='#class'>[</a></span>
+<span class='pat'><a href='#dot'>.</a></span>
+<span class='pat'><a href='#grouping'>(</a></span>
+<span class='pat'><a href='#grouping'>)</a></span>
+<span class='pat'><a href='#alternation'>|</a></span>
+<span class='pat'><a href='#star'>*</a></span>
+<span class='pat'><a href='#plus'>+</a></span>
+<span class='pat'><a href='#hook'>?</a></span>
+<span class='pat'><a href='#repetition'>{</a></span>&nbsp;)
+precede it with a backslash (<span class='pat'>\</span>).&nbsp;
+Since backslash is thus itself a metacharacter,
+to match a backslash, use a doubled backslash.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>\\</td> <td>\</td></tr>
+  <tr><td class='pat'>\[</td> <td>[</td></tr>
+  <tr><td class='pat'>\.</td> <td>.</td></tr>
+  <tr><td class='pat'>\*</td> <td>*</td></tr>
+</tbody>
+</table>
+
+
+<h3 id='invisible' title='invisible'>Characters ordinarily invisible</h3>
+
+<p>
+Escapes such as
+<span class='pat'>\t</span> (tab) and
+<span class='pat'>\n</span> (newline)
+may appear in <code>perl</code> regular expressions,
+as can the other escape sequences
+<span class='pat'>\a</span>,
+<span class='pat'>\b</span>,
+<span class='pat'>\e</span>,
+<span class='pat'>\f</span>,
+<span class='pat'>\r</span>,
+<span class='pat'>\ooo</span> where <span class='pat'>o</span> represents
+an octal digit [0-7],
+and
+<span class='pat'>\xXX</span> where <span class='pat'>X</span> represents
+a hex digit [0-9A-Fa-f].&nbsp;
+The octal and hex escapes may be constructed
+to match any character, not just invisible ones.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>\t</td> <td><span class='it'>tab</span></td></tr>
+  <tr><td class='pat'>\x09</td> <td><span class='it'>tab</span></td></tr>
+  <tr><td class='pat'>\011</td> <td><span class='it'>tab</span></td></tr>
+  <tr><td class='pat'>\x61</td> <td>a</td></tr>
+</tbody>
+</table>
+
+
+<h2 id='class' title='class'>A character class matches any character in the class</h2>
+
+<p>
+A character class is pattern that matches any one of a set of characters.&nbsp;
+A character class is usually written by
+listing the characters in the set, enclosed in
+<span class='pat'>[&nbsp;]</span>.&nbsp;
+</p>
+
+<p>
+Consecutive character ranges in a class
+can be written conveniently as the lowest character, a hyphen -,
+and the highest character, like <span class='pat'>[a-z]</span> or
+<span class='pat'>[_a-zA-Z0-9]</span>.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>[ab]</td> <td>a <i>or</i> b <i> but nothing else</i></td></tr>
+  <tr><td class='pat'>[a-z]</td> <td>a <i>or</i> b <i>or</i> c
+        <i>and so on up to</i> z</td></tr>
+</tbody>
+</table>
+
+
+<h3 id='negated-class' title='negated-class'>Negating a character class</h3>
+
+<p>
+A character class is negated by starting it with <span class='pat'>[^</span>
+rather than <span class='pat'>[</span>.&nbsp;
+</p>
+
+<table class='breakAfter'>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>[^ab]</td> <td><i>any character
+        <span class='sc'>except</span></i> a <i>or</i> b</td></tr>
+  <tr><td class='pat'>[^^]</td> <td><i>any character
+        <span class='sc'>except</span></i> ^</td></tr>
+</tbody>
+</table>
+
+
+<h3 id='class-metacharacters' title='class-metacharacters'>Metacharacters in a class</h3>
+
+<p>
+The ordinary metacharacters
+<span class='pat'><a href='#class'>[</a></span>
+<span class='pat'><a href='#dot'>.</a></span>
+<span class='pat'><a href='#grouping'>(</a></span>
+<span class='pat'><a href='#grouping'>)</a></span>
+<span class='pat'><a href='#alternation'>|</a></span>
+<span class='pat'><a href='#star'>*</a></span>
+<span class='pat'><a href='#plus'>+</a></span>
+<span class='pat'><a href='#hook'>?</a></span>
+<span class='pat'><a href='#repetition'>{</a></span>
+are treated as regular characters within a character class.&nbsp;
+However, the class metacharacters <span class='pat'>] - ^</span>
+still require special treatment.&nbsp;
+</p>
+
+<p>
+<span class='pat'>]</span> ordinarily marks the end of a class.&nbsp;
+However,
+a <span class='pat'>]</span> appearing immediately after the opening
+<span class='pat'>[</span> or
+<span class='pat'>[^</span> of a class
+is considered a regular character appearing as part of the class.&nbsp;
+</p>
+
+<p>
+Nothing special has to be done to include <span class='pat'>[</span>
+as a character in a character class,
+but of course it must be escaped outside a class.&nbsp;
+</p>
+
+<p>
+<span class='pat'>-</span> ordinarily indicates a range in a class.&nbsp;
+If a character class is to include <span class='pat'>-</span>,
+the <span class='pat'>-</span> must be listed
+either first or last in the class.&nbsp;
+(If the class also includes <span class='pat'>]</span>,
+which must be listed first, then
+<span class='pat'>-</span> must be last.)&nbsp;
+</p>
+
+<p>
+<span class='pat'>^</span> is also a metacharacter in a class,
+but only if it immediately follows the opening <span class='pat'>[</span>.&nbsp;
+If a character class is to include <span class='pat'>^</span>,
+the <span class='pat'>^</span> may appear anywhere
+except as the first character.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>[a]</td> <td>a <i> but nothing else</i></td></tr>
+  <tr><td class='pat'>[&thinsp;]a]</td> <td>] <i>or</i> a
+        <i> but nothing else</i></td></tr>
+  <tr><td class='pat'>[[a]</td> <td>[ <i>or</i> a <i> but nothing else</i></td></tr>
+  <tr><td class='pat'>[&thinsp;][&thinsp;]</td> <td>] <i>or</i>
+        [ <i> but nothing else (why?)</i></td></tr>
+  <tr><td class='pat'>\[</td> <td>[ <i>(not a character class)</i></td></tr>
+  <tr><td class='pat'>[-az]</td> <td>- <i>or</i> a <i>or</i> z
+        <i>but nothing else</i></td></tr>
+  <tr><td class='pat'>[az-]</td> <td>- <i>or</i> a <i>or</i> z
+        <i>but nothing else</i></td></tr>
+  <tr><td class='pat'>[&thinsp;]-az]</td> <td><i>any character from</i> ] <i>to</i> a,
+         <i>or</i> z</td></tr>
+  <tr><td class='pat'>[&thinsp;]az-]</td> <td>] <i>or</i> a <i>or</i> z
+        <i>or</i> - <i>but nothing else</i></td></tr>
+  <tr><td class='pat'>[ab^]</td> <td>a <i>or</i> b <i>or</i> ^
+        <i>but nothing else</i></td></tr>
+  <tr><td class='pat'>[&thinsp;]az^-]</td> <td>] <i>or</i> a <i>or</i> z
+        <i>or</i> ^ <i>or</i> - <i>but nothing else</i></td></tr>
+</tbody>
+</table>
+
+<p>
+In <code>perl</code>,
+a backslash followed by a non-alphabetic character
+represents that literal character
+(although as we've seen, there are other ways of getting
+all class metacharacters into a class).&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>[\-a]</td> <td>- <i>or</i> a <i>but nothing else</i></td></tr>
+  <tr><td class='pat'>[\\a]</td> <td>\ <i>or</i> a <i>but nothing else</i></td></tr>
+</tbody>
+</table>
+
+<h3 id='dot' title='dot'>Universal character class (<span class='pat'>.</span>)</h3>
+
+<p>
+A dot <span class='pat'>.</span> matches any character except newline.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>.</td> <td>a <i>or</i> * <i>or</i> . <i>or</i> &nbsp;
+         (a space) <i>or ...</i></td></tr>
+  <tr><td class='pat'>\.</td> <td>. <i>but nothing else</i></td></tr>
+</tbody>
+</table>
+
+
+<h3 id='named-class' title='named-class'>Named character classes</h3>
+
+<p>
+Perl defines a number of named character classes:&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><td>\w</td> <td>[a-zA-Z0-9] </td> <td>\W</td> <td>[^a-zA-Z0-9]</td></tr>
+  <tr><td>\s</td> <td>[ \t\n]     </td> <td>\S</td> <td>[^ \t\n]    </td></tr>
+  <tr><td>\d</td> <td>[0-9]       </td> <td>\D</td> <td>[^0-9]      </td></tr>
+</tbody>
+</table>
+
+<p>
+These can appear as metacharacters
+or as elements of character classes in [&thinsp;].&nbsp;
+</p>
+
+<p class='breakAfter'><code>grep</code> and some other regular expression languages
+defines a number of self-explanatory named character classes:&nbsp;
+<span class='pat'>[:alnum:]</span>,
+<span class='pat'>[:alpha:]</span>,
+<span class='pat'>[:cntrl:]</span>,
+<span class='pat'>[:digit:]</span>,
+<span class='pat'>[:graph:]</span>,
+<span class='pat'>[:lower:]</span>,
+<span class='pat'>[:print:]</span>,
+<span class='pat'>[:punct:]</span>,
+<span class='pat'>[:space:]</span>,
+<span class='pat'>[:upper:]</span>,
+and
+<span class='pat'>[:xdigit:]</span>.&nbsp;
+</p>
+
+
+<h2 id='catenation' title='catenation'>Catenated patterns match the first one, then the second</h2>
+
+
+<p>
+Catenation of regular expressions
+is done by writing them one after another:&nbsp;
+for example <span class='pat'>ab</span> or <span class='pat'>.[a-z]</span>.&nbsp;
+The catenation of two patterns matches
+any string that starts with something the first pattern matches,
+then continues with something the second pattern matches.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>abc</td> <td>abc</td></tr>
+  <tr><td class='pat'>[a-z][A-Z]</td> <td>aA <i>or</i> aB <i>or</i> Ba
+        <i>or ...</i></td></tr>
+</tbody>
+</table>
+
+
+<h2 id='alternation' title='alternation'>Patterns separated by <span class='pat'>|</span> match one or the other</h2>
+
+
+<p>
+If <span class='pat'>&alpha;</span> and <span class='pat'>&beta;</span> are patterns,
+then
+<span class='pat'>&alpha;|&beta;</span> matches
+anything <span class='pat'>&alpha;</span> matches or
+anything <span class='pat'>&beta;</span> matches.&nbsp;
+<span class='pat'>|</span> is associative
+and can be used for any number of sub-patterns, not just two:&nbsp;
+<span class='pat'>&alpha;|&beta;|<i>&gamma;</i></span> matches
+anything that <span class='pat'>&alpha;</span>, <span class='pat'>&beta;</span>,
+or <span class='pat'><i>&gamma;</i></span> match.&nbsp;
+</p>
+
+<p>
+<span class='pat'>|</span> operates in a way similar to a character class in
+<span class='pat'>[&nbsp;]</span>,
+except that a character class may only contain single characters,
+while <span class='pat'>|</span> may join any two patterns.&nbsp;
+They are distinguished for implementation reasons:&nbsp;
+a character class can be recognized without lookahead,
+but recognizing alternation with <span class='pat'>|</span>
+requires an unbounded stack.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>(abc)|(bcd)</td> <td>abc <i>or</i> bcd
+        <i>but nothing else</i></td></tr>
+  <tr><td class='pat'>a|b</td> <td><i>precisely what <span class='pat'>[ab]</span>
+        matches</i></td></tr>
+</tbody>
+</table>
+
+
+<h2 id='repetition' title='repetition'>A pattern followed by a repetition
+matches some number of times</h2>
+
+<p>
+Repetition of a regular expression is done by
+following the expression with a repetition metacharacter or meta-sequence.&nbsp;
+The complete pattern matches some number of repetitions of
+whatever the original pattern matches.&nbsp;
+</p>
+
+
+<h3 id='hook' title='hook'><span class='pat'>?</span> or optional match</h3>
+
+<p>
+A pattern followed by <span class='pat'>?</span>
+matches either the empty string, or
+anything that the pattern matches.&nbsp;
+</p>
+
+<p>
+We will use &epsilon; to represent an empty string,
+that is, a string of 0 characters.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>a?</td> <td>&epsilon; <i>or</i> a
+        <i>but nothing else</i></td></tr>
+  <tr><td class='pat'>[ab]?</td> <td>&epsilon; <i>or</i> a <i>or</i> b
+         <i>but nothing else</i></td></tr>
+  <tr><td class='pat'>(abc)?</td> <td>&epsilon; <i>or</i> abc
+        <i>but nothing else</i></td></tr>
+  <tr><td class='pat'>.?</td> <td><i>Any single character within a line,
+        or &epsilon;</i></td></tr>
+</tbody>
+</table>
+
+
+<h3 id='plus' title='plus'><span class='pat'>+</span> or positive closure</h3>
+
+<p>
+A pattern followed by <span class='pat'>+</span> matches
+anything that one or more occurrences of the pattern match.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>a+</td> <td>a <i>or</i> aa <i>or</i> aaa
+        <i>or ...</i></td></tr>
+  <tr><td class='pat'>[ab]+</td> <td>a <i>or</i> b <i>or</i> aa
+         <i>or</i> ba  <i>or</i> ab <i>or ...</i></td></tr>
+  <tr><td class='pat'>(abc)+</td> <td>abc <i>or</i> abcabc <i>or ...</i></td></tr>
+  <tr><td class='pat'>.+</td> <td>Any non-empty string within a single line</td></tr>
+</tbody>
+</table>
+
+
+<h3 id='star' title='star'><span class='pat'>*</span> or Kleene closure</h3>
+
+<p>
+A pattern followed by <span class='pat'>*</span> matches anything that
+0 or more occurrences of the pattern match.&nbsp;
+If <span class='pat'>&alpha;</span> is a pattern, then
+<span class='pat'>&alpha;*</span> matches
+everything <span class='pat'>&alpha;+</span> matches,
+and in addition matches the empty string.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>a*</td> <td>&epsilon; <i>or</i> a <i>or</i> aa
+         <i>or</i> aaa <i>or ...</i></td></tr>
+  <tr><td class='pat'>[ab]*</td> <td>&epsilon; <i>or</i> a <i>or</i> b
+         <i>or</i> aa  <i>or</i> ba  <i>or</i> ab <i>or ...</i></td></tr>
+  <tr><td class='pat'>(abc)*</td> <td>&epsilon; <i>or</i> abc
+         <i>or</i> abcabc <i>or ...</i></td></tr>
+  <tr><td class='pat'>.*</td> <td><i>Any string (even an empty one)
+         within a single line</i></td></tr>
+</tbody>
+</table>
+
+
+<h3 id='repetition-count' title='repetitionrepetition-count'>Numeric repetition counts <span class='pat'>{<i>m</i>}</span>, <span class='pat'>{<i>m,</i>}</span>, and  <span class='pat'>{<i>m,n</i>}</span></h3>
+
+<p>
+<code>perl</code> and some other languages denote specific numbers of repetitions
+using numbers in braces <span class='pat'>{&nbsp;}</span>.&nbsp;
+A pattern <span class='pat'>&alpha;</span> followed by
+<span class='pat'>{<i>m</i>&thinsp;}</span> matches anything
+that <i>m</i> repetitions of <span class='pat'>&alpha;</span> matches;&nbsp;
+a pattern <span class='pat'>&alpha;</span> followed by
+<span class='pat'>{<i>m,n</i>&thinsp;}</span> matches anything
+that <i>m</i> to <i>n</i> repetitions of <span class='pat'>&alpha;</span>
+match;&nbsp; and
+a pattern <span class='pat'>&alpha;</span> followed by
+<span class='pat'>{<i>m,</i>}</span> matches anything
+that <i>m</i> or more repetitions of <span class='pat'>&alpha;</span> match.&nbsp;
+</p>
+
+<p>
+One can see that
+<span class='pat'>&alpha;*</span> is equivalent to
+<span class='pat'>&alpha;{0,}</span>,
+<span class='pat'>&alpha;+</span> is equivalent to
+<span class='pat'>&alpha;{1,}</span>, and
+<span class='pat'>&alpha;?</span> is equivalent to
+<span class='pat'>&alpha;{0,1}</span>.&nbsp;
+</p>
+
+
+<h3 id='minimal' title='minimal'>Minimal closures <span class='pat'>+?</span>, <span class='pat'>*?</span>, <span class='pat'>{<i>m,n</i>&thinsp;}?</span>, and <span class='pat'>{<i>m,</i>&thinsp;}?</span></h3>
+
+<p>
+<span class='pat'>+</span>, <span class='pat'>*</span>,
+<span class='pat'>{<i>m,n</i>&thinsp;}</span>
+and
+<span class='pat'>{<i>m,</i>&thinsp;}</span>
+are <i>greedy</i>:&nbsp;
+a pattern followed by one of them will match
+all the occurrences possible.&nbsp;
+The corresponding minimal closures
+<span class='pat'>+?</span>, <span class='pat'>*?</span>,
+<span class='pat'>{<i>m,n</i>}?</span>,
+and
+<span class='pat'>{<i>m,</i>}?</span>
+match the smallest number of occurrences
+that allows the next expression to match.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>.*z </td> <td><i>All of</i> azazaz</td></tr>
+  <tr><td class='pat'>.*?z</td> <td><i>The first</i> az <i>only,
+         in</i> azazaz.</td></tr>
+</tbody>
+</table>
+
+<p>
+Minimal closures do not add any power to regular expressions,
+but can be much more convenient than
+writing the corresponding pattern without them.&nbsp;
+</p>
+
+
+<h2 id='grouping' title='grouping'>Parenthesized strings match themselves, without the parentheses</h2>
+
+
+<p>
+Parentheses are used in <code>perl</code>
+and most other regular expression languages
+to mark off a pattern that is matched as a unit.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>(abc)</td> <td>abc</td></tr>
+</tbody>
+</table>
+
+
+<h2 id='precedence' title='precedence'>Precedence of evaluation</h2>
+
+
+<p>
+The prefix escape operator <span class='pat'>\</span>
+always applies to the next character
+(if that is a character that can be escaped).&nbsp;
+It binds most tightly of all the operators.&nbsp;
+</p>
+
+<p>
+The postfix operators <span class='pat'>*</span>, <span class='pat'>+</span>,
+<span class='pat'>?</span>, and <span class='pat'>{}</span>
+apply to the pattern that immediately precedes them.&nbsp;
+They bind next most tightly.&nbsp;
+</p>
+
+<p>
+Catenation (listing one pattern after another) binds next most tightly.&nbsp;
+</p>
+
+<p>
+The alternation operator <span class='pat'>|</span> binds least tightly.&nbsp;
+</p>
+
+<p>
+Parentheses force matching of everything inside
+before the parenthesized pattern can be combined with anything outside.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th> <th>Does <i>not</i> match</th>
+      <th>Why</th></tr>
+  <tr><td class='pat'>\.+</td>
+      <td>. <i>or</i> .. <i>or</i> ... <i>or so on</i></td>
+      <td>a <i>or</i> aa <i>or so on</i></td>
+      <td><span class='pat'>\</span> <i>binds more tightly than</i>
+          <span class='pat'>+</span></td>
+  </tr>
+  <tr><td class='pat'>ab*</td>
+      <td>a <i>or</i> ab <i>or</i> abb <i>or so on</i></td>
+      <td>&epsilon; <i>or</i> abab <i>or so on</i></td>
+      <td><span class='pat'>*</span> <i>binds more tightly than catenation</i></td>
+  </tr>
+  <tr><td class='pat'>(ab)*</td>
+      <td>&epsilon; <i>or</i> abab <i>or so on</i></td>
+      <td></td>
+      <td><i>The parentheses force</i> <span class='pat'>ab</span>
+          <i>to match as a unit</i></td>
+  </tr>
+  <tr><td class='pat'>ab|cd</td>
+      <td>ab <i>or</i> cd</td>
+      <td>abd <i>or</i> acd</td>
+      <td><i>catenation</i> <span class='pat'>|</span>
+          <i>binds more tightly than alternation</i>
+      </td>
+  </tr>
+  <tr><td class='pat'>(ab)|(cd)</td>
+      <td>ab <i>or</i> cd</td>
+      <td></td>
+      <td><i>The parentheses force</i>
+          <span class='pat'>ab</span> and <span class='pat'>cd</span>
+          <i>to match as units</i>
+      </td>
+  </tr>
+</tbody>
+</table>
+
+
+<h1 id='context' title='context'>Context</h1>
+
+<p>
+Some regular expression languages
+contain operators that indicate context,
+but do not match any characters.&nbsp;
+</p>
+
+
+<h2 id='line' title='line'><span class='pat'>^</span> and <span class='pat'>$</span> as line context</h2>
+
+<p>
+<span class='pat'>^</span> at the beginning of a pattern
+matches the beginning of a line,
+and <span class='pat'>$</span> at the end of a pattern
+matches the end of a line.&nbsp;
+<span class='pat'>^</span> and <span class='pat'>$</span> do not match
+any specific line-starting or line-ending character (such as newline),
+they merely indicate the context of the pattern that contains them.&nbsp;
+</p>
+
+<table class='breakBefore'>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>^a</td> <td>a <i>but only if it begins a line</i></td></tr>
+  <tr><td class='pat'>b$</td> <td>b <i>but only if it ends a line</i></td></tr>
+  <tr><td class='pat'>^c$</td> <td>c <i>but only if it is an entire line</i></td></tr>
+  <tr><td class='pat'>^\^</td> <td>^ <i>but only if it begins a line</i></td></tr>
+  <tr><td class='pat'>^\^\$$</td> <td>^$
+        <i>but only if they are an entire line</i></td></tr>
+</tbody>
+</table>
+
+<p>
+Perl (but not the other languages)
+also have <span class='pat'>\A</span> that matches the beginning of the entire input,
+and <span class='pat'>\Z</span> that matches the end.&nbsp;
+</p>
+
+
+<h2 id='word' title='word'>Word context</h2>
+
+<p>
+<code>perl</code> provides
+<span class='pat'>\b</span> which matches the empty string
+either at the beginning or the end of a word.&nbsp;
+The corresponding <span class='pat'>\B</span>
+matches empty strings that are not at word boundaries.&nbsp;
+</p>
+
+<p>
+Other notations provide separate patterns for the beginning and end;&nbsp;
+<code>perl</code> apparently does not support these.&nbsp;
+In such notations,
+<span class='pat'>\&lt;</span> at the beginning of a pattern matches
+the empty string at the beginning of a word,
+and <span class='pat'>\&gt;</span> at the end of a pattern matches
+the empty string at the end of a word.&nbsp;
+<span class='pat'>\&lt;</span> and <span class='pat'>\&gt;</span> do not match
+any specific word-starting or word-ending character (such as space or tab),
+they merely indicate the context of the pattern that contains them.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>\ba</td>
+  <td>a
+      <i>but only if it begins a word, as in</i>
+      is a <i>or</i> two apples
+  </td>
+  </tr>
+</tbody>
+</table>
+
+
+<h2 id='trailing' title='trailing'>Trailing context with <span class='pat'>/</span></h2>
+
+
+<p>
+<code>perl</code> does not provide this.&nbsp;
+In some other notations,
+<span class='pat'>&alpha;/&beta;</span>
+matches anything <span class='pat'>&alpha;</span> matches,
+but only if followed by something <span class='pat'>&beta;</span> would match.&nbsp;
+The string that would be matched by <span class='pat'>&beta;</span>
+is used only for context,
+and is not matched by this pattern.&nbsp;
+</p>
+
+
+<h1 id='extensions' title='extensions'>Not regular, but sometimes found in pattern languages</h1>
+
+<h2 id='matched' title='matched'><span class='pat'>$<i>k</i></span> or <span class='pat'>\<i>k</i></span></h2>
+
+<p>
+In some regular-expression-like languages (including perl),
+<span class='pat'>\<i>k</i></span>
+may appear in a pattern,
+representing whatever string matched the <i>k</i>th parenthesized subpattern.&nbsp;
+<i>k</i> is usually limited to 1 through 9.&nbsp;
+Strictly speaking,
+a pattern including such a reference
+may not be a regular expression in the formal languages sense;&nbsp;
+such a pattern may instead be
+<i>context-free</i> or <i>context-sensitive</i>
+(depending on how <span class='pat'>\<i>k</i></span> appears in the pattern),
+and of a more powerful class of languages.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Matches</th></tr>
+  <tr><td class='pat'>([ab])c</td>
+      <td>aca <i>or</i> bcb
+        &nbsp;<span class='it sc bf'>Not a regular expression</span></td>
+  </tr>
+</tbody>
+</table>
+
+<p>
+Regular expressions are often used to match and replace text.&nbsp;
+In the replacement text,
+<span class='pat'>$<i>k</i></span> (or in other languages
+<span class='pat'>\<i>k</i></span>)
+represents whatever the <i>k</i>th parenthesized subpattern
+in the pattern matched.&nbsp;
+The <i>k</i>th is determined by counting opening parentheses.&nbsp;
+</p>
+
+
+<h1 id='uses' title='uses'>Some uses of regular expressions</h1>
+
+<h2 id='set' title='set'>Defining a set of strings</h2>
+
+<p>
+A regular expression defines a set of strings,
+namely the set of strings that the expression matches completely.&nbsp;
+We say that the expression defines a <i>language</i>,
+namely the set of strings.&nbsp;
+Such a set is a <i>regular</i> language
+(because it is defined by a regular expression);&nbsp;
+the regular languages are the simplest kind of formal language,
+and each one can be recognized by a <i>finite state machine</i>.&nbsp;
+The sets are often but not necessarily infinite.&nbsp;
+</p>
+
+<table class='breakBefore'>
+<tbody>
+  <tr><th>Expression</th> <th>Its language</th></tr>
+  <tr><td class='pat'>a</td>
+      <td>{ 'a' }</td>
+  </tr>
+  <tr><td class='pat'>[ab]</td>
+      <td>{ 'a', 'b' }</td>
+  </tr>
+  <tr><td class='pat'>[ab]</td>
+      <td>{ 'a', 'b' }</td>
+  </tr>
+  <tr><td class='pat'>[^ab]</td>
+      <td>{ 'c', 'd', ... , 'z', 'A', 'B', ... , 'Z', ' ', '-', ... }
+        <i>(not including 'a' or 'b')</i></td>
+  </tr>
+  <tr><td class='pat'>[^ab]</td>
+      <td>{ 'c', 'd', ... , 'z', 'A', 'B', ... , 'Z', ' ', '-', ... }
+        <i>(not including 'a' or 'b')</i></td>
+  </tr>
+  <tr><td class='pat'>[ab]*</td>
+      <td>{ '', 'a', 'b', 'aa', 'ab', 'ba', 'bb', 'aaa', ... }
+        <i>(infinite)</i></td>
+  </tr>
+  <tr><td class='pat'>(c|(dd)|(eee))+</td>
+      <td>{ 'c', 'dd', 'eee', 'cc', 'cdd', 'ceee', 'ddc', 'dddd', 'ddeee', ... }
+        <i>(infinite)</i></td>
+  </tr>
+</tbody>
+</table>
+
+
+<h2 id='matching' title='matching'>Matching a substring within a string</h2>
+
+<p>
+Regular expressions are frequently used for matching a part of a longer string.&nbsp;
+We will use <span class='match'>underscoring</span> to indicate
+which parts of a string might be matched.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Pattern</th> <th>Possible matches</th></tr>
+  <tr><td class='pat'>i</td>
+      <td>Elevat<span class='match'>i</span>on ga<span class='match'>i</span>n
+          400 ft.&nbsp;
+          Th<span class='match'>i</span>s <span class='match'>i</span>s the
+          most travelled tra<span class='match'>i</span>l
+          <span class='match'>i</span>n the park.</td>
+  </tr>
+  <tr><td class='pat'>[aeiou]+</td>
+      <td>El<span class='match'>e</span>v<span class='match'>a</span>t<span
+          class='match'>io</span>n
+          g<span class='match'>ai</span>n 400 ft.&nbsp;
+          Th<span class='match'>i</span>s <span class='match'>i</span>s
+          th<span class='match'>e</span> m<span class='match'>o</span>st
+          tr<span class='match'>a</span>v<span class='match'>e</span>ll<span
+            class='match'>e</span>d
+          tr<span class='match'>ai</span>l <span class='match'>i</span>n
+          th<span class='match'>e</span> p<span class='match'>a</span>rk.</td>
+  </tr>
+  <tr><td class='pat'>[^aeiou]+</td>
+      <td><span class='match'>El</span>e<span class='match'>v</span>a<span
+          class='match'>t</span>io<span class='match'>n
+          g</span>ai<span class='match'>n 400 ft.&nbsp;
+          Th</span>i<span class='match'>s </span>i<span class='match'>s
+          th</span>e<span class='match'> m</span>o<span class='match'>st
+          tr</span>a<span class='match'>v</span>e<span class='match'>ll</span>e<span
+            class='match'>d
+          tr</span>ai<span class='match'>l </span>i<span class='match'>n
+          th</span>e<span class='match'> p</span>a<span class='match'>rk.</span></td>
+  </tr>
+  <tr><td class='pat'>(ai)|(is)</td>
+      <td>Elevation g<span class='match'>ai</span>n 400 ft.&nbsp;
+          Th<span class='match'>is</span> <span class='match'>is</span> the most
+          travelled tr<span class='match'>ai</span>l in the park.</td>
+  </tr>
+  <tr><td class='pat'>io?n</td>
+      <td>Elevat<span class='match'>ion</span> ga<span class='match'>in</span>
+          400 ft.&nbsp;
+          This is the most travelled trail <span class='match'>in</span>
+          the park.</td>
+  </tr>
+  <!--
+  <tr><td class='pat'>\&lt;i</tr>
+      <td>Elevation gain 400 ft.&nbsp;</td>
+          This is the most travelled trail
+          in the park.
+  -->
+</tbody>
+</table>
+
+
+<h2 id='replacing' title='replacing'>Replacing a substring</h2>
+
+<p>
+Regular expressions are also frequently used
+in specifying the replacement of substrings with other strings.&nbsp;
+Such a replacement may be written as a command
+that includes regular expressions.&nbsp;
+The usual command syntax is:
+</p>
+
+<p class='display'>
+  <code>s/</code><i>from</i><code>/</code><i>to</i><code>/</code>
+</p>
+
+<p>
+In sophisticated replacement command languages,
+any character can be used in place of the three <span class='pat'>/</span>'s,
+as long as it does not appear unescaped in the <i>from</i>
+or <i>to</i> patterns.&nbsp;
+Otherwise,
+any <span class='pat'>/</span> needed in the pattern or replacement
+must be escaped with a backslash.&nbsp;
+A <code>g</code> at the end of the command indicates
+global replacement of anything that matches the <i>from</i> pattern;&nbsp;
+otherwise, only the first match is replaced.&nbsp;
+</p>
+
+<p>
+Parentheses (or in some notations escaped parentheses)
+may appear in the <i>from</i> expression
+to identify sub-expressions
+whose match can be used in the <span class='pat'>to</span> expression.&nbsp;
+These subexpressions are numbered beginning from 1
+in the order of the left parentheses.&nbsp;
+The string that matches the first subexpression
+can then be indicated in the <i>to</i> expression
+by <span class='pat'></span>
+(<span class='pat'>\1</span> in some notations);&nbsp;
+that matching the second by <span class='pat'></span>;&nbsp;
+and so on.&nbsp;
+</p>
+
+<p>
+We will use <span class='match'>underscoring</span> to indicate
+which parts of a string have been replaced.&nbsp;
+</p>
+
+<table>
+<tbody>
+  <tr><th>Command</th> <th>Applied to</th> <th>Result</th></tr>
+  <tr><td class='pat'>s/i/I/</td>
+      <td>This is the most travelled trail
+          in the park.</td>
+      <td>Th<span class='match'>I</span>s is the most travelled trail
+          in the park.</td>
+  </tr>
+  <tr><td class='pat'>s/i/I/g</td>
+      <td>This is the most travelled trail
+          in the park.</td>
+      <td>Th<span class='match'>I</span>s <span class='match'>I</span>s the
+          most travelled tra<span class='match'>I</span>l
+          <span class='match'>I</span>n the park.</td>
+  </tr>
+  <tr><td class='pat'>s:i(.):i:g</td>
+      <td>This is the most travelled trail
+          in the park.</td>
+      <td>Th<span class='match'>iss</span> <span class='match'>iss</span> the
+          most travelled tra<span class='match'>ill</span>
+          <span class='match'>inn</span> the park.</td>
+  </tr>
+</tbody>
+</table>
+
+
+<h1 id='rxlangs' title='rxlangs'>Comparison of some regular expression notations</h1>
+
+<p>
+With the several competing versions of traditional Unix commands,
+it's difficult to choose a definitive regular expression notation,
+especially since the Gnu versions have all been made
+roughly as powerful as <code>perl</code>.&nbsp;
+The table below approximates the traditional limitations and notations
+of several kinds of regular expressions.&nbsp;
+</p>
+
+<ul>
+  <li> <i>perl</i> &mdash; A recent and powerful string processing language
+  </li>
+  <li> <i>sed</i> &mdash; The Unix stream editor, dating back to the late 1960's
+        (I believe)
+  </li>
+  <li> <i>lex</i> &mdash; The Unix lexical analyzer generator, from the mid 1970's
+  </li>
+  <li> <i>egrep</i> &mdash; The extended version of <i>grep</i>
+  </li>
+  <li> <i>grep</i> &mdash; The Unix regular expression pattern matcher
+  </li>
+  <li> <i>sh glob</i> &mdash; The filename globbing language for Unix <code>sh</code>
+  </li>
+</ul>
+
+<table class='center breakBefore'>
+<tbody>
+  <tr><th></th>
+      <th class='ce'>perl</th>
+      <th class='ce'>lex</th>
+      <th class='ce'>sed</th>
+      <th class='ce'>egrep</th>
+      <th class='ce'>grep</th>
+      <th class='ce'>sh glob</th>
+  </tr>
+  <tr><th>Escape</th>
+      <td>\</td>
+      <td>\</td>
+      <td>\</td>
+      <td>\</td>
+      <td>\</td>
+      <td>\</td>
+  </tr>
+  <tr><th>Character class</th>
+      <td>[ ]</td>
+      <td>[ ]</td>
+      <td>[ ]</td>
+      <td>[ ]</td>
+      <td>[ ]</td>
+      <td>[ ]</td>
+  </tr>
+  <tr><th>Negated character class</th>
+      <td>[^ ]</td>
+      <td>[^ ]</td>
+      <td>[^ ]</td>
+      <td>[^ ]</td>
+      <td>[^ ]</td>
+      <td>[^ ]</td>
+  </tr>
+  <tr><th>Universal class</th>
+      <td>.</td>
+      <td>.</td>
+      <td>.</td>
+      <td>.</td>
+      <td>.</td>
+      <td>?</td>
+  </tr>
+  <tr><th>Kleene closure</th>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td class='no'/>
+  </tr>
+  <tr><th>Positive closure</th>
+      <td>+</td>
+      <td>+</td>
+      <td class='no'/>
+      <td>+</td>
+      <td class='no'/>
+      <td class='no'/>
+  </tr>
+  <tr><th>Optional match</th>
+      <td>?</td>
+      <td>?</td>
+      <td class='no'/>
+      <td>?</td>
+      <td class='no'/>
+      <td class='no'/>
+  </tr>
+  <tr><th>Repetition counts</th>
+      <td>{ }</td>
+      <td>{ }</td>
+      <td class='no'/>
+      <td>{ }</td>
+      <td class='no'/>
+      <td class='no'/>
+  </tr>
+  <tr><th>Minimal closures</th>
+      <td>*?</td>
+      <td class='no'/>
+      <td class='no'/>
+      <td class='no'/>
+      <td class='no'/>
+      <td class='no'/>
+  </tr>
+  <tr><th>Subpatterns</th>
+      <td>( )</td>
+      <td>( )</td>
+      <td>\( \)</td>
+      <td>( )</td>
+      <td class='no'/>
+      <td class='no'/>
+  </tr>
+  <tr><th>Alternation</th>
+      <td>|</td>
+      <td>|</td>
+      <td>|</td>
+      <td>|</td>
+      <td class='no'/>
+      <td class='no'/>
+  </tr>
+  <tr><th>Embedded newline</th>
+      <td>\n</td>
+      <td>\n</td>
+      <td>\n</td>
+      <td class='no'/>
+      <td class='no'/>
+      <td class='no'/>
+  </tr>
+  <tr><th>Line context</th>
+      <td>^ $</td>
+      <td>^ $</td>
+      <td>^ $</td>
+      <td>^ $</td>
+      <td>^ $</td>
+      <td class='no'/>
+  </tr>
+  <tr><th>Word context</th>
+      <td>\b</td>
+      <td>\&lt; \&gt;</td>
+      <td>\&lt; \&gt;</td>
+      <td>\&lt; \&gt;</td>
+      <td>\&lt; \&gt;</td>
+      <td class='no'/>
+  </tr>
+  <tr><th>Trailing context</th>
+      <td class='no'/>
+      <td>/</td>
+      <td class='no'/>
+      <td class='no'/>
+      <td class='no'/>
+      <td class='no'/>
+  </tr>
+  <tr><th>Reusing <i>k</i>th match</th>
+      <td>\<i>k</i></td>
+      <td class='no'/>
+      <td>\<i>k</i></td>
+      <td>\<i>k</i></td>
+      <td class='no'/>
+      <td class='no'/>
+  </tr>
+  <tr><th>Replacement with <i>k</i>th match</th>
+      <td>$<i>k</i></td>
+      <td class='no'/>
+      <td>\<i>k</i></td>
+      <td class='no'/>
+      <td class='no'/>
+      <td class='no'/>
+  </tr>
+  <tr><th>Replacement with entire match</th>
+      <td>\0</td>
+      <td class='no'/>
+      <td>&amp;</td>
+      <td class='no'/>
+      <td class='no'/>
+      <td class='no'/>
+  </tr>
+</tbody>
+</table>
+
+<p>
+<code>perl</code> regular expressions are usually enclosed in slashes
+(<code>/.../</code>),
+in which case any slash in the regular expression
+must be escaped with a backslash.&nbsp;
+</p>
+
+<p>
+In <code>lex</code> patterns,
+quotes <span class='pat'>'&nbsp;'</span> escape any special characters between them,
+except for backslash (which may be used to include a quote in a quoted pattern).&nbsp;
+</p>
+
+<p>
+In <code>sed</code> patterns,
+<span class='pat'>.</span> can match a newline internal to a string
+(although not its terminal newline).&nbsp;
+Only a limited set of single character escapes
+such as <span class='pat'>\t</span> is provided.&nbsp;
+</p>
+
+<p>
+In <code>sh</code> filename globbing,
+the universal class (<span class='pat'>?</span>)
+does not include the dot character or / or newline.&nbsp;
+There is also a universal pattern (<span class='pat'>*</span>)
+that matches zero or more occurrences of anything
+<span class='pat'>?</span> matches.&nbsp;
+Backslash is used to escape the special meaning of <span class='pat'>^</span>
+and <span class='pat'>-</span>
+in a character class.&nbsp;
+</p>
+
+
+<!--xhtml -n -->
+</div>
+
+</div><!-- #TBg -->
+
+<div id='TFooter'>
+<div class='W3C'>
+  <a href='http://validator.w3.org/check?uri=referer'><img class='W3C'
+    src='../../img/valid-xhtml10-blue.png'
+    alt='Valid XHTML 1.0 Strict'/></a>
+  <br/>
+  <a href='http://jigsaw.w3.org/css-validator/check/referer'><img class='W3C'
+    src='../../img/vcss-blue.png'
+    alt='Valid CSS!'/></a>
+</div>
+<div class='timestamp'>2010Mar10We23:00</div>
+<div style='padding-top:1px;'>
+<a class='plain' href='./index.html' style='font-variant:small-caps;'
+>Thomas A. Alspaugh</a>
+<span style='padding-left:1em;'><span class='email ss sm'>alspaugh&nbsp;
+    <span class='ss sc sm'>at</span> &middot; ics &middot; uci &middot; edu</span>
+    <!-- -spell alspaugh uci edu --> </span>
+</div>
+</div>
+
+<!-- Google Analytics code -->
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol)
+  ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost +
+  "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-15281497-1");
+pageTracker._trackPageview();
+} catch(err) {}
+</script>
+
+</body>
+</html>
+

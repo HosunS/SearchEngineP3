@@ -1,0 +1,290 @@
+<!-- received="Tue Aug 27 00:28:30 1996 PDT" -->
+<!-- sent="Tue, 27 Aug 1996 00:28:28 -0700" -->
+<!-- name="Yaron Goland" -->
+<!-- email="yarong@microsoft.com" -->
+<!-- subject="Microsoft Feature Support List (V 0.1, ALPHA, 8/26/96)" -->
+<!-- id="ae428a5409021004bb29@[18.52.0.181]" -->
+<!-- inreplyto="" -->
+<title>Archive of Working Group on Versioning and Configuration Management of World Wide Web Content: Microsoft Feature Support List (V 0.1, ALPHA, 8/26/96)</title>
+<h1>Microsoft Feature Support List (V 0.1, ALPHA, 8/26/96)</h1>
+<b>Yaron Goland</b> (<a href="mailto:yarong@microsoft.com"><i>yarong@microsoft.com</i></a>)<br>
+<i>Tue, 27 Aug 1996 00:28:28 -0700</i>
+<p>
+<ul>
+<li> <b>Messages sorted by:</b> <a href="index.html#111">[ date ]</a><a href="thread.html#111">[ thread ]</a><a href="subject.html#111">[ subject ]</a><a href="author.html#111">[ author ]</a>
+<!-- next="start" -->
+<li> <b>Previous message:</b> <a href="0110.html">Yaron Goland: "MS Versioning Requirements Spec"</a>
+<!-- nextthread="start" -->
+<!-- reply="end" -->
+</ul>
+<hr>
+<!-- body="start" -->
+<pre>
+Microsoft Feature Support List (V 0.1, ALPHA, 8/26/96)
+by Yaron Y. Goland (<a href="mailto:yarong@microsoft.com">yarong@microsoft.com</a>)
+The following is the list of features which I have found that Microsoft 
+requires in order to express the full functionality of its products across 
+HTTP. The "I have found" caveat means that the list will change as I 
+continue my investigations.  In addition this is an ALPHA version of the 
+document and is only being released at the behest of Jim Whitehead so that 
+'something' would get into the HTTP v1.2 working group. Please excuse any 
+contradictions or omissions, over the coming days I will be working with 
+Jim to clean up any problems and sync this document with his own work.
+This list is a result of the HTTP Versioning and File Control Project, 
+which currently consists of just me. However I am also the program manager 
+for WinInet which is the API that will provide support for HTTP 
+versioning.
+While I have proposed solutions to the needs expressed in this document 
+these solutions are in a rough form and serve only to clarify the purpose 
+of the particular feature. I am open to a complete rewrite of the 
+implementation so long as it maintains the same underlying feature set.
+Finally, this document does not represent all of the features I would like 
+to add, only the features that I am aware Microsoft requires.
+1. File Control Features
+By its very nature versioning requires strong file support features. 
+Without them the overhead for even basic versioning tasks quickly grows out 
+of control.
+1.1 Attributes
+The list of attributes one would want to associate with a file or directory 
+is endless. Rather than trying to specify them all I would recommend that 
+the link facility, as described below, be used. A link would be available 
+to an attribute entity whose format will be decided later. I do have a list 
+of attributes, such as if a URL can be multiply checked out or not, but 
+giving it here would just clutter this paragraph.
+1.2 Copy
+Currently Copy can only be implemented through a combination of GET and 
+PUT/POST. In cases were the file is being moved from one computer to 
+another this is quite appropriate. It is unlikely that servers will be 
+willing to take upon themselves the difficulties inherent in accepting a 
+request from one source and then performing an action on another source due 
+to that request. This opens the door to all sorts of abuses. However in the 
+case were URLs are being moved around on the same server a COPY verb would 
+prove extremely useful. Given the need for this command and given the heavy 
+costs inherent in the current GET-&gt;PUT/POST method I believe it is 
+appropriate to implement a COPY verb. Note that the COPY verb should not be 
+restricted to only copying within one site and instead should specify which 
+URL to copy from and which URL to copy to. The previous comments to the 
+contrary, a site should have the freedom to accept requests to copy to 
+foreign sites.
+While I am fairly agnostic on the issue of a MCopy I think that sticky 
+headers makes it a bit useless.
+1.3 Directories
+This is not a request for a command but rather a discussion of the 
+implications of directories. Directory URLs are unique entities and should 
+be allowable as arguments to all commands included in this document. Thus a 
+move or copy should work on the directory URL by moving the URL and all of 
+its subordinate URLs to a new location with proper URL name translation. A 
+GET on a directory URL should return a HTML file containing the directory 
+information. I would recommend we standardize on the SiteMap format which 
+provides for a HTML file containing hierarchical information. A tag should 
+also be available to indicate if an action to be performed on recursively 
+on a directory. Finally some sort of wildcard support is required. This is 
+not necessarily restricted to just directory URLs and would be useful as a 
+back door to M* verbs.
+1.4 Delete
+Delete functionality already exists in HTTP. It is included for 
+completeness.
+1.5 [Full | Partial] Write [Lock | Unlock]
+A lock is defined here as the ability to prevent anyone from doing anything 
+to a particular URL if it is locked. The owner of the lock however may do 
+anything to the URL they want, including deleting it. If the URL is deleted 
+the lock still exists. Meaning no one can create that URL or perform any 
+commands on that URL until the lock is released. With this in mind we need 
+the ability to do write locks on multiple files. We also need a way to 
+explicitly override locks.
+This is a major feature issue for Microsoft. The ability to Lock a file 
+both partially and completely is desperately needed. Furthermore support 
+for multiple simultaneous file locks is equally needed. We need to begin by 
+asserting that PUT HTTP requests are atomic. This may seem obvious but 
+should nevertheless be stated. Thus the locking problem is reduced to the 
+issue of locking a file over multiple requests. Dependency on time outs is 
+dangerous as a request may be submitted after the lock has timed out, the 
+resulting ugliness is self evident. Thus a token based lock system seems to 
+be the best solution. A set of URLs would be submitted as a lock request. 
+If the lock is successful the system will respond with an opaque set of 
+octets. These octets are a token that refers to the lock. All further 
+requests on those URLs must include the lock token. If they do not then 
+they are treated as normal requests, with success or failure based upon 
+normal behavior given the existence of a lock. If the lock is removed, by 
+expiration or because of override, the request with the lock token will 
+fail with an appropriate error indication. Facilities should also exist to 
+add or remove URLs from a particular lock token. Locks should be indefinite 
+but a non-activity time out should apply. This time out should be generous 
+and should not be used as a means of removing a lock from an application 
+that is abusing the lock facility.
+Locks should be removed through one of three means: the lock owner asking 
+to remove the lock, an activity time out, or another user overriding the 
+lock. It is up to the system to determine who can override a lock however 
+our needs in this area will be explained in the security section below.
+Finally, I generally do not like adding verbs. As such I would use PEP to 
+put lock and unlock onto a PUT with no body. I would also use byte ranges 
+to support partial locks on files. In addition one should be able to use 
+the PUT tags to request a lock during another request. So for example a 
+lock request tag could be added to a GET. The GET will only succeed if the 
+lock can be executed. A lock token will then be added to the header of the 
+response or an error message returned.
+1.6 Get
+Again, completeness.
+1.7 Link
+Links are needed for a variety of reasons including associating the 
+pre-processed and processed versions of files and establishing shadow 
+directories. The variety of values one would want to associate with a link 
+are numerous and argue that links should be made into first class objects. 
+A tag would be added to the HTML header of a file indicating the URLs of 
+any associated links. The link URL should be equal to the URL of the 
+requested entity with appropriate tags appended to the end. The client 
+would then request the links using a normal GET. The bodies of the replies 
+would contain whatever information was relevant to the link.
+In order to ease administration it is also possible that each linked file 
+will have a URL associated with it that will list all the links attached to 
+this file.
+A PUT with appropriate tags should be used to associate a link body with 
+one or more URLs. Note that there is no restriction on the number of files 
+a link URL may be attached to.
+Once a link is made into a URL all sorts of powerful mechanisms become 
+possible.
+1.8 Move
+While arguments can be made for a move verb I would suggest a copy followed 
+by a delete.
+1.9 Partial [Read | Write]
+Partial read support is already provided through byte ranges. Partial write 
+support is problematic because servers that do not support partial writes 
+would drop the byte range header and execute a write over file. I would 
+suggest implementing partial write through a PEP extension as a means of 
+solving this problem.
+1.10 Put
+The only question here is should there exist a tag which tells the server 
+that if the file already exists it should not be overwritten and an error 
+should be returned. The same functionality can be achieved through a head 
+request.
+1.11 Rename
+This can be handled through copy as specified above. Our only requirement 
+is that renames be possible without having to move the file from the server 
+to the client and back again.
+2. Versioning Control Features
+2.1 Comments
+Why an action has occurred is just as important as the action itself. Thus 
+a comment facility is necessary. I would suggest either comment tags, one 
+for strings and another for URLs, or the Link facility be used. Given the 
+frequency that comments are used it may be appropriate to implement the 
+comment tags and then define a method by which the tags are turned into 
+links. The idea is that we do not want to have every action take two parts, 
+the action and then the addition of a link in order to add a comment.
+2.2 Currently Checked Out Files
+A tag should be added to modify a GET request to indicate that check out 
+information is request for the specified URL. If the URL is a directory 
+then information will be provided on all the entries in that directory. The 
+suggested recursive tag should also apply. This could easily be implemented 
+as a predefined link type.
+2.3 Destroy
+A deleted object is removed from normal view in histories or directories 
+but will be visible in a link associated with a directory which specified 
+deleted but not destroyed items. As such a tag should be added to the 
+delete command specifying if the delete is meant as a delete or a destroy.
+2.4 History
+A history for a document or directory is necessary to show the user what 
+versions have existed and what their comments are. This can be implemented 
+through the attributes link. Specific formats for the history file can be 
+decided later. Though said formats must address the difference between 
+linear and branched histories.
+2.5 Merge
+Sometime a Check In will result in a conflict between a currently existing 
+URL and the Checked In URL. If the server has facilities to detect such 
+conflicts then the server may request that the client resolve the 
+conflicts. At this point the server should send a PUT with a merge tag to 
+the client. The body of the PUT will either contain the entity to merge 
+with or the URL of the entity to be merged with. The reason for the pointer 
+is that not all clients will be able to merge all types of files and may 
+return an error message so indicating. By allowing just the URL to be sent 
+the server is able to save bandwidth in case the client can not support the 
+merge.
+2.6 [Multi | Single] Check [In | Out]
+The only real difference between check in/out and lock/unlock is that 
+multiple users may have that ability to check out a single resource while 
+only a single user may have a lock. There is also the issue of an entity 
+body but not all check ins even use an entity body. In fact a check in 
+without an entity body is just an UnCheckOut. The security, override, and 
+implementation format for lock also apply here.
+Another issue is the meaning of checking in a directory. In this case the 
+body of the message should be a multi-part mime file with HTTP headers 
+indicating the URLs of each entry. Entries which are not included are 
+assumed to be unchanged.
+2.7 Search
+The ability to search a site is crucial. Facilities for grep, wild card 
+search, and searches on check in/out status are needed. It is tempting to 
+implement these functions using URL munges as they are now done, with the 
+recognition of directory structure this would be very powerful. I have no 
+particular views on the subject.
+2.8 Version
+A facility to specify the version identifier is needed. This identifier 
+should be expressed by appending it to the end of the URL for the entity. 
+The appended format should be defined so that it is always possible to 
+identify and remove the appended entity.
+This however opens the question of what sort of versioning identifiers 
+should be used. Integer? Decimal? Alphabetic? Opaque Token? All of the 
+above? Currently we only require integer however all of the above is 
+probably the best solution. When a URL is checked in the server's 
+confirmation reply should include the URL assigned to the entity. The reply 
+should be in the appended format. If information regarding the relationship 
+of URLs is needed then a history file should be requested. The format of 
+the history file will clearly indicate the relationship of the URLs.
+When a Check In/Out or Lock/UnLock request is made on a URL that is not in 
+appended format the request should apply to all versions of that URL.
+3. Access Control Features
+Security is a murky territory I am sure we would all rather avoid but the 
+reality is that security is absolutely vital to versioning. If a robust 
+security solution is not provided for then proprietary ones will be 
+introduced and all of our work will be for not.
+The security model that would best meet our needs is a combination of group 
+and individual based security attributes. Each entity, either group or 
+individual, can be assigned security rights which apply to one or more URLs 
+with the option to apply the rights recursively. The actual rights would be 
+a listing of the verbs and tags in this document. A user would only be able 
+to use a tag or verb if they have the right to. This combination of rights, 
+both to users and groups, to URLs both singly, in groups, and recursively 
+through the URL hierarchy will meet our needs nicely.
+In addition facilities to modify these rights are needed. I am not 
+religious on how they are implemented, only that they exist. I will assume 
+the existence of SSL or similar protocol to secure the transmission line. 
+The authorization header is more than sufficient to uniquely identify a 
+user.
+4. Comments on the WWW Versioning Support Draft Proposal v 0.1
+4.1 Flags
+Flags are not necessary here as values are set via links which point to 
+arbitrary entity bodies, probably HTML files, whose format can be decided 
+later. I provide a facility for finding out who has what files checked out 
+through links and while I have not specified it, a similar facility could 
+be provided for finding out who has which locks.
+4.2 Lock
+No time out value is really necessary to meet Microsoft's needs. We 
+completely rely on the over ride facility. I only put the time out value 
+into the document for completeness sake. As long as a "NEVER" value is 
+available for the time out you will hear no complaints from me.
+4.3 Unlock
+I will count on the security set up to clear up cases of who may and may 
+not unlock a URL. Obviously the person who locked it may unlock it but we 
+also rely upon 'authorized' users to be able to unlock a file. In some 
+cases that means users with the same security level and in others those 
+with special security levels. This definition is enforced by the server and 
+the authorization control section provides a definition more than powerful 
+enough to handle all cases relevant to Microsoft.
+4.4 Use
+We do not need such a facility currently but it is still a neat idea. I can 
+see circumstances were we would want it. Though my general dislike of 
+adding verbs does make me a bit wary.
+4.5 Configurations
+We provide this functionality through a number of other means. Specifically 
+using SiteMaps for directory listings. However this is still an interesting 
+feature and I will look at it further.
+4.6 Derivations File
+AKA a history file which is provided for.
+</pre>
+<!-- body="end" -->
+<hr>
+<p>
+<ul>
+<!-- next="start" -->
+<li> <b>Previous message:</b> <a href="0110.html">Yaron Goland: "MS Versioning Requirements Spec"</a>
+<!-- nextthread="start" -->
+<!-- reply="end" -->
+</ul>

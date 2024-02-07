@@ -1,0 +1,357 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+
+<head>
+<title>Lessons from WebDAV for the Next Generation Web Infrastructure</title>
+</head>
+
+<body>
+
+<h1 ALIGN="CENTER">Lessons from WebDAV for the Next Generation Web Infrastructure</h1>
+
+<p align="center"><I><b>E. James Whitehead, Jr.</b><br>
+Department of Information and Computer Science<br>
+University of California, Irvine<br>
+ejw@ics.uci.edu </i></p>
+
+<h2>Abstract</h2>
+
+<p>The Web Distributed Authoring and Versioning (WebDAV) working group of the Internet
+Engineering Task Force (IETF) has extended the HyperText Transfer Protocol (HTTP) to
+support remote collaborative authoring of network resources of any media type. This
+process of extending HTTP exposed several weaknesses of HTTP in the domain of
+collaborative authoring, notably in parameter marshalling, support for multi-resource
+operations, support for operating on hierarchies of resources, and status reporting. The
+need to have built-in locking support was also identified. This paper describes these
+shortcomings of HTTP, and collects this experience in the form of requirements for the
+next generation Web infrastructure. </p>
+
+<h2>1. Introduction</h2>
+
+<p>Propelled by the desire to complete the original vision of the Web as a medium for
+collaboration in addition to its better known roles of information dissemination, in 1996
+the Web Distributed Authoring and Versioning (WebDAV) working group [WebDAV][Whitehead,
+1997] adopted the goal of making distributed web authoring tools broadly interoperable and
+began work on extending the HyperText Transfer Protocol (HTTP) [Fielding et
+al.,1997].&nbsp; The WebDAV distributed authoring protocol [Goland et al., 1998] provides
+facilities for: 
+
+<ul>
+  <li><b>Properties:</b> The ability to create, remove, and query information about
+    Web pages, such as their author, creation date, etc.</li>
+  <li><b>Collections:</b> The ability to create sets of related documents and to
+    retrieve a hierarchical membership listing, similar to a directory listing in a
+    filesystem.</li>
+  <li><b>Locking:</b> Prevention of overwrite conflicts, a simple mechanism for
+    concurrency control.</li>
+  <li><b>Namespace operations:</b> The ability to copy and move Web resources and
+    hierarchies of Web resources.</li>
+</ul>
+
+<p>The process of extending HTTP to support remote collaborative authoring exposed several
+shortcomings in HTTP, notably in parameter marshalling, support for multi-resource
+operations, support for operating on hierarchies of resources, and error reporting. The
+need to have built-in locking support was also identified.&nbsp; This paper describes
+these shortcomings of HTTP, and collects this experience in the form of requirements for
+the next generation Web infrastructure. In many cases, these requirements are a
+reformulation of the requirements found in the WebDAV&nbsp; requirements document [Slein
+et al.,1998].</p>
+
+<h2>2. Parameter Marshalling</h2>
+
+<p>HTTP 1.x provides two ways of encoding parameter information for a particular HTTP
+method request: request headers and the request body.&nbsp; Similarly, response headers
+and the response body are the two ways an HTTP server can pass results back to a client.
+&nbsp; HTTP 1.x predominantly uses headers to transport parameters in a request message,
+exceptions being the PUT method, where the request body contains the entity being
+uploaded, and the POST method, which often contains form data, but which can carry any
+information.</p>
+
+<p>The WebDAV property methods, PROPPATCH and PROPFIND, first uncovered the limitations of
+HTTP headers. Within WebDAV, a property is a name, value pair where the name is a URI,
+providing a decentralized namespace, and the value is well-formed XML [Bray, Paoli,
+Sperberg-McQueen, 1998] of any length. A WebDAV property value can be in any of the ISO
+10646 [ISO 10646] character set encodings supported by XML, since property values are
+often human-readable. The PROPPATCH method allows the client to set and remove multiple
+properties with a single method invocations, while PROPFIND may retrieve all properties
+and values, named properties and their values, or only the names of all defined
+properties.&nbsp; The problem raised by these two methods is how best to marshal the
+information in a PROPPATCH request or PROPFIND result. </p>
+
+<p>HTTP headers proved inadequate for marshaling PROPPATCH requests due to their poor
+internationalization support, and inefficiency handling large header values.&nbsp; Since
+HTTP headers do not have any support for encoding ISO 10646 character set information,
+WebDAV would have needed to develop additional encoding strategies for the ISO 10646
+character set encodings supported by XML. Once such an encoding technique was developed,
+there would still be problems with encoding long-length properties into HTTP headers.
+&nbsp; Although in theory HTTP headers do not have bounded length, poor HTTP
+implementations have effectively limited HTTP headers to short lengths, with headers under
+254 characters having best results.&nbsp; While HTTP headers can be split into multiple
+headers with the same name, this is inefficient since the header name is repeated multiple
+times.</p>
+
+<p>Due to the limitations of HTTP headers, PROPPATCH marshals its request parameters into
+well-formed XML, which is submitted in the request body. XML has strong
+internationalization support with its built-in support for multiple character set
+encodings, and has no length limits on XML element (hence WebDAV property) values. By
+placing the XML into the request body, the unlimited length of the request body matches
+the unlimited length of a well-formed XML stream. Furthermore, XML is extensible, allowing
+new elements to be added in the middle of an XML stream, supporting future addition of
+WebDAV, or third-party elements into XML protocol elements, or XML property values.</p>
+
+<p>Based on the experience with properties, WebDAV developed a design rule for where to
+encode parameter information.&nbsp; As a rule of thumb, parameters are encoded in XML and
+submitted in the request entity body when they have unbounded length, when they may be
+shown to a human user and hence require encoding in an ISO 10646 character set, or when
+there is a high expectation the parameters will require significant future extension.
+&nbsp; Otherwise, parameters are encoded in HTTP headers.</p>
+
+<p>The WebDAV experience with parameter marshalling leads to the following requirements
+for the next generation Web infrastructure.</p>
+
+<p><b>Internationalizable marshalling:</b> It must be possible to marshal data
+encoded in any ISO 10646 character set encoding.</p>
+
+<p><b>Unlimited length marshalling:</b> It must be possible to marshal data of
+any length.</p>
+
+<p><b>Extensible marshalling syntax: </b>It must be possible to add new data
+items to a marshaled data stream without affecting existing applications.</p>
+
+<h2>3. Multi-resource Operations</h2>
+
+<p>WebDAV supports COPY and MOVE methods for use in manipulating the namespace of Web
+resources.&nbsp; With both COPY and MOVE, the method is sent to the source resource, and
+the destination is specified by the Destination header. Though this seems simple and
+straightforward, there are several lurking difficulties. First, when a method affects two
+resources, should the precondition headers If-[None]-Match and If-Modified-Since apply to
+the source resource, the destination resource, or both? WebDAV chose to have these headers
+only apply to the source resource, and not to the destination resource.&nbsp; However,
+since there is a need to specify a precondition which affects the source and/or the
+destination resource, WebDAV specifies a new precondition header called &quot;If&quot;
+which allows a precondition to be matched to a named resource, and hence can specify
+preconditions against the source or the destination.</p>
+
+<p>The underlying difficulty is HTTP's lack of support for multi-resource operations.
+&nbsp; HTTP assumes an operation will only affect one resource, and provides no facilities
+for stating that some headers apply to one resource, while other headers apply to another.
+&nbsp; This leads to headers like the WebDAV &quot;Overwrite&quot; header which is
+explicitly defined to control overwriting of the destination resource.&nbsp; As a result,
+a MOVE or COPY can have some headers which apply just to the source (If-Match), to just
+the destination (Overwrite), and to both the source and the destination (If).</p>
+
+<p>The WebDAV experience with multi-resource operations leads to the following
+requirements:</p>
+
+<p><b>Multi-resource operations:</b> It must be possible to support operations
+which affect two or more resources.&nbsp; It must be possible to specify pairings of
+individual parameters to individual resources.</p>
+
+<p><b>Multi-resource preconditions:</b> It must be possible to specify operation
+preconditions which operate over several resources.</p>
+
+<h2>4. Operations on Resource Hierarchies</h2>
+
+<p>One important efficiency optimization in the design of WebDAV is the ability to specify
+copy, move, property retrieval, or locking over an entire hierarchy with a single method
+invocation. Using the Depth header, the semantics of COPY, MOVE, PROPFIND, and LOCK can be
+modified to affect only the requested resource, a depth of 0, or a requested collection
+and all of its children, and their children, etc., with a depth of infinity. PROPFIND
+alone supports Depth 1 semantics, specifying the retrieval of properties on a collection
+and its children, but not its children's children. </p>
+
+<p>The semantics of a depth infinity COPY, MOVE and PROPFIND are defined using a
+propagation model, with the initial method invocation being passed to a collection, which
+then rewrites the Destination header before propagating the original method invocation
+with all the original headers (excepting the rewritten Destination) and the original
+request body along to its children. By definition, the action of depth infinity COPY,
+MOVE, and PROPFIND operations are are best-effort, and non-atomic.&nbsp; Thus, an error in
+the middle of a tree copy does not cause a complete rollback of the copy, nor does such an
+error necessarily cause a halt to the copy operation. These semantics make it much easier
+to implement tree operations, as they do not require a transaction engine to be present in
+the server to implement a rollback. </p>
+
+<p>Since the semantics for COPY, MOVE, and PROPFIND are non-transactional, it would be
+possible to achieve the same result as a depth infinity operation by sending a pipelined
+stream of COPY, MOVE, or PROPFIND requests, one for each individual resource in the
+collection hierarchy. &nbsp; However, such an approach suffers from significant
+performance penalties due to having to first retrieve the membership of the collection
+hierarchy, and the overhead of re-specifying essentially the same request once for each
+resource in the hierarchy. </p>
+
+<p>As an exception to the best-effort semantics for tree operations, tree locks have all
+or nothing semantics; either the entire tree is successfully locked, or the tree lock
+fails. Since the lock does not change the state of the body of the resource, it is easier
+to implement the rollback for locking. However, due to their all or nothing semantics,
+tree locks cannot be specified using a stream of pipelined individual requests. This
+ability to specify all or nothing tree semantics provides one more reason, in addition to
+the efficiency argument, for supporting operations which act on hierarchies of resources.</p>
+
+<p>As is the case for multi-resource operations, supporting hierarchy operations is
+difficult because of the HTTP assumption that operations only affect a single
+resource.&nbsp; Like the multi-resource case, precondition operations are difficult to
+specify for tree operations. There is a need to specify both a precondition which affects
+the entire hierarchy, and a precondition which only affects individual resources in the
+hierarchy. For example, since a single resource deep in a hierarchy might be individually
+locked, there is a need to pass a lock token to that resource for a tree move. A client
+might also want to ensure the tree operation only takes place if all the resources are in
+a state known to the client, requiring submission of multiple URI, entity-tag pairs.&nbsp;
+WebDAV supports both these precondition types with its If header.</p>
+
+<p>Hierarchy operations become more complex when they are combined with multi-resource
+operations, as with a tree copy and move, where there is a source hierarchy and a
+destination hierarchy. Ideally it would be possible to specify parameters which affect
+either the entire source hierarchy or the entire destination hierarchy, and then also
+specify individual exceptions to these parameters (e.g., overwrite all destinations,
+except for foo.html). However, since HTTP does not provide marshalling support for
+hierarchy operations, the best that can be accomplished using HTTP is to specify
+parameters which affect all resources, with no individual exceptions.</p>
+
+<p>WebDAV hierarchy operations suggest the following requirements for the next generation
+Web infrastructure:</p>
+
+<p><b>Hierarchy support:</b> It must be possible to support operations which
+operate over a hierarchy of resources. Specifically, support is needed for operations
+which affect a collection and its children, and for operations which affect a collection,
+it's children, and it's children's children, etc.</p>
+
+<p><b>Marshalling support for hierarchies:</b> It must be possible to support
+parameter to hierarchy mappings, and parameter to resource mappings.</p>
+
+<p><b>Hierarchy preconditions: </b>It must be possible to specify preconditions
+which affect an entire hierarchy.</p>
+
+<h2>5. Status Reporting</h2>
+
+<p>WebDAV extended the HTTP object model by adding properties to each resource, and by
+defining a collection resource type. Both of these extensions affect HTTP status
+reporting.&nbsp; By adding properties, status reports must now be capable of
+distinguishing between status which describes the whole resource on which properties are
+defined, and status which describes just a single property on a resource.</p>
+
+<p>By defining collections, and hierarchy operations which operate over collections,
+status reports must now be capable of reporting success and failure across multiple
+resources. Additionally, since it is possible to specify a depth infinity PROPFIND, status
+reports must be capable of distinguishing between property-scoped status and
+resource-scoped status within the same status response.</p>
+
+<p>Since HTTP only supports status reporting for a single resource, WebDAV created a
+multi-status response to meet its status reports needs. With the multi-status response,
+resource-scope and property-scope status responses are wrapped inside an XML response
+body.</p>
+
+<p>Support for multi-resource operations exacerbates an existing problem with HTTP error
+reporting when there are multiple, simultaneous error conditions. For example, in the case
+where a destination resource is locked, it is possible for a client to simultaneously not
+have write access permission to the resource, and also not be the owner of the lock. In
+this case, both a locked response and an access denied response are acceptable.
+Additionally, since there is a source as well as a destination, the client could submit a
+precondition against the source which might also fail, leading to situations where there
+are many simultaneous error conditions. At present, since only one error message may be
+reported even though many error conditions might exist, and since it is server-specific as
+to which error condition is reported first, it is difficult for a client to do anything
+intelligent with the error messages. The addition of error precedence rules would aid
+client error processing.</p>
+
+<p>The requirements which emerge from a consideration of status reporting are:</p>
+
+<p><b>Property status:</b> It must be possible to report status with a single
+property scope.</p>
+
+<p><b>Hierarchy status: </b>It must be possible to report status from a
+hierarchy operation where the results of multiple individual operations are collected into
+a single response.</p>
+
+<p><b>Combined scope:</b> It must be possible to report property-scoped and
+resource-scoped status in a single and hierarchy response.</p>
+
+<p><b>Precedence rules:</b> There must be rules for determining which status
+message to report in cases where multiple simultaneous status messages apply.</p>
+
+<h2>6. Built-in Lock Support</h2>
+
+<p>One of the conclusions of the WebDAV effort is that locking support must be a core
+facility. Since locking was added to HTTP after the write operation, PUT, was defined, it
+is now possible to have situations where overwrite conflicts occur when a resource is
+simultaneously being edited by a WebDAV and an HTTP (i.e., non-lock aware authoring
+client). Consider the following scenario:</p>
+
+<p>Two clients A and B are interested in editing the resource 'index.html'. Client A is an
+HTTP client rather than a WebDAV client, and so does not know how to perform locking. To
+begin, client A doesn't lock the document, but does a GET and begins editing. Later,
+client B does LOCK, performs a GET and begins editing. Client B finishes editing before
+client A, performs a PUT, then does an UNLOCK. Later, client A performs a PUT, overwriting
+and losing all of B's changes. </p>
+
+<p>There are several reasons why the WebDAV protocol itself cannot prevent this situation.
+First, it cannot force all clients to use locking because it must be compatible with HTTP
+clients that do not comprehend locking. Second, it cannot require servers to support
+locking because of the variety of repository implementations, some of which rely on
+reservations and merging rather than on locking. Finally, being stateless, it cannot
+enforce a sequence of operations like LOCK / GET / PUT / UNLOCK. </p>
+
+<p>There are several techniques which can be applied to mitigate this problem: 
+
+<ul>
+  <li>WebDAV servers that support locking can reduce the likelihood that clients will
+    accidentally overwrite each other's changes by requiring clients to lock resources before
+    modifying them. Such servers would effectively prevent HTTP 1.0 and HTTP 1.1 clients from
+    modifying resources. </li>
+  <li>WebDAV clients can be good citizens by using a lock / retrieve / write /unlock sequence
+    of operations (at least by default) whenever they interact with a WebDAV server that
+    supports locking. </li>
+  <li>HTTP 1.1 clients can be good citizens, avoiding overwriting other clients' changes, by
+    using entity tags in If-Match headers with any requests that would modify resources. </li>
+</ul>
+
+<p>The WebDAV experience with locking leads to the following requirement:</p>
+
+<p><b>Core overwrite prevention:</b> Facilities for the prevention of overwrite
+conflicts must be an integral part of the protocol. All authoring clients must make use of
+the overwrite prevention facilities.</p>
+
+<h2>7. Conclusion</h2>
+
+<p>By extending the HTTP data model with properties and collections, by supporting
+operations with a source and a destination, and by supporting operations which operate on
+an hierarchy of resources, WebDAV exposed several shortcomings in HTTP's support for
+remote collaborative authoring.&nbsp; This paper has discussed these shortcomings in the
+areas of parameter marshalling, precondition support, and status reporting for single
+properties, single resources, multiple resources, and hierarchies of resources. The need
+for core support of overwrite prevention was also identified. In order to concisely convey
+the experience gained from the WebDAV project, the paper has listed requirements for the
+next generation Web infrastructure.</p>
+
+<h2>References</h2>
+
+<p><b>[Bray, Paoli, Sperberg-McQueen, 1998]</b> T. Bray, J. Paoli, C. M.
+Sperberg-McQueen, &quot;Extensible Markup Language (XML).&quot; World Wide Web Consortium
+Recommendation REC-xml-19980210. http://www.w3.org/TR/1998/REC-xml-19980210.</p>
+
+<p><b>[Fielding et al., 1997]</b> R. Fielding, J. Gettys, J. Mogul, H. Frystyk,
+T. Berners-Lee, &quot;Hypertext Transfer Protocol -- HTTP/1.1.&quot; RFC 2068. U.C.
+Irvine, DEC, MIT/LCS. January, 1997. </p>
+
+<p><b>[Goland et al., 1998] </b>Y. Y. Goland, E. J. Whitehead, Jr., A. Faizi,
+S.R. Carter, D. Jensen, &quot;Extensions for Distributed Authoring on the World Wide Web
+-- WEBDAV.&quot; draft-ietf-webdav-protocol-08, Internet-Draft, work-in-progress.
+Microsoft, U.C. Irvine, Netscape, Novell. April, 1998.</p>
+
+<p><b>[ISO 10646]</b> ISO (International Organization for Standardization).
+ISO/IEC 10646-1993 (E). Information technology -- Universal Multiple-Octet Coded Character
+Set (UCS) -- Part 1: Architecture and Basic Multilingual Plane. [Geneva]: International
+Organization for Standardization, 1993 (plus amendments AM 1 through AM 7). </p>
+
+<p><b>[Slein et al., 1998]</b> J. A. Slein, F. Vitali, E. J. Whitehead, Jr., D.
+Durand, &quot;Requirements for Distributed Authoring and Versioning Protocol for the World
+Wide Web.&quot; RFC 2291. Xerox, Univ. of Bologna, U.C. Irvine, Boston Univ. February,
+1998.</p>
+
+<p><b>[WebDAV]</b> WebDAV Home Page. <a
+href="http://www.ics.uci.edu/pub/ietf/webdav/">http://www.ics.uci.edu/pub/ietf/webdav/</a></p>
+
+<p><b>[Whitehead, 1997]</b> E. J. Whitehead, Jr. &quot;World Wide Web
+Distributed Authoring and Versioning (WEBDAV) -- An Introduction.&quot; ACM StandardView,
+Vol 5., No. 1, March 1997, p. 3-8.</p>
+</body>
+</html>

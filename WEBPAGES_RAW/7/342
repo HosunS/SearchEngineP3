@@ -1,0 +1,464 @@
+			Functions for Dictionary Processing
+
+Examine the dictionary processing functions in the project accompanying this
+lecture. Generally dictionaries are more focused and powerful than lists, so
+there are not as many generally useful dictionary functions. But dictionaries
+do occur in very many interesting programs. Hand simulate these functions, or
+run them (in the debugger) to understand them better. Also see the example uses
+in the driver I supplied. Here is some commentary. 
+
+------------------------------------------------------------------------------
+
+The count function
+
+The count function takes a list of objects as an argument. It creates an empty
+dict and binds answer to it. Then it iterates over every value in the list
+
+  (a) calls answer.get(v,0), which either retrieves the the value associated
+        with v (how many times this v has bee processed), or returns 0 if no
+        value is associated with v (v hasn't been processed).
+  (b) adds 1 to this value
+  (c) stores the new value (back) into answer[v], either creating an association
+        for the first time (to 1) or changing the association (to a value 1
+        bigger than before).
+
+After the loop terminates, it returns all the information accumulate in the 
+dictionary.
+
+def count(alist):
+    answer = {}
+    for v in alist:
+        answer[v] = answer.get(v,0) + 1
+    return answer
+
+Without using the .get method, we can write the body of the loop more
+explicitly by testing whether or not v is already a key in the answer
+dictionary.
+
+        if v not in answer:
+            answer[v] = 1
+        else:
+            answer[v] += 1
+
+If we wrote just answer[v] += 1 inside the loop (remember that this statement
+is just shorthand for answer[v] = answer[v]+1), the first iteration (for the
+first value v in alist) would try to access answer[v] and raise KeyError because
+no key with that value is in the dictionary (it starts empty).
+
+Here is an example of calling this function on a word (in which case count
+iterates through the letters in the word, not a real list: all that is important
+in count is that it can iterate over its argument, processing each value in the
+dictionary).
+
+print(count('antidisestablishmentarianism'))
+
+which prints
+
+{'e': 2, 'd': 1, 'a': 4, 'b': 1, 'm': 2, 'l': 1, 'n': 3, 'i': 5, 'h': 1, 't': 3, 's': 4, 'r': 1}
+
+This is the actual order when I ran this Python code; remember that
+dictionaries are not ordered like list and tuples, so iterating through
+dictionaries produces values seemingly at random (although there is an
+underlying order there, it is complicated to explain and not really useful to
+know). See the print_dict method for ensuring the keys are produced in certain
+order.
+
+------------------------------------------------------------------------------
+
+The concordance Function
+
+
+A concordance of a document consists of all the words in the document, each
+associated with a list of line numbers on which each word appears (we will
+convert each word into all lower-case letters for simplicity). We can easily
+use a dictionary whose keys are strings and whose associated values are lists
+of integers to keep track of a concordance. As a trivial exampe (but useful to
+hand simulate), the file book.txt contains
+
+See Spot
+See Spot run
+Run Spot run
+
+and produces a concordance whose dictonary is printed as
+
+{'run': [2, 3, 3], 'spot': [1, 2, 3], 'see': [1, 2]}
+
+Notice that the list shows line 3 twice (because Run and run both appear on
+line 3; later we will modify our function's code to not append duplicates into
+its lists).
+
+The concordance function takes an argument that is a string (the name of a file
+that is the document) and produces a dictionary whose keys are strings and
+whose assocated values are lists of integers. Examine it below.
+
+def concordance(file_name : str) -> {str:[int]}:
+    c = {}					# initialize local names
+    line_num = 0
+
+    for line in open(file_name):		# loop through every line
+        line_num += 1				#   update line_num
+        for word in line.rstrip().split(' '):	#   loop through every word
+            word = word.lower()		  	#     use lower-case
+            if word not in c:			#     update dictionary
+                c[word] = [line_num]		#       assocate word with list
+            else:	  			#       or...
+                c[word].append(line_num)        #       update list
+
+    return c					# return result
+
+Notice the outer loops reads lines from the open file (and uses line_num to
+keep track of  which line has been read: line_num is 1 for the first line,
+2 for the second line, etc.).
+
+Each line is stripped of its '\n' and split into a list of words, and then
+iterated over. The inner loop processes each word in the line (in lower-case
+form), updating the dictionary for it appropriately: adding a new list if one
+is not present; appending to an existing list if one is present. 
+
+Note how the append function mutates the list assocated with each word. It is
+frequently the case in dictionaries that we want to update/mutate the value
+associated with some key (once the key has been put in the dictionary).
+Beginning students sometimes write a lot of extra code to perform this simple
+operation. Use this code as an example of the easy way to do this.
+
+Finally, we can enhance this code so that it doesn't put the same line number
+in a list twice. There are at least two ways to do this.
+
+def concordance(file_name : str) -> {str:[int]}:
+    c = {}					# initialize local names
+    line_num = 0
+
+    for line in open('book.txt'):		# loop through every line
+        line_num += 1				#   update line_num
+        for word in line.rstrip().split(' '):	#   loop through every word
+            word = word.lower()		  	#     use lower-case
+            if word not in c:			#     update dictionary
+                c[word] = [line_num]		#       assocate word with list
+            else:	  			#       or...
+                if line_num not in c[word]:     #       check if line_num absent
+                    c[word].append(line_num)    #         update list if so
+
+    return c					# return result
+
+When Python runs this code on 'book.txt', it prints
+
+{'see': [1, 2], 'spot': [1, 2, 3], 'run': [2, 3]}
+
+Finally, since we process line numbers from smallest to biggest, we could
+replace
+
+  if line_num not in c[word]:
+      c[word].append(line_num)
+
+by the equivalent:
+
+  if line_num != c[word][-1]:
+      c[word].append(line_num)
+
+which checks whether the current line number is not equal to the the last index
+in the list associate with word (and if it is not there, it appends it). 
+
+We can use the print_dict function defined below to print this concordance
+more nicely.
+
+------------------------------------------------------------------------------
+
+The print_dict Function
+
+Next is a function that prints a dictionary in a nicer form: its keys are
+in alphabetical order, and their values are aligned by computing the maximum
+length of the string representation of keys.
+
+For example, it would print the following dictionary produced by count
+
+a         -> 2
+can       -> 1
+chuck     -> 2
+could     -> 1
+how       -> 1
+if        -> 1
+much      -> 1
+wood      -> 2
+woodchuck -> 2
+
+and the following dictinary produced by concordance
+
+run  -> [2, 3, 3]
+see  -> [1, 2]
+spot -> [1, 2, 3]
+
+Look at the function below. The commented out code shows an alternative way to
+compute the maximum length. We start with max_len at 0and then look at every
+key in adict: if the length of its str is bigger than the max_len, we update
+max_len to its value. After the loop finishes, max_len will store the maximum
+string length of the keys.
+
+Note that we call str(...) because this function works for all dictionaries,
+with all different types of keys.
+
+We can write this code more elegantly by creating a comprehension of the string
+lengths of all the keys, and then call the max function on all these values. The
+later approach (which is written in this function) is more Pythonic solution,
+but it harder for beginners to understand. You should try to understand both
+approaches to solve this problem; use each to help you understand the other.
+
+def print_dict(adict,key=None,reverse=False):
+#    max_len = 0
+#    for k in adict:
+#        if len(str(k)) > max_len:
+#            max_len = len(str(k))
+    max_len = max( [len(str(k)) for k in adict] )
+
+    for k,v in sorted(adict.items(), key=key, reverse=reverse):
+        print('{k: <{max_len}} -> {v}'.format(k=k, v=v, max_len=max_len))
+
+Let us show in stages how we wrote all the code for the full second loop, which
+actually prints all the values.
+
+(1) To print all the values in a dict without fancy formatting, we can write
+just the following (which iterates over all the keys in adict.
+
+    for k in adict:
+       print(k,'->',addict[k])
+
+(2) Another way to do this iterates over key-value pairs using adict.items()
+
+    for k,v in adict.items():
+       print(k,'->',v)
+
+(3) We would like to print this information better formatted so we use the
+    format function on following string: {k: <{max_len}} -> {v}', into which we
+    substitue the values bound to k and v, and also max_len (I used the same
+    names here inside the {} but these names could be different). After
+    formatting the string might be 'chuck     -> 2'. Notice that
+    {k: <{max_len}} ... substitutes 9 (max_len) into the specification for k,
+    so the key is printed in field width of 9, left justified, with spaces
+    afterwards).
+
+    for k,v in adict.items():
+        print('{k: <{max_len}} -> {v}'.format(k=k, v=v, max_len=max_len))
+
+    an equivalent print is the following (but less clear)
+
+        print('{x: <{y}} -> {z}'.format(x=k, z=v, y=max_len))
+
+(4) Finally, we would like to iterate through adict.items() in a sorted form,
+    using the key and reverse parameters. We know that we can write sorted 
+    (a function that produces a list we can iterate over). Here it is a list of
+    dictionary items, sorted according to key/reverse, which are passed as
+    arguments to print_dict and then passed on to sorted). An iterator using
+    this information as follows.
+
+    for k,v in sorted(adict.items(), key=key, reverse=reverse):
+
+    adict.items produces 2-tuples of key,value pairs, like ('a', 2) then 
+    ('can', 1) then ('chuck', 2) etc. in any order. The sorted function produces
+    a list of these tuple according to key/reverse, which we can iterate over:
+    k is bound to each first value in the tuple while v is bound to the second.
+
+The project shows various calls to print_dict, both with/without arguments
+matching key/reverse (if omitted, both have default values: None/False, which
+just sorts the standard way.
+
+------------------------------------------------------------------------------
+
+The reverse and reverse_distinct Functions
+
+The second function (as the name implies above) is a simple variant of the
+first. We start by discussing the first, the slight problem with it, and the
+fix. To be concrete let's begin by looking at the dictionary we pass to this
+function as an argument, and then the reversed dictionary that it returns.
+
+The argument could look as follows. This dictionary has names of people as its
+keys and lists of names of states as its values (the list of the states each of
+the people lived in): note that these lists can have dupliate values in them, if
+the person lived in the state, moved to another state, and then moved back. The
+lists for some people, e.g., 'rich' have this property (he lived in 'PA' and
+'CA' twice each); the lists for other people, e.g., 'alex' do not.
+
+occupancy = {'rich'  : ['IL','PA','CA','WA','PA','CA'],
+             'alex'  : ['WA','PA','AZ','CA','NY'],
+             'mark'  : ['WA','PA','CA','IN','CA'],
+             'ellen' : ['CA','OR','WA','PA','CA'],
+             'patty' : ['WA','PA','OR'],
+             'david' : ['NY','RI','PA','WA'] }
+
+In a "reversed" dictionary, they keys are the names of states and the values are
+lists of the names of people who have lived in that state. So a reversed
+dictionary might look as follows. Note that in the lists in the argument, the
+order of the states is important: they tell the movements from state to state
+over time of each person; but in the list in the result, the order of the
+people is irrelevant.
+
+Here I show the results of printing this dictionary with print_dict. If we
+wanted to, we could have sorted each of these lists for easier reading, but I
+didn't here.
+
+  AZ -> ['alex']
+  CA -> ['alex', 'rich', 'ellen', 'mark']
+  IL -> ['rich']
+  IN -> ['mark']
+  NY -> ['alex', 'david']
+  OR -> ['patty', 'ellen']
+  PA -> ['alex', 'rich', 'patty', 'david', 'ellen', 'mark']
+  RI -> ['david']
+  WA -> ['alex', 'rich', 'patty', 'david', 'ellen', 'mark']
+
+Here is our first attempt to reverse a dictionary. It would  be very interesting
+to single-step this function with the debugger to see how every step worked.
+
+def reverse(adict):
+    answer = {}
+    for k,k_vals in adict.items():
+        for v in k_vals:
+            if v not in answer:
+                answer[v] = []
+            answer[v].append(k)
+            #code in loop can be replaced by: answer.setdefault(v,[]).append(k)
+        #print(answer)  # uncomment this print to see answer being built
+
+    return answer
+
+This function works as follows. First is defines the answer dictionary to be
+empty; it will add and update information into this answer dictionary and
+ultimately return it. In between defining and returning, the OUTER for loop
+iterates over every item in adict. Each item in adict is a key (person) and
+value associated with that key (list of states). Here is how each of these
+is processed.
+
+The INNER for loop iterates over each state in the list of states. Inside the
+body of the inner for loop we have both k, the person, and v, each state the
+person lived in. We want to add that person to the list for that state in the
+answer dictionary. We do that by looking-up the state as a key in answer with
+.setdefault: it either returns  the list associated with that state (if that
+state is already a key in the answer dictionary) or it puts the state in as a
+key in answer and associates it with empty list and returns that list; then it
+appends the person to the list it found or created.
+
+So in the outer loop, when k = 'rich' k_vals = ['IL','PA','CA','WA','PA','CA'];
+in the inner loop v is bound to each of these states. For 'IL' it puts 'IL'
+in answer with an empty list and appends 'rich' to this list; then it puts 'PA'
+in answer with an empty list and appends 'rich' to this list; then it puts 'CA'
+in answer with an empty list and appends 'rich' to this list; then it puts 'WA'
+in answer with an empty list and appends 'rich' to this list; then it finds 'PA'
+already is a key in answer, so it appends 'rich' to its list ('rich' is now in
+the list twice -an issue we will deal with soon); then it finds 'CA' already is
+a key in answer, so it appends 'rich' to it list ('rich' is now in that list
+twice too). The inner loop is now finished. Every state that 'rich' lived in is
+now a key in the answer dictionary, and 'rich' is in the list associated with
+each key: sometimes twice. Now the outer loop goes to the next person and
+and the states that person lived in....
+
+It would be interesting to uncomment the print(answer) call after the INNER for
+loop, which is executed once for every iteration of the OUTER for loop. It shows
+how the answer dictionary is built, after every person is processed. We could
+print this information in the inner loop, to show even more details about how
+the loop was built.
+
+When this function finally returns answer, it is the following dictionary.
+Notice that the list of people who have lived in every state has names that
+appear more than once.
+
+  AZ -> ['alex']
+  CA -> ['alex', 'rich', 'rich', 'ellen', 'ellen', 'mark', 'mark']
+  IL -> ['rich']
+  IN -> ['mark']
+  NY -> ['alex', 'david']
+  OR -> ['patty', 'ellen']
+  PA -> ['alex', 'rich', 'rich', 'patty', 'david', 'ellen', 'mark']
+  RI -> ['david']
+  WA -> ['alex', 'rich', 'patty', 'david', 'ellen', 'mark']
+
+So, how can we fix this problem? Well, before we append a name into a list, we
+should check to see whether or not it is there: if it is there, do nothing; if
+it is not there, append. Here is the updated code, in the reverse_disctinct
+function. This is similar to how we avoided duplicate line numbers in the
+concordance function.
+
+def reverse_distinct(adict):
+    answer = {}
+    for k,k_vals in adict.items():
+        for v in k_vals:
+            if v not in answer:
+                answer[v] = []
+            where = answer[v]
+            #code above can be replaced by: where = answer.setdefault(v,[])
+            if k not in where:
+                where.append(k)
+        #print(answer)  # uncomment this print to see answer being built
+
+    return answer
+
+Notice that everything is the same, except the body of the inner loop, which
+becomes the following.
+
+     if v not in answer:
+         answer[v] = []
+     where = answer[v]
+     #code above can be replaced by: where = answer.setdefault(v,[])
+     if k not in where:
+         answer.append(k)
+
+Again, this need to add the person into the list associated with a state, but
+not if the person is already in that list.
+
+First, where computes the list for the state: the list associated with the state
+if it is already in the answer dictionary; an empty list that becomes associated
+with the state if it is not already in the answer dictionary. Then the if
+statements checks whether the name is in the list, and if not it appends the
+name to the list associated with the state (computed and bound to where above).
+
+When this function finally returns answer, it is the following dictionary.
+Notice that the list of people who have lived in every state has each name
+distinct: none appears more than once.
+
+  AZ -> ['alex']
+  CA -> ['alex', 'rich', 'ellen', 'mark']
+  IL -> ['rich']
+  IN -> ['mark']
+  NY -> ['alex', 'david']
+  OR -> ['patty', 'ellen']
+  PA -> ['alex', 'rich', 'patty', 'david', 'ellen', 'mark']
+  RI -> ['david']
+  WA -> ['alex', 'rich', 'patty', 'david', 'ellen', 'mark']
+
+In reality, what we want is to associate each key with a set, which by its
+defintion has no duplicates. That would simplify our code. We will discuss sets
+in the next lecture and revisit the reverse functions.
+
+Finally, the following code sorts each list of names associated with a state
+before returning the dictionary.
+
+
+def reverse_distinct(adict):
+    answer = {}
+    for k,k_vals in adict.items():
+        for v in k_vals:
+            if v not in answer:
+                answer[v] = []
+            where = answer[v]
+            #code above can be replaced by: where = answer.setdefault(v,[])
+            if k not in where:
+                where.append(k)
+        #print(answer)  # uncomment this print to see answer being built
+
+    for v in answer.values():    # examine every value/list in the dictionary
+        v.sort()		  # and sort it (mutate it)
+    return answer
+
+The result printed with print_dict would be
+
+AZ -> ['alex']
+CA -> ['alex', 'ellen', 'mark', 'rich']
+IL -> ['rich']
+IN -> ['mark']
+NY -> ['alex', 'david']
+OR -> ['ellen', 'patty']
+PA -> ['alex', 'david', 'ellen', 'mark', 'patty', 'rich']
+RI -> ['david']
+WA -> ['alex', 'david', 'ellen', 'mark', 'patty', 'rich']
+
+Now the lines (key/value pairs) are sorted by state and the lists are sorted
+by names.
+
+

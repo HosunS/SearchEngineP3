@@ -1,0 +1,168 @@
+__author__ = 'dgk'
+# RESTAURANT COLLECTION PROGRAM
+# Informatics 42, UCI, David G. Kay, Winter 2012
+
+# Implement Restaurant as a class, collection as a class containing a list.
+
+##### MAIN PROGRAM (CONTROLLER)
+
+def restaurants():  # nothing -> interaction
+    """ Main program
+    """
+    print("Welcome to the restaurants program!  [RPList]")
+    collection = Collection()
+    collection = handle_commands(collection)
+    print("\nThank you.  Good-bye.")
+
+
+def handle_commands(C):  # Collection -> Collection (plus interaction)
+    """ Display menu to user, accept and process commands
+    """
+    MENU = """
+Restaurant Collection Program --- Choose one
+    a:  Add a new restaurant to the collection
+    r:  Remove a restaurant from the collection
+    s:  Search the collection for selected restaurants
+    p:  Print all the restaurants
+    q:  Quit
+"""
+    while True:
+        response = input(MENU)
+        if response=="q":
+            return C
+        elif response=='a':
+            C.add(Restaurant_get_info())
+        elif response=='r':
+            C.remove_by_name(ask_for_name("remove"))
+        elif response=='p':
+            print(C)
+        elif response=='s':
+            for r in C.search_by_name(ask_for_name("search for")):
+                print(str(r))
+        else:
+            invalid_command(response)
+
+def ask_for_name(action):  # str -> str (plus interaction)
+    """ Prompt user for a restaurant name and return it.
+    """
+    return input("Please enter the name of the restaurant to " + action + ":  ")
+
+def invalid_command(response):  # str -> interaction
+    """ Print message for invalid menu command.
+    """
+    print("Sorry; '" + response + "' isn't a valid command.  Please try again.")
+
+def Restaurant_get_info():  # nothing -> Restaurant
+    """ Prompt user for fields of Restaurant; create and return.
+    """
+    return Restaurant(
+        input("Please enter the restaurant's name:  "),
+        input("Please enter the kind of food served:  "),
+        input("Please enter the phone number:  "),
+        input("Please enter the name of the best dish:  "),
+        float(input("Please enter the price of that dish:  ")))
+
+
+
+##### RESTAURANT
+
+class Restaurant():
+    """ Attributes:  name, cuisine, phone, dish, price
+    """
+    def __init__(self, name: str, cuisine: str, phone: str,
+                 dish: str, price: float):
+        self.name = name
+        self.cuisine = cuisine
+        self.phone = phone
+        self.dish = dish
+        self.price = price
+
+    def __str__(self):
+        return\
+        "Name:     " + self.name + "\n" +\
+        "Cuisine:  " + self.cuisine + "\n" +\
+        "Phone:    " + self.phone + "\n" +\
+        "Dish:     " + self.dish + "\n" +\
+        "Price:    $%3.2f" % self.price + "\n\n"
+
+
+# Testing for Restaurant:
+if __name__ == '__main__':
+    testr1 = Restaurant('Thai Dishes', 'Thai', '334-4433', 'Mee Krob', 8.50)
+    actual = str(testr1)
+    expected = ( # Parentheses let us split the statement across lines
+"""Name:     Thai Dishes
+Cuisine:  Thai
+Phone:    334-4433
+Dish:     Mee Krob
+Price:    $8.50
+
+""")
+    assert(actual == expected)
+
+
+
+
+
+#### COLLECTION
+
+class Collection():
+    """ Attribute:  rests (list of Restaurants)
+    """
+
+    def __init__(self):
+        self.rests = []
+
+    def __str__(self):
+        s = ""
+        for r in self.rests:
+            s = s + str(r)
+        return s
+
+    def add(self, r: Restaurant) -> 'List of Restaurant':
+        """ Return list of Restaurants with input added at end
+        """
+        self.rests.append(r)
+
+    def remove_by_name(self, name: str) -> 'side effect, change rests':
+        """ Given name, remove all Restaurants with that name from collection.
+        """
+        result = []
+        for r in self.rests:
+            if r.name != name:
+                result.append(r)
+        self.rests = result
+
+        #    Alternative:
+        #    return [r for r in self.rests if r.name != name]
+
+    def search_by_name(self, name: str) -> 'list of Restaurant':
+        """ Return list of Restaurants in input list whose name matches input string.
+        """
+        return [r for r in self.rests if r.name == name]
+
+# Testing for Collection
+if __name__ == '__main__':
+    testr1 = Restaurant('Thai Dishes', 'Thai', '334-4433', 'Mee Krob', 8.50)
+    testr2 = Restaurant('Thai Touch', 'Thai', '334-3344', 'Paht Thai', 10.50)
+    testr3 = Restaurant('Taillevent', 'French', '01-11-22-33-44', 'Escargots', 28.50)
+    testr4 = Restaurant('Thai Dishes', 'Thai', '223-4433', 'Paht Woon Sen', 10.50)
+    testr5 = Restaurant('Thai Dishes', 'Thai', '211-4433', 'Larb Gai', 13.50)
+    testRC = Collection()
+    testRC.rests = [testr1, testr2, testr3, testr4, testr5]
+
+    assert(testRC.search_by_name("Not there") == [])
+    assert(Collection().search_by_name("Taillevent") == [])
+    assert(testRC.search_by_name("Taillevent") == [testr3])
+    assert(testRC.search_by_name("Thai Dishes") == [testr1, testr4, testr5])
+
+    testRC.remove_by_name("Taillevent")
+    assert(testRC.rests == [testr1, testr2, testr4, testr5])
+
+    testRC2 = Collection()
+    testRC2.rests = [testr1, testr2, testr3, testr4, testr5]
+    testRC2.remove_by_name("Thai Dishes")
+    assert(testRC2.rests == [testr2, testr3])
+
+
+restaurants()

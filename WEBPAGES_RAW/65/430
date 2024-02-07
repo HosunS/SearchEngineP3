@@ -1,0 +1,547 @@
+// Cryptogram solver, David Eppstein, UC Irvine, September 2000.
+// UI written by Steve Trottier and modified by DE
+
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.util.zip.*;
+import java.net.*;
+import java.io.*;
+
+public class Cryptogram extends java.applet.Applet
+{	
+	Checkbox editFreely = new Checkbox( "Edit Cryptogram", true );
+	EditFreelyWatcher editFreelyWatcher = new EditFreelyWatcher();
+	TextArea cryptogramArea = new TextArea( "", 1, 1, TextArea.SCROLLBARS_NONE );
+	TextField attributionField = new TextField();
+	Button undoChanges = new Button( "Undo Changes" );
+	Button importRandom = new Button( "Import Random Cryptogram" );
+	Button stop = new Button( "Stop" );
+	Button solve = new Button( "Solve" );
+	int knownPuzzle = 0;
+
+	CryptChar[] cryptPositions;
+	CryptChar[] attribPositions;
+	CryptChar[] alphaPositions;
+	CryptChar[] reversePositions;
+	
+	CryptChar alpha(char c) {
+		if (WordPatterns.letter(c)) return alphaPositions[(int)c - (int)'A'];
+		else return new CryptChar(c);
+	}
+	CryptChar ralpha(char c) {
+		return reversePositions[(int)c - (int)'A'];
+	}
+	
+
+	public void init()
+	{	setBackground( Color.white );
+		editFreely.setBackground( Color.white );
+		//setBackground( Color.lightGray );
+		GridBagLayout layout = new GridBagLayout();
+		GridBagConstraints c = new GridBagConstraints();
+		setLayout( layout );
+		c.insets = new Insets( 4,4,4,4 );
+		c.gridwidth = GridBagConstraints.REMAINDER;
+		c.weightx = 1.0;
+		Panel p = new Panel();
+		layout.setConstraints( p, c );
+		add( p );
+		p.setLayout( new FlowLayout() );
+		p.add( editFreely );
+		p.add( undoChanges );
+		c.weightx = 0.0;
+		Label l = new Label( "Cryptogram:" );
+		c.anchor = GridBagConstraints.WEST;
+		layout.setConstraints( l, c );
+		add( l );
+		c.anchor = GridBagConstraints.CENTER;
+		c.weightx = 1.0;
+		c.weighty = 1.0;
+		c.fill = GridBagConstraints.BOTH;
+		c.insets = new Insets( 0,4,4,4 );
+		layout.setConstraints( cryptogramArea, c );
+		add( cryptogramArea );
+		c.fill = GridBagConstraints.NONE;
+		c.weightx = 0.0;
+		c.weighty = 0.0;
+		c.gridwidth = GridBagConstraints.RELATIVE;
+		c.anchor = GridBagConstraints.WEST;
+		l = new Label( "Attribution:" );
+		layout.setConstraints( l, c );
+		add( l );
+		c.anchor = GridBagConstraints.CENTER;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridwidth = GridBagConstraints.REMAINDER;
+		c.weightx = 1.0;
+		layout.setConstraints( attributionField, c );
+		add( attributionField );
+		p = new Panel();
+		c.gridheight = GridBagConstraints.REMAINDER;
+		layout.setConstraints( p, c );
+		add( p );
+		p.add( importRandom );
+		p.add( solve );
+		p.add( stop );
+
+		undoChanges.setEnabled( false );
+		Font f = new Font( "Courier", Font.PLAIN, 12 );
+		cryptogramArea.setFont( f );
+		attributionField.setFont( f );
+		TextAreaWatcher textAreaWatcher = new TextAreaWatcher();
+		cryptogramArea.addKeyListener( textAreaWatcher );
+		attributionField.addKeyListener( textAreaWatcher );
+		editFreely.addItemListener( editFreelyWatcher );
+		undoChanges.addActionListener( new UndoChangesButtonWatcher() );
+		importRandom.addActionListener( new ImportRandomButtonWatcher() );
+		stop.addActionListener( new StopButtonWatcher() );
+		solve.addActionListener( new SolveButtonWatcher() );
+		solve.setEnabled( true );
+		stop.setEnabled( false );
+		cryptogramArea.requestFocus();
+		cryptogramArea.setCursor( new Cursor( Cursor.TEXT_CURSOR ) );
+		attributionField.setCursor( new Cursor( Cursor.TEXT_CURSOR ) );
+		
+		alphaPositions = new CryptChar[26];
+		reversePositions = new CryptChar[26];
+		for (char ch = 'A'; ch <= 'Z'; ch++) {
+			alphaPositions[(int)ch-(int)'A'] = new CryptChar(ch);
+			reversePositions[(int)ch-(int)'A'] = new CryptChar(ch);
+		}
+	}
+
+	private StringBuffer contentBuf = new StringBuffer();
+	private String getCryptogramAreaString()
+	{
+		contentBuf.setLength(0);
+		for ( int i=0; i < cryptPositions.length; i++ )
+			contentBuf.append(cryptPositions[i].getCurrent());
+		return contentBuf.toString();
+	}
+
+	private String getAttributionFieldString()
+	{
+		contentBuf.setLength(0);
+		for ( int i=0; i < attribPositions.length; i++ )
+			contentBuf.append(attribPositions[i].getCurrent());
+		return contentBuf.toString();
+	}
+
+	private String wholeText()
+	{
+		contentBuf.setLength(0);
+		for ( int i=0; i < cryptPositions.length; i++ )
+			contentBuf.append(cryptPositions[i].getCurrent());
+		contentBuf.append(" ");
+		for ( int i=0; i < attribPositions.length; i++ )
+			contentBuf.append(attribPositions[i].getCurrent());
+		return contentBuf.toString();
+	}
+
+	public class TextAreaWatcher extends KeyAdapter
+	{
+		// handle key press events in cryptogram solving mode
+		public void keyPressed(KeyEvent e)
+		{
+			if ( !editFreely.getState() )
+			{
+				TextComponent hasFocus = (TextComponent)e.getSource();
+				char c = Character.toUpperCase(e.getKeyChar());
+				if ( !Character.isISOControl(c) )
+				{
+					CryptChar[] charArray;
+					if ( hasFocus == cryptogramArea )
+						charArray = cryptPositions;
+					else
+						charArray = attribPositions;
+
+					int caretPos = hasFocus.getCaretPosition();
+					if( caretPos < charArray.length )
+					{	if ( charArray[caretPos].isMutable() && WordPatterns.letter(c) )
+						{
+							// here with letter typed over letter -- swap cryptPositions
+							charArray[caretPos].swap(c);
+							cryptogramArea.setText( getCryptogramAreaString() );
+							attributionField.setText( getAttributionFieldString() );
+						}
+					}
+					hasFocus.setCaretPosition( caretPos+1 );
+					e.consume();
+				}
+				else if ( e.getKeyCode()==e.VK_DELETE ||
+							 e.getKeyCode()==e.VK_TAB || e.getKeyCode()==e.VK_ENTER )
+					e.consume();
+				else if ( e.getKeyCode() == e.VK_BACK_SPACE )
+				{	e.consume();
+					if ( hasFocus.getCaretPosition()>0 )
+						hasFocus.setCaretPosition( hasFocus.getCaretPosition()-1 );
+				}
+			}
+		}
+	}
+
+	// handle "Edit Freely" checkbox state changes
+	// when changed from checked to unchecked, set up cryptogram strings
+	public class EditFreelyWatcher implements ItemListener
+	{	public void itemStateChanged( ItemEvent e )
+		{	if ( !editFreely.getState() )
+			{	setStrings( cryptogramArea.getText().toUpperCase(),
+								attributionField.getText().toUpperCase() );
+
+				clearTranspositions();
+				cryptogramArea.setText( getCryptogramAreaString() );
+				attributionField.setText( getAttributionFieldString() );
+				undoChanges.setEnabled( true );
+			}
+			else
+			{	undoChanges.setEnabled( false );
+				knownPuzzle = 0;
+			}
+		}
+	}
+	
+	// set up cryptPositions without necessarily changing display
+	public void setStrings(String s, String t) {
+		cryptPositions = new CryptChar[s.length()];
+		for ( int i=0; i<s.length(); i++ )
+				cryptPositions[i] = alpha(s.charAt(i));
+
+		attribPositions = new CryptChar[t.length()];
+		for ( int i=0; i<t.length(); i++ )
+			attribPositions[i] = alpha(t.charAt(i));
+				
+	}
+
+	// return all CryptChars to their original setting
+	public void clearTranspositions() {
+		for (int i = 0; i < 26; i++) {
+			alphaPositions[i].reset();
+			reversePositions[i].reset();
+		}
+	}
+	
+	// make a completely random derangement for all CryptChars
+	public void randomize() {
+		for (int i = 25; i > 0; i--) {
+			do {
+				int j = (int)(Math.random()*(i+1));
+				alphaPositions[i].swap(alphaPositions[j].getCurrent());
+				cryptogramArea.setText( getCryptogramAreaString() );
+				attributionField.setText( getAttributionFieldString() );
+			} while (alphaPositions[i].getOriginal() == alphaPositions[i].getCurrent());
+		}
+	}
+
+	// handle "Undo" button presses
+	public class UndoChangesButtonWatcher implements ActionListener
+	{	public void actionPerformed( ActionEvent e ) {
+			clearTranspositions();
+			cryptogramArea.setText( getCryptogramAreaString() );
+			attributionField.setText( getAttributionFieldString() );
+		}
+	}
+
+	// handle "Import Random" button presses
+	public class ImportRandomButtonWatcher implements ActionListener {
+		private Vector puzzleList = null;
+
+		public void actionPerformed( ActionEvent e ) {
+			importRandom.setEnabled(false);
+			solve.setEnabled(false);
+			setCursor( new Cursor( Cursor.WAIT_CURSOR ) );
+			if (puzzleList == null) loadPuzzles();
+			int n = puzzleList.size();
+			if (n <= 0) {
+				showStatus("Unable to find any puzzles!");
+				return;
+			}
+			int i = (int)(Math.random()*n);
+			showStatus("Importing puzzle " + (i+1) + " of " + n);
+			String line = (String) puzzleList.elementAt(i);
+				
+			// randomly derange the strings
+			setStrings( line.substring(0, line.indexOf(" -- ")).toUpperCase(),
+							line.substring(line.indexOf(" -- ")+4).toUpperCase() );
+			randomize();
+			setStrings( getCryptogramAreaString(), getAttributionFieldString() );
+			clearTranspositions();
+			
+			// permanently set strings to their randomized variants
+			cryptogramArea.setText( getCryptogramAreaString() );
+			attributionField.setText( getAttributionFieldString() );
+			editFreely.setState( false );
+			undoChanges.setEnabled( true );
+			importRandom.setEnabled(true);
+			solve.setEnabled(true);
+			setCursor( new Cursor( Cursor.DEFAULT_CURSOR ) );
+		}
+
+		private void loadPuzzles() {
+			puzzleList = new Vector();
+			try {
+				importRandom.setEnabled(false);
+				URL theURL = new URL( getCodeBase().toString() + "puzzles.txt.gz" );
+				URLConnection conn = theURL.openConnection();
+				BufferedReader in = new BufferedReader( new InputStreamReader(
+											new GZIPInputStream( conn.getInputStream() ) ) );
+
+				String line;
+				while ( (line=in.readLine())!=null )
+					puzzleList.addElement(line);
+				in.close();
+			}
+			catch( IOException e ) { }
+		}
+	}
+	
+	// handle "Stop" button events
+	public class StopButtonWatcher implements ActionListener
+	{	public void actionPerformed(ActionEvent e) {
+			stop.setEnabled(false);
+		}
+	}
+	
+	// handle "Solve" button events
+	WordPatterns wordPatterns = null;
+	static final int N_SWAPS_TO_TRY = 50;
+	public class SolveButtonWatcher implements ActionListener, Runnable
+	{
+	
+		public void actionPerformed( ActionEvent e )
+		{
+			setStrings( cryptogramArea.getText().toUpperCase(),
+								attributionField.getText().toUpperCase() );
+
+			clearTranspositions();
+			cryptogramArea.setText( getCryptogramAreaString() );
+			attributionField.setText( getAttributionFieldString() );
+
+			importRandom.setEnabled(false);
+			solve.setEnabled(false);
+			stop.setEnabled(true);
+			editFreely.setState(false);
+			undoChanges.setEnabled( true );
+			new Thread(this).start();
+		}
+		
+		public void setPermutation(char matches[]) {
+			for (int i = 0; i < 26; i++) alphaPositions[i].swap(matches[i]);
+		}
+		public char[] getPermutation() {
+			char[] matches = new char[26];
+			for (int i = 0; i < 26; i++) matches[i] = alphaPositions[i].getCurrent();
+			return matches;
+		}
+				
+		public void run() {
+			Thread.yield();
+			Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+			setCursor( new Cursor( Cursor.WAIT_CURSOR ) );
+			if (wordPatterns == null) {
+				showStatus("Loading word frequency data...");
+				wordPatterns = new WordPatterns ( getCodeBase().toString() );
+				showStatus("Frequency data loaded");
+			}
+			LetterProbability p = new LetterProbability();
+			int nIters = 0;
+			clearTranspositions();
+			String code = wholeText();
+			String codeMain = getCryptogramAreaString();
+			
+			int globalBad = 1000;
+			int globalBadAuth = 1000;
+			double globalProb = 0.0;
+			char[] globalPerm = getPermutation();
+			
+			// main solver loop
+			while ( stop.isEnabled() ) {
+
+				// update letter probability matrix
+				p = new LetterProbability(p, code, wordPatterns);
+				setPermutation( p.match() );
+
+				boolean foundGood = false;
+				
+				// loop making local improvements until reach local optimum
+				for (;;) {
+					exchangeLetters();
+					replaceWords();
+
+					// compare against global optimum found so far
+					String decode = getCryptogramAreaString();
+					int nBad = wordPatterns.nBadWords( decode );
+					int nBadAuth = wordPatterns.nBadWords( getAttributionFieldString() );
+					double prob = wordPatterns.phraseProb ( decode );
+					if (nBad > globalBad ||
+						 (nBad == globalBad && nBadAuth > globalBadAuth) ||
+						 (nBad == globalBad && nBadAuth == globalBadAuth && prob <= globalProb))
+						 break;
+
+					foundGood = true;
+					globalBad = nBad;
+					globalBadAuth = nBadAuth;
+					globalProb = prob;
+					globalPerm = getPermutation();				
+				}
+
+				if (foundGood) p.adjustPerm(globalPerm, 0.05 * Math.pow(0.5, globalBad));
+				else {
+					p.adjustPerm( getPermutation(), -0.01 ); // make next one more likely to differ
+					setPermutation( globalPerm );		// iteration didn't get anywhere
+				}
+				
+				// update display
+				cryptogramArea.setText( getCryptogramAreaString() );
+				attributionField.setText( getAttributionFieldString() );
+				showStatus("Iteration " + (++nIters) + ", " + (globalBad + globalBadAuth) +
+								" unrecognized words, p=" + globalProb);
+				Thread.yield();
+			}
+			setCursor( new Cursor( Cursor.DEFAULT_CURSOR ) );
+			solve.setEnabled(true);
+			stop.setEnabled(false);
+			importRandom.setEnabled(true);
+		}
+	}
+	
+	// try swapping pairs of letters that increase the set of known words
+	private void exchangeLetters() {
+		String decode = getCryptogramAreaString();
+		long bad = wordPatterns.badWords( decode );
+		double prob = wordPatterns.phraseProb ( decode );
+		for (char i = 'A'; i <= 'Z'; i++) {
+			for (char j = 'A'; j < i; j++) {
+				alpha(ralpha(i).getCurrent()).swap(j);	// swap char i for char j
+				decode = getCryptogramAreaString();
+				long newBad = wordPatterns.badWords( decode );
+				if ((newBad &~ bad) != 0) {
+					alpha(ralpha(i).getCurrent()).swap(j);	// not an improvement, undo
+					continue;
+				}
+				double newProb = wordPatterns.phraseProb( decode );
+				if (newBad == bad && newProb < prob) {
+					alpha(ralpha(i).getCurrent()).swap(j);	// not an improvement, undo
+					continue;
+				}
+
+				// good swap, maintain quality measure of updated string
+				bad = newBad;
+				prob = newProb;
+			}
+		}
+	}
+	
+	// try replacing individual words that don't affect other parts of the encoding
+	private void replaceWords() {
+		
+		// loop through words of text finding possible replacements
+		// we do this twice to give priority to words in main cryptogram area
+		Enumeration enum = wordPatterns.words(getCryptogramAreaString());
+		int nWords = 0;
+		while (enum.hasMoreElements()) {
+			String codeWord = (String) enum.nextElement();
+			nWords++;
+			replaceOneWord(codeWord, nWords, getCryptogramAreaString());
+		}
+		enum = wordPatterns.words(wholeText());
+		nWords = 0;
+		while (enum.hasMoreElements()) {
+			String codeWord = (String) enum.nextElement();
+			nWords++;
+			replaceOneWord(codeWord, nWords, wholeText());
+		}
+	}
+	
+	// inner loop of replaceWords()
+	private void replaceOneWord(String codeWord, int nWords, String decode)
+	{
+		// find letters not used in other words of current text
+		Enumeration curText = wordPatterns.words(decode);
+		String curWord = null;
+		int used = 0;
+		int curN = 0;
+		while (curText.hasMoreElements()) {
+			String textWord = (String) curText.nextElement();
+			curN++;
+			if (curN == nWords) curWord = textWord;
+			else if (wordPatterns.getWord(textWord) != null)
+				used |= letterBits(textWord);
+		}
+
+		// test if there's any hope of replacing this word
+		if ((letterBits(curWord) &~ used) == 0) return;
+
+		// loop over dictionary finding best replacement
+		double bestProb = 0.0;
+		String bestWord = codeWord;
+		Enumeration matches = wordPatterns.matches(curWord).elements();
+		while (matches.hasMoreElements()) {
+			WordPatterns.Word match = (WordPatterns.Word) matches.nextElement();
+			if (match.freq > bestProb && matchable(curWord,match.theWord,used)) {
+				bestProb = match.freq;
+				bestWord = match.theWord;
+			}
+		}
+		
+		// did we find a replacement?
+		if (bestProb > 0.0) {
+			for (int i = 0; i < curWord.length(); i++) {
+				char c = curWord.charAt(i);
+				if (WordPatterns.letter(c))
+					alpha(ralpha(c).getCurrent()).swap(bestWord.charAt(i));
+			}
+		}
+	}
+	
+	// make bitmask of letters occurring in a word
+	private int letterBits(String word) {
+		int mask = 0;
+		for (int i = 0; i < word.length(); i++) {
+			int c = (int)word.charAt(i) - (int)'A';
+			if (c >= 0 && c < 26) mask |= (1<<c);
+		}
+		return mask;
+	}
+	
+	// do singleton chars of word use available letters?
+	private boolean matchable(String codeWord, String decode, int used)
+	{
+		for (int i = 0; i < codeWord.length(); i++) {
+			int c = (int)codeWord.charAt(i) - (int)'A';
+			if (c < 0 || c >= 26) continue;
+			int d = (int) decode.charAt(i) - (int)'A';
+			if ((used & (1<<c)) != 0) {		// original letter is used elsewhere?
+				if (c != d) return false;		// then it must stay unchanged
+			} else if ((used & (1<<d)) != 0) return false;	// else new letter must be free
+		}
+		return true;
+	}
+		
+
+	// keep track of which character is transposed to which in current solution
+	public class CryptChar
+	{	private char original;
+		private char current;
+
+		public CryptChar( char c ) { current = original = c; }
+		public boolean isMutable() { return WordPatterns.letter(original); }
+		public char getOriginal() { return original; }
+		public char getCurrent() { return current; }
+		private void setCurrent( char c ) { current = c; }
+		public void reset() { setCurrent(getOriginal()); }
+
+		public void swap ( char c ) {
+			if (isMutable() && WordPatterns.letter(c)) {
+				CryptChar ccrev = ralpha(c);
+				CryptChar cc = alpha(ccrev.getCurrent());
+				CryptChar rev = ralpha(getCurrent());
+				
+				cc.setCurrent(getCurrent());
+				setCurrent(c);
+				ccrev.setCurrent(getOriginal());
+				rev.setCurrent(cc.getOriginal());
+			}
+		}
+	}
+
+}

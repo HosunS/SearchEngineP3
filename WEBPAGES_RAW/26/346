@@ -1,0 +1,74 @@
+<html><head><title>
+ECHT'94:Chimera:Hypertext Concepts</title>
+</head><p>
+
+<BODY TEXT="#000000" LINK="#0000FF" VLINK="#FF0000" ALINK="#00BB00" BGCOLOR="#FFFFFF">
+<TABLE WIDTH=100%>
+<TR ALIGN=CENTER VALIGN=MIDDLE>
+<TD ALIGN=CENTER><A HREF="index.html#TOC">Table of Contents</A></TD>
+<TD ALIGN=CENTER><A HREF="concepts.html">Hypertext Concepts</A></TD>
+<TD ALIGN=CENTER><A HREF="implementation.html">Implementation Architecture</A></TD>
+</TR>
+</TABLE>
+<HR>
+<H2>3. A Conceptual Architecture</H2>
+<A HREF="concepts.html">Section&nbsp;2</A> outlined Chimera's hypertext concepts and gave a short example mapping them into a reasonably complex software development project. This section sketches a conceptual architecture which supports these concepts. This architecture adopts a client-server approach to providing hypertext services.  We term this the Chimera architecture (See Figure&nbsp;2).<p>
+
+<TABLE WIDTH=100%>
+<TR>
+	<TD VALIGN=BOTTOM ALIGN=CENTER><IMG SRC="images/conceptual-arch.gif" ALT="Conceptual Architecture Figure" WIDTH=503 HEIGHT=301></TD>
+</TR>
+<TR>
+	<TD VALIGN=TOP>Figure 2: <B>Example instance of Chimera conceptual architecture.</B> Chimera clients consisting of one or more viewers access the Chimera server to provide hypertext services to their users. Note that there are no restrictions on the number of clients, the number of viewers per client, and that the same viewer can appear in multiple clients. The process invoker can invoke Chimera clients as directed by the Chimera server. Chimera clients can also access external systems in the environment, such as a graphics server or a sound server. All entities are separate Unix processes and can read/write information to a repository such as a file system or object manager.</TD>
+</TR>
+</TABLE><p>
+
+A client-server approach is adopted to help meet the challenges of a heterogeneous SDE in which there are many users. A client-server approach allows multiple users on different machines to access a hyperweb from a dynamically changing set of viewers; hypertext events originate in one viewer and propagate to (potentially many) others via the server. The use of a server supports a multilingual approach where clients can be written in different programming languages, each of them accessing the server through their language-specific API. The use of a server also keeps process and object file sizes down since code to manage a hyperweb is centralized in the server.
+We now discuss the components of the Chimera architecture which are the Chimera server, the Chimera clients, the process invoker, and the external tools and systems that populate any SDE.<p>
+
+<H3><A NAME="ChimeraServer">3.1 Chimera Server</A></H3>
+The primary responsibilities of the Chimera server are as follows.
+<UL TYPE=DISC>
+	<LI>Provide services which allow clients access to Chimera's hypertext concepts.<p>
+
+	<LI>Manage the persistence of a hyperweb. Through the use of an object manager, the Chimera server must map instances of Chimera's hypertext concepts into a persistent store.  The Chimera server is not responsible for the persistent storage of client object data.<p>
+
+	<LI>Receive, route, and generate hypertext events<A HREF="footnotes.html#Footnote6"><SUP>6</SUP></A>. The server must also provide a means for clients to register interest in a subset of these events.<p>
+
+	<LI>Manage each connected client. For instance, the Chimera server should know what viewers are running, what view each viewer is in, and if the viewer is ready to receive hypertext events.
+</UL>
+<H3><A NAME="ProcessInvoker">3.2 Process Invoker</A></H3>
+The process invoker is responsible for spinning up Chimera clients. This occurs when the Chimera server determines it needs to send a hypertext event to a viewer that is not running. The process invoker maintains a mapping between viewer names and executable programs<A HREF="footnotes.html#Footnote7"><SUP>7</SUP></A>. When the Chimera server sends the process invoker a viewer name, the process invoker invokes the executable program via operating system services.
+<H3><A NAME="ChimeraClient">3.3 Chimera Client</A></H3>
+A Chimera client includes one or more viewers and the libraries needed to communicate with a Chimera server. Each viewer in a client is responsible for the following.
+<UL TYPE=DISC>
+	<LI>definition of the concepts "object" and "view". Each viewer must determine the precise meaning of these concepts in their own context.  While this is typically straightforward, ambiguity may arise especially with respect to versions of objects.<p>
+
+	<LI>definition of the concept "anchor". This includes identifying what elements of a view can have anchors attached to them, how these anchors are created and deleted, how the presence of an anchor is indicated, and what attributes can be assigned to an anchor. Since each viewer may choose to implement this functionality in different ways, a uniform interaction style cannot be guaranteed<A HREF="footnotes.html#Footnote8"><SUP>8</SUP></A>. This is one of many issues facing designers of open hypertext systems [4, 15, 25].<p>
+
+	<LI>a mapping function from an anchor identifier (received from the Chimera server at the time the anchor is created) into a specific region or object of its display.<p>
+
+	<LI>an event handler which will respond to hypertext events from the Chimera server.<p>
+
+	<LI>communicating with the Chimera server. This includes registering for hypertext events, indicating its current view (which may change if the viewer is asked by its user to display a different object), accessing the services related to Chimera's hypertext concepts, and letting the Chimera server know that it is ready to receive hypertext events (this provides time for a newly invoked client to initialize before the server sends it any hypertext events).<p>
+
+	<LI>providing a mechanism for persistent storage of object data.
+</UL>
+<H3><A NAME="ExternalSystems">3.4 External Systems</A></H3>
+Viewers in a Chimera client may directly interface with the user, may require the use of external tools, or may use a user interface management system to present their interface. Chimera does not place any restrictions on what external systems are accessed by its clients or how these clients communicate with their users.
+<HR>
+<TABLE WIDTH=100%>
+<TR ALIGN=CENTER VALIGN=MIDDLE>
+<TD ALIGN=CENTER><A HREF="index.html#TOC">Table of Contents</A></TD>
+<TD ALIGN=CENTER><A HREF="concepts.html">Hypertext Concepts</A></TD>
+<TD ALIGN=CENTER><A HREF="implementation.html">Implementation Architecture</A></TD>
+</TR>
+</TABLE><p>
+
+<h4>
+<hr size=1 noshade>
+This page is part of the <A HREF="http://www.ics.uci.edu/pub/chimera/">Chimera</A> web site.<BR>
+Send feedback and questions to <A HREF="mailto:kanderso@ics.uci.edu">Ken Anderson</A>.<BR>
+Last updated on Thu, Sep 19, 1996 at 12:33:50 PM. 
+</h4>
+</body></html>

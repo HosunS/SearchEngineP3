@@ -1,0 +1,218 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>32.7 Requiring Parameters</title>
+<META NAME="description" CONTENT="32.7 Requiring Parameters">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node262.html">
+<LINK REL="previous" HREF="node260.html">
+<LINK REL="up" HREF="node252.html">
+<LINK REL="next" HREF="node262.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node260.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node252.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node262.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node260.html">32.6 Ordering parameters and</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node252.html">32. OpenEye Command Line</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node262.html">32.8 Accessing parameter values</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION0035700000000000000000">
+32.7 Requiring Parameters</A>
+</H1>
+
+<P>
+Both <i>OEParseCommandLine</i> and <i>OEParseCommandLineLW</i> will check
+that the user has set all the required parameters.  There are two different
+possible kinds of requirements, single parameter requirements and multi
+parameter requirements.  Single variable requirements are set using the
+!REQUIRED field in the !PARAMETER record.  A required parameter must either
+be set by the user or have a default value.  Multi variable requirements
+depend upon the setting of several variables and are specified with a
+text configuration file (separate from the text configuration file passed
+to OEConfigure).  The format of the requirement text configuration file
+passed to either <i>OEParseCommandLine</i> or <i>OEParseCommandLineLW</i>
+are described in the API documentation.   The following example illustrates
+both kinds of requirements.
+
+<P>
+<i>Chapter 32 - Example 9 : cpp file</i>
+<dl><dd><pre class="verbatim">#include "oeplatform.h"
+#include "oesystem.h"
+
+//Defines static const unsigned char* array InterfaceData
+#include "ch32-9.itf"
+
+//Defines static const unsigned char* array RequirementData
+#include "ch32-9r.req"
+
+using namespace OEPlatform;
+using namespace OESystem;
+
+int main(int argc, char** argv)
+{
+  OEInterface itf;
+  OEConfigure(itf,InterfaceData);
+  if (OECheckHelp(itf,argc,argv)) return 0;
+  OEParseCommandLine(itf,argc,argv,RequirementData);
+  OEWriteSettings(itf,oeout,true);
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch32-9.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+<i>Chapter 32 - Example 9 : OEConfigure txt configuration file</i>
+<dl><dd><pre class="verbatim">!CATEGORY Variables
+  !BRIEF Category for variables
+
+  !PARAMETER -x
+    !TYPE float
+    !DEFAULT 0.0
+    !BRIEF First variable
+  !END
+
+  !PARAMETER -y
+    !TYPE float
+    !DEFAULT 0.0
+    !BRIEF Second variable
+  !END
+
+!END
+
+!CATEGORY operator
+
+  !PARAMETER -op
+    !TYPE string
+    !BRIEF Operation to perform on x and y
+    !REQUIRED yes
+    !DETAIL
+      The operation performed is
+
+        x &lt;-op&gt; y
+
+      So if -op is 'add' the operation is
+
+        x + y
+  !END
+
+!END
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch32-9.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+<i>Chapter 32 - Example 9 : Requirement txt configuration file</i>
+<dl><dd><pre class="verbatim">!REQUIREMENT
+  !OPTION -y 0.0 !-op divide
+  !OPTION !-y 0.0
+  !ERROR_MSG
+    Cannot divide by zero
+    result would be undefined
+!END
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch32-9r.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+Running this program gives the following results with a valid command line.
+
+<P>
+<dl><dd><pre class="verbatim">&gt; ch32-9 -x 1 -y 2 -op divide
+#Interface settings
+
+#Variables : Category for variables
+    -x  1.000000
+    -y  2.000000
+
+#operator :
+    -op  divide
+</pre></dl>
+
+<P>
+and the following results with command lines not matching the requirements
+
+<P>
+<dl><dd><pre class="verbatim">&gt; ch32-9 -x 1 -y 1
+Fatal: Missing required parameter -op
+
+&gt; ch32-9 -x 1 -y 0 -op divide
+Fatal: Missing requirements:
+    Cannot divide by zero
+    result would be undefined
+</pre></dl>
+
+<P>
+The first command line above fails because of the "!REQUIRED true" field
+in the !PARAMETER -op record.  The second command line fails because of
+the multi-parameter requirements.
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node260.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node252.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node262.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node260.html">32.6 Ordering parameters and</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node252.html">32. OpenEye Command Line</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node262.html">32.8 Accessing parameter values</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

@@ -1,0 +1,168 @@
+<HTML><HEAD>
+<TITLE> Make: a Unix programming aid
+</TITLE>
+</HEAD><BODY>
+
+<H2> Make:&nbsp; a Unix programming aid </H2>
+
+You should do separate compilation on files,
+compiling code files (files ending with <tt>.c</tt>)
+into object files (ending with <tt>.o</tt>), and then
+creating a final executable version from these.&nbsp;
+This saves much CPU
+time since you only really need to recompile the files you have edited
+since the last compile.&nbsp;
+It also saves you precious hacking time since
+you don't have to sit there waiting for your entire program to recompile
+every time you make a few small corrections.&nbsp;
+The Unix command <I>make</I> executes compiliation of large programs
+according to a set of rules you give it.
+<P>
+The method (not the best -- just a general, simple way which handles
+most cases reasonably well):
+<P>
+Your program for a given lab should be in a single directory.&nbsp;
+Within the directory you should have
+all of your code files (<tt>.c</tt>),
+usually one include file (<tt>.h</tt>),
+and a file called <tt>Makefile</tt> or <tt>makefile</tt>.&nbsp;
+Later you will also have some object files (<tt>.o</tt>),
+a single executable file, and perhaps some program input and output
+files for testing purposes.
+<P>
+The code files contain all executable code and data declarations.&nbsp;
+An easy rule is to put each function in a file by itself,
+with the name of the file corresponding to the name of the function
+contained therein.&nbsp;
+There is nothing wrong with putting several (small) related functions
+in each file as long as you can easily remember where you put them.
+<P>
+The <tt>.h</tt> file contains the compiler directives to insert all
+system include files,
+like <tt>&lt;stdio.h&gt;</tt> and <tt>&lt;math.h&gt;</tt>,
+and all data type and macro definitions.&nbsp;
+This file should <I>not</I>
+contain anything that creates a variable, allocates space, or generates
+executable code.&nbsp;
+It <I>should</I> contain all compiler directives which
+define data structures, macros, etc.&nbsp;
+This file should be included at the head of all <tt>.c</tt> files.&nbsp;
+Thus all code files will have exactly the same knowledge about
+the environment in which they coexist.
+<P>
+The last file, <tt>Makefile</tt>, tells the system how all of your files
+are inter-related, and how to combine them into a program.&nbsp;
+<tt>Makefile</tt> consists of a list of files which need to be generated
+in the process of creating an executable program.&nbsp;
+This list will include the <tt>.o</tt> files and the final executable
+file.&nbsp;
+For each file, there is a list of files that the file depends on,
+and a list of commands (usually just one <tt>gcc</tt> command) that will
+generate the file.&nbsp;
+The syntax is:&nbsp; on a given line you have the name of the file,
+a colon, and a list of the files that it depends on,
+separated by spaces.&nbsp;
+On the next line, the first character <I>must</I> be a tab
+(not eight spaces -- a <I>real</I> tab character).
+Following the tab is a command that should result in the creation
+of the desired file.&nbsp;
+Blank lines between entries are allowed.&nbsp;
+The following is an example <tt>Makefile</tt>:
+<P>
+<pre>
+#----------- example of a makefile ----------
+
+CC=gcc
+
+mysort: main.o timer.o insert.o quick.o merge.o heap.o
+        $(CC) -o mysort main.o timer.o insert.o quick.o merge.o heap.o -lm
+
+main.o: main.c my_includes.h
+        $(CC) -c main.c
+
+insert.o: insert.c my_includes.h
+        $(CC) -c insert.c
+
+quick.o: quick.c my_includes.h
+        $(CC) -c quick.c
+
+merge.o: merge.c my_includes.h
+        $(CC) -c merge.c
+
+heap.o: heap.c my_includes.h
+        $(CC) -c heap.c
+
+#----------- end of example makefile --------
+</pre>
+<P>
+Notice that all files depend on a simple tree structure of
+prerequisites.&nbsp;
+The Unix command <tt>make</tt> will read <tt>Makefile</tt> and
+examine the timestamps on the files involved.&nbsp;
+It will then invoke only
+the commands necessary to update branches of the tree that have been
+modified since the last compile.
+<P>
+Also notice that <I>all</I> object files rely on the include file.&nbsp;
+If you change a definition in the include file, you may redefine a data
+structure or macro whose definition is known to all of the code files,
+so they generally must all be recompiled.&nbsp;
+But even though the include
+file is listed as a prerequisite, it is not listed on the compile
+command line since it is read in when the <tt>#include</tt> directive is
+encountered on the first line of the <tt>.c</tt> file.&nbsp;
+You should not need to
+change the basic definitions in the <tt>.h</tt> file very often, since
+you should not start coding until you have figured out what
+global data structure definitions and other declarations you will need.
+<P>
+Note that include files that are located in the system include directory
+are surrounded by angles (as in <tt>&lt;stdio.h&gt;</tt>) while include
+files that are located in directories relative to the current
+directory are surrounded by double quotes
+(as in <tt>"my_includes.h"</tt>).
+<P>
+It has been observed that g++ will produce better diagnostics
+than gcc if there are errors in your programs.&nbsp;
+Other than that, if you write your
+programs in standard ANSI C as described in Kernighan,
+there should be no difference.
+<P>
+Here is another example makefile:
+<P>
+<pre>
+# This sets a make variable OBJ to the list of all the files I want to
+# compile together.  Make is smart enough to know that each file that
+# ends in .o comes from a file that ends in .c.
+OBJ = sorts.o insertion.o quick.o heap.o merge.o
+
+# This tells make to use the g++ compiler instead of the default (cc)
+# when it is implicitly producing .o files from .c files.
+CC = g++
+
+# This tells make what flags to use when compiling C programs.  The flag
+# -Wall tells g++ to print all warning messages.  The flag -g tells
+# g++ to generate the extra information required by a symbolic debugger
+# such as gdb.
+CFLAGS = -Wall -g 
+
+# This tells make that the main program it is to build
+# is "sorts" and that sorts depends on the files listed in the make variable
+# OBJ.  It also gives a command on the second line to compiler the
+# final executable file "sorts".  Note that the second line begins
+# with a TAB.  Make is very fussy that command lines begin with TABs.
+sorts : $(OBJ)
+	g++ $(CFLAGS) -o sorts $(OBJ) /home/dan/165/timer.o
+</pre>
+<P>
+
+<HR>
+<ADDRESS>
+<A HREF="http://www.ics.uci.edu/~dan">
+Dan Hirschberg </A> <BR>
+Computer Science Department<BR>
+University of California, Irvine, CA 92697-3435<BR>
+</ADDRESS>
+<tt>dan (at) ics.uci.edu</tt><br>
+Last modified: Apr 6, 1999
+</BODY></HTML>

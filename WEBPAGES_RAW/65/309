@@ -1,0 +1,1286 @@
+		Implementing Collection Template Classes in the ITL
+
+
+Introduction:
+
+In this lecture we will discuss the details of the implementation of one data
+type, Set, which is one of the five standard generic data types/collection
+classes that we have discussed (Stack, Queue, Priority Queue, Set, and Map).
+
+The implementation that we will discuss in detail uses an array data structure,
+in a simple way, to store all the values in the Set. There are strong
+similarities between this implementation of Set and the array implementations
+of the other data types; also, Set is of middling complexity compared to Stack,
+Queue, and Priority Queue (lower) and Map (higher), so it is a good class to
+examine in detail.
+
+Please feel free to examine the array implementations of the other data types;
+you can find these implementations in the courselib project, by looking in its
+src folder. In Programming Assignments 2-4, you will write more complicated
+(but still similar) implementations of many of these templated classes. Note
+that the queue implemention is also complicated, because it treats its array as
+a circular structure, to ensure most operations are O(1) (especially enqueue
+and dequeue).
+
+In a code walk-through, a team of programmers listen to another programmer
+talk about his/her code. While looking at the code and hearing a discussion of
+it, they probe for errors, try to uncover why certain design decisions were
+made, and generally discuss the code. You need to lose your ego when you lead a
+code walk-through. Consider this lecture a code walk- through: I encourage
+questions about the code or criticisms of it.
+
+You should examine array_set.hpp and ics_exceptions.hpp files while reading
+this lecture note.
+
+Note that you should not edit/change any file in the courselib folder (unless
+told to by the instructor). If you want to experiment with a class, copy it
+into a project folder and change the copy there: when we #include files
+in a project, C++ will first look for/find a file with that name IN the project
+folder; if it cannot, only then will it try to find a file with the same name
+in a library.
+
+-------------------------
+
+ArraySet:
+
+The array_set.hpp file defines a class templated by a single type, which
+also defines a nested Iterator class.
+
+template<class T> class ArraySet {
+...
+
+  class Iterator {
+  ....
+  }
+
+}
+
+In the previous lecture we discussed the declarations of most of the public
+constructors, methods, and operators in ArraySet. Here we will focus first on
+the private data declararations used to store data in these classes, and then
+study the definitions of the constructors, methods, and operators that
+manipulate them to implement the required semantics/meanings of the data type
+
+-------------------------
+
+
+ArraySet instance variables (private):
+
+For a start, let's examine the private: part of this class. It declares the
+following 4 instance variables.
+
+  private:
+    T*  set;           //Unordered contiguous array
+    int length    = 0; //Physical length of array
+    int used      = 0; //Amount of array used: invariant: 0 <= used <= length
+    int mod_count = 0; //For sensing concurrent modification
+
+(1) set: a pointer to an array of (see the constructors) T.
+    The values in the set are stored in this array: they are stored unordered,
+      and contiguously (one after the other, no holes) in indexes 0 through
+      used-1.
+    This array can be reallocated (growing/shrinking) to accomodate more/fewer
+       values.
+
+(2) length: the length of whatever array is pointed to by set.
+    When the set array is reallocated (see above) this value changes.
+
+(3) used: the amount of the array (number of indexes) that contains values.
+      invariant: 0 <= used <= length; so, for an array of length 4, used can be
+      0, 1, 2, 3, and 4; the first possible set value is stored in set[0] and
+      the last is stored in set[3].
+
+(4) mod_count: the number of modIFICATIONs to (calls to mutators of) an
+      ArraySet since it was constructed.
+     Storing this value is required for the correct implementation of iterators.
+     
+The private: part of the class also declares three (non-public) helper methods
+(erase_at, ensure_length, and ensure_length_low), which are called by public
+methods defined in this class, to simplify their code; we will discuss these
+helper methods later in this lecture note.
+
+Note that I explicitly initialize all instance variables but "set". I like to
+use such initializations and minimize the number of initializations in the
+constructors, to avoid forgetting to initalize something. Alex Thornton thinks
+that every constructor should explicitly initialize all its instance variables
+(citing locality: the initializations should appear near the constructor). Both
+of us are concerned about accidentally failing to initialize an instance
+variable. Often C++ compilers will provide warning/error messages if an
+instance variable is not initialized in one way or the other. The interesting
+part of every constructor (discussed below) is allocating (and reallocating, in
+the ensure_length/ensure_length_low helper methods) the array storing the
+values in the set.
+
+mod_count is updated by command/mutator methods and examined solely by Iterator
+methods when iterating over an ArraySet, to determine if the ArraySet has been
+modified since the iteration started. If it has, and the iteration continues,
+the Iterator methods will throw a ConcurrentModificationError exception. We
+cannot simultaneously traverse (iterate over) and mutate a data structure:
+doing so can lead to unpredictable behavior, so instead the iterator throws an
+exception in such circumstances.
+
+------------------------------------------------------------------------------
+
+Destructor/Constructors (public, also covering ensure_length/ensure_length_low,
+which are private):
+
+This section discusses the definition of the destructor and all the constructors
+declared in ArraySet.
+
+(0) ~ArraySet() - a destructor that deallocates the array that set refers to,
+which also calls a destructor on each of the values in the array.
+
+template<class T>
+ArraySet<T>::~ArraySet() {
+  delete[] set;
+}
+
+
+(1) ArraySet() - default constructor:  allocate an array of length 0. The
+insert method always calls ensure_length to ensure that an array will be long
+enough to store a newly inserted value (and the erase method always calls
+ensure_length_low to shrink the array if it is overly long). So its length will
+be increased to 1 before storing the first value. Some implementations would
+allocate a non-zero minimal-sized arrray: not a bad idea because we problably
+wouldn't declare the Set if we weren't going to put at least one value in it.
+Of course, can do that explicitly, by using the next constructor.
+
+template<class T>
+ArraySet<T>::ArraySet() {
+  set = new T[length];
+}
+
+
+(2) ArraySet(int initial_length): use inital_length as the initial length for
+the array to allocate (although negative lengths are disallowed: it uses length
+0 if the argument is negative, instead of throwing an exception). Note that
+this constructor is called a conversion constructor, which we don't want to be
+called automatically, so we declare it (earlier in the class declaration) with
+the keyword "explicit": by using "explicit", ArraySet s = 1; will not compile;
+without "explicit" it would have the same meaning as writing ArraySet s(1);
+which does NOT create a set storing the value 1, but instead creates a set
+whose array is length 1.
+
+template<class T>
+ArraySet<T>::ArraySet(int initial_length)
+: length(initial_length) {
+  if (length < 0)
+    length = 0;
+  set = new T[length];
+}
+
+
+(3) ArraySet(const ArraySet<T>& to_copy) - copy constructor: use the to_copy
+ArraySet to supply the length and used instance variables, then allocate an
+appropriate sized array and copy the required values into it. We could instead
+write: length(to_copy.used), which would create a minimal length copy (but big
+enough for used values).
+
+template<class T>
+ArraySet<T>::ArraySet(const ArraySet<T>& to_copy)
+: length(to_copy.length), used(to_copy.used) {
+  set = new T[length];
+  for (int i=0; i<to_copy.used; ++i)
+    set[i] = to_copy.set[i];
+}
+
+
+(4) ArraySet(const std::initializer_list<T>& il)) - initializer constructor
+(new in C++11): iterate through all the values in the initializer_list,
+inserting each into the ArraySet. This constructor allows us to write:
+
+  ArraySet<int> s({1,2,3,4,5});
+
+This statement declares the ArraySet s and stores into it the values 1 through
+5 inclusive.
+
+Note that the following will not work, because the constructor is explicit.
+
+  ArraySet<std:int> s = {1,2,3,4,5};
+
+But, using the = operator and two constructors, we could write the following
+code (which redundantly constructs and destructs a temporary ArraySet).
+
+  ArraySet<int> s = ArraySet<int>({1,2,3,4,5});
+
+template<class T>
+ArraySet<T>::ArraySet(const std::initializer_list<T>& il)
+: length(il.size()) {
+  set = new T[length];
+  for (const T& s_elem : il)  //Can use for-each to iterate of intializer_list
+    insert(s_elem);
+}
+
+(5) template<class Iterable> ArraySet(const Iterable& i) - iterator constructor:
+iterate through all the values in i, inserting each into the ArraySet. Each of
+the five standard data types supports size/begin/end/prefix ++, which are
+needed for the for-each loop in this method to work correctly. Thus, we can
+easily construct a data type from one class by iterating over the data stored in
+another class: e.g., construct a Set with all the values in a Queue.
+
+template<class T>
+template<class Iterable>
+ArraySet<T>::ArraySet(const Iterable& i)
+: length(i.size()) {
+  set = new T[length];
+  for (const T& v : i)
+    insert(v);
+}
+
+
+I will now include a description of the private helper methods (a) ensure_length
+and (b) ensure_length_low here, because they also relate to reallocation of the
+"set" instance variable. These methods, which appear similarly in the array
+implementations of all the data types, ensure that set's array length is
+"reasonble": big enough when "inserting" and not too big when "erasing".
+
+(a) For ensure_length, it ensures the array can store new_length values; if it
+cannot, ensure_length makes set's length either new_length or double the old
+length (whichever is bigger) and copies all the set's values there; finally it
+deletes the old array, reclaiming all its space. The code here is delicate: we
+need to keep track of the old information while creating the new information.
+
+When we talk about Analysis of Algorithms we will see that this doubling
+strategy requires only O(N) copies when creating a Set of N new values. If
+we increased the size by 1 for each new value, that strategy would require
+O(N^2) copies.
+
+template<class T>
+void ArraySet<T>::ensure_length(int new_length) {
+  if (length >= new_length)
+    return;
+  T* old_set = set;
+  length = std::max(new_length,2*length);
+  set = new T[length];
+  for (int i=0; i<used; ++i)
+    set[i] = old_set[i];
+
+  delete [] old_set;
+}
+
+(b) For ensure_length_low, it ensures the array is not too large, but it is
+large enough to double in length without reallocating the array. Thus, if the
+length needed is <= 1/4 of the actual length, the array length will be reduce
+to just twice what is needed (typically halved). For example, if we have 8
+values in an array and then start removing them, when the number or remaining
+value becomes 2 (1/4 of 8) the array size will be reduced to 4 (halved). It is
+now smaller (by half) but it still allows 2 more values to be added into the
+array before it must be doubled.
+
+If we halved the size of the array when half (not a quarter) was needed
+(reduced the length 8 array to a length 4 array when only 4 values remained),
+then adding a new value into the array would require its length to be doubled
+immediately. Whenever we reallocate an array, we want to be able to add/remove
+a reasonable number of values without having to reallocate the array.
+
+Again, the code here is delicate: we need to keep track of the old information
+while creating the new information.
+
+template<class T>
+void ArraySet<T>::ensure_length_low(int new_length) {
+  if (length < 4 * new_length)
+    return;
+  T *old_set = set;
+  length = 2 * new_length;
+  set = new T[length];
+  for (int i = 0; i < used; ++i)
+    set[i] = old_set[i];
+
+  delete[] old_set;
+}
+
+------------------------------------------------------------------------------
+
+Queries/Accessors (public):
+
+Notice that each of of these methods include the keyword "const" after their
+parameter list, because each leaves the data structure unchanged/unmutated.
+
+
+(1) empty: returns whether the Set stores no value (used is 0). We could more
+generally just check this->size() == 0, and we would if the size() function was
+truly computed in a complicated function, but here we check the used instance
+variable directly. (See the relationship in the ArrayQueue class between the
+empty and size functions for something more complicated).
+
+template<class T>
+inline bool ArraySet<T>::empty() const {
+  return used == 0;
+}
+
+
+(2) size: returns the number of values the Set stores. The set's values are
+stored in indexes 0 to used-1, for a total of used values. When used is 5, the
+values are stored in indexes 0, 1, 2, 3, and 4.
+
+template<class T>
+int ArraySet<T>::size() const {
+  return used;
+}
+
+
+(3) contains: determines whether an element is in the Set. It performs a linear
+search of the array (whose values are unordered), returning true immediately
+when the value element is found in any used index in the array; and returning
+false (after/outside the loop) if element is not found in any used index in the
+array.
+
+template<class T>
+bool ArraySet<T>::contains (const T& element) const {
+  for (int i=0; i<used; ++i)
+    if (set[i] == element)
+      return true;
+
+  return false;
+}
+
+
+(4) str: uses a temporary ostringstream (returned using the .str() function to
+convert the ostringstream to a std::string) to collect all the textual data
+str() returns: this includes the standard text for inserting a set onto the
+ostream. For example, "ArraySet[0:a,1:b,2:c,3:](length=4,used=3,mod_count=3)"
+shows
+
+ (a) "ArraySet" is the implementation
+ (b) the array instance variable (its indexes and their values)
+ (c) the values of all the other instance variables used in this array
+       implementation of a set.
+
+Using ostringstream in this way is useful in many contexts when we want to build
+a large string from a variety of values (converting each to its string
+representations).
+
+Use << for real output for a Set and .str() for debugging output for a Set
+(especially to debug specific implementations, like ArraySet).
+
+template<class T>
+std::string ArraySet<T>::str() const {
+  std::ostringstream answer;
+  answer << "array_set[";
+
+  if (length != 0) {
+    answer << "0:" << set[0];
+    for (int i = 1; i < length; ++i)
+      answer << "," << i << ":" << set[i];
+  }
+
+  answer << "](length=" << length << ",used=" << used << ",mod_count=" << mod_count << ")";
+  return answer.str();
+}
+
+
+(5) contains_all: determines whether ALL the values in the iterable are in the
+Set. It uses a for-each loop to iterate over the parameter i, using contains
+(see above) to check whether any value produced by the iterable returns false:
+if so this function immediately returns false; if every value produced by the
+iterable is contained in the array, then this function eventually returns true.
+
+template<class T>
+template<class Iterable>
+bool ArraySet<T>::contains_all (const Iterable& i) const {
+  for (const T& v : i)
+    if (!contains(v))
+        return false;
+  
+    return true;
+}
+
+------------------------------------------------------------------------------
+
+Commands/Mutators (public, also covering erase_at which is private):
+
+Notice that none of these methods say "const" after the parameter list, because
+all change (or at least can change, if necessary) the data structure. Each
+change is  accompanied by incrementing the mod_count (modification count)
+instance variable. If we wrote "const" with these methods, the compiler would
+report an error because it knows when we are changing instance variables.
+
+
+(1) insert: adds an element into the Set if it is not already in the Set,
+returning 1 if it was not in the Set and 0 if it is was. It performs a linear
+search through the array, returning 0 immediately if it finds the element; if it
+doesn't find the element anywhere, it calls ensure_length to ensure the length
+of the array is big enough to store a new element (initially going from
+length = 0 to length = 1, otherwise doubling the length); then it puts the
+element in the array one beyond the last element previously stored, and notes
+the modification by incrementing mod_count, and returning 1.
+
+This method is the most critical in the class; we should hand simulate a few
+insertions, including calls to ensure_length. Note that if used = 5, then
+indexes 0 through 4 are occupied, so writing set[used++] = element; increments
+used by 1, but uses its old value (5) as the index to store the new element,
+which is correct: it is 1 beyond the index of the previously last value, stored
+in index 4.
+
+Note that Sets are not ordered in any special way, so we can put the element
+anywhere, but it is most convenient to store it at an index one higher than the
+last. I'm also assuming that you know the exact meanings and differences between
+used++ and ++used: both increment used, but the value returned by the postfix
+operator (yes, this operator returns a values, just as a+b returns a value) is
+the original value in used (before incrementing it) while the value returned by
+the prefix operator is the new  value in used (after incrementing it).
+
+int ArraySet<T>::insert(const T& element) {
+  for (int i=0; i<used; ++i)
+    if (set[i] == element)
+      return 0;
+
+  this->ensure_length(used+1);
+  set[used++] = element;
+  ++mod_count;
+  return 1;
+}
+
+We could call the contains method here instead of writing the for loop.
+
+
+(2) erase: removes (the opposite of insert) the element from the Set if it is
+already in the Set, returning 1 if it is in the Set and 0 if it is not. It
+performs a linear search through the array, returning the value that private
+helper method erase_at(i) returns (it always returns 1; erase_at is described
+at the end of this secion) if it finds element; if it doesn't find the element,
+it just returns 0 without calling erase_at. The erase_at method may reallocate
+the array to be smaller, and always updates mod_count too; this same method is
+also called by the Iterator's erase method (discussed later).
+
+template<class T>
+int ArraySet<T>::erase(const T& element) {
+  for (int i=0; i<used; ++i)
+    if (set[i] == element)
+      return erase_at(i);
+
+  return 0;
+}
+
+
+(3) clear: removes all the elements from the Set by just resetting used (and of
+course incrementing mod_count). The call to ensure_length_low will actually
+reallocated the array to store 0 values. The speed of this operation is
+independent of the number of elements stored in the array: it is O(1).
+
+template<class T>
+void ArraySet<T>::clear() {
+  used = 0;
+  this->ensure_length_low(0);
+  ++mod_count;
+}
+
+
+(4) insert_all: inserts all the values in the iterable into the Set, returning
+a count of the number of values actually inserted (unique values not originally
+in the Set). It uses a for-each loop to iterate over the parameter i, using
+insert (see above) to actually insert the value into the Set; each call to
+insert updates mod_count, so mod_count can increase by more than 1 in a call to
+insert_all.
+
+template<class T>
+template<class Iterable>
+int ArraySet<T>::insert_all(const Iterable& i) {
+  int count = 0;
+  for (const T& v : i)
+     count += insert(v);
+  return count;
+}
+
+
+(5) erase_all: erases all the values in the iterable from the Set, returning a
+count of the number actually erased (unique values originally in the Set). It
+uses a for-each loop to iterate over the parameter i, using erase (see above)
+to actually erase the value into the Set; each call to erase updates  mod_count,
+so mod_count can increase by more than 1 in a call to erase_all.
+
+template<class T>
+template<class Iterable>
+int ArraySet<T>::erase_all(const Iterable& i) {
+  int count = 0;
+  for (const T& v : i)
+     count += erase(v);
+
+  return count;
+}
+
+
+(6) retain_all: retains all the values in the iterable in the Set, returning a
+count of the number actually erased (unique values originally in the Set). It
+uses the iterable constructor to create an ArraySet s containing all the values
+in the iterable; then it examines every element in the Set and checks s to
+decide whether or not it should be erased, using erase (see above) to actually
+erase the value into the Set; each call to erase updates  mod_count, so
+mod_count can increase by more than 1 in a call to retain_all.
+
+Key point (see erase_at below): if it erases the value at index i, a new value
+is put into index i (the value formerly at the end of the array), so that value
+must be checked too; but because i will be incremented at the bottom of the
+loop, we must decrement i explicitly whenever we erase a value. Hand simulate
+an example (including the call to erase_at) where a Set contains two values and
+the iterable creates an empty set s (so neither value should be retained):
+without decrementing i, this code would skip (and therefore retain) the second
+value!
+
+template<class T>
+template<class Iterable>
+int ArraySet<T>::retain_all(const Iterable& i) {
+  ArraySet s(i);
+  int count = 0;
+  for (int i=0; i<used; i++)
+    if (!s.contains(set[i])) {
+      erase_at(i);
+      --i;
+      ++count;
+    }
+
+  return count;
+}
+
+
+(7) erase_at: a private helper method that removes the value at index i from
+the Set/array. Note that as we talked about in class, while we COULD shift the
+values in each index after it, one forward (an O(N) operation), but that order-
+preserving operation is not necessary because Sets have no order. So the "no
+order" latitude allows us to implement this operation in O(1) time by just
+copying the value at the end of the array to the index of the value to remove
+and then "ignore" the value in that last position by decrementing used.
+
+Note if that the index to remove is 0 and used is 1, this code still work: it
+copies from the last index (0) to the index being removed (0) and then
+decrements used to 0. of course, this method also increments mod_count.
+
+After the set is updated and used is decrement, it calls ensure_length_low,
+which might reallocate/shrink the set array (it reallocates/shrinks only if
+used is < 1/4 of length).
+
+Again, look at this code and go back to what I said in detail about the erase
+method about decrementing i when a value is removed: since a new value is moved
+to index i, it still must be checked for being retained, but the for loop
+automatically increments i: so to keep i the same, we must decrement it first.
+
+template<class T>
+int ArraySet<T>::erase_at(int i) {
+  set[i] = set[--used];
+  this->ensure_length_low(used);
+  ++mod_count;
+  return 1;
+}
+
+
+It might have been useful to write a private index_of method that either
+returns the index at which a value is stored in the array or -1 if it is not
+stored there (since -1 is never a legal arrray index). Note that because we are
+storing a Set of values, the same value cannot occur twice. Such code would
+simplify a few methods by removing their looping code. Here are examples of how
+such code would work, if it were in the class:
+
+template<class T>
+int ArraySet<T>::index_of(const T& element) {
+  for (int i=0; i<used; ++i)
+    if (set[i] == element)
+      return i;
+
+  return -1;
+}
+
+template<class T>
+bool ArraySet<T>::contains (const T& element) const {
+  return index_of(element) != -1;
+}
+
+int ArraySet<T>::insert(const T& element) {
+  int i = index_of(element);
+  if (i != -1)
+    return 0;
+
+  this->ensure_length(used+1);
+  set[used++] = element;
+  ++mod_count;
+  return 1;
+}
+
+template<class T>
+int ArraySet<T>::erase(const T& element) {
+  int i = index_of(element);
+  return (i == -1 ? 0 : erase_at(i));
+}
+
+------------------------------------------------------------------------------
+
+Overloaded Operators (public):
+
+(1) operator =: assign the value of the Set rhs to this Set so they compare ==
+(see below). Note if x and y are Sets, then x = y calls operator= on the left
+Set (so "this" refers to the Set x) while the parameter name rhs refers to
+the Set y. It first checks if the two Sets are the same object (meaning the
+assignment statement was of the form x = x) and if so does nothing; otherwise
+it ensures this Set has an array big enough to store all the values stored in
+rhs Set, sets used correctly, fills the array with values for the rhs,
+increments mod_count, and returns this (for use in code like x = y = z; which
+assigns z to y, returning y, which it assigns to x.
+
+template<class T>
+ArraySet<T>& ArraySet<T>::operator = (const ArraySet<T>& rhs) {
+  if (this == &rhs)
+    return *this;
+  this->ensure_length(rhs.used);
+  used = rhs.used;
+  for (int i=0; i<used; ++i)
+    set[i] = rhs.set[i];
+
+  ++mod_count;
+  return *this;
+}
+
+
+(2) operator ==: determines whether or not two Sets store the same values
+(regardless of their order in the arrays: recall Sets are unordered). It too
+first checks if the two Sets are the same object (meaning the test was of the
+form x == x) and if so immediately returns true; otherwise if next checks
+that the Sets are the same size and if not returns false; finally it iterates
+through this Set to ensure every value in it is also contained in the rhs Set.
+
+template<class T>
+bool ArraySet<T>::operator == (const ArraySet<T>& rhs) const {
+  if (this == &rhs)
+    return true;
+
+  if (used != rhs.size())
+    return false;
+
+  for (int i=0; i<used; ++i)
+    if (!rhs.contains(set[i]))
+      return false;
+
+  return true;
+}
+
+
+(3) operator !=: determines whether two Sets have some different values
+(regardless of their order in the arrays). It just calls == and negates the
+results (a tiny bit less efficient but much simpler).
+
+template<class T>
+bool ArraySet<T>::operator != (const Set<T>& rhs) const {
+  return !(*this == rhs);
+}
+
+
+(4) operator <=: determines whether this Set is a subset (or the same Set) as
+rhs Set. Mostly, this operators does what == does, but it also allows
+this->used to be <= rhs.used.
+
+template<class T>
+bool ArraySet<T>::operator <= (const Set<T>& rhs) const {
+  if (this == &rhs)
+    return true;
+
+  if (used > rhs.size())
+    return false;
+
+  for (int i=0; i<used; ++i)
+    if (!rhs.contains(set[i]))
+      return false;
+
+  return true;
+}
+
+
+(5) operator <: determines whether this Set is a strict subset (not the same
+Set) as rhs Set. Mostly, this operators does what == does, but it also allows
+this->used to be < rhs.used.
+
+template<class T>
+bool ArraySet<T>::operator < (const Set<T>& rhs) const {
+  if (this == &rhs)
+    return false;
+
+  if (used >= rhs.size())
+    return false;
+
+  for (int i=0; i<used; ++i)
+    if (!rhs.contains(set[i]))
+      return false;
+
+  return true;
+}
+
+
+(6) operator >=: determines whether this Set is a superset (or the same Set) as
+rhs Set. Uses the rule x >= y iff y <= x (which is true for the subset
+relation).
+
+template<class T>
+bool ArraySet<T>::operator >= (const Set<T>& rhs) const {
+  return rhs <= *this;
+}
+
+
+(7) operator >: determines whether this Set is a strict superset (not the same
+Set as hrs Set. Uses the rule x > y iff y < x (which is true for the proper
+subset relation).
+
+template<class T>
+bool ArraySet<T>::operator > (const Set<T>& rhs) const {
+  return rhs < *this;
+}
+
+In retrospect (and maybe I'll change this with a later release of the
+courselib), I should have implemented <= in detail as shown above and then
+implemented all the other relational operators as follows:
+
+  == as <= and used == rhs.used
+  != the same, by negating ==: x != y iff !(x == y)
+  >  by negating <=: x > y iff !(x <= y)
+  <  the same, by changing sides: x < y iff y > x
+  >= by changing sides: x >= y iff y <= x
+
+Which results in only one multi-line method: the rest one-liners. So we can
+simply define all relational operators in terms of <=
+
+
+(8) operator <<: insert onto the outs ostream either "set[]" or "set[...]"
+where ... are all the values in the Set, separated by commas. Note that the
+values can appear in any order in a Set: so two Sets that print differently are
+really the same (are ==) if they print the same values but just in a different
+order.
+
+In the code below it is simplest to use the order the values are  stored in the
+array, and that order is fine. That is, for Sets, any order will do. WE CANNOT
+ASSUME THAT ALL IMPLEMENTATIONS OF SETS WILL USE SUCH AN ORDERING. Hand
+simulate this code for a Set containing just a few values to see why it works.
+
+Question: could we have implemented == by using << to create two strings for
+Sets (first using ostringstream then .str() to get the string itself) and
+compare these string for equality? If so, why (and would it be a good idea);
+if not, why not?
+
+template<class T>
+std::ostream& operator << (std::ostream& outs, const ArraySet<T>& s) {
+  outs << "set[";
+
+  if (!s.empty()) {
+    outs << s.set[0];
+    for (int i = 1; i < s.used; ++i)
+      outs << "," << s.set[i];
+  }
+
+  outs << "]";
+  return outs;
+}
+
+A slightly simpler body (without the special case) would be as follows. Notice
+how it inserts the empty set a bit differently, and after inserting the last
+value in the set, inserts the empty string ("") and inserts "]" after the loop
+finishes.
+
+template<class T>
+std::ostream& operator << (std::ostream& outs, const ArraySet<T>& s) {
+  outs << "set[";
+
+  for (int i=0; i<s.used; ++i)
+    outs << (i == 0 ? "" : ",") << s.set[i];
+
+  outs << "]";
+  return outs;
+}
+
+There are many ways to do equivalent things in C++: try to choose ways that are
+simple and clear. Can you argue why "something special" is needed to correctly
+show the values separated by commas.
+
+------------------------------------------------------------------------------
+
+Iterator Nested class (public):
+
+IMPORTANT: In the drivers there is an "it" menu option to examine iterators in
+detail (their methods and operators). After you read this section, try the "it"
+submenu to further explore your understanding of the methods described below.
+
+The meanings of the commands in the (it)erator menu are as follows:
+  <   : print the iterator
+  e   : erase the value specified by the iterator (by it cursor)
+  *   : print the value the iterator refers to (its cursor refers to)
+  +   : increment the iterator prefix, ++i (advance cursor, return new value)
+  +o  : increment the iterator pOstfix, i++ (advance cursor, return old value)
+  c   : process regular commands for the data type while remembering the
+          iterator (do a mutator, then quit, then update the iterator to
+          see a ConcurrentModificationError)
+  *a  : repeatedly print the value the iterator refers to and then prefix
+          increment the iterator, until it reaches one beyond the end
+  ea  : repeatedly erase the values the iterator refers to and then prefix 
+          increment the iterator, until it reaches one beyond the end
+          (printing the initial and final iterator values)
+  f   : use a for-each loop to print the value of every value the iterator
+         refers to
+  q   : quit experimenting with the iterator
+
+Note that the ArraySet class defines a nested scope containing the Iterator
+class. We can refer to this class by ics::ArraySet<T>::Iterator if we need to.
+We can use an Iterator to erase a value from the Set, compute a .str()
+representation of the Iterator, increment an Iterator (both ways: prefix ++i
+and postfix i++), check for equality/inequality among Iterators, and finally
+dereference an  Iterator to get at the value it refers to or get a pointer to
+the value it refers to.
+
+We will discuss these methods below. But first we discuss the private instance
+variables. Note that there is a simple but delicate relationship between the
+erase method and ++ operators.
+
+    class Iterator {
+      public:
+        //Private constructor called in begin/end, which are friends of ArraySet<T>
+        ~Iterator();
+        T           erase();
+        std::string str  () const;
+        ArraySet<T>::Iterator& operator ++ ();
+        ArraySet<T>::Iterator  operator ++ (int);
+        bool operator == (const ArraySet<T>::Iterator& rhs) const;
+        bool operator != (const ArraySet<T>::Iterator& rhs) const;
+        T& operator *  () const;
+        T* operator -> () const;
+        friend std::ostream& operator << (std::ostream& outs, const ArraySet<T>::Iterator& i) {
+          outs << i.str(); //Use the same meaning as the debugging .str() method
+          return outs;
+        }
+        friend Iterator ArraySet<T>::begin () const;
+        friend Iterator ArraySet<T>::end   () const;
+
+      private:
+        //If can_erase is false, current indexes the "next" value (must ++ to reach it)
+        int          current;  //if can_erase is false, this value is unusable
+        ArraySet<T>* ref_set;
+        int          expected_mod_count;
+        bool         can_erase = true;
+
+        //Called in friends begin/end and postfix ++
+        Iterator(ArraySet<T>* iterate_over, int initial);
+    };
+
+------------------------------------------------------------------------------
+
+ArraySet::Iterator instance variables (private):
+
+ (1) current: an index into a Set's array: where the iterator is in an ArraySet.
+     It should always be >= 0 and <= used. It is OK to be == to used because it
+     can be ONE BEYOND the end of the array; that is how the for-each code
+     knows it has iterated over every value in the Set.
+
+ (2) ref_set: the ArraySet the iterator refers to (is indexing over): we will
+     access its "set" instance variable (an array) with indexed by current
+     (an int).
+
+ (3) expected_mod_count: stores the mod_count's value when the iterator was
+     created; to work properly, expected_mod_count must == ref_set->mod_count;
+     it is checked in every operation and if these values are unequal, it means
+     that the array was mutated (by something other than erase in the
+     iterator, which is discussed below), so the ConcurrentModificationError
+     exception is thrown.
+
+ (4) can_erase: ensures we cannot call .erase() on the iterator twice in a row,
+     without calling ++ to advance the iterator. When the value in some index
+     is erased, it is replaced by the value appearing at the end of the array;
+     in this case, the next call to a ++ operator actually does not increment
+     current (discussed more below) because it already indexes the next value 
+     (one value beyond the most recently erased value).
+
+Note: The can_erase instance variable always starts true (all the others need
+to be given values in the constructor).
+
+The code shown for the Iterator methods/operators will clarify what the last
+two instance variables mean, by discussing how they are used.
+
+------------------------------------------------------------------------------
+
+Methods producing Iterators (public)
+
+Note that the only constructor for Iterator is private. But, this class friends
+the begin/end methods declared in the ArraySet class, directly after it declares
+the Iterator class. These begin/end methods construct and return Iterators. Both
+methods require their return type to be specified as auto, but then explicitly
+added the actual return type after the ->.
+
+In all cases we have to cast away constness of "this" because we need to be able
+to call .erase() on an Iterator which means it can change the state of the
+ArraySet it refers to. Alex recommended declaring ref_set as mutable, which
+would not required the cast. I'm not sure which I like better.
+
+(1) begin: return an Iterator whose current index is where the first value in
+the ArraySet is stored (index 0).
+
+template<class T>
+auto ArraySet<T>::begin () const -> ArraySet<T>::Iterator {
+  return Iterator(const_cast<ArraySet<T>*>(this),0);
+}
+
+
+(2) end: return an Iterator whose current index is ONE BEYOND where the last
+value in the ArraySet is stored (index used).
+
+template<class T>
+auto ArraySet<T>::end () const -> ArraySet<T>::Iterator {
+  return Iterator(const_cast<ArraySet<T>*>(this),used);
+}
+
+------------------------------------------------------------------------------
+
+Iterators constructors/methods/operators (private and public)
+
+(1) Iterator constructor: fills in ref_set (which ArraySet this iterator is
+iterating over) and initializes to what index in ref_set's array the iterator
+is referring.
+
+CRITICAL: The expected_mod_count instance variable copies the mod_count of the
+ref_set to which it refers. If the mod_count of this ref_set ever changes
+(because it is mutated) and an operation is called on the iterator, the
+iterator will be able to discover the modification (its expected_mod_count will
+be wrong) and fail (as it is required to do) by throwing the
+CurrentModificationError exception.
+
+To save space, we will use CME to abbreviate ConcurrentModificationError.
+
+
+emplate<class T>
+ArraySet<T>::Iterator::Iterator(ArraySet<T>* iterate_over, int initial)
+: current(initial), ref_set(iterate_over), expected_mod_count(ref_set->mod_count) {
+}
+
+
+(2) Iterator destructor: it allocates no dynamic storage with new, so it
+deallocates none with delete.
+
+template<class T>
+ArraySet<T>::Iterator::~Iterator()
+{}
+
+
+(3) erase: erase from the ArraySet the value the iterator indexes. It must
+first check that the mod_count is unchanged and that can_erase is true
+(throwing special exceptions for either error); likewise, it also checks that
+the iterator really refers to a legal position in ref_set's array. If so, it
+does the erase:
+
+  (a) setting can_erase to false means that we must call ++ on the iterator
+      before it can erase the next value (see ++ code for resetting can_erase),
+
+  (b) it saves the value it is removing to return,
+
+  (c) it calls the erase_at helper method using ref_set to erase the value at
+      the current index (note that erase_at changes ref_set's mod_count and
+      might even reallocate the set array to be smaller),
+
+  (d) it resets the expected_mod_count: when an iterator erases a value, that
+      iterator (but no others) can still correctly continue iterating through
+      the data structure; if multiple iterators are active on the data
+      structure, all the others will fail because their expected_mod_count will
+      remain the same and thus become incorrect,
+
+  (e) the removed value is returned
+
+template<class T>
+T ArraySet<T>::Iterator::erase() {
+  if (expected_mod_count != ref_set->mod_count)
+    throw ConcurrentModificationError("ArraySet::Iterator::erase");
+  if (!can_erase)
+    throw CannotEraseError("ArraySet::Iterator::erase Iterator cursor already erased");
+  if (current < 0 || current >= ref_set->used)
+    throw CannotEraseError("ArraySet::Iterator::erase Iterator cursor beyond data structure");
+
+  can_erase = false;
+  T to_return = ref_set->set[current];
+  ref_set->erase_at(current);
+  expected_mod_count = ref_set->mod_count;
+  return to_return;
+}
+
+
+(4) str: returns interesting information about the iterator's implementation:
+starting with ref_set-->str(), it includes the values in the ArraySet it is
+iterating over and the instance variables used in the ArraySet implementation;
+these are followed by the instance variables of the iterator.
+
+template<class T>
+std::string ArraySet<T>::Iterator::str() const {
+  std::ostringstream answer;
+  answer << ref_set->str() << "(current=" << current << ",expected_mod_count=" << expected_mod_count << ",can_erase=" << can_erase << ")";
+  return answer.str();
+}
+
+
+(5) prefix ++: advances the iterator so that it indexes the next value,
+returning a REFERENCE to the NEW state of this iterator (the object ++ applies
+to). It checks for CME. The cursor is immediately returned (NOT incremented) if
+it is already ONE BEYOND the last index (>= used). It is incremented if
+can_erase == true but NOT incremented if can_erase == false (because that means
+the previous value was erased, so current indexes the value it was replaced by,
+which is still the next value to be iterated over); in this case it resets
+can_erase to true. Finally, it returns a reference to the newly incremented
+iterator object.
+
+template<class T>
+auto ArraySet<T>::Iterator::operator& ++ () -> ArraySet<T>::Iterator {
+  if (expected_mod_count != ref_set->mod_count)
+    throw ConcurrentModificationError("ArraySet::Iterator::operator ++");
+
+  if (current >= ref_set->used)
+    return *this;
+
+  if (can_erase)
+    ++current;
+  else
+    can_erase = true;  //current already indexes "one beyond" deleted value
+
+  return *this;
+}
+
+
+(6) postfix ++: advances the iterator so that it indexes the next value,
+returning the OLD state of this iterator. It checks for CME. The cursor is NOT
+incremented if it is already ONE BEYOND the last index (used). Otherwise it
+saves the previous current value of the Iterator, so it can return it. As with
+the prefix ++ operator, both the current value and the current value in
+to_return are incremented if can_erase == true but NEITHER is incremented if
+can_erase == false;  in this case it resets can_erase to true. Finally, it
+returns the orginal iterator.
+
+template<class T>
+auto ArraySet<T>::Iterator::operator ++ (int) -> ArraySet<T>::Iterator {
+  if (expected_mod_count != ref_set->mod_count)
+    throw ConcurrentModificationError("ArraySet::Iterator::operator ++(int)");
+
+  if (current >= ref_set->used)
+    return *this;
+
+  Iterator to_return(this->ref_set,current-1);
+
+  if (can_erase)
+    ++current;
+  else
+    can_erase = true;  //current already indexes "one beyond" deleted value
+
+  return to_return;
+}
+
+Generally it is a bad idea to try to do anything with the value of the returned
+Iterator (reference). It is best to increment iterators in statements, not
+using their values: ++i; or i++;
+
+Prefer prefix ++ because it does not have to create an object to return; instead
+it just returns a reference to the iterator object that has been incremented,
+which saves time/space (sometimes a lot, for complicated implementations).
+
+
+(7) operator ==: determines whether two Iterators have the same values: they
+must be the same type of Iterator (checked via dynamic_cast), the mod_count
+must not have have changed, and the ref_set pointers must be the same too.
+Finally (and most importantly) they must index the same value (current).
+
+template<class T>
+bool ArraySet<T>::Iterator::operator == (const ics::Iterator<T>& rhs) const {
+  const Iterator* rhsASI = dynamic_cast<const Iterator*>(&rhs);
+  if (rhsASI == 0)
+    throw IteratorTypeError("ArraySet::Iterator::operator ==");
+  if (expected_mod_count != ref_set->mod_count)
+    throw ConcurrentModificationError("ArraySet::Iterator::operator ==");
+  if (ref_set != rhsASI->ref_set)
+    throw ComparingDifferentIteratorsError("ArraySet::Iterator::operator ==");
+
+  return current == rhsASI->current;
+}
+
+
+(8) operator !=: determines whether two Iteraors have different values: all
+the early checks must be OK, but the last check is done oppositely.
+
+template<class T>
+bool ArraySet<T>::Iterator::operator != (const ics::Iterator<T>& rhs) const {
+  const Iterator* rhsASI = dynamic_cast<const Iterator*>(&rhs);
+  if (rhsASI == 0)
+    throw IteratorTypeError("ArraySet::Iterator::operator !=");
+  if (expected_mod_count != ref_set->mod_count)
+    throw ConcurrentModificationError("ArraySet::Iterator::operator !=");
+  if (ref_set != rhsASI->ref_set)
+    throw ComparingDifferentIteratorsError("ArraySet::Iterator::operator !=");
+
+  return current != rhsASI->current;
+}
+
+(9) operator *: dereference (get the value the iterator indexes); checks for CME
+and checks that current has not been erased (cannot * an erased value until
+after ++) and is legal [0,used); return the value at the index it refers to.
+
+template<class T>
+T& ArraySet<T>::Iterator::operator *() const {
+  if (expected_mod_count != ref_set->mod_count)
+    throw ConcurrentModificationError("ArraySet::Iterator::operator *");
+  if (!can_erase || current < 0 || current >= ref_set->used) {
+    std::ostringstream where;
+    where << current << " when size = " << ref_set->size();
+    throw IteratorPositionIllegal("ArraySet::Iterator::operator * Iterator illegal: "+where.str());
+  }
+
+  return ref_set->set[current];
+}
+
+
+(9) operator ->: dereference and select local instance/method (using the value
+the iterator indexes); checks for CME and checks that current has not been
+erased (cannot -> an erased value until after ++) and is legal [0,used); return
+a pointer to the value at the index it refers to.
+
+Note that for an iterator i, (*i).foo is equivalent to i->foo.
+
+template<class T>
+T* ArraySet<T>::Iterator::operator ->() const {
+  if (expected_mod_count != ref_set->mod_count)
+    throw ConcurrentModificationError("ArraySet::Iterator::operator ->");
+
+  if (!can_erase || current < 0 || current >= ref_set->used) {
+    std::ostringstream where;
+    where << current << " when size = " << ref_set->size();
+    throw IteratorPositionIllegal("ArraySet::Iterator::operator -> Iterator illegal: "+where.str());
+  }
+
+  return &ref_set->set[current];
+}
+
+
+It would be instructive to hand simulate the following code as a program; or
+execute its equivalent in the set_driver using the regular menu and then the
+"it" submenu; or even execute the code in a project. It produces the results
+
+----------
+a
+e
+d
+b
+c
+set[d,c] 
+----------
+
+#include <string>
+#include <iostream>
+#include "array_set.hpp"
+
+
+int main() {
+  try {
+
+    //Example: simple iterator test for Sets
+
+    ics::ArraySet<std::string> s({std::string("a"), std::string("b"), std::string("c"), std::string("d"), std::string("e")});
+
+    ics::ArraySet<std::string>::Iterator i = s.begin();
+    std::cout << *i << std::endl;
+    i.erase();
+    ++i;
+    std::cout << *i << std::endl;
+    i.erase();
+    ++i;
+    std::cout << *i << std::endl;
+    ++i;
+    std::cout << *i << std::endl;
+    i.erase();
+    ++i;
+    std::cout << *i << std::endl;
+
+    std::cout << s << std::endl;
+  } catch (ics::IcsError& e) {
+    std::cout << e.what() << std::endl;
+  }
+
+  return 0;
+} 
+
+You might also want to remove some the ++i; code to see what exceptions are
+thrown. Also you can std::cout << i << std::endl; to see debugging information
+about the iterator i.
+
+Some guidelines for thinking about and writing iterators.
+
+1) An iterator's cursor will either be legal or one beyond legal. When it is
+   initialized, it may be either (depending on whether or not the data
+   structure contains any values), and can_erase starts as true.
+
+   The cursor indicates the current value that would be (a) returned by the *
+   operator or (b) erased by the .erase() method call.
+
+   Note that in both forms of ++ we test for a legal/one beyond legal cursor
+   first, immediately returning the current iterator if it is already one
+   beyond. Only if it is legal, do we compute what to return.
+
+2) When .erase() is called on an iterator with (a) can_erase false or (b) a
+   cursor one beyond legal (see previous paragraph), it cannot erase anything
+   and raises an exception; it also doesn't advance the cursor.
+
+   When .erase() is called on an iterator with (a) can_erase true and (b) a
+   a legal cursor, not only is the cursor's value removed from the data
+   structure, but the cursor is advanced to the next value (which may legal or
+   one beyond legal), and can_erase is set to false: at this point .erase()
+   cannot be called until some form of ++ is called (see below), which won't
+   actually advance the cursor the next time it is called, because it has been
+   advanced here.
+
+   In this implementation, the cursor's value stays the same after erase, but a
+   new Set value (the one at the end of the array) is placed in the array at
+   this index; we must execute a ++ (which does nothing in this case) to
+   "advance" to this value.
+
+3) When either form (prefix or postfix) of ++ is called on an iterator, it
+   either advances the cursor or leaves it at its current value (depending on
+   what operation -erase or ++- was called previously, and in both cases, 
+   can_erase is/becomes true).
+
+   If the currsor is one beyond legal, the cursor does not advance and is
+   returned; can_erase remains unchanged.
+   
+   If can_erase == false (meaning the previous cursor was erased and the
+   cursor already indexes the correct value), it does not advance but just
+   resets can_erase to true: otherwise the cursor is advanced/incremented.
+
+4) Any change to a data structure via .erase() using an iterator disallows any
+   cursor operations on any other iterator, because mod_count increases.
+
+-------------------------
+
+Final Words
+
+Prefer for-each to explicit iteration: the code is more compact. If writing
+explicit iterators, prefer prefix to postfix incrementation (++i to i++). The
+following two code fragments are equivalent only when there are no calls to
+i.erase() in the body of the loop
+
+  for (ArraySet<...>::Iterator i = c.begin(); i != c.end(); ++i)
+    ...
+
+The one belows caches the value of c.end()
+
+  ArraySet<...>::Iterator end = c.end();
+  for (ArraySet<...>::Iterator i = c.begin(); i != end; ++i)
+    ...
+
+which can change if i.erase() is called; so do not use this form if you are
+calling i.erase().
+
+We have now taken the complete tour through the .hpp file storing the ArraySet
+implementation of Set. Feel free to examine any/all of the array implementations
+of the four other data types. Each will have some unique code, but there will
+also be much similar code as well.
+
+ArrayStack is very simple.
+
+ArrayQueue is implemented using the array as a circular structure: improving
+its performance (dequeque is O(1)) but making all the code more complicated to
+understand. The code in LinearArrayQueue, from Programming Assignment #0, is
+simpler to understand but is slower: e.g., dequeue is O(N), because it shifts
+to the left by one index all values that remain in the Queue.
+
+ArrayPriorityQueue is simple, except it introduces/uses the concept of a
+function pointer: a pointer to a function that computes whether a > b for
+the prioritization. This function pointer can be supplied as an argument to the
+template or a constructor.
+
+ArrayMap is simple, except it introduces/uses the pair class, which itself is
+very simple, to associate keys with their values in each location of the array.
+
+In Programming Assignment #2 you will write linked list implementations of
+various templated classes: each will implement its data type by using a simple
+linear linked list or a variant. Much of the code will mirror what is written
+here (converting array access to linked list accesses). Especially interesting
+is the code relating to Iterators (where hints will be given).

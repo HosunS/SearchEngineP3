@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MSFragment: Molecule Fragmentation for Mass Spec Analysis</title>
+    <meta charset="utf-8"> 
+    <!-- Include JQuery for tabs and UI plugins -->     
+    <script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.unserialize.js"></script>
+    <script type="text/javascript" src="/js/jquery-ui-1.8.16.custom.min.js"></script>    
+    <script type="text/javascript" src="/js/jquery.colorbox-min.js"></script>    
+    <script type="text/javascript" src="/js/chemdb.js"></script>
+    <!-- Include styling -->
+    <link rel="stylesheet" type="text/css" href="/css/chemdb.css" />
+    <link rel="stylesheet" type="text/css" href="/css/colorbox.css" /> 
+    <link type="text/css" href="/css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />    
+
+    <script type="text/javascript">
+    $(document).ready(function(){
+    	var messages = {"#smartsText":"<p>Fragmentation patterns are specified as SMARTS strings.</p><p>The fragmentation bond is indicated through atom map indices, and must be specified as 1 and 2.</p><p>Atom maps are provided by simply enclosing an atom in square brackets follow by a colon and a number.<p>For example, the SMARTS:<br/> <b>C[C:1][C:2]C</b><br/> specifies fragmentation of a 4 carbon chain around the middle bond.</p>"}
+        // Initialize buttons
+        $(".button").button();        
+        $(".dialog").click(function(){
+        	var key = $(this).attr("href");
+        	$("#dialog").html(messages[key]);
+        	$( "#dialog" ).dialog({
+                modal: true,
+                buttons: {
+                    Ok: function() {
+                        $( this ).dialog( "close" );
+                    }
+                }
+            });
+        });
+        
+        // Bind function to form submission event
+        $("#MSFragment").submit(function(){
+            // Load molecule images into results div
+            var url = $(this).attr("action");
+            var params = $(this).serialize();
+            $.post(url, params, function(data){             
+                $("#results").html($(data).find("#results").contents());
+                $("#results").find("img").addClass("shadow");                 
+            });
+            $(".hide").show();
+            return false;
+        });
+    });
+    </script>
+</head>
+
+<body>
+<div id="background">           
+    <div id="content">
+        <div id="header">
+            <div id="chemdb-logo"></div>
+            <span>MSFragment: Molecule Fragmentation for Mass Spec Analysis</span>
+            <div id="top-nav">
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Tools</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/BabelWeb.py">Babel</a></li>
+                        <li><a href="/cgibin/Mass2Structure.py">Mass2Structure</a></li>                        
+                        <li class="odd"><a href="/cgibin/tools/MolInfoWeb.py">MolInfo</a></li>
+                        <li><a href="/cgibin/MSFragment.py">MSFragment</a></li>
+                        <li class="odd"><a href="/cgibin/PatternCountScreenWeb.py">Pattern Count Screen</a></li>
+                        <li><a href="/cgibin/PatternMatchCounterWeb.py">Pattern Match Counter</a></li>
+                        <li class="odd"><a href="/cgibin/Smi2DepictWeb.py">Smi2Depict</a></li>
+                        <li><a href="/cgibin/reaction/ReactionProcessorWeb.py">Reaction Processor</a></li>
+                    </ul>
+                </div>                                                                          
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Applications</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/ChemicalIndexWeb.py">Chemical Search</a></li>
+                        <li><a href="http://cosmos.igb.uci.edu/">COSMOS</a></li>
+                        <li class="odd"><a href="/cgibin/tutorial/ReactionTutorialSetupWeb.py">Reaction Explorer</a></li>
+                        <li><a href="http://reactions.igb.uci.edu/">Reaction Predictor</a></li>                        
+                        <li class="odd"><a href="/cgibin/reaction/VirtualSpaceWeb.py">Virtual Chemical Space</a></li>
+                    </ul>
+                </div>
+            </div>   
+            <div id="crumbs"><!-- <a class="breadcrumb" href="../index.htm" target="_top">ChemDB</a>
+ --><a href="/">Home</a> <img class="crumb-arrow" src='/images/arrow.png' /> <a class="breadcrumb" href="#">MSFragment</a></div>
+        </div>
+        
+        <div id="loadingDiv"><img src="/images/loading.gif" /></div>
+        <div class="hidden">
+            <div id="dialog"></div>
+        </div> 
+        <form id="MSFragment" name="MSFragment" action="MSFragment.py" method=post>
+            <div class="ui-widget-header" style="margin-bottom:3px;">Input Molecule and Fragmentation Patterns</div>
+        	<div class="module">                
+                <div>
+			        <span class="module-sub-header float-left margin-top">SMILES</span>
+                    <a class="sketch-button float-right" href="JMEPopupWeb.py?parentForm=MSFragment&smilesField=linkers&JMEPopupWeb=True">Sketch <IMG SRC="../resource/edit.gif" style="width:19; height:17; border:0" alt="Draw structure"></a>                
+                    <textarea id="linkers" name="linkers" class="margin-top" rows=6 style="width:100%">O=C(CCCC(=O)ON1C(=O)CCC1=O)ON2C(=O)CCC2=O DSG 
+</textarea>
+        		</div>
+                
+                <div class="margin-top">                
+    	            <span class="module-sub-header margin-top"><a class="dialog" href="#smartsText">Fragmentation Patterns</a></span>
+        			<textarea rows=6 cols=25 name="smarts" style="width:100%">O=[C;!R:1][N:2] 
+O=[C;!R:1][O:2]N 
+[C:1][C:2] 
+[N:1][O:2]</textarea>                    
+                </div>
+                
+        		<div class="margin-top float-left" style="width:100%">
+            		<input type="hidden" name="MSFragment" value="Fragment Molecule" />
+            		<button class="convert-button float-right" type="submit" name="MSFragment" >Fragment</button>
+            		<!-- <span class="float-left"><input type="checkbox" name="outputOnly" value="checked">Output Only</span>  -->
+                </div>
+        	</div>
+        </form>
+        
+        <!-- <table class="dataTable" cellspacing=0 cellpadding=4>
+        	<tr valign=top>
+        		<td class="subheading" colspan=5>
+        			Results
+        		</td>
+        	</tr>
+        	
+        	<tr valign=top>
+        		<td class="labelCell">
+            		Fragments <br> and <br> Mol. Wt.
+        		</td>
+        
+        		<td>
+        		    <textarea rows=10 cols=42.9 name="fragments" wrap=off></textarea>
+        		</td>
+        	</tr>
+        </table>
+        <br> -->
+        
+        <div id="results" class="hide">
+            <div class="ui-widget-header">Results ( fragments)</div>
+            <div class="module">        	        	         
+    			
+            </div>
+        </div>
+        <!-- <h2>Formatted for DB Input</h2>
+        <textarea rows=10 cols=60 name="dbInput" wrap=off></textarea> -->        
+    </div>
+</div>
+</body>
+</html>

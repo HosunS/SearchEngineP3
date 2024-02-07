@@ -1,0 +1,158 @@
+<html>
+<head>
+    <title>Ucigame - Gallery - BounceHouse</title>
+<link href="../stylesheet.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+
+<center><h2>Ucigame - Gallery - BounceHouse</h2></center>
+
+<h4>
+<a href="../index.html">Home</a> |
+<a href="../getting-started.html">Getting Started</a> |
+<a href="../reference.html">Reference</a> |
+<a href="../java.html">Introduction to Java</a> |
+<a href="../gallery.html">Gallery</a>
+</h4>
+
+<p>
+<table>
+<tr>
+<td width="300" valign="top">
+<applet
+   code="BounceHouse.class"
+   codebase="."
+   archive="../ucigame.jar"
+   width="250"
+   height="250"
+   border="0"
+>
+Your browser cannot show Java applets.
+</applet>
+</td>
+<td width=600 valign="top" halign="center">
+BounceHouse shows off Ucigame's "pixel perfect" collision
+detection.  (If you don't specify pixel perfect, then
+collision detection is based on the entire rectangular sprite,
+which in the case of the big X has quite a different shape.)
+Use the arrow keys to accelerate the spaceship in any
+direction.
+<br> <br>
+Press the Space key to toggle the spaceship's behavior when
+it collides with an edge or the big X: it can bounce or stop.
+<br> <br>
+The spaceship's "eyes" turn red briefly when it bumps against
+the big X or the side of the window.  The red "eyes"
+(see <a href="images/et-red-eyes.png">images/et-red-eyes.png)</a>
+are pinned onto the spaceship sprite, and are normally
+hidden (because of spaceshipBumped.hide()).  When a collision
+is detected, spaceshipBumped.show() is called, so they
+appear on top of the usual green "eyes."
+At timer named "TurnOffBumpedIndicator" is created, which
+causes TurnOffBumpedIndicatorTimer() to be invoked every 200
+milliseconds.  But since that method turns itself off, it
+is only called once, and the eyes are set back to green by
+hiding the pinned sprite.
+</td>
+</tr>
+<tr>
+<td colspan=2>
+<br>
+<b>BounceHouse.java</b>
+<br>
+<pre>
+import ucigame.*;
+
+public class BounceHouse extends Ucigame
+{
+    Sprite bigX;
+    Sprite spaceship;
+    Sprite spaceshipBumped;
+    int howManyFramesToShowInstructions = 120;
+    int currFrame = 0;
+    boolean bounce = true;
+
+    public void setup()
+    {
+        window.size(250, 250);
+        window.title("Bounce House");
+        framerate(30);
+        window.showFPS();
+
+        canvas.background(128, 0, 0);
+
+        bigX = makeSprite(getImage("images/bigX.png", 255));
+        spaceship = makeSprite(getImage("images/et.png", 255));
+        spaceshipBumped = makeSprite(getImage("images/et-red-eyes.png", 255));
+        spaceship.pin(spaceshipBumped, 12, 18);
+        spaceshipBumped.hide();
+        keyboard.typematicOff(keyboard.SPACE);
+
+        bigX.position(50, 50);
+        spaceship.position(15, 15);
+        spaceship.motion(0, 0);
+
+        if (isAvailableFont("Arial"))
+            canvas.font("Arial", ITALIC, 15, 255, 255, 0);
+    }
+
+    public void draw()
+    {
+        canvas.clear();
+
+        if (currFrame < howManyFramesToShowInstructions)
+        {
+            canvas.putText("Space to toggle bouncing/stopping", 10, 220);
+            currFrame = currFrame + 1;
+        }
+
+        spaceship.move();
+        if (bounce)
+            spaceship.bounceIfCollidesWith(
+                bigX, TOPEDGE, BOTTOMEDGE, LEFTEDGE, RIGHTEDGE, PIXELPERFECT);
+        else
+            spaceship.stopIfCollidesWith(
+                bigX, TOPEDGE, BOTTOMEDGE, LEFTEDGE, RIGHTEDGE, PIXELPERFECT);
+        if (spaceship.collided())
+        {
+            spaceshipBumped.show();
+            startTimer("TurnOffBumpedIndicator", 200);
+        }
+
+        bigX.draw();
+        spaceship.draw();
+    }
+
+    public void onKeyPress()
+    {
+        // Arrow keys accelerate the spaceship
+        if (keyboard.isDown(keyboard.UP))
+            spaceship.motion(0, -0.1, ADD);
+        if (keyboard.isDown(keyboard.DOWN))
+            spaceship.motion(0, 0.1, ADD);
+        if (keyboard.isDown(keyboard.LEFT))
+            spaceship.motion(-0.1, 0, ADD);
+        if (keyboard.isDown(keyboard.RIGHT))
+            spaceship.motion(0.1, 0, ADD);
+
+        // Space toggles bouncing (typematic is turned off for Space key)
+        if (keyboard.key() == keyboard.SPACE)
+            bounce = !bounce;
+    }
+
+    public void TurnOffBumpedIndicatorTimer()
+    {
+        spaceshipBumped.hide();
+        stopTimer("TurnOffBumpedIndicator");
+    }
+}
+</pre>
+</td>
+</tr>
+</table>
+
+<br>
+<br>
+
+</body>
+</html>

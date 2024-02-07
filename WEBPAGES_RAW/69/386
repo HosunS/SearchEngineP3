@@ -1,0 +1,383 @@
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1252">
+<META NAME="Generator" CONTENT="Microsoft Word 97">
+<TITLE>Here are the meeting notes from the Orem meeting</TITLE>
+</HEAD>
+<BODY>
+
+<P>WEBDAV Interim Working Group Meeting</P>
+<P>Orem, Utah</P>
+<P>July 14-15, 1997</P>
+<P>&nbsp;</P>
+<P>A meeting of the WEBDAV working group took place July 14-15, 1997, in Orem, Utah, at the Novell campus.  The meeting took place over two full days, and was attended by 26 people.  Jim Whitehead was the Chair of the meeting, and Jon Radoff diligently recorded minutes for the entire meeting.  Steve Carter provided local arrangements, including meeting location and meals.  Information on the meeting, including the agenda, a list of attendees, presentations given at the meeting, and meeting minutes can be retrieved from URL &lt;http://www.ics.uci.edu/~ejw/authoring/orem/&gt;.</P>
+<P>The purpose of the meeting was to conduct a detailed review of the protocol design, to discuss and resolve open issues in the requirements document, and to review open issues in the access control requirements document.  To this end, the first day the meeting had presentations on properties and locking followed by a presentation on requirements open issues.  The second day began with a presentation on collection and namespace operations in the morning, with presentations on versioning and access control in the afternoon.  The format used was a presentation, followed by a break and then a period for comments from the attendees.</P>
+<P>*** Monday, July 14, 1997 ***</P>
+<P>The meeting began with introductory remarks thanking Steve Carter and Novell for hosting the meeting.  Next was a review of the agenda, which was accepted without change.</P>
+<B><P>PROPERTIES/METADATA</P>
+</B><P>Yaron Goland gave a presentation on the design of metadata and properties in WebDAV.  The notes below roughly parallel the slide presentation, but tend to group notes from several slides together.  </P>
+<P>Yaron began by noting that the term "property" is used instead of metadata, since "meta" is an abused word, making it practically meaningless due to its many divergent meanings.</P>
+<P>Defining Properties</P>
+
+<UL>
+<LI>Data about data, e.g., source, author </LI>
+<LI>properties are lightweight pieces of  information, NOT FULL FLEDGED RESOURCES. </LI></UL>
+
+<P>- Properties are fairly small pieces of information, termed "small chunk" data</P>
+<P>- "large chunk" data are not handled by properties. This information is "linked" to the resource it describes</P>
+<P>- Name-value pairs</P>
+<P>Problems with sending and retrieving properties with HTTP headers</P>
+<P>- Too inefficient (many properties can be defined on a resource, and it would add to much of a burden to return all properties on every GET request)</P>
+<P>- Properties can be fairly large, and span multiple lines.</P>
+<P>Property Namespace</P>
+<P>- Hierarchical namespace (considered in a previous WebDAV design) is expensive to implement, and raises issues with backward compatibility</P>
+<P>- DAV namespace is flat; but this won't prohibit introducing a hierarchical namespace in the future </P>
+<P>- Names are URIs:</P>
+<P>- URIs don't collide with anyone else</P>
+<P>- URIs don't introduce a canonical set of properties - registration process</P>
+<P>- example:</P>
+<P>AIIM.Dublin.Author,</P>
+<P>www.ietg.org/standards/dav/source</P>
+<P>Property Values are XML Documents</P>
+<P>- Standard structured data format</P>
+<P>- This is a way to represent structured data </P>
+<P>- RDF is an alternative proposal</P>
+<P>- purpose: schema definitions, data definitions, etc. </P>
+<P>- XML is based on SGML which has been "stable for ten years."</P>
+<P>- Whereas SGML standard is documented in volumes; WebDAV XML is significantly simpler/shorter </P>
+<P>Property Attributes</P>
+<P>- Hoping to pull this out.  Atrributes were initially considered for use in typing properties, but this is not needed due to the definition of XML elements.  This section of the draft can be considered historical.</P>
+<P>Defined Attributes</P>
+<P>- "Live" indicates that the property's syntax and semantics are enforced by the server. </P>
+<P>- "Read Only" indicates that the property can not be set by the client. This may come from the file system. May not be able to back-propagate this information.</P>
+<P>Property Schemas and DAV Properties</P>
+<P>- Schemas in the context of DAV properties are used to group related properties together for easy discovery.</P>
+<P>There was a brief discussion on levels of compliance.  It was noted that there will be at least two levels of compliance - versioning or no versioning. One property (the "DAV" property) will tell you how much of the DAV protocol the server supports. Yaron noted that we want to have a compelling case for low-end systems. Don't want to require huge complicated systems to take advantage of DAV.</P>
+<P>One flaw noted in the specification is there is a need to be able to discover whether a particular schema or property is supported.</P>
+<P>Standard XML Elements for Properties</P>
+<P>Prop - children (Propname, Propvalue) define property's name/value pairs </P>
+<P>Propname - contains the URI which is the name of the property </P>
+<P>Propvalue - Contains an XML document which is the value of the property</P>
+<P>Date format will be whatever RDF defines. </P>
+<P>Property URL Scheme - Introduction</P>
+<P>Since properties have similarities to full resources, it makes sense to be able to retrieve a property's value using the GET method, which requires that the property have a URI associated with it.  The proposal for adding a standard URI parameter called "DAV" to URLs, and then appending the property URI to the DAV parameter, was discussed.</P>
+<P>Example:</P>
+<P>";DAV/" segment</P>
+<P>- The namespace to the right of the param is a path space. Just one entry</P>
+<P>Due to relative URL handling, the URI appended to the end of the DAV parameter must not have "/" embedded within it.  The slashed can be URL escaped, but this raises a readability issue - URLs turn into %2f junk. The solution is to use an encoding mechanism:</P>
+<P>- encase the URL in () and turn all / to ! </P>
+<P>Any prior ! will need to be URL encoded.</P>
+<P>Issues:</P>
+<P>- CGI scripts may be confused by the parameter </P>
+<P>- Conflict avoidance: DAV server discovery tells you that the DAV encoding will be properly supported. PEP may be another possibility (but "cure may be worse than disease") because it is too heavyweight.</P>
+<P>- Because of the way the namespace is grabbed it can be pretty expensive to constantly be discovering</P>
+<P>- Yaron G.: "99% of the time we are only creating or deleting a property. Copying a property is rare." </P>
+<P>Open issue - server controlled property namespace; users don't want to do discovery; perhaps should use an official "name mangling" space (as suggested by Fielding at Palo Alto meeting).</P>
+<P>&nbsp;</P>
+<P>DAV Links</P>
+<P>- Links associate one resource with another resource. </P>
+<P>- Links are implemented as DAV properties </P>
+<P>- Typing information is given by the name of the property </P>
+<P>- LINK/XML elements whcih define source/dest pairs </P>
+<P>DAV Links - Value</P>
+<P>- http://www.ietg.org/standards/dav/Link contains two elements src and dst</P>
+<P>&nbsp;</P>
+<P>Methods on DAV Properties</P>
+<P>DELETE</P>
+<P>- Deletes the property specified in the request-URI </P>
+<P>GET</P>
+<P>- Returns the property specified in the request-URI </P>
+<P>- The request-URI http://foo;DAV/ will return all properties defined on a resource</P>
+<P>- Issue: Is only the value returned or the complete resource returned?</P>
+<P>PUT</P>
+<P>- Issue as to whether this will be included.</P>
+<P>POST is essentially undefined. You can never know what is inside it. You can't have consistent management.</P>
+<P>PUT is the opposite of POST; if you PUT a string, you deliver an arbitrary stream of bytes which is returned verbatim when you do a GET.</P>
+<P>- Problem is that value-added vendors will want to return data in a proprietary format.</P>
+<P>- If PUT can't be used we will need something to create properties.</P>
+<P>PROPPATCH</P>
+<P>- Replaces PUT</P>
+<P>- Atomically creates and deletes a number of properties in order to keep the resource in a consistent state.</P>
+<P>- Transaction control is an issue -- see TIP (Transaction Internet Protocol)</P>
+<P>- Other issue - separate functionality from implementation so that value-added vendors of "rich" DAV systems can operate as a module on top of a "big three" Web server vendor. </P>
+<P>PROPPATCH Implementation</P>
+<P>- Supports creating or deleting a property. - no abiliy to modify part of a value.</P>
+<P>- Proposal to remove restriction of ;DAV/ in URI when doing a PROPPATCH; this is a legacy of the old PATCH method.</P>
+<P>Syntax</P>
+<P>- Can contain any number of XML elements: create/remove</P>
+<P>SEARCH</P>
+<P>- Performs pattern matching search over the name and value spaces of the properties on a resource.</P>
+<P>- Limited search is included in the body; may use AND/OR searches.</P>
+<P>- Match-String performs an octet pattern match, * for zero-or more octet matches and ? for exactly one.</P>
+<P>- NOT a be-all end-all search capability </P>
+<P>Q&amp;A: </P>
+<P>Dennis Hamilton: When does the XML standard become implementable given that the WebDAV specification is currently referencing something unavailable?</P>
+<P>Yaron Goland: The basis for XML, SGML, has been stable for 10 years.  Currently the main open XML issues affecting WebDAV are: a) incompatibility - colon in a property name; this is being changed, b) closing tags must be &lt;/tagname&gt;, which is inefficient, using &lt;/&gt; is another proposal under discussion.</P>
+<P>Moving towards RDF, but DAV is not dependent on this.</P>
+<P>&nbsp;</P>
+<P>Jim W.: Another issue is whether the namespace tag should be replaced by use of the HREF tag.</P>
+<P>Yaron G.: We have two options. Option #1: Namespace as currently specified is perfectly valid XML.  Option #2: Use RDF if it is at a proposed-standard level by January.</P>
+<P>&nbsp;</P>
+<P>Judy Slein: How long until XML becomes a W3C recommendation? </P>
+<P>Alex Hopmann: The core XML spec is stable, hasn't changed in awhile. Recommendation timeframe is unknown, but probably a few months. XML link spec is still being worked on. No substantial changes have been made to XML other than allowance of colon.</P>
+<P>&nbsp;</P>
+<P>Dennis H.: How will value-added products integrate with DAV servers?</P>
+<P>Yaron G.: You will be able to "Own" a namespace and take over the connection for a DAV namespace. Value-added implementations will probably occur via NSAPI, ISAPI and Apache module interfaces. There is no standard for interoperability of DAV value-added components with the Web serveer. </P>
+<P>&nbsp;</P>
+<P>Q: How do we prevent going through the back door and make a change to a property?</P>
+<P>Yaron: Unless your administrator is a moron, this isn't an issue.</P>
+<P>&nbsp;</P>
+<P>Judy S.: What is live versus read-only? There are at least three different concepts:</P>
+<P>1. The server enforces some syntax rules about values.  This might apply to the case where the user provides a value and the server validates this value.</P>
+<P>2. A property has a value that is only provided by the server. </P>
+<P>Yaron G.: Read-only just means you can't set the value through DAV.  Note that read-only doesn't have anything to do with access - it is just notes a property that can't be set. </P>
+<P>3. Non copyable versus copyable properties?</P>
+<P>Yaron G.: Copying of properties is dealt with in another section.</P>
+<P>&nbsp;</P>
+<P>Yaron G.: "Live" means that it is enforced. For example, if you move a resource from a server that supports versioning to a server that doesn't, you would not want to label the destination resource as supporting a "live" versioning property because it would not be enforced. You can never copy the value of a "live" property because this can only be generated by the server. </P>
+<P>Dennis H.: Live means that the server is an active participant in maintaining the integrity of the data for the property.</P>
+<P>&nbsp;</P>
+<P>Q: Clarification - can you copy properties from one server to another and maintain the "live" status across?</P>
+<P>Yaron: Absolutely. One of the things the specification supports is the copy failing if it doesn't support the target property.</P>
+<P>&nbsp;</P>
+<P>At this point, the microphone was passed around the room to give everyone present a chance to comment on the properties design.  Issues raised in this way were recorded in a list which was presented on the screen.  Afterwards, there was some discussion of these issues.  In the minutes below, the issue and discussion are grouped together.</P>
+<P>&nbsp;</P>
+<P>Is XML too heavy to scale?</P>
+<P>Alex H.: It is pretty easy to parse.  Microsoft has a Java based parser which requires 280 lines of code to parse XML.  XML seemed like the best way to maintain a consistent schema for the data.</P>
+<P>Discovery - why is it so hard to find out about properties?</P>
+<P>;DAV/ to name a property and the introduction of  another updating scheme</P>
+<P>Yaron: This is indeed evil.  It is very onerous to always go and ask the server for the URL for a property.</P>
+<P>* Yaron: We need to address the URL encoding for property naming; this is broken and should be discussed. </P>
+<P>Why insistence on a flat property name space? </P>
+<P>Yaron G: Everyone is supporting a flat model with atomic updating.</P>
+<P>How tightly are properties associated with the underlying resource?</P>
+<P>Is SEARCH just "get properties?"</P>
+<P>Yaron G.: Yes. Search is underspecified. There is too much to do in this area,to address it properly I am considering proposing an IETF WG just for search.</P>
+<P>Any cases where we aren't covering properties for large-chunk data</P>
+<P>Yaron G.: Links take care of what we need</P>
+<P>With linked metadata, doesn't this require too many round-trips to retrieve the data?</P>
+<P>Yaron G.: Yes, large chunk data is a pain. It will never be as nice as small chunk.  The designers were willing to make this trade-off to have something simple to use.</P>
+<P>What about typed properties?</P>
+<P>How are properties implemented via proxies? </P>
+<P>Yaron G.: HTTP Proxies shouldn't be doing things that are dependent on calculations on the server. If your property needs to be processed, don't send out the data as cacheable. The HTTP proxy mechanism is only used when you don't need a guarantee on the integrity of the data. </P>
+<P>Can you copy read-only properties between DAV implementations if they are live on both sides? Is live and read-only mutually exclusive? </P>
+<P>Yaron G.: Proposal - We need an explicit requirement that a dead property is not cacheable; or maybe that it is cacheable for a certain period of time. </P>
+<P>There was a general sentiment that the issue of caching of properties needed to be investigted further. </P>
+<P>&nbsp;</P>
+<B><P>LOCKS AND STATE TOKENS</P>
+</B><P>&nbsp;</P>
+<P>Jim Whitehead next gave a presentation outlining locks and state tokens.</P>
+<P>&nbsp;</P>
+<P>- Locking is used to arbitrate access to a resource among principals of equal access.</P>
+<P>- Locking and access control are orthogonal </P>
+<P>- Two axes of locking support: exclusive vs. shared</P>
+<P>exclusive: only owner can write to resource </P>
+<P>shared: more than one user can have the lock. </P>
+<P>- Only have a write lock</P>
+<P>&nbsp;</P>
+<P>Resource Access:</P>
+<P>Starting with everyone on the Internet</P>
+<P>- A subset have access permission</P>
+<P>- A subset of people with permission have a lock.</P>
+<P>&nbsp;</P>
+<P>- Exclusive locks are too rigid - requires administrator to release</P>
+<P>- Shared locks make it so many people can get access to the resource without holding up the entire group. </P>
+<P>&nbsp;</P>
+<P>Lock State&#9;Shared Lock Exclusive Lock</P>
+<P>------------------------------------------------------ </P>
+<P>None&#9;&#9;true&#9;&#9;true</P>
+<P>Shared Lock&#9;true&#9;&#9;false</P>
+<P>Exclusive Lock   false&#9;&#9;false*</P>
+<P>&nbsp;</P>
+<P>true = Lock may be granted</P>
+<P>false = lock must not be granted</P>
+<P>*=owner of lock may have lock regranted</P>
+<P>&nbsp;</P>
+<P>* Q: Can you promote a shared lock to an exclusive lock? </P>
+<P>Yaron G.: We discussed this in the past and thought this would introduce compatibility problems.</P>
+<P>Jim W.: This should be discussed further.</P>
+<P>&nbsp;</P>
+<P>Required Support:</P>
+<P>- A WEBDAV server is not required to support locking in any form because there are too many differences within implementations.</P>
+<P>- If a server does support locking, it may choose to support any combination of exclusive and shared locks.  </P>
+<P>* There is a need for a discovery mechanism so a client may determine what locking support is provided by the server.</P>
+<P>&nbsp;</P>
+<P>LOCK Method</P>
+<P>- Creates the lock specified by the Lock-Info header on the Request-URI</P>
+<P>&nbsp;</P>
+<P>Yaron G. - Issue: Should the lock parameter be a URL?</P>
+<P>There was some discussion at this point on the Owner header.  The owner header provides contact information for the owner of the lock.  This information is provided in addition to any authentication information which might be available, since authentication information does not always contain useful contact information. This raises a privacy concern, as people may not want to advertise that information, and hence there may be a need to be able to disable this mechanism.  There is also a security consideration, since some servers should not deliver this information to some users.</P>
+<P>&nbsp;</P>
+<P>Time-out Header</P>
+<P>- causes locks to go away at a predefined point in time.</P>
+<P>- activity-based: timer set as soon as the lock is granted </P>
+<P>&nbsp;</P>
+<P>UNLOCK</P>
+<P>Removes the lock identified by the state-token header from the Request-URI.</P>
+<P>&nbsp;</P>
+<P>Write Lock</P>
+<P>- The only defined access type.</P>
+<P>- Prevents a principal from successfully modifying the resource</P>
+<P>&nbsp;</P>
+<P>* Issue: The specification should be checked to see if a write lock request will fail on a property resource.</P>
+<P>Q: What are the interactions between the setting of file system or database oriented locks and the WEBDAV locking mechanism?</P>
+<P>There was a significant discussion concerning how locking of a container should be handled if it contains locked resources.  This led into a discussion of containment in general, with direct containment and referential containment being mentioned as the two classes of containment which are evident within the WebDAV specification.</P>
+<P>* An issue was raised concerning how to reconcile access to resources via the WEBDAV mechanism versus outside mechanisms that may also change content (and hence may also be outside the scope of WEBDAV locks).</P>
+<P>&nbsp;</P>
+<P>State Tokens:</P>
+<P>Clarification: Entity tags are just a quoted string </P>
+<P>The client cannot create a lock token.</P>
+<P>Conditional Token Headers</P>
+<P>- If-State-Match</P>
+<P>- If-None-State-Match</P>
+<P>- OR capability was not needed for the If-None-State-Match header, but is needed for the If-State-Match header.</P>
+<P>There was some discussion concerning the timeout header.  A question was raised on why the specification only uses seconds for the timeout period? What about different types of time periods.  Someone suggested using the ISO 8601 time format in the timeout header, and this format deals with partial seconds. Another suggestion was made to use absolute time values?  It was noted that it is totally up to the server to define the deltas between time headers.</P>
+<P>Yaron G.: Another requirement that was added to the spec is that you need to send in the state token any time you manipulate a resource you locked.  This ensures that you really have the right to access it - for example, when two programs run by the same user attempt to access a lock.  For example, if Program B tries to lock a resource locked by Program A, it will immediately be rejected because the request won't have a state token.</P>
+<P>At this point the microphone was passed around the room, and comments were noted.  Comments received, including subsequent discussion, are noted below:</P>
+<P>- Timeout information</P>
+<P>- Format of lock tokens</P>
+<P>- Interactivity with access control</P>
+<P>- Locking properties</P>
+<P>- The spec should probably say that a server MAY allow a property to be locked. By default you are locking all of a resource's properties.</P>
+<P>- Perhaps locking of containers should not be allowed.</P>
+<P>- Should we require support of recursive locking within containers?</P>
+<P>Three possibilities were noted: </P>
+<P>1. Don't require infinite depth recursion when locking a container</P>
+<P>2. Do require a lock to recurse to the lowest level of a container � Con: it is expensive</P>
+<P>3. Allow multiple types of containers � Con: don't want to support "negotiation".</P>
+<P>&nbsp;</P>
+<P>There was wide sentiment that the whole containment model should be reviewed.</P>
+<P>Q: How is the client supposed to know when to provide a lock token from a container when accessing a member?</P>
+<P>Issue: Perhaps the state token format should use XML?</P>
+<P>Q: What are the uniqueness properties of lock tokens?</P>
+<P>Jim W.: Lock tokens are unique across space and time. (Maybe lock tokens should be unique across space and time for all types of lock tokens.)</P>
+<P>Issue: should state tokens be subject to normal resource discovery? </P>
+<P>Possible proposal: State tokens are essentially identified as a normal property � in this case, we can use the standard URI format. The question was raised whether it possible to discover all of the locks that exist at a particular time on the server? </P>
+<P>There was some discussion on the interaction between locks and language variants.</P>
+<P>Issue: When servers talk to each other why wouldn't one server assume a "client" state to talk to the other? Can we obtain a compilation list of all the locks that exist on a particular server? This would provide the ability of multiple WebDAV servers to subscribe to each other. </P>
+<P>The issue was raised on whether there should be access control on properties.  This discussion was deferred to the session on access control requirements.</P>
+<P>There was a discussion on shared locks, and reservations. It was noted that shared locks work well as an advisory lock; vendors with a system based on advisory locks can expose their advisory lock functionality as a WEBDAV shared lock.  Yaron G. pointed out that a shared lock is a reservation. The basic purpose of the shared lock is to provide a way to find out who else is interested in the resource. It doesn't really enforce any functionality. The main purpose of the shared lock is to prevent someone from obtaining exclusive locks.</P>
+<P>&nbsp;</P>
+<P>---</P>
+<B><P>OPEN REQUIREMENTS ISSUES</P>
+</B><P>&nbsp;</P>
+<P>Judith Slein gave a presentation and led discussion on open issues in the WebDAV requirements document.</P>
+<P>&nbsp;</P>
+<P>- You need to be able to lock multiple resources atomically. [Poll mailing list to see if we should eliminate this requirement] </P>
+<P>- Keep requirement for nothing in WebDAV to preclude e-mail </P>
+<P>Internationalization</P>
+<P>- Anything having to do with variants is eliminated - You need to be able to specify information in any language format into the property strings. We need to discuss how this will be done. </P>
+<P>Q: Is collation supported?</P>
+<P>Yaron G.: No. In fact it is acceptable under the spec to return multiple responses to a particular property.</P>
+<P>Reservations</P>
+<P>Jim W.: Current locking capabilities essentially support reservations. </P>
+<P>Judy: Language should match; we'll fold reservations into locking. </P>
+<P>Jim W.: There will be a revised WebDAV Requirements draft next week.  Once this draft is out, there will be a working group last call on the draft, which will end after the Munich IETF meeting.  At this time, there will be a call for consensus on the requirements draft within the working group.  Assuming consensus is reached, the requirements draft will be submitted to the IESG for release as an Informational RFC.</P>
+<P>&nbsp;</P>
+<P>*** Tuesday, July 15, 1997 ***</P>
+<B><P>COLLECTIONS AND NAMESPACE OPERATIONS</P>
+</B><P>&nbsp;</P>
+<P>The second day of the meeting began with a presentation and discussion on collections and namespace operations led by Jim Whitehead.</P>
+<P>A container is somewhat analogous to a directory in a filesystem, but it isn't exactly like a directory because the Web is not a filesystem. A collections is a new type of web resource.</P>
+<P>Members of a collection are: internal members, which have a URI which is relative to the base URI of the collection, or external members, which are have the sole restriction that they may not be relative to the base URI of the collection. </P>
+<P>- Propagate members have recursive method invocations propagated to them</P>
+<P>- No-propagate members do not have method invocations propagated to them.</P>
+<P>All internal members are by default propagate members. </P>
+<P>A collection may be viewed as a compound resource in which the collection is a container for a group of related resources. </P>
+<P>Propagation Model</P>
+<P>- When you apply a method to a collection the method is propagated </P>
+<P>to all of the "propagate" members.</P>
+<P>- Depth of propagation may be 0, 1 or infinity. </P>
+<P>(0=collection only, 1=all of the members but not collections contained in the collection, infinity=go until the bottom of the containment tree is reached)</P>
+<P>&nbsp;</P>
+<P>MKCOL creates a new collection resource at a request URI. If Request-URI</P>
+<P>exists, MKCOL fails.</P>
+<P>- The server may make intermediate collection as it sees fit, for example, MKCOL http://server/a/b/c/ the server may create /a/ and /a/b/ and /c/.</P>
+<P>&nbsp;</P>
+<P>INDEX returns a machine readable representation of the membership of the resource at Request-URI; for a collection, INDEX must return a machine readable list of its members. INDEX is undefined for non-collection resources � it may return a result, it may not.  INDEX returns an XML document listing the members of the collection. The results from INDEX are cacheable and should be accompanied by an ETag header for the INDEX entity body.</P>
+<P>&nbsp;</P>
+<P>ADDREF</P>
+<P>Adds the URI specified in the collection member header from the collection</P>
+<P>specified by the Request URI.</P>
+<P>Issue: what occurs if the collection resource is deleted? </P>
+<P>&nbsp;</P>
+<P>COPY</P>
+<P>Creates a duplicate of the source resource. Must produce an exact octet-by-octet copy of the body of the resource. Alterations to the source resource do not modify the </P>
+<P>destination resource.  Copies are performed by value.</P>
+<P>- A "duplicate properties" header controls whether properties should be duplicated during copies.</P>
+<P>- An "enforce-live-properties" requires that the destination be capable of supporting the live properties.  If a property is not labeled as enforce-live-properties, and it cannot be copied live, the value must be duplicated in an identically named, dead resource on the destination resource. All dead properties should simply be an octet copy to new dead properties.</P>
+<P>COPY for collections</P>
+<P>- Copy recursively</P>
+<P>- Depth header 0: indicates collection must duplicate all of its external members in a new collection at the destination. </P>
+<P>&nbsp;</P>
+<P>Dennis H.: the behavior is not recursively consistent which is weird. </P>
+<P>Jim W.: When overwrite is true, you essentially are deleting the destination collection and recreating a duplicate. When overwrite is false, you are really doing a merge.</P>
+<P>Proposed: change semantics to MERGE because the COPY semantics are not recursively consistent.</P>
+<P>&nbsp;</P>
+<P>RFC2068 METHODS</P>
+<P>GET will return any human readable form of the collection.  The HEAD method is a GET method without the response body -- nothing needs to change. POST is undefined.</P>
+<P>A PUT on a collection must fail, but the server may add a non-collection resource which is PUT to the controlled namespace of the collection to one or more collections. </P>
+<P>Yaron G.: GET does not need to work on a collection at all - there is no requirement for this.</P>
+<P>Q: Is it automatic that a resource placed in a directory, e.g., with /a/ if you create /a/x then x is automatically added as an internal member of the collection?</P>
+<P>Jim W.: This is a "may" requirement. The server is responsible for maintaining its own namespace.</P>
+<P>Yaron G.: Internal members are always propagate. It is only optional for external members.</P>
+<P>Yaron G.: With binary methods such as COPY and MOVE, only internal members can</P>
+<P>be affected because of the hierarchical namespace. External members can only be affected by unary methods such as delete. Section 6.4 "DELETE for collections" needs to be revised to reflect that propagate links should be deleted. The main motivation for the propagate/non-propagate distinction was for the delete operation.</P>
+<P>Point: it will take 2+n operations to atomically lock a group of resources because you first need to create a transient collection, then add references to the collection, then lock the collection.</P>
+<P>On a depth 0 collection copy, then the links themselves are not copied, but on depth 1 copies they are.</P>
+<P>At this point the microphone was passed around the room, and comments were recorded so they were visible on the screen in the front of the room.</P>
+<P>- The distinction between propagate/non-propagate links gives the creator of the collection more power over the collection. Maybe we should eliminate this distinction?</P>
+<P>- With DMA, we found that propagation semantics were very difficult to implement. We may want to avoid providing for propagation within DAV. </P>
+<P>- DMA has both direct and referential links. It would be nice if DAV supported the same containment models as DMA. </P>
+<P>- It should be simple to implement the collection within a DOS file system.</P>
+<P>- Propagation semantics are of concern. We may want to eliminate this.</P>
+<P>- We need collection semantics, but I could live with external references only. Don't propagate. </P>
+<P>- What is the means by which one populates level 0?</P>
+<P>- It should be possible to completely populate a collection at the time of its creation.</P>
+<P>- Collections yes, external references are helpful. </P>
+<P>- Inconsistency between different concepts of collections. </P>
+<P>- There should be a way to create collections and have methods that affect all the members of a collection.</P>
+<P>&nbsp;</P>
+<P>After going around the room for comments, a straw poll of the participants was held.  The questions put before the group were: should collections capability be included within WebDAV, if yes, should the collection model include external members (referential containment), and should there be a distinction between internal and external members of a collection.  The results of this straw poll were:</P>
+<P>- Collections: yes</P>
+<P>- External references: yes</P>
+<P>- Distinction between reference types: yes/no mix</P>
+<P>&nbsp;</P>
+<P>Discussion compound document support: don't have any specific support; vendors can implement this using properties. </P>
+<P>Discussion concerning whether atomicity is important or not. </P>
+<P>Comment: If we support the flat namespace with collections that have internal members, then we should change the spec so that implementations MUST support that if you add something to the underlying directory it will automatically be added to the collection. </P>
+<P>---</P>
+<B><P>VERSIONING</P>
+</B><P>&nbsp;</P>
+<P>Jim Whitehead gave a presentation on a proposal for versioning support for WebDAV.</P>
+<P>Version object data model: each version of a resource is itself a separate resource, with its own URI.</P>
+<P>Version history collection: a subtype of the WEBDAV collection type, contains a graph of the document.  Members of a version history collection have links to the version history collection and comments information stored in properties.</P>
+<P>INDEX returns the predecessor, successor, root, comments, defaultpublished and versionid for each member, in addition to normal INDEX information for each entry.</P>
+<P>Yaron G.: Doesn't this create a potential bottleneck for retrieving a successor? </P>
+<P>Jim W.: Getting a successor is an infrequent operation, so a 2-hop operation shouldn't be a problem.</P>
+<P>&nbsp;</P>
+<P>GET on a version history collection must return the default published version, if one exists.</P>
+<P>CREATE method</P>
+<P>- Mechanism that adds a resource to a version history collection. The Request-URI on a CREATE is the version history collection. If the VersionID header is present in the request, CREATE may set the VersionID for the new resource to that value. A resource made by CREATE cannot be modified </P>
+<P>ISSUE: We need to discuss whether we should support non-linear branching or only linear branching. This appears to be an important issue to document management companies.  There was some discussion about what were the compelling scenarios for non-linear versioning.  Bob P. mentioned that the majority of users of Continuus/CM use nonlinear versioning.</P>
+<P>Consensus: Need to design in branch versioning from the start - versioning has a dependency on locking, yet locking is optional. Versioning is an optional component of WebDAV. There is a different between the most recent version and the most recent "published" version.  The protocol should make a clear distinction between these two.</P>
+<P>&nbsp;</P>
+<B><P>ACCESS CONTROL</P>
+</B><P>Jon Radoff gave a presentation on access control, discussing his preliminary access control requirements draft.  During his presentation, there was discussion on both the requirements, and the characteristics of a good solution to providing access control functionality. The HTML form of this presentation can be retrieved at www.novalink.com/ietf/access/present1.html</P>
+<P>The following issues were identified:</P>
+<P>- Do we want to base semantics on HTTP methods or on abstract permission constraints?</P>
+<P>- Do we want to modify the internal resources that define an access policy?</P>
+<P>- Is access control part of the base specification for WebDAV?</P>
+<P>- Need to clarify access policies v. ACLs</P>
+<P>- Should access control be its own working group?</P>
+<P>- Point that we already have an ACL mechanism in place in the form of NT, Oracle databases, UNIX servers, etc. </P>
+<P>- Model should be reasonably abstract about how the server defines authorization; focus on associating constraints with a resource</P>
+<P>- Identify what the minimum requirements are. </P>
+<P>-We need to allow authors to define access constraints for documents that they introduce. - It would be nice to look at what other document management systems support.</P>
+
+<UL>
+<LI>Consider allowing DAV implementations to control the identities of principals within an access group ("access policy").</LI></UL>
+
+<P>After Jon Radoff's presentation, the meeting was adjourned.</P>
+<P>*** End of meeting ***</P></BODY>
+</HTML>

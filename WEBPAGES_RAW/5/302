@@ -1,0 +1,88 @@
+
+### Change this line when the data is on website
+msm = read.csv("http://www.ics.uci.edu/~zhaoxia/teaching/stat120c/Data/msmdata.csv")
+###
+
+# First acquire the relevant n and p
+n = dim(msm)[1]
+p = dim(msm)[2]
+
+# Set x and y for simplicity
+x = msm$Pressure
+y = msm$Calcium
+
+# Solve for \hat{beta}_1 and \hat{beta}_0
+beta1 = sum( ( x - mean(x) ) * ( y - mean(y) ) )/sum( ( x - mean(x) )^2 )
+beta0 = mean(y) - beta1 * mean(x)
+
+# Solve for the unbiased estimate for sigma^2
+yhat = beta0 + beta1*x
+MSE = sum( (y - yhat)^2 )/(n-2)
+
+# Test the null hypothesis that beta_1 = 0 vs. beta_1 != 0
+test.stat = beta1/sqrt( MSE / sum( ( x - mean(x) )^2 ) )
+alpha = 0.05
+
+# Rejection region approach
+cutoff = qt( c(alpha/2, 1-alpha/2), df = n - 2 )
+(test.stat <= cutoff[1]) | (test.stat >= cutoff[2])
+# The result above is TRUE so we reject the null hypothesis
+
+# p-value approach
+p.value = 2*pt( test.stat, df = n - 2, lower.tail = F)
+p.value <= alpha
+# The result above is TRUE so we reject the null hypothesis
+
+# Confidence interval for the mean at 100 psi
+y_100 = beta0 + beta1*100
+y_100 + c(-1,1)*qt(1-0.05/2, df = n-2)*sqrt(MSE*(1/n + 
+                                                (100-mean(x))^2/sum( (x-mean(x))^2 ) ) )
+# An alternative way to create such a confidence interval is to produce
+# the two endpoints separately
+lower = y_100 - qt(1-0.05/2, df = n-2)*sqrt(MSE*(1/n + 
+                                                  (100-mean(x))^2/sum( (x-mean(x))^2 ) ) )
+upper = y_100 + qt(1-0.05/2, df = n-2)*sqrt(MSE*(1/n + 
+                                                  (100-mean(x))^2/sum( (x-mean(x))^2 ) ) )
+
+# Confidence interval for a new observation of 100 psi
+y_100 + c(-1,1)*qt(1-0.05/2, df = n-2)*sqrt(MSE*(1/n + 1 
+                                                +(100-mean(x))^2/sum( (x-mean(x))^2 ) ) )
+# alternative way
+lower = y_100 - qt(1-0.05/2, df = n-2)*sqrt(MSE*(1/n + 1 
+                                                +(100-mean(x))^2/sum( (x-mean(x))^2 ) ) )
+upper = y_100 + qt(1-0.05/2, df = n-2)*sqrt(MSE*(1/n + 1 
+                                                +(100-mean(x))^2/sum( (x-mean(x))^2 ) ) )
+
+# Calculating SSR, SSE, and SSTO
+yhat = beta0 + beta1*x
+SSE = sum( (y - yhat)^2 ) # called RSS, residual sum of squares
+SSReg = sum( (yhat - mean(y))^2 ) # SS Regression
+SSTO = sum( (y - mean(y))^2 )
+
+# Calculating the coefficient of determination
+Rsquared = SSReg/SSTO
+
+# The easy way
+mod = lm(Calcium ~ Pressure, data = msm)
+summary(mod)
+
+# Residuals vs. fitted values
+stdresid = rstandard(mod)
+plot(x = yhat, y = stdresid, xlab = "Predicted Calcium (in ppm)", ylab = 
+       "Standardized Residuals", main = "Standardized Residuals\nvs. Fitted")
+abline(h = 0, lwd = 1, lty = 2, col = "grey")
+
+# QQ plot of Residuals
+qqnorm( scale(y-yhat) )
+qqline( scale(y-yhat), lty = 2, lwd = 1, col = "grey" )
+
+# Plot of Results
+plot(x = x, y = y, xlab = "Pressure (in psi)", ylab = "Calcium (in ppm)", 
+     main = "Scatterplot of data with\nregression line added")
+curve(beta0 + beta1*x, from = min(x), to = max(x), add = TRUE, lwd = 2, lty = 1)
+
+# CI for the mean at Pressure = 100 psi
+predict(mod, newdata = list(Pressure = 100), level = 0.95, interval = "confidence")
+
+# CI for a new observation at Pressure = 100 psi
+predict(mod, newdata = list(Pressure = 100), level = 0.95, interval = "prediction")

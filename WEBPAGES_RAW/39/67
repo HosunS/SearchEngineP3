@@ -1,0 +1,239 @@
+<HTML>
+<HEAD>
+<TITLE>ICS 180, February 2, 1999</TITLE>
+<META name="Owner" value="eppstein">
+<META name="Reply-To" value="eppstein@ics.uci.edu">
+</HEAD><BODY>
+<IMG SRC="icslogo2.gif" WIDTH=472 HEIGHT=72 ALT=""><P>
+<A HREF="index.html">
+<H1>ICS 180, Winter 1999:<BR>
+Strategy and board game programming</H1></A>
+
+<H2>Lecture notes for February 2, 1999<BR>
+Variants of Alpha-Beta Search</H2>
+
+Although the basic alpha-beta search discussed already is simple and works 
+well, there have been several attempts to search game trees even more 
+efficiently.  The basic idea behind most of these is that, if we consider 
+the scores in the range from alpha to beta as being "interesting" and all 
+other scores to be "uninteresting", then alpha-beta gets its 
+efficiency by cutting off the search quickly at nodes with uninteresting 
+scores.  If we narrow the gap between alpha and beta, fewer scores will be 
+interesting and more cutoffs will happen.
+
+<P>First, let's quickly review the original alpha-beta search,
+omitting details like hashing or
+<A HREF="990202a.html">adjust winning scores for the current ply</A>.
+
+<PRE>
+    // basic alpha-beta search
+    int alphabeta(int depth, int alpha, int beta)
+    {
+        move bestmove;
+        if (game over or depth <= 0) return winning score or eval();
+        for (each possible move m) {
+            make move m;
+            score = -alphabeta(depth - 1, -beta, -alpha)
+            if (score >= alpha) { alpha = score; bestmove = m; }
+            unmake move m;
+            if (alpha >= beta) break;
+        }
+        return alpha;
+    }
+</PRE>
+
+<H3>Fail-Soft Alpha-Beta</H3>
+
+The code above always returns alpha, beta, or a number between alpha and 
+beta.  In other words, when a score is uninteresting, no extra information 
+is returned about that score.  The reason for this is that the current 
+score is kept in the variable alpha, which starts at the bottom of the 
+window of interesting scores, and always increases from there, so it is not 
+possible to return a score less than alpha.
+One of the simplest improvements to 
+alpha-beta is to keep the current score and alpha in separate variables.
+The following pseudocode uses the constant "WIN" to denote the maximum 
+score that can be returned by any call to alpha-beta search.
+
+<PRE>
+    // fail-soft alpha-beta search
+    int alphabeta(int depth, int alpha, int beta)
+    {
+        move bestmove;
+        int current = -WIN;
+        if (game over or depth <= 0) return winning score or eval();
+        for (each possible move m) {
+            make move m;
+            score = -alphabeta(depth - 1, -beta, -alpha)
+            unmake move m;
+            if (score >= current) {
+                current = score;
+                bestmove = m;
+                if (score >= alpha) alpha = score;
+                if (score >= beta) break;
+            }
+        }
+        return current;
+    }
+</PRE>
+
+With this change, one can determine a little more information than before 
+about a position.  If the returned value x is less than or equal to alpha, 
+then we still don't know the true value of the position (because we may 
+have pruned away some important lines of the search), but we do know that 
+the true value is at most x.  Similarly, if x is greater than or equal to 
+beta, we know that the true search value is at least x.
+These slightly tighter upper and lower bounds don't improve the search 
+itself, but they could lead to a greater number of successful hash probes.
+The use of fail-soft alpha-beta is also essential in the MTD(f) algorithm 
+described below.
+
+<H3>Aspiration Search</H3>
+
+This is not a replacement for alpha-beta, it is just a change to the way 
+the outermost call to the search is made.
+Normally, when using alpha-beta to choose the best move, one calls 
+<PRE>
+    alphabeta(depth, -WIN, WIN)
+</PRE>
+where the huge range between -WIN and 
+WIN indicates that we don't know what the true search value will be, so
+all possible scores should be considered interesting.
+Then, the move one makes should be the one set in the variable bestmove at 
+the outer level of the search.
+
+<P>Instead, it is often helpful to call alpha-beta with an artificially 
+narrow window centered around the previous search value.  If the result is 
+a score within that window, you've saved time and found the correct search 
+value.  But if the search fails, you must widen the window and search 
+again:
+<PRE>
+    // aspiration search
+    int alpha = previous - WINDOW;
+    int beta = previous + WINDOW;
+    for (;;) {
+        score = alphabeta(depth, alpha, beta)
+        if (score <= alpha) alpha = -WIN;
+        else if (score >= beta) beta = WIN;
+        else break;
+    }
+</PRE>
+
+The constant WINDOW should be set in a way that balances the time savings 
+from a narrower search with the time lost from repeating an unsuccessful 
+search.  A typical value in chess might be around half a pawn.
+Variants of aspiration search include widening the window more gradually 
+in the event of an unsuccessful search, or using an initial search window 
+that is not necessarily centered around the previous search result.
+
+<H3>MTD(f)</H3>
+
+This technique, like aspiration search, is just a modification to the 
+initial call to alpha-beta.  If a narrower search window leads to faster 
+searches, the idea here is to make the search window as narrow as possible:
+it always calls alpha-beta with beta=alpha+1.  The effect of such a 
+"zero-width" search is to compare the true score with alpha: if the search 
+returns a value at most alpha, then the true score is itself at most alpha,
+and otherwise the true score is greater than alpha.
+
+<P>One could use this idea to perform a binary search for the true score:
+<PRE>
+    int alpha = -WIN;
+    int beta = +WIN;
+    while (beta > alpha+1) {
+        int test = (alpha+beta)/2;
+        if (alphabeta(depth, test, test+1) <= test) beta = test;
+        else alpha = test+1;
+    }
+</PRE>
+
+<P>However, this will lead to a large number of searches
+(the logarithm of the difference between WIN and -WIN).
+The MTD(f) idea is to instead use fail-soft alpha-beta to 
+control the search: each call to fail-soft alpha-beta returns a search 
+value which is closer to the final score, so if we use that search value as 
+the start of the next test, we should eventually converge.
+<PRE>
+    // MTD(f)
+    int test = 0;
+    for (;;) {
+        score = alphabeta(depth, test,test+1);
+        if (test == score) break;
+        test = score;
+    }
+</PRE>
+
+Unfortunately, complicated interactions with the hash table can cause this 
+routine to get into an infinite loop, so one needs additional code to halt 
+the search if too many iterations have been made without any convergence.
+
+<P>One big advantage of MTD(f) is that we can simplify the code to the 
+alpha-beta search, since it only really has two parameters (depth and alpha)
+rather than three.
+
+<H3>PVS</H3>
+
+Probably the best of the alpha-beta variants, this goes by several names: 
+Negascout, Principal Variation Search, or PVS for short.
+The idea is that alpha-beta search works best if
+the first recursive search is likely to be 
+the one with the best score.  Techniques such as sorting the move list or 
+using a best move stored in the hash table make it especially likely that 
+the first move is best.  If it is, we can search the other moves more 
+quickly by using the assumption that they are not likely to be as good.
+
+<P>So PVS performs that first search with a normal 
+window, but on subsequent searches uses a zero-width window to test each 
+successive move against the first move.  Only if the zero-width search 
+fails does it do a normal search.
+
+<PRE>
+    // principal variation search (fail-soft version)
+    int alphabeta(int depth, int alpha, int beta)
+    {
+        move bestmove, current;
+        if (game over or depth <= 0) return winning score or eval();
+        move m = first move;
+        make move m;
+        current = -alphabeta(depth - 1, -beta, -alpha)
+        unmake move m;
+        for (each remaining move m) {
+            make move m;
+            score = -alphabeta(depth - 1, -alpha-1, -alpha)
+            if (score > alpha && score < beta)
+                score = -alphabeta(depth - 1, -beta, -alpha)
+            unmake move m;
+            if (score >= current) {
+                current = score;
+                bestmove = m;
+                if (score >= alpha) alpha = score;
+                if (score >= beta) break;
+            }
+        }
+        return current;
+    }
+</PRE>
+
+This shares the advantage with MTD(f) that most nodes in the search tree 
+have zero-width windows, and can use a simpler two-parameter form of 
+alpha-beta.  Since there are very few calls with beta > alpha+1,
+one can do extra work in those calls (such as saving the best move for 
+later use) without worrying much about the extra time it takes.
+
+<H3>Recommendations</H3>
+
+My own program uses a combination of aspiration search (for the outermost 
+call to the search routines) and PVS (for the inner calls).
+However, different games behave differently.  These searches are not so 
+hard to implement; as with most aspects of game programming, the best way 
+to choose between them, and to tune their parameters, is to implement them 
+all and to try some experiments.  All of them should return the same 
+search value (or nearly the same, if influenced by the hash table), but 
+with different numbers of nodes searched.  Pick the one that leads to the 
+smallest search trees in typical positions from your game.
+
+<P><HR>
+<A HREF="/~eppstein/">David Eppstein,
+<A HREF="/">Dept. Information & Computer Science</A>,
+<A HREF="http://www.uci.edu/">UC Irvine</A>.
+</BODY></HTML>

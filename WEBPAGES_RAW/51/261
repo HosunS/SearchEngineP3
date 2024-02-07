@@ -1,0 +1,333 @@
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="GENERATOR" CONTENT="Globetrotter 1.1.1">
+<META HTTP-EQUIV="AUTHOR" CONTENT="David G. Kay">
+<META HTTP-EQUIV="UPDATED" CONTENT="Thursday, January 5, 2006 2:39 PM">
+<TITLE>String Formatting</TITLE>
+<META HTTP-EQUIV="X-GLOBETROTTERDATA" CONTENT="D250620B">
+<META HTTP-EQUIV=KEYWORDS CONTENT="java programming, data structures">
+<META HTTP-EQUIV="DESCRIPTION" CONTENT="Web references for computer science topics, especially Java programming and data structures.">
+<META HTTP-EQUIV="COPYRIGHT" CONTENT="Copyright &#169; 2006 by David G. Kay.  All rights reserved.">
+<link href="/~kay/courses/31/mainstyle.css" rel="stylesheet" type="text/css" />
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+<P>
+ICS 31 &bull; David G. Kay &bull; UC Irvine</FONT></P>
+<P><B><font size=6>String Formatting</font></B></P>
+<P>&nbsp;</P>
+Are you tired of printing dollars-and-cents 
+amounts in Python that look like <code>$ 12.0</code> ?
+Do you want to have precise control over what 
+the text results of your programs look like?
+You're ready to learn <strong>string formatting.</strong>
+<p>
+Python, like most programming languages, provides
+a rich set of features for specifying the format of
+text.  They make it possible to format things into
+nicely aligned tables, or smoothly flowing sentences,
+or even rudimentary text-based graphics.
+Formatting specifications aren't conceptually difficult;
+they're not like mutable vs. immutable or navigating
+through lists of namedtuples containing other lists.
+But they are intricate: They control the character-by-character
+arrangement on the page or screen.  
+Since even one extra space can mess up your results,
+string formatting requires us to pay close, meticulous attention.
+</p>
+<p>
+Suppose we define the Dish namedtuple and some
+Dish objects as follows:
+<pre><code>from collections import namedtuple
+Dish = namedtuple('Dish', 'name price calories')
+d1 = Dish("Paht Woon Sen", 12.50, 340)
+d2 = Dish("Mee Krob", 9.00, 355)
+d3 = Dish("Escargots", 24.50, 95)
+DL = [d1, d2, d3]</code></pre>
+<p>
+Now suppose we want to display a Dish in this form:
+<pre><code>Paht Woon Sen ($12.50): 340 cal.</code></pre>
+This text, and any text we plan to print,
+consists of constant parts (that are the same
+every time we print the results) and
+variable parts (that may change every time,
+depending on the data).
+</p>
+<p>
+Here are the variable parts of this string:
+<pre><code> Paht Woon Sen ($12.50): 340 cal.
+ -------------   -----   ---
+ <u><em>VARIABLE</em></u>        <u><em>VAR</em></u>     <u><em>VAR</em></u></code></pre>
+The variable parts are the data values:
+<code>'Paht Woon Sen'</code>, <code>12.50</code>, 
+and <code>340</code>.
+</p>
+<p>
+Here are the constant parts of the same string:
+<pre><code> Paht Woon Sen ($12.50): 340 cal.
+              ---     ---   -----
+            <u><em>CONST.</em></u>    <u><em>CON.</em></u>  <u><em>CONSTANT</em></u><em></em></code></pre>
+The constant parts are the three strings
+<code>' ($'</code> (space-parenthesis-dollar sign),
+<code>'): '</code> (parenthesis-colon-space), and
+<code>' cal.'</code> (space-c-a-l-period).
+</p><p>
+Next we list the <em>names</em> of the variable/data parts.
+These might be Python variable names, or more complicated Python expressions.  In this case, the names are
+<code>d1.name</code>, <code>d1.price</code>, 
+and <code>d1.calories</code>.
+</p><p>
+Next we decide whether we need any precise formatting (a specific number of digits or other precise spacing).  
+We will want these eventually, but for now, let's say no so we can cover some other issues first.
+</p>
+<p>
+Copy the code below,
+paste it into a Python file, and run it in IDLE:
+<pre><code>from collections import namedtuple
+Dish = namedtuple('Dish', 'name price calories')
+d1 = Dish("Paht Woon Sen", 12.50, 340)
+d2 = Dish("Mee Krob", 9.00, 355)
+d3 = Dish("Escargots", 24.50, 95)
+DL = [d1, d2, d3]</code></p></pre>
+<p>
+As we discuss each of the lines of code below,
+copy the line into IDLE and run it.
+</p>
+<p>
+First we print the variable and constant parts as usual:
+<pre><code>print(d1.name, " ($", d1.price, "): ", d1.calories, " cal.")</code></pre>
+This gives us our results, but without fancy formatting.
+The <code>print()</code> function automatically prints one space
+to separate each of its arguments; that gives us the
+extra spaces we see when we run the code above.
+</p>
+<p>
+Next we try to eliminate the extra spaces using concatenation (+).
+[This will give us an error when we try to concatenate a
+number into a string.  Once you run this code and see the message, comment
+out this line or remove it so the subsequent examples run.]
+<pre><code>print(d1.name + " ($" + d1.price + "): " + d1.calories + " cal.")</code>
+</p></pre><p>
+With concatenation and calls to <code>str()</code>, we can control
+the horizontal spacing precisely:
+<pre><code>print(d1.name + " ($" + str(d1.price) + "): " + str(d1.calories) + " cal.")</code></pre>
+<p>
+The <code>print()</code> function automatically prints one space
+to separate each of its arguments; we can change that
+using the <code>sep=</code> keyword parameter.  First we separate
+the items with the empty string instead of a space:
+<pre><code>print(d1.name, " ($", d1.price, "): ", d1.calories, " cal.", sep="")</code></pre>
+This gets the horizontal spacing right.
+</p>
+<p>
+As another illustration, we can separate the items with
+any other separator string we care to specify:
+<pre><code>print(d1.name, " ($", d1.price, "): ", d1.calories, " cal.", sep="---")</code></pre>
+<p>
+By default (i.e., without our having to give specific instructions), <code>print()</code> prints a newline at the end of each invocation (at the end of each call to <code>print()</code>).  That's what
+gives us the blank lines each time we call <code>print()</code> with no arguments.
+In the code below, we see that each call to <code>print()</code> prints its arguments followed by a newline:
+<pre><code>print('Huey', 'Dewey', 'Louie')
+print('Donald')
+print('Scrooge')
+print()
+print('Daisy')
+print("\n")
+print('Daffy')</code></pre><p>
+Notice especially the two blank lines between Daisy and Daffy:  
+One is for the explicit <code>"\n"</code> and the second is what <code>print()</code> automatically provides.
+</p>
+<p>
+We can specify different behavior at the end of each
+call to <code>print()</code> by using the <code>end=</code> 
+keyword parameter.
+It says what to print (instead of the usual newline) after the call to <code>print()</code> has printed it arguments.
+Saying <code>end=" "</code>, for example, says, "Keep whatever
+is printed next on the same line as what we just printed."
+<pre><code>print("--------------------------")
+print('Huey', 'Dewey', 'Louie', end=" ")
+print('Donald', end=" ")
+print('Scrooge')
+print()</code></p></pre>
+<p>
+As with <code>sep=</code>, the value of the <code>end=</code> 
+parameter can be any string:
+<pre><code>print('Donald', end="Zot! Zot! Zot!")
+print('---> This follows the end= string in the previous line <---')
+print("\n")
+print('Huey', 'Dewey', 'Louie', sep=" ** ", end="End of the line.\n")
+print("Hey, Uncle Donald!")</code></pre><p>
+We can do a lot with the techniques we already know,
+but the most powerful tool for formatting text is the
+<code>format()</code> method. 
+We will use it in these two situations (although there
+are many more that we won't cover):
+<ul>
+<li>Specify a particular number of digits to the right of a decimal point (in the example below, two digits, for dollars-and-cents amounts):
+  <pre><code>     Paht Woon Sen ($12.50): 340 cal.</code></pre>
+</li>
+<li>Place values into fixed-sized "fields" to line the values up:
+  <pre><code>     Paht Woon Sen  12.50 340
+     Mee Krob        9.00 355
+     Escargots      24.50  95</code>
+</pre>
+</li>
+</ul><p>
+Here is the syntax of the <code>format()</code> method on strings:
+</p>
+<p>
+&nbsp;&nbsp;&nbsp;&nbsp;<u><var><font size=2>FORMAT-STRING</font></var></u><code><strong>.</strong>format(</code><u><var><font size=2>SERIES-OF-EXPRESSIONS-TO-PRINT</font></var></u><code>)</code>
+</p>
+<p>
+We wrote above about the constant parts and the variable parts of what we
+want to print.  With the <code>format()</code> method, the constant parts go in the format string; the variable parts are the arguments to the method (i.e., they go in the series of expressions).
+</p>
+<p>
+Here are the semantics:  The <code>format()</code> method returns a string,
+which we usually print out (but we could use the string returned by <code>format()</code>
+in any other context where a string makes sense, e.g., by assigning it to a variable).
+The string is formatted according to the instructions
+in the format-string, following this pattern:</p><p>
+<code>print( </code><u><var><font size=2>FORMAT-STRING</font></var></u><code> <strong>.</strong> format(d1.name, d1.price, d1.calories)</code></p>
+<p>
+The format string looks like the desired output.
+It contains constant parts and variable parts; 
+in the format string each variable part is a placeholder
+or "format specification" (shown below as a dashed line) for the eventual data value
+that will appear in that place.
+<pre><code>"-------- ($--------): -------- cal."
+ <em><u>FMT-SPEC</u></em>   <u><em>FMT-SPEC</em></u>   <u><em>FMT-SPEC</em></u></code></pre><p>
+Each placeholder (dashed line) is a place where we put a
+<strong>format specification</strong>, which can tell Python which of
+the variable parts to print and how to print it.
+Actual format specifications in Python don't use dashed lines.
+Instead they use curly braces:  <code>{ }</code>
+</p>
+<p>
+We can combine what we've learned so far into this working
+Python code, which of course you should run:
+<pre><code>print("{} (${}): {} cal.".format(d1.name, d1.price, d1.calories)</code></pre>
+<p>
+This code says to print the value of <code>d1.name</code> where
+the first set of braces appears (at the start of the format string),
+then to print space-parenthesis-dollar-sign, then to print the value
+of <code>d1.price</code> where the second set of braces appears,
+then to print a few more characters, then the value of <code>d1.calories</code>
+where the third set of braces appears, and then the last few characters in
+the format string. 
+There are three arguments to <code>format()</code>; they correspond with
+the three format specifications (<code>{ }</code>) in the format string.
+</p>
+<p>
+To control the formatting further, we can say things inside the curly braces.  
+The syntax for each format specification has this form:
+<p><code>{ </code><u><var><font size=2>ARGUMENT-SELECTOR</font></var></u><code> <strong>:</strong> </code><u><var><font size=2>FORMAT-CODE</font></var></u><code> }</code></p><p>
+To the left of the colon is a value that indicates
+which of the arguments to <code>format()</code> to print in that space.
+Usually we just take them in order, but Python allows us to specify them
+in a different order:
+<pre><code>print("{2:} (${1:}): {0:} cal.".format(d1.calories, d1.price, d1.name)</code></pre>
+<p>
+It's not that common to want to reorder the appearance of the arguments
+in the format string;
+normally we'll leave the left side of the colon empty.
+(But if we didn't at least mention what could go there,
+format strings would seem even stranger than they do already.)
+The code below shows nothing on either side of the colon
+in the format specifications.  It behaves just the same
+as if we'd used <code>{ }</code> without the colons.
+<pre><code>print("{:} (${:}): {:} cal.".format(d1.name, d1.price, d1.calories))</code></pre>
+<p>
+If we rarely put anything to the left of the colon in a format specification,
+what can we put to the right of the colon?
+That's where we put the <strong>field width specifications</strong>, the instructions to Python
+for how many characters in the formatted string to devote to each data item.
+The syntax of a field width specification (what can go to the right of the colon
+in a format specification) depends on the type of data being formatted.
+Here are the three main types, for strings, ints, and floats respectively:
+</p><p><var><u><font size=2>FIELD-WIDTH</font></u></var><code><strong>s</strong></code>
+<br /><var><u><font size=2>FIELD-WIDTH</font></u></var><code><strong>d</strong></code>
+<br />
+<var><u><font size=2>FIELD-WIDTH</font></u></var><code><strong>.</strong></code><var><u><font size=2>NUMBER-OF-DECIMAL-PLACES</font></u></var><code><strong>f</strong></code></p>
+<p>
+For example, a format specification of <code>{:5.2f]</code> says:
+<ul>
+<li>Reserve a 5-character field in the result string.
+</li>
+<li>In that field, place a float number with two digits to the right of the decimal point.
+</li>
+</ul>
+<p>
+Try running this example:
+<pre><code>print("{:} (${:5.2f}): {:} cal.".format(d1.name, d1.price, d1.calories))</code></pre><p>Notice that the 5-character field counts one character for the decimal point itself.  
+Note also that there's one colon that's not part of a format specification; it's just printed as a character in the result.
+</p>
+<p>
+What happens if we use a larger field width than our data requires?
+<pre><code>print("{:} (${:7.2f}): {:} cal.".format(d1.name, d1.price, d1.calories))</code>
+</pre>
+<p>
+  We use 5 of the 7 characters for the number, with the two extra spaces after the dollar sign and before the first digit of the number.  
+</p>
+<p>
+What if we specify a narrower field than we need?
+<pre><code>print("{:} (${:3.2f}): {:} cal.".format(d1.name, d1.price, d1.calories))</code></pre><p>Python has three choices in this situation:  It could give us an error message;
+it could chop off the value somehow to make it fit in the specified-width field;
+or it could take as many digits as it needs, even if that exceeds the specified
+field width.  Python takes the latter choice, with the reasoning that it's better
+to see the actual value with messed-up formatting than to see only part of the
+value or not to see it at all.
+</p><p>
+So in Python, if the field width is too small, Python still takes the number of 
+characters it needs.
+</p>
+<p>
+In fact, if we always want to take up exactly the space we need for the value,
+with no extra spaces, we use a field width of zero:
+<pre><code>print("{:} (${:0.2f}): {:} cal.".format(d1.name, d1.price, d1.calories))
+print("{:} (${:0.2f}): {:} cal.".format(d1.name, 3.50, d1.calories))
+print("{:} (${:0.2f}): {:} cal.".format(d1.name, 23424234, d1.calories))</code></p></pre>
+<p>
+Another use of field width specifications is to line things up in columns like this:
+<pre><code>     Paht Woon Sen  12.50 340
+     Mee Krob        9.00 355
+     Escargots      24.50  95</code></pre>
+<p>To do this, we choose a field width that's large
+enough to accommodate the largest value we expect in a given column:
+<pre><code>print("{:20s}{:6.2f}{:4d}".format(d1.name, d1.price, d1.calories))</code></pre><p>This says to place the dish name in a 20-character field,
+the price in a six-character field (with two digits to the right of the
+decimal point), and the number of calories in a 4-character field.
+(By default, strings are aligned with the left edge of their field
+and numbers are aligned with their rightmost digit; this reflects the
+typical practice in typesetting data in tables.)
+</p>
+<p>
+We can put this in a loop through our list of dishes:
+<pre><code>for d in DL:
+    print("{:20s}{:6.2f}{:4d}".format(d.name, d.price, d.calories))</code></pre>
+<p>
+Finally, we can write a function that 
+prints our dish information in tabular format with titles:
+<pre><code>def print_dishlist_info(DL: [Dish]) -> None:  # Just prints
+    """ Print a table with a row for each dish """
+    print("Name                 Price Calories")
+    print("----                 ----- --------")
+    for d in DL:
+        print("{:20s}{:6.2f}{:4d}".format(d.name, d.price, d.calories))
+    return
+print()
+print_dishlist_info(DL)</code></pre><p>
+There are many more features to the <code>format()</code> method than we have covered here.  String formatting is almost a sub-language of its own within Python.
+You are welcome to explore at python.org or in other reference materials.
+But for the problems or exams in this class, you will not need anything beyond 
+what's on this page.
+</p>
+<HR>
+<address>
+<FONT FACE="Palatino"><A HREF="http://www.ics.uci.edu/~kay/">David G. Kay</A>,</FONT><a href=mailto:kay@uci.edu> kay@uci.edu</A>
+</address>
+<p>Copyright 2014 by David G. Kay.  Permission granted for individual nonprofit use in the study 
+of Python programming.  All other rights reserved.</p>
+</BODY>
+</HTML>

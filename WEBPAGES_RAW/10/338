@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>ChemicalSearch:  Find Chemicals by Search Criteria</title>
+	<meta charset="utf-8">
+	<!-- Include JQuery for tabs and UI plugins -->		
+	<script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.unserialize.js"></script>
+	<script type="text/javascript" src="/js/jquery-ui-1.8.16.custom.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.colorbox-min.js"></script>
+    <script type="text/javascript" src="/js/jquery.ui.selectmenu.js"></script>
+    <script type="text/javascript" src="/js/jquery.multiselect.min.js"></script>
+    <script type="text/javascript" src="/js/chemdb.js"></script>
+	<!-- Include styling -->
+	<link rel="stylesheet" type="text/css" href="/css/ChemicalSearch/ChemicalSearch.css" />
+    <link rel="stylesheet" type="text/css" href="/css/chemdb.css" /> 
+    <link rel="stylesheet" type="text/css" href="/css/colorbox.css" />    
+	<link type="text/css" href="/css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="/css/jquery.ui.selectmenu.css" />
+
+	<script type="text/javascript">		
+		$(document).ready(function(){
+			// Initialize tabs, buttons, selects
+			$( "#tabs" ).tabs();
+			$(".select").selectmenu({style:"dropdown"});
+			$(".multiselect").multiselect({
+			   selectedText: "# of # selected",
+			   minWidth: 400
+			});
+			
+		 	// Set toggling for hidden div's
+			$("h4").click(function(){
+				$(this).next(".inner-text").slideToggle("slow")
+				.siblings(".inner-text:visible").slideUp("slow");
+				$(this).toggleClass("active");
+				$(this).siblings("h4").removeClass("active");
+			});
+			
+			// Submit form when 'Search' is clicked
+			$('.search-button').click(function() {
+				$('form#ChemicalIndexWeb').submit();
+			});		
+		});
+		
+		/**
+		 * Only make the SMILES controls (sketching and canonization) available
+		 * if the discrete search field has SMILES selected.
+		 */
+		function updateSmilesControls()
+		{
+		    form = document.forms[0];
+		    select = form.chemicalDiscreteColSelect;
+		
+		    vis = (select.value.indexOf('smiles') > -1) ? 'visible' : 'hidden';
+		
+		    document.getElementById('smilesControls').style.visibility = vis;
+		}
+		
+		/**
+		 * Additional text search options (i.e., fuzzy search) should only be available
+		 * depending on which text field is being searched.
+		 */
+		function updateTextControls()
+		{					    
+		    select = document.getElementById('textSearchSelect');
+		
+		    vis = (select.value == 'externalid') ? 'hidden' : 'visible';
+		
+		    document.getElementById('textControls').style.visibility = vis;
+		}
+		
+		/**
+		 * Update the advanced similarity parameters if a standard search style is chosen
+		 */
+		function searchStyle(){
+			var abstr = $("#search-style").val();
+			var alpha_beta = abstr.split(",");			
+			$("#alpha").val(alpha_beta[0]);
+			$("#beta").val(alpha_beta[1]);
+		}
+	</script>
+</head>
+
+<body onload="updateSmilesControls(); updateTextControls();">
+<div id="background">     
+    <div id="content">
+        <div id="header">
+            <div id="chemdb-logo"></div>
+            <span>ChemDB: Chemical Search</span>
+            <div id="top-nav">
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Tools</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/BabelWeb.py">Babel</a></li>
+                        <li><a href="/cgibin/Mass2Structure.py">Mass2Structure</a></li>                        
+                        <li class="odd"><a href="/cgibin/tools/MolInfoWeb.py">MolInfo</a></li>
+                        <li><a href="/cgibin/MSFragment.py">MSFragment</a></li>
+                        <li class="odd"><a href="/cgibin/PatternCountScreenWeb.py">Pattern Count Screen</a></li>
+                        <li><a href="/cgibin/PatternMatchCounterWeb.py">Pattern Match Counter</a></li>
+                        <li class="odd"><a href="/cgibin/Smi2DepictWeb.py">Smi2Depict</a></li>
+                        <li><a href="/cgibin/reaction/ReactionProcessorWeb.py">Reaction Processor</a></li>
+                    </ul>
+                </div>                                                                          
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Applications</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/ChemicalIndexWeb.py">Chemical Search</a></li>
+                        <li><a href="http://cosmos.igb.uci.edu/">COSMOS</a></li>
+                        <li class="odd"><a href="/cgibin/tutorial/ReactionTutorialSetupWeb.py">Reaction Explorer</a></li>
+                        <li><a href="http://reactions.igb.uci.edu/">Reaction Predictor</a></li>                        
+                        <li class="odd"><a href="/cgibin/reaction/VirtualSpaceWeb.py">Virtual Chemical Space</a></li>
+                    </ul>
+                </div>
+            </div>   
+            <div id="crumbs"><!-- <a class="breadcrumb" href="../index.htm" target="_top">ChemDB</a>
+ --><a href="/">Home</a> <img class="crumb-arrow" src='/images/arrow.png' /> <a class="breadcrumb" href="#">Chemical Search</a></div>
+        </div>
+    	<div id="tabs" class="margin-top"> 		
+    		<ul> 
+    			<li><a href="#tabs-1">Text Search</a></li> 
+    			<li><a href="#tabs-2">Structure Search</a></li> 		
+    			<li><a href="#tabs-3">Filters</a></li>
+    			<li><a href="#tabs-4">Options</a></li>
+    		</ul>
+    		
+			<form id="ChemicalIndexWeb" name="ChemicalIndexWeb" action="ChemicalSearchWeb.py" method="post">
+				
+				<div id="tabs-1" class="module">
+                    <div style="text-align:right; padding-bottom:6px;"><a href="help/ChemicalSearchWebHelp.htm#TextSearch" target="helpWin">Help?</a></div>
+                    <div class="module">
+    				    <select id="textSearchSelect" name="textSearchSelect" onChange="updateTextControls();" class="select" style="width: 200px;">
+    				    	<option value="contents">Chemical Name</option>
+<option value="externalid">External ID</option>
+<option value="full" selected>All Annotations</option>
+
+    				    </select>
+    				    <input type="text" name="textSearchValue" value="" class="margin-top" style="width:100%"/>		     
+    				    <br />
+    					<div id="textControls">
+    						<span>Fuzzy</span><input tabindex=50 type=checkbox name="fuzzySearch" value="checked"  />
+    					</div>                        
+                    </div>
+                    <button class="search-button float-right margin-top">Search</button>
+				</div>
+							    
+				<div id="tabs-2" class="module">
+					<div style="text-align:right; padding-bottom:6px;"><a href="help/ChemicalSearchWebHelp.htm#StructureSearch" target="helpWin">Help?</a></div>		    
+                    <div class="module">
+    				    <div id="sketch-wrapper">
+                            <div class="float-right">
+                                <a class="sketch-button" href="JMEPopupWeb.py?parentForm=ChemicalIndexWeb&smilesField=similarSmiles&JMEPopupWeb=True">Sketch <img src="../resource/edit.gif" style="border:0; float:none;" alt="Draw structure" /></a>                                
+                            </div>
+                            <div class="module-sub-header float-left">
+                                Enter <a target="_blank" href="help/ChemicalSearchWebHelp.htm#simSMILES">smiles</a>
+                            </div>
+    						<textarea tabindex=50 id="similarSmiles" name="similarSmiles" class="margin-top" rows=4 style="width:100%; margin-bottom:25px;"></textarea>
+    					</div>
+    					 
+    					<div class="tab-inner-wrapper">
+    						<h4>Advanced Options</h4>
+    						<div id="advanced-options" class="inner-text" style="background-color: white;">
+                                <div>
+                                    <a href="help/ChemicalSearchWebHelp.htm#similarityThreshold" target="helpWin" class="subtleLink">Threshold</a>
+                                    <input style="width: 40px;" type="text" class="numberField" name="similarityThreshold" value="0.5" />
+                                </div>
+                                <div class="margin-top">
+                                    <select id="search-style" class="select" onChange="searchStyle();">
+        						    	<option value="1.0,1.0">Similar</option>
+        						        <option value="0.9,0.1">Sub-structure</option>
+        							</select>
+        						    <br />
+                                    <span>Tversky</span>
+        						    <input tabindex=50 type="text" class="numberField" id="alpha" name="alpha" style="width: 40px;" value="1.0" />
+        						    <a href="help/ChemicalSearchWebHelp.htm#simParams" target="helpWin" class="subtleLink">&alpha;</a>
+        						    <input tabindex=50 type="text" class="numberField" id="beta" name="beta" style="width: 40px;" value="1.0" />
+        						    <a href="help/ChemicalSearchWebHelp.htm#simParams" target="helpWin" class="subtleLink">&beta;</a>
+                                </div>
+                        <!--
+    							<br/>
+    							<span>Strict</span>
+    						    <input tabindex=50 type=checkbox name="strictSubstructure"  value="checked" />		    
+    						    <br />
+                        -->
+    					    </div>
+    					</div>
+                    </div>
+                    
+                    <button class="search-button float-right margin-top">Search</button>
+				</div>
+									
+				<div id="tabs-3" class="module">
+					<div style="text-align:right; padding-bottom:6px;"><a href="help/ChemicalSearchWebHelp.htm#BasicFilters" target="helpWin">Help?</a></div>					
+                    <div class="tab-inner-wrapper">    					       
+					    <h4>Structure</h4>
+					    <div class="inner-text">
+						    <select name="chemicalDiscreteColSelect" onChange="updateSmilesControls();" class="select" style="width: 200px;">
+						    	<option value="iso_smiles" selected>SMILES (isomeric)</option>
+<option value="can_smiles">SMILES (canonical)</option>
+<option value="chemical_id">CDB Chemical ID</option>
+<option value="molecular_formula">Molecular Formula</option>
+
+							</select>					
+						    <div id="smilesControls" class="float-right">
+						    	<a class="sketch-button" href="JMEPopupWeb.py?parentForm=ChemicalIndexWeb&smilesField=chemicalDiscreteValues&JMEPopupWeb=True">Sketch <img src="../resource/edit.gif" style="border:0; float:none;" alt="Draw structure" /></a>
+                                <!-- (or enter <a target="_blank" href="help/ChemicalSearchWebHelp.htm#simSMILES">smiles</a>)  -->
+						    </div>
+						    <textarea  id="chemicalDiscreteValues" name="chemicalDiscreteValues" class="margin-top" rows=4 style="width:100%;"></textarea>
+					    </div>
+					    
+					    <h4>Sources</h4>
+					   	<div class="inner-text">
+							<select name="sourceIdSelect" multiple class="multiselect">
+						    	
+							</select>
+						</div>   
+					    
+					    <h4>Subsets</h4>
+					    <div class="inner-text">
+						    <select name="subsetSelect" multiple class="multiselect">
+						    	<option value="205">FDA Approved Drugs</option>
+<option value="189">KEGG Compounds</option>
+<option value="161">NCI Diversity Set</option>
+
+						    </select>
+					    </div>	    	
+	
+					    <h4>Advanced</h4>
+					    <div class="inner-text">				    
+					    	<div class="half-column float-left">
+                                <div class="margin-top clear">
+    						    	<select name="chemicalRangeCol0Select" class="select">
+    							    	<option value="molecular_weight" selected>Molecular Weight</option>
+<option value="num_heavy_atoms">Heavy Atoms</option>
+<option value="num_c">Carbons</option>
+<option value="num_o">Oxygens</option>
+<option value="num_n">Nitrogens</option>
+<option value="xlogp">XLogP</option>
+<option value="chemaxon_logp">LogP (Chemaxon)</option>
+<option value="num_rotors">Rotatable Bonds</option>
+<option value="h_donors">H-Bond Donors</option>
+<option value="h_acceptors">H-Bond Acceptors</option>
+<option value="chiral_atoms">Chiral Atoms</option>
+<option value="chiral_bonds">Chiral Bonds</option>
+<option value="rigid_segments">Rigid Segments</option>
+<option value="zap_solvation">Solvation Energy</option>
+<option value="zap_area">Solvation Area</option>
+<option value="zap_total">Solvation Total</option>
+<option value="zap_coulombic">Solvation Coulombic</option>
+
+    							    </select>							    	    		    		  		   
+    							    <input type="text" class="numberField" name="chemicalRangeMin0" size="3" value="" />
+    							    &le; x <
+    							    <input type="text" class="numberField" name="chemicalRangeMax0" size="3" value="" />
+                                </div>
+							    <div class="margin-top clear">
+                                    <select name="chemicalRangeCol1Select" class="select">
+    							    	<option value="molecular_weight">Molecular Weight</option>
+<option value="num_heavy_atoms">Heavy Atoms</option>
+<option value="num_c">Carbons</option>
+<option value="num_o">Oxygens</option>
+<option value="num_n">Nitrogens</option>
+<option value="xlogp">XLogP</option>
+<option value="chemaxon_logp">LogP (Chemaxon)</option>
+<option value="num_rotors" selected>Rotatable Bonds</option>
+<option value="h_donors">H-Bond Donors</option>
+<option value="h_acceptors">H-Bond Acceptors</option>
+<option value="chiral_atoms">Chiral Atoms</option>
+<option value="chiral_bonds">Chiral Bonds</option>
+<option value="rigid_segments">Rigid Segments</option>
+<option value="zap_solvation">Solvation Energy</option>
+<option value="zap_area">Solvation Area</option>
+<option value="zap_total">Solvation Total</option>
+<option value="zap_coulombic">Solvation Coulombic</option>
+
+    								</select>								
+    							    <input type="text" class="numberField" name="chemicalRangeMin1" size="3" value="" />
+    							    &le; x <
+    								<input type="text" class="numberField" name="chemicalRangeMax1" size="3" value="" />
+                                </div>
+							</div>						
+							<div class="half-column float-right">
+                                <div class="margin-top clear">
+    							    <select name="chemicalRangeCol2Select" class="select">
+    							    	<option value="molecular_weight">Molecular Weight</option>
+<option value="num_heavy_atoms">Heavy Atoms</option>
+<option value="num_c">Carbons</option>
+<option value="num_o">Oxygens</option>
+<option value="num_n">Nitrogens</option>
+<option value="xlogp">XLogP</option>
+<option value="chemaxon_logp">LogP (Chemaxon)</option>
+<option value="num_rotors">Rotatable Bonds</option>
+<option value="h_donors" selected>H-Bond Donors</option>
+<option value="h_acceptors">H-Bond Acceptors</option>
+<option value="chiral_atoms">Chiral Atoms</option>
+<option value="chiral_bonds">Chiral Bonds</option>
+<option value="rigid_segments">Rigid Segments</option>
+<option value="zap_solvation">Solvation Energy</option>
+<option value="zap_area">Solvation Area</option>
+<option value="zap_total">Solvation Total</option>
+<option value="zap_coulombic">Solvation Coulombic</option>
+
+    								</select>    								
+    							    <input type="text" class="numberField" name="chemicalRangeMin2" size="3" value="" />
+    							    &le; x <
+    							    <input type="text" class="numberField" name="chemicalRangeMax2" size="3" value="" />    		    
+                                </div>
+                                <div class="margin-top clear">
+    							    <select name="chemicalRangeCol3Select" class="select">
+    							    	<option value="molecular_weight">Molecular Weight</option>
+<option value="num_heavy_atoms">Heavy Atoms</option>
+<option value="num_c">Carbons</option>
+<option value="num_o">Oxygens</option>
+<option value="num_n">Nitrogens</option>
+<option value="xlogp" selected>XLogP</option>
+<option value="chemaxon_logp">LogP (Chemaxon)</option>
+<option value="num_rotors">Rotatable Bonds</option>
+<option value="h_donors">H-Bond Donors</option>
+<option value="h_acceptors">H-Bond Acceptors</option>
+<option value="chiral_atoms">Chiral Atoms</option>
+<option value="chiral_bonds">Chiral Bonds</option>
+<option value="rigid_segments">Rigid Segments</option>
+<option value="zap_solvation">Solvation Energy</option>
+<option value="zap_area">Solvation Area</option>
+<option value="zap_total">Solvation Total</option>
+<option value="zap_coulombic">Solvation Coulombic</option>
+
+    								</select>
+    							    <input type="text" class="numberField" name="chemicalRangeMin3" size="3" value="" />
+    							    &le; x <
+    							    <input type="text" class="numberField" name="chemicalRangeMax3" size="3" value="" />
+                                </div>
+						    </div>
+					    </div>
+                    </div>	    				    				     
+				</div>
+				
+				<div id="tabs-4" class="module">
+                    <div class="module">								    
+    				    <a href="help/ChemicalSearchWebHelp.htm#results" target="helpWin" class="subtleLink">Results</a>
+    				    <input type="hidden" name="resultsStart" value="0" />
+    				    <input tabindex=500 type="text" name="maxPerPage" value="10" class="numberField" style="width: 30px;" />
+    				    <span> / page</span>				    
+    				    <br />
+    				    <span>Include Source IDs</span>
+    				    <input type=checkbox name="includeSourceData" value="checked"  />
+                    </div>
+				</div>
+				<input type="hidden" name="searchCommand" value="True" />
+				<input type="hidden" name="ChemicalSearchWeb" value="Search" />				
+			</form>
+    	</div>		
+    </div>
+</div>
+</body>
+</html>

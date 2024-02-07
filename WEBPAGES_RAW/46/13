@@ -1,0 +1,199 @@
+<html>
+	<head>
+		<title>Winter 2005 ICS H22</title></head><body bgcolor="#ffcc99">
+		<h2>H22 Lab&nbsp;2 - Savings Calculator</h2>
+		<h3>Due Date: Wednesday, January 25, 23:59PM</h3>
+		<h3>I. Overview</h3>
+		<P>
+			This lab is written to accomplish several objectives: The first objective is 
+			for you to write an implementation of a
+			<it>binary search</it>
+			algorithm, which is a very common and useful algorithm in computer science. 
+			Writing a binary search algorithm is all the more useful because binary search 
+			is a non-trivial example of a
+			<it>recursive algorithm</it>, which is a fundamental algorithmtic concept. 
+			Secondly, this programming exercise asks you to write a
+			<it>robust</it>
+			code, which reacts well to incorrect inputs given by the user, inputs out of 
+			range for the algorithm to meaningfully handle, display, etc.
+		</P>
+		<P>Optionally (a bonus part), you can experiment with a graphical interface.&nbsp; 
+			This is a good exercise for you (once you are done with the basic part), 
+			because the way the graphical intefaces are implemented utilizes several java 
+			API classes, and hence this exercise will give you some practice with the way 
+			java implements class hierarchy. In particular, you will see how to deal with 
+			exceptions thrown by some of the methods you will use.&nbsp;</P>
+		<P></P>
+		<P><EM>Hint:&nbsp; Before you start, read the whole lab, and take note of the paragraph 
+				on grading at the end...</EM></P>
+		<h3>II. The Binary Search Algorithm</h3>
+		Suppose that you are planning an expensive purchase some time in the future. 
+		For example, you may be planning for the down-payment of a house or saving for 
+		college tuition. You would like to set aside a fixed amount of cash each month 
+		and put it in an interest-bearing account so that you have the desired amount 
+		of money at the desired time. You will write a program this week that 
+		calculates the amount of money required each month.
+		<p>
+			There are three input numbers that are required from the user. The first is the 
+			target savings amount which will be expressed as an integer representing the 
+			target number of <EM>dollars</EM> to be saved. We will call this <strong>targetSavings</strong>. 
+			The second piece of input is a positive integer with the number of <EM>months</EM>
+			until the savings must be achieved. We will call this <strong>numberOfMonths</strong>.&nbsp; 
+			The final piece of input is a double with the annual interest rate (i.e. the 
+			number 5.3 would be an annual interest rate of 5.3%). We will call this <strong>interestRate</strong>.&nbsp; 
+			You will then use these three numbers to calculate the amount that must be 
+			saved each month. You will need at least two Java methods to calculate this 
+			amount. You may choose to have more in order to break up your code into 
+			manageable sized tasks.
+		</p>
+		<P>Notice that the input is&nbsp;a triple of types (int,int,double).&nbsp; These 
+			are the types of the input values, but we recommend that internally your 
+			algorithms should use a different representation of all amounts of money.&nbsp; 
+			Namely, we recommend that you denote monetary values as integers <EM>denoting the 
+				number of cents.&nbsp; </EM>This is because a cent is the smallest money 
+			unit, and because an alternative representation as a pair of two integers, one 
+			representing dollars and the other&nbsp;representing cents, is less convenient 
+			to work with.&nbsp;
+		</P>
+		<P>
+			The first Java method is a method called <strong>amountSaved</strong> that 
+			takes in a candidate monthly payment in cents <strong>candidatePayment</strong> 
+			and then calculates the amount that would be saved if the person sets aside <strong>
+				candidatePayment</strong> cents each month for <strong>numberOfMonths</strong>
+			months. The interest will be compounded monthly. That is, starting with the 
+			initial value of zero, you will iterate for <strong>numberOfMonths </strong>months, 
+			and each month you will add in <strong>candidatePayment </strong>and multiply 
+			the amount saved by <strong>(1 + (interestRate/(12*100)))</strong>.&nbsp; At 
+			each point, the amount saved should be rounded down to an integer since we will 
+			assume that the bank does not keep track of fractions of cents. For 
+			consistency, it is best for every one to round downwards instead of using the 
+			round method in class Math. (I bet that this is what real banks do too.)&nbsp; 
+			[[As a bonus you can experiment with your code to find out the effects of such 
+			rounding "error" for some realistic interest rates:&nbsp; What's the 
+			accumulative effect of the way the bank rounds the cent fractions?]]</P>
+		<p>
+			Once you have your method <strong>amountSaved </strong>working you need to 
+			write a method that calculates the correct amount <strong>monthlyPayment </strong>
+			to set aside. This method should be called <STRONG>calculateMonthlyPayment</STRONG>, 
+			(for purpose of simplifying our testing of your code, all these methods should 
+			be methods of a <A href="http://www.ics.uci.edu/~stasio/winter06/lab2/SavingsCalculator.java">
+				SavingsCalculator</A> class, and it should take a triple (int,int,double) 
+			as an input, as discussed above. The output of this method should be the 
+			smallest value of <strong>X </strong>such that <strong>amountSaved( X ) </strong>
+			is at least <strong>targetSavings</strong>.&nbsp; This is the minimal monthly 
+			payment (in cents) required to achieve the input target savings given the input 
+			number of months and the interest rate.&nbsp; To find this value, your method 
+			should do a <EM>binary search </EM>for the desired <strong>monthlyPayment</strong>.&nbsp; 
+			(You can read more about a binary search algorithm is in chapter 9.3.3.)&nbsp; 
+			In order to do a proper binary search, you will need an upper bound and a lower 
+			bound for the correct <strong>monthlyPayment</strong>. You should take 0 as a 
+			lower bound, while a reasonable upper bound could be <strong>targetSavings/numberOfMonths</strong>. 
+			Note that this is the amount you would have to set aside if the interest rate 
+			were 0. The binary search algorithm preceeds as follows:&nbsp; Given the 
+			current <STRONG>(min,max)</STRONG> values and the target value <STRONG>t</STRONG>, 
+			at each iteration the binary search tests if the value for the monthly payment 
+			given by median <STRONG>med=(min+max)/2</STRONG>, is greater or less than the 
+			desired value <STRONG>t</STRONG> . This test will require the <strong>amountSaved </strong>
+			method which you have written.&nbsp; If the <STRONG>amountSaved(med)</STRONG> is 
+			greater than <STRONG>t</STRONG>, you should recurse the binary search algorithm 
+			on interval <STRONG>(min,med)</STRONG>, and if it is smaller than <STRONG>t</STRONG>, 
+			then you should recurse the binary search algorithm on interval <STRONG>(med,max).</STRONG>&nbsp; 
+			This way, the algorithm can zoom down on the smallest value <STRONG>m</STRONG> s.t.
+			<STRONG>amountSaved(m)</STRONG> is greater or equal to <STRONG>t</STRONG>.
+		</p>
+		<P><EM>Hint: A good way to keep a sanity check and see if your algorithm does what you 
+				expect it to do, is to embed in your code commands that print out all sort of 
+				intermediary values your algorithm deals with.&nbsp; Once you are satisfied 
+				that the code does what it's supposed to, you can remove these printing 
+				commands.</EM></P>
+		<p>
+			<H3>III. Interface, Robust Code, Exception Handling</H3>
+		<P>
+		In your program you should only assume that the user inputs some strings as the 
+		values of the three input fields. The inputs should be taken from a console. 
+		(See examples how to do this in the book and in the lecture notes.) The correct 
+		inputs should be two non-negative integer values for the target savings and the 
+		number of months, and a non-negative real value between 0 and 100, for the 
+		interest rate. Therefore, you must check for the unreasonable input values 
+		(like non-numerical values, negative values, out of range, etc.) You also need 
+		to check for more subtle problems, like if the number of months is so large 
+		that even setting aside a single penny a month will result in too much savings. 
+		In each case, you need to print out a reasonable and polite error message to 
+		the user. If there are no errors, you should output the monthly value to be 
+		saved in dollars and cents, e.g. $45.27.
+		<P></P>
+		<P>
+			The best way to handle certain type of incorrect inputs is by using
+			<it>exceptions</it>. In general, from any input (console, file, graphics), you 
+			should assume that the inputs given by the user can be extracted only as 
+			strings. To extract integer (or double, float, etc) values from such input 
+			string <strong>s</strong>, you can use a method like <strong>Integer.valueOf(s).intValue()</strong>
+			, (see examples in ch.1 in the textbook), or, a simpler method <strong>Integer.parseInt(s)</strong>. 
+			Then, to handle the case when <strong>s</strong> cannot be parsed as an integer 
+			(or double, float, etc) value, you should catch and appropriately handle the 
+			exception(s) thrown by these methods. One way to find what exceptions these 
+			methods throw is to program it first without handling the exception, and see 
+			what the java interpreter reports when the input string is wrong. Another (and 
+			better) way is to check a java reference for all exceptions thrown by the 
+			input-parsing method you use. For example, for the exceptions thrown by the 
+			above method, see <A href="http://java.sun.com/j2se/1.4.2/docs/api/java/lang/Integer.html">
+				http://java.sun.com/j2se/1.4.2/docs/api/java/lang/Integer.html</A>. You can 
+			find appropriate classes, methods, and their exceptions to handle 
+			string-to-integer (string-to-float, string-to-double, etc) conversion starting 
+			from the link above which describes the <strong>Integer</strong> class, and 
+			exploring the related classes (<strong>Float</strong>, <strong>Double</strong>, 
+			etc).
+		</P>
+		<P>To facilitate easy testing of your code (both for us and for you), we have 
+			implemented a class <A href="http://www.ics.uci.edu/~stasio/winter06/lab2/SavingsCalculatorTester.java">
+				SavingsCalculatorTester.java </A>, which enables you to write a series of 
+			test cases, in a file like <A href="http://www.ics.uci.edu/~stasio/winter06/lab2/input.in">
+				input.in</A>.&nbsp; The SavingsCalculatorTester.test method creates on 
+			object of class Input, and here is the definition of the java class <A href="http://www.ics.uci.edu/~stasio/winter06/lab2/Input.java">
+				Input.java</A>. The SavingsCalculatorTester reads each line of the input.in 
+			file, interprets each of these lines as triples of inputs, and calls the <strong>SavingsCalculator.calculateMonthlyPayment</strong>
+			method on each of these inputs. You should modify the code of the 
+			SavingsCalculatorTester (where specified) so that it handles all the input 
+			errors as explained above, because as it is right now this code assumes the <STRONG>
+				input.in</STRONG> file contains correctly formed inputs.
+		</P>
+		<P></P>
+		<H3>Turning in Your Code</H3>
+		<P>
+			See the <A href="http://www.ics.uci.edu/~stasio/winter06/lab_intro.html">introduction 
+				to the lab</A> to find out how to turn in your files.
+		</P>
+		<H3>Grading</H3>
+		<P>You will be graded on correctness of your binary search algorithm (70%), and on 
+			how robust your code is to input errorrs (30%).</P>
+		<H3>Bonus (Optional Part): &nbsp;Graphical user interface (and learning about class 
+			hierarchy)</H3>
+		<P>Here is a sample code which you can use to experiment with a graphical user 
+			interface for a program you have written:
+		</P>
+		<P><A href="http://www.ics.uci.edu/~stasio/winter06/lab2/GraphicalSavingsCalculator.java">GraphicalSavingsCalculator.java</A>
+		</P>
+		<P>In this code, the action starts when the user presses the <STRONG>Calculate </STRONG>
+			button. Your code will start out in the <STRONG>paint </STRONG>method, but you 
+			will need to call other methods from there to do your calculations. You may 
+			also decide to have some data that is global to the entire class, although you 
+			should only need to keep the three input variables global. You will notice that 
+			this GUI implementation uses the <STRONG>JFrame</STRONG> JAVA API class, which 
+			is a part of the <STRONG>java.awt</STRONG> package. As you understand how this 
+			GUI works, you will see the <STRONG>paint</STRONG> method taking the <STRONG>Graphics</STRONG>
+			object as an argument. This <STRONG>Graphics</STRONG> class admits methods like <STRONG>
+				drawString</STRONG> which the code above uses to display outputs of the 
+			calculations. (For now this code only basically copies the inputs provided by 
+			the user, but you will re-write to make these outputs meaningful.) As you try 
+			to use this code you will notice that the <STRONG>drawString</STRONG> method 
+			writes out the output without clearing first the previous output written on the 
+			same spot. Examine the methods provided by this API class and find one that 
+			allows you to print the output cleanly, with the outputs of the previous 
+			computations erased first. You can examine the documentation of these classes 
+			on-line. For example, the JFrame class is described here: <A href="http://java.sun.com/j2se/1.4.2/docs/api/javax/swing/JFrame.html">
+				http://java.sun.com/j2se/1.4.2/docs/api/javax/swing/JFrame.html</A>, and 
+			the Graphics class is described here: <A href="http://java.sun.com/j2se/1.4.2/docs/api/java/awt/Graphics.html">
+				http://java.sun.com/j2se/1.4.2/docs/api/java/awt/Graphics.html</A>.
+		</P>
+	</body>
+</html>

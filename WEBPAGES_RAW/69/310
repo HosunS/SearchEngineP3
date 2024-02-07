@@ -1,0 +1,88 @@
+/*
+** 2adic - test algorithms for finding 2-adic multiplicative inverse
+** David Eppstein / Columbia University / 1 May 1987
+**
+** inv1 is the standard long division algorithm (known to Hensel).
+**
+** inv2 works via the following theorem:
+**   if xy = 1 (mod p^k), then xy(2-xy) = 1 (mod p^2k).
+** Pf: let xy = 1 + a p^k.  Then 2-xy = 1 - a p^k, so xy(2-xy) = 1 - a^2 p^2k.
+** Corollary: the loop step in inv2 doubles the number of correct digits.
+**
+** Note that we need to start with the inverse correct to one digit; for p=2
+** this is easy, otherwise take x^(p-2) but this only stays in NC for fixed p.
+*/
+
+#include <stdio.h>
+
+typedef unsigned long two_adic;
+
+two_adic inv1(x)
+two_adic x;
+{
+    two_adic inv = 1,		/* eventual inverse, start one bit correct */
+	     prod = x,		/* inv . x */
+	     pow = 2,		/* power of two, bit to work on next */
+	     xpow = x + x;	/* pow . x */
+
+    if ((x & 01) == 0) return 0; /* not a unit */
+
+    while (prod != 1) {
+	if ((prod & pow) != 0) { /* this bit wrong? */
+	    inv += pow;		/* yes, fix it */
+	    prod += xpow;	/* maintaining invariant */
+	}
+	pow += pow;		/* move on to next bit */
+	xpow += xpow;
+    }
+    return inv;
+}
+
+two_adic inv2(x)
+two_adic x;
+{
+    two_adic inv = 1,		/* eventual inverse, start one bit correct */
+	     prod;		/* inv . x  (set in loop test so not now) */
+
+    if ((x & 01) == 0) return 0; /* not a unit */
+
+    while ((prod = inv * x) != 1) /* # bits correct doubles each time, */
+	inv *= 2 - prod;	/* so loop executes log(wordsize) times */
+
+	/* note the 2 above is not the 2 in two-adic -- we can use the same */
+	/* algorithm with the same 2 for inverting p-adics with any p */
+
+    return inv;
+}
+
+bitout(x)
+two_adic x;
+{
+    if (x == 0) putchar('0');
+    else while (x != 0) {
+	putchar('0' + (x & 01));
+	x >>= 1;		/* left shift for int is right for two_adic */
+    }
+}
+
+main(argc,argv)
+int argc;
+char **argv;
+{
+    two_adic x;
+
+    if (argc != 2) {
+	fputs("usage: 2adic num\n", stderr);
+	exit(1);
+    }
+
+    x = atoi(argv[1]);
+    fputs(" x = ", stdout);	/* can't use puts because it adds newline */
+    bitout(x);
+    fputs("\ni1 = ", stdout);
+    bitout(inv1(x));
+    fputs("\ni2 = ", stdout);
+    bitout(inv2(x));
+    putchar('\n');
+    exit(0);
+}

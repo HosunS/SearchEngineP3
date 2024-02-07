@@ -1,0 +1,2056 @@
+<?xml version='1.1'?>
+<!DOCTYPE html
+     PUBLIC '-//W3C//DTD XHTML 1.0 Strict//EN'
+     'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
+<head>
+  <title>XSLT</title>
+  <meta name='Author' content='Thomas A. Alspaugh'/>
+  <meta name='Description' content="XSLT"/>
+  <meta http-equiv='content-type' content='text/html; charset=ISO-8859-1'/>
+  <meta http-equiv='Content-Style-Type' content='text/css'/>
+  <link href='../../alspaugh-uci.css' rel='stylesheet' type='text/css'/>
+  <!-- <link href='../alspaugh-uci-cls.css' rel='stylesheet' type='text/css'/> -->
+  <style type='text/css'>
+    @media screen {
+      body     {  background: url("img/bg-xslt.png") repeat-y;  }
+      #TMain   {  margin-left: 10.00em;  }
+    }
+  </style>
+</head>
+<body>
+
+<div id='TBg'>
+
+<div id='THeader'>
+XSL Transformations (XSLT)
+</div>
+
+<div id='TLinks1' class='Links'> <!-- - - - - - - - - - - - - - - - - - - - -->
+<p>  <a class='sc' href='../../index.html'>Home</a>
+</p>
+<div class='hr'> </div>
+<p>  <a href='index.html'>Foundations home</a>
+</p>
+<div class='hr'> </div>
+<p>
+<a href='set.html'>Sets</a><br/>
+<a href='relation.html'>Relations</a><br/>
+<a href='correspondence.html'>Correspondences</a><br/>
+<a href='orderedSet.html'>Ordered Sets</a><br/>
+<a href='lattice.html'>Lattices</a><br/>
+<a href='graph.html'>Graphs</a><br/>
+<a href='powerset.html'>Powersets</a><br/>
+<a href='binaryString.html'>Binary Strings</a><br/>
+<a href='logicConcepts.html'>Logic</a><br/>
+<a href='allen.html'>AIA</a><br/><!-- -spell AIA -->
+<a href='greek.html'>Greek</a><br/>
+</p>
+<div class='hr'> </div>
+<p>
+<a href='glossaryExternal.html'>Glossary</a><br/>
+<a href='goodAbstract.html'>Abstracts</a><br/>
+<a href='argument.html'>Argument</a><br/>
+<a href='ontology.html'>Glossaries</a><br/>
+<a href='inquiryCycle.html'>Inquiry Cycle</a><br/>
+<a href='hohfeld.html'>Legal Relations</a><br/>
+<a href='goodPresentation.html'>Presentations</a><br/>
+</p>
+<div class='hr'> </div>
+<p>
+<a href='quickStart.html'>Elicitation</a><br/>
+<a href='ontology.html'>Glossaries</a><br/>
+<a href='goal.html'>Goals</a><br/>
+<a href='istar.html'>i*</a><br/>
+<a href='SCR.html'>SCR</a><br/>
+<a href='tracing.html'>Tracing</a><br/>
+</p>
+<div class='hr2'> </div>
+<p>
+<a href='alloy.html'>Alloy</a><br/>
+<a href='msc.html'>MSCs</a><br/>
+<a href='regularExpression.html'>Regular Exprs.</a><br/>
+</p><!-- -spell MSCs Exprs -->
+<div class='hr2'> </div>
+<p>
+<a href='java-designPattern.html'>Design Patterns</a><br/>
+<a href='javadoc.html'>Javadoc</a><br/>
+<a href='java-package.html'>Java Packages</a><br/>
+<a href='java-type.html'>Java Types</a><br/>
+</p>
+<div class='hr2'> </div>
+<p>
+<a href='html.html'>(X)HTML</a><br/>
+<a href='xmlSchema.html'>XML Schemas</a><br/>
+<a href='xslt.html'>XSLT</a><br/>
+</p><!-- -spell XSLT -->
+</div>
+
+
+<!-- No right column -->
+<div id='TMain'><!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<!--xhtml -y -->
+
+
+<!--spell CSS Localnames NCName QName Qnames Stylesheets UTF XMLSchema -->
+<!--spell XPath XSL Za abc abcd abcde arabic attribute's atttribute -->
+<!--spell atttributes bc boofle de dir doctype href html http img jpg -->
+<!--spell lang localname lt namespace normalizedString numberStyle -->
+<!--spell olist paraNest param qname simpleType src stylesheet stylesheets -->
+<!--spell twelveDays when's xalan xml xmlns xs xsl -->
+
+
+<h1>Table of contents</h1>
+
+<div id='ToC'>
+  <h1><a href='#Introduction'>Introduction and context</a></h1>
+  <h2><a href='#Weaknesses'>Some weaknesses of XSLT</a></h2>
+  <h1><a href='#node'>Nodes</a></h1>
+  <h1><a href='#stylesheet'>Stylesheets and the <code>stylesheet</code> element</a></h1>
+  <h1><a href='#template'>Matching templates</a></h1>
+  <h2><a href='#TemplateMatching'>Defining a template to match to a node</a></h2>
+  <h2><a href='#Pattern'>Patterns for matching nodes</a></h2>
+  <h2><a href='#Output'>Producing output from a template</a></h2>
+  <h3><a href='#Literally'>Literal template contents</a></h3>
+  <h3><a href='#copy'><code>copy</code></a></h3>
+  <h3><a href='#AttributeValueTemplate'>Attribute value templates</a></h3>
+  <h3><a href='#attribute'><code>attribute</code></a></h3>
+  <h3><a href='#element'><code>element</code></a></h3>
+  <h3><a href='#text'><code>text</code></a></h3>
+  <h3><a href='#comment'><code>comment</code></a></h3>
+  <h3><a href='#value-of'>Computing text with <code>value-of</code></a></h3>
+  <h3><a href='#copy-of'>Computing nodes with <code>copy-of</code></a></h3>
+  <h3><a href='#Example'>Example of producing output from a template</a></h3>
+  <h2><a href='#apply-templates'>Recursively applying templates</a></h2>
+  <h2><a href='#mode'>Template modes</a></h2>
+  <h2><a href='#TemplatePrecedence'>Which template is applied?</a></h2>
+  <h2><a href='#BuiltInTemplates'>Built-in templates</a></h2>
+  <h1><a href='#Whitespace'>Whitespace handling</a></h1>
+  <h1><a href='#NamedTemplate'>Named templates</a></h1>
+  <h1><a href='#VariableOrParameter'>Variables and parameters</a></h1>
+  <h1><a href='#for-each'><code>for-each</code></a></h1>
+  <h1><a href='#number'>Numbering things in the output</a></h1>
+  <h1><a href='#sort'><code>sort</code></a></h1>
+  <h1><a href='#Conditional'>If and when</a></h1>
+  <h1><a href='#IncludeImport'>Including and importing stylesheets</a></h1>
+  <h1><a href='#output'>Output method</a></h1>
+  <h1><a href='#NotCovered'>Not here, but in XSLT</a></h1>
+  <h1><a href='#References'>References</a></h1>
+</div> <!-- id='ToC' -->
+
+
+<h1 id='Introduction'>Introduction and context</h1>
+
+<p>
+XSLT is a language for transforming XML documents.&nbsp;
+The result can be another XML document, an HTML document,
+or any text document.&nbsp;
+The transformation is done by matching
+<code><a href='#template'>templates</a></code>
+in an XSLT stylesheet
+against an XML document.&nbsp;
+Each template defines the output produced when it is matched.&nbsp;
+If desired,
+each template can use other templates recursively
+to produce parts of its output.&nbsp;
+</p>
+
+<p>
+This document summarizes the basic features of XSLT.&nbsp;
+For more information see the <a href='#XSLT'>W3C recommendation</a>
+that defines XSLT.&nbsp;
+</p>
+
+<p>
+XSLT is a part of XSL, which is a general XML stylesheet language
+that also handles how an XML file is presented
+(like CSS for HTML).&nbsp;
+XSLT is the part of XSL that deals with transformations of XML files.&nbsp;
+</p>
+
+<p>
+The XSLT output of the examples in this document
+was generated automatically using
+<a href='http://xml.apache.org'>xalan</a>.&nbsp;
+</p>
+
+<p>
+XSLT element and attribute names made from two words
+have a hyphen between the words
+(for example
+<code><a href='#value-of'>value-of</a></code> and
+<code><a href='#preserve-space'>preserve-space</a></code>).&nbsp;
+This is in contrast to analogous
+<a href='xmlSchema.html'>XML Schema</a> element and attribute names,
+in which the second word is capitalized
+and catenated to the first one
+(for example,
+<code><a href='xmlSchema.html#simpleType'>simpleType</a></code> and
+<code><a href='xmlSchema.html#normalizedString'>normalizedString</a></code>).&nbsp;
+</p>
+
+
+<h2 id='Weaknesses'>Some weaknesses of XSLT</h2>
+
+<p>
+Because XSLT stylesheets are XML files,
+and elements of XML files have to be correctly nested,
+it is not possible to write a stylesheet
+that produces the beginning of an element in one template
+and the end in another;&nbsp;
+an element must be entirely written
+from one template.&nbsp;
+</p>
+
+<p>
+XSLT does not have strong facilities for
+modularizing a stylesheet,
+so complex transformations are difficult to manage.&nbsp;
+It is easy for an XSLT stylesheet to get out of hand
+and become incomprehensible to its creator.&nbsp;
+</p>
+
+
+<h1 id='node'>Nodes</h1>
+
+<div class='figure' id='Figure1'>
+  <img src='img/xmlNodeTree.png' alt='XML node tree'
+   style='height: 3.5cm;'/>
+  <p>Figure 1.&nbsp; Node tree for example
+  </p>
+</div>
+
+<p>
+XSLT considers an XML file to consist of
+a tree of <dfn>nodes</dfn>,
+in which each element, attribute, and string of text contained in an element
+is a node.&nbsp;
+Each attribute of an element
+is a child node of that element's node;&nbsp;
+each child element is also a child node of that element's node.&nbsp;
+If the element's contents are text only,
+the element's node has a single child node for that text;&nbsp;
+if the element contains elements and text mixed,
+then its node has a child node for each segment of text
+and each child element.&nbsp;
+Each node of an input XML document
+is processed by a template and can produce output.&nbsp;
+The nodes are most commonly traversed in pre-order
+(parent node first, followed by child nodes in sequence, recursively),
+but XSLT provides ways of processing nodes in almost any order,
+as will be seen later.&nbsp;
+</p>
+
+<p>
+Figure 1 shows the node tree for this XML element:&nbsp;
+</p>
+
+<pre>
+  &lt;body&gt;
+    &lt;p class='sum'&gt;Total Amount: &lt;xsl:value-of select='expense-report/total'/&gt;&lt;/p&gt;
+  &lt;/body&gt;
+</pre>
+
+
+<h1 id='stylesheet'>Stylesheets and the <code>stylesheet</code> element</h1>
+
+<p>
+An XSLT stylesheet is an XML file containing a <code>stylesheet</code> element,
+as in this example:&nbsp;
+</p>
+
+<pre>
+  &lt;?xml version='1.0'?&gt;
+  &lt;xsl:stylesheet xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0'&gt;
+    ...
+  &lt;/xsl:stylesheet&gt;
+</pre>
+
+<p>
+The <code>xsl:</code> prefix is commonly used for XSLT elements,
+but any prefix can be used if it is
+defined in the <code>xmlns</code> attribute.&nbsp;
+Each prefix used in the stylesheet
+must be declared in the <code><a href='#stylesheet'>stylesheet</a></code> element
+as an <code>xmlns:</code> attribute
+(as <code>xsl:</code> has been above, in the <code>xmlns:xsl</code> attribute).&nbsp;
+</p>
+
+<p>
+<code><a href='#stylesheet'>stylesheet</a></code> may have an
+<code>exclude-result-prefixes</code> attribute
+whose value is a list of namespace prefixes
+that are not to be automatically given
+to output nodes.&nbsp;
+Each such prefix must have been declared as an <code>xmlns:</code> attribute.&nbsp;
+</p>
+
+
+<h1 id='template'>Matching templates</h1>
+
+<h2 id='TemplateMatching'>Defining a template to match to a node</h2>
+
+<p>
+A <code>template</code> element can be set up to match a node
+<a href='#Pattern'>pattern</a>,
+as in the example below.&nbsp;
+The pattern is given in the <code>match</code> attribute.&nbsp;
+The template expression can match no nodes, one node, many nodes, or all nodes.&nbsp;
+</p>
+
+<pre>
+  &lt;xsl:template <b>match='item'</b>&gt; &lt;!-- Matches an item child of the context node --&gt;
+    ... &lt;!-- See <a href='#Output'>below</a> for contents of a template --&gt;
+  &lt;/xsl:template&gt;
+</pre>
+
+<p>
+See also <a href='#NamedTemplate'>named templates</a>.&nbsp;
+</p>
+
+
+<h2 id='Pattern'>Patterns for matching nodes</h2>
+
+<p id='ContextNode'>
+XSLT uses a subset of <a href='#XPath'>XPath</a> expressions as patterns
+to match against XML nodes.&nbsp;
+Expressions can be absolute
+(beginning with <code>/</code> for the root element)
+or relative to a <i>context node</i>,
+the current location.&nbsp;
+Here is a list of example expressions
+(many adapted from examples in
+[<a href='#XSLT'>XSLT</a>] and
+[<a href='#XPath'>XPath</a>]).&nbsp;
+</p>
+
+<ul>
+  <li> <code>/</code> matches the root element
+  </li>
+  <li> <code>.</code> matches the context node
+  </li>
+  <li> <code>..</code> matches the parent of the context node
+  </li>
+  <li> <code>*</code> matches any child element of the context node
+  </li>
+  <li> <code>para</code> matches any <code>para</code> child element
+    of the context node
+  </li>
+  <li> <code>chapter|appendix</code> matches any
+    child element of the context node
+    that is either
+    a <code>chapter</code> or an <code>appendix</code>
+  </li>
+  <li> <code>/olist</code> matches any <code>olist</code> element
+    that is a child of the root element
+  </li>
+  <li> <code>//olist</code> matches any <code>olist</code> element
+    that is a descendant of the root element
+    (i.e. anywhere in the document)
+  </li>
+  <li> <code>olist/item</code> matches any <code>item</code> element
+    that is a child of an <code>olist</code> element
+    that is a child of the context node
+  </li>
+  <li> <code>appendix//para</code> matches any <code>para</code> element
+    that is a descendant of an <code>appendix</code> element
+    that is a child of the context node
+  </li>
+  <li> <code>*[1]</code> matches
+    any element that is the first child element of the context node
+  </li>
+  <li> <code>para[1]</code> matches any <code>para</code> element
+    that is the first <code>para</code> child element of the context node
+  </li>
+  <li> <code>para[position() &amp;gt; 1]</code> matches any <code>para</code> element
+    that is the second or later <code>para</code> child element of
+    the context node
+    (<code>&lt;</code> and <code>&gt;</code> must be represented by
+    <code>&amp;lt;</code> and <code>&amp;gt;</code> in attribute values)
+  </li>
+  <li> <code>para[last()]</code> matches any <code>para</code> element
+    that is the last <code>para</code> child element of the context node
+  </li>
+  <li> <code>para[last()=1]</code> matches any <code>para</code> element
+    that is the only <code>para</code> child element of the context node
+    (the last child is the first)
+  </li>
+  <li> <code>para[position()=2 and last()=3]</code> matches
+    any <code>para</code> element
+    that is the second of three <code>para</code> child elements of the context node
+  </li>
+  <li> <code>para[position() mod 2 = 1]</code>
+    matches any <code>item</code> element that is
+    the 1st or 3rd or 5th or ... child of the context node
+  </li>
+  <li> <code>chapter[@title='Appendix']</code> matches any <code>chapter</code>
+    child element of the context node
+    that has a <code>title</code> attribute whose value is 'Appendix'
+  </li>
+  <li> <code>div[@class]//p</code> matches any <code>p</code> element
+    with a <code>div</code> ancestor element that has
+    a <code>class</code> attribute
+    and is a child of the context node
+  </li>
+  <li> <code>*[position()=last() or @title!='Appendix']</code> matches
+    any child element of the context node
+    that is the last child element
+    or has a <code>title</code> attribute whose value is not 'Appendix'
+  </li>
+  <li> <code>@*</code> matches any attribute of the context node
+    (not any element that has an attribute)
+  </li>
+  <li> <code>@class</code> matches any <code>class</code> attribute
+    of the context node
+    (not any element that has a <code>class</code> attribute)
+  </li>
+  <li> <code>text()</code> matches any text node
+    that is the child of the context node,
+    for example the simple content of an element
+  </li>
+  <li> <code>node()</code> matches any child element of the context node
+  </li>
+</ul>
+
+<p>
+A name may be
+</p>
+
+<ul>
+  <li id='localname'>
+    a <dfn>localname</dfn> such as <code>item</code>
+    with no namespace prefix,
+    corresponding to the
+    <a href='xmlSchema.html#NCName'><code>xs:NCName</code></a> predefined type;&nbsp;
+    or
+  </li>
+  <li id='qname'>
+    a <dfn>qualified name</dfn> or <dfn>qname</dfn>  such as <code>xs:QName</code>
+    with a namespace prefix,
+    corresponding to the
+    <a href='xmlSchema.html#QName'><code>xs:QName</code></a> predefined type.&nbsp;
+    The prefix must have been defined in an
+    <code><a href='xmlSchema.html#xmlns_'>xmlns:*</a></code> attribute
+    such as <code>xmlns:xs='http://www.w3.org/2001/XMLSchema'</code>
+    of the current element or a parent element.&nbsp;
+  </li>
+</ul>
+
+<p>
+Localnames only match elements and attributes in an XML file
+with no default namespace.&nbsp;
+Qnames only match elements and attributes
+whose default namespace or explicit prefix corresponds to
+the namespace for the qname.&nbsp;
+</p>
+
+<p>
+In summary:
+</p>
+
+<ul>
+  <li> names represent element names
+  </li>
+  <li> names preceded by @ represent attribute names
+  </li>
+  <li> / and // constrain an element match by matching on the element's
+    parent or ancestor elements
+  </li>
+  <li> .. matches a parent node
+  </li>
+  <li> [] encloses a condition that further constrains an element match,
+    or an integer expression such as <code>1</code> or <code>last()</code>
+    that is shorthand for the condition
+    <code>position=1</code> or <code>position=last()</code>
+  </li>
+  <li> [] may constrain any element in a / or // chain
+  </li>
+  <li> expressions beginning with / are absolute
+  </li>
+  <li> all other expressions are relative to the context node
+  </li>
+</ul>
+
+
+<h2 id='Output'>Producing output from a template</h2>
+
+<p>
+A <code><a href='#template'>template</a></code> element can contain
+text, non-XSLT elements, and XSLT elements.&nbsp;
+When a template matches an input element or attribute,
+the text and non-XSLT elements it contains are written as output
+(with whitespace <a href='#Whitespace'>compressed or stripped</a>
+and <a href='#AttributeValueTemplate'>attribute value templates</a> expanded).&nbsp;
+XSLT elements it contains are replaced by their own output.&nbsp;
+</p>
+
+<table summary='Ways to produce output from XSLT'>
+<caption>Table 1.&nbsp; Ways to produce output from XSLT</caption>
+<tbody>
+  <tr><th>If you want to:
+      </th>
+      <th>Put in the template:
+      </th>
+  </tr>
+  <tr><td> produce fixed output (other than
+      XSLT elements and <code>&lt;!-- --&gt;</code> comments)
+      </td>
+      <td> the fixed output itself
+      </td>
+  </tr>
+  <tr><td> produce a copy of the context node
+      </td>
+      <td> <code><a href='#copy'>copy</a></code>
+      </td>
+  </tr>
+  <tr><td> compute the value of an attribute
+      </td>
+      <td> an <a href='#AttributeValueTemplate'>attribute value template</a>
+      </td>
+  </tr>
+  <tr><td> compute the name of an attribute
+      </td>
+      <td> <code><a href='#attribute'>attribute</a></code>
+      </td>
+  </tr>
+  <tr><td> compute the name of an element,
+            or output an XSLT element
+      </td>
+      <td> <code><a href='#element'>element</a></code>
+      </td>
+  </tr>
+  <tr><td> compute text in an element
+      </td>
+      <td><code><a href='#value-of'>value-of</a></code>
+      </td>
+  </tr>
+  <tr><td> produce a set of copies of input nodes
+      </td>
+      <td> <code><a href='#copy-of'>copy-of</a></code>
+      </td>
+  </tr>
+  <tr><td> produce a <code>&lt;!-- --&gt;</code> comment
+        in the output
+      </td>
+      <td> <code><a href='#comment'>comment</a></code>
+      </td>
+  </tr>
+  <tr><td> control output whitespace exactly
+        and/or produce newlines in the output
+      </td>
+      <td> <code><a href='#text'>text</a></code>
+      </td>
+  </tr>
+</tbody>
+</table>
+
+<p>
+XSLT produces XML output by default
+(with an XML header),
+but can be changed to output HTML or text
+using the <code>method</code> attribute of the
+<code><a href='#output'>output</a></code> element.&nbsp;
+</p>
+
+<p>
+See Examples
+<a href='#eg-copy'>1</a> (<code><a href='#copy'>copy</a></code>),
+<a href='#eg-attributeValueTemplate'>2</a>
+(<a href='#AttributeValueTemplate'>attribute value templates</a>),
+and
+<a href='#eg-outputAll'>3</a> (many ways of producing output) below
+for examples of templates.&nbsp;
+</p>
+
+
+<h3 id='Literally'>Literal template contents</h3>
+
+<p>
+The simplest way to produce text and non-XSLT elements in the output
+is just to put them in the contents of the template.&nbsp;
+This always works if the text and elements are fixed
+and you are not particular about whitespace
+(see <a href='#Whitespace'>Whitespace handling</a>).&nbsp;
+</p>
+
+<p>
+See <a href='#eg-attributeValueTemplate'>Example 2</a> below for an example
+of literal contents in a template.&nbsp;
+</p>
+
+
+<h3 id='copy'><code>copy</code></h3>
+
+<p>
+If a copy of the input node is desired in the output,
+the <code><dfn>copy</dfn></code> element may be used in the template.&nbsp;
+<code><a href='#copy'>copy</a></code> creates an element or attribute
+with the same name as the context node
+(but does not create its child elements or attributes if any &mdash;
+see <code><a href='#copy-of'>copy-of</a></code> for that).&nbsp;
+The contents of the <code><a href='#copy'>copy</a></code> element
+are expanded to become the contents of the output element or attribute.&nbsp;
+</p>
+
+<table id='eg-copy' summary='eg-copy'>
+<tbody>
+  <tr><th colspan='2'>Example 1.&nbsp; Copying elements and attributes
+      </th>
+  </tr>
+  <tr><th>XSLT
+      </th>
+      <td>
+<pre>
+&lt;?xml version='1.0'?&gt;
+&lt;xsl:<a href='#stylesheet'>stylesheet</a> xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0'&gt;
+  &lt;xsl:<a href='#output'>output</a> method='xml'/&gt;
+
+  &lt;xsl:<a href='#template'>template</a> match='para'&gt;
+    &lt;paraNest&gt;
+      &lt;xsl:<a href='#copy'>copy</a>&gt;&lt;xsl:<a href='#apply-templates'>apply-templates</a> select='<span class='attrexpr'>@*</span>'/&gt;Contains '&lt;xsl:apply-templates
+        select='<span class='attrexpr'>text()</span>'/&gt;'.&lt;/xsl:copy&gt;
+    &lt;/paraNest&gt;
+  &lt;/xsl:template&gt;
+
+  &lt;xsl:<a href='#template'>template</a> match='@depth'&gt;
+    &lt;xsl:<a href='#copy'>copy</a>/&gt;
+  &lt;/xsl:template&gt;
+
+&lt;/xsl:stylesheet&gt;
+</pre>
+      </td>
+  </tr>
+  <tr><th>Input
+      </th>
+      <td>
+<pre>
+&lt;para depth='1'&gt;woo-woo!&lt;/para&gt;</pre>
+      </td>
+  </tr>
+  <tr><th>Output
+      </th>
+      <td>
+<pre>
+&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;paraNest&gt;&lt;para depth='1'&gt;Contains 'woo-woo!'.&lt;/para&gt;&lt;/paraNest&gt;</pre>
+      </td>
+  </tr>
+</tbody>
+</table>
+
+
+<h3 id='AttributeValueTemplate'>Attribute value templates</h3>
+
+<p>
+Attribute values in non-XSLT elements
+of a <code><a href='#template'>template</a></code>
+may contain <dfn>attribute value templates</dfn> enclosed in <code>{}</code>,
+which are expanded
+when output is produced for the <code><a href='#template'>template</a></code>.&nbsp;
+An attribute value template is an
+XPath expression (such as a <a href='#Pattern'>pattern</a>),
+possibly extended with
+<a href='#VariableOrParameter'>XSLT variable or parameter references</a>&nbsp;
+(<code>$x</code> where <code>x</code> is the name of the variable or parameter)
+and additional functions and extensions
+described in [<a href='#XSLT'>XSLT</a>].&nbsp;
+The <a href='#ContextNode'>context node</a> for the attribute value template
+is the node matched by the <code><a href='#template'>template</a></code>.&nbsp;
+</p>
+
+<p>
+Any <a href='#Pattern'>pattern</a> that can be used for matching nodes
+can also be used in an attribute value template:&nbsp;
+</p>
+
+<ul>
+  <li> <code>{href}</code> is replaced by the (simple) contents of
+    child element <code>href</code> of the matched element;&nbsp;
+    if there is more than one <code>href</code> child element,
+    the contents of the first one are used
+  </li>
+  <li> <code>{@width}</code> is replaced by
+    the value of attribute <code>width</code>
+    of the matched element
+  </li>
+  <li> <code>{size/@width}</code> is replaced by
+    the value of attribute <code>width</code>
+    of the <code>size</code> child element of the matched element
+  </li>
+  <li> <code>{../@width}</code> is replaced by
+    the value of attribute <code>width</code>
+    of the parent of the matched element
+  </li>
+</ul>
+
+<p>
+But there are additional <a href='#XPath'>XPath</a> expressions
+that can be used as well,
+of which a few are:&nbsp;
+</p>
+
+<ul>
+  <li> <code>{'href'}</code> is replaced by
+    the literal string <code>href</code>.&nbsp;
+  </li>
+  <li> <code>{$image-dir}</code> is replaced by the value of
+    XSLT <a href='#VariableOrParameter'>variable or parameter</a>
+    <code>image-dir</code>.&nbsp;
+  </li>
+  <li> <code>{local-name(.)}</code> is replaced by
+    the local name of the first node its argument matches.&nbsp;
+    Any <a href='#Pattern'>pattern</a> can be used in place of '.'.&nbsp;
+  </li>
+  <li> <code>{substring('abc', 2, 1)}</code> is replaced by
+    the substring of 'abc' beginning at the 2nd character (1-origin)
+    of length 1 (in other words, by 'b').&nbsp;
+    If the length parameter is omitted the substring extends
+    to the end of the string.&nbsp;
+  </li>
+  <li> <code>{substring-after('abcde', 'bc')}</code> is replaced by
+    the substring of 'abcde'
+    following the first appearance of 'bc'
+    (in other words, by 'de').&nbsp;
+    The <code>substring-before</code> function is analogous.&nbsp;
+  </li>
+</ul>
+
+<p>
+To include a <code>{</code> or <code>}</code> in an attribute,
+double it.&nbsp;
+For example,
+<code>{{$image-dir}}</code> represents the literal string
+<code>{$image-dir}</code>.&nbsp;
+Otherwise, <code>{</code> or <code>}</code> are not allowed inside
+the enclosing <code>{}</code> of an attribute value template.&nbsp;
+</p>
+
+<p>
+The values of certain XSL attributes
+such as <code>select</code> and <code>name</code>
+are assumed to be attribute value templates &mdash;
+templates in these attributes' values
+should not be enclosed in <code>{}</code>,
+and literal strings in these values
+must be quoted (with single quotes <code>'x'</code>
+if the attribute's value is double-quoted as usual).&nbsp;
+These attributes are listed at the end of the document
+in <a href='#ExpressionAttributes'>Table 3</a>.&nbsp;
+(They are distinguished in
+[<a href='#XSLT'>XSLT</a>]'s syntax summary of each element
+by having an expression type,
+or being enclosed in <code>{}</code>.)&nbsp;
+For example:&nbsp;
+<code>select=''href''</code> selects the literal string <code>href</code>,
+while
+<code>select='href'</code> selects the child <code>href</code> element
+of the context node.&nbsp;
+</p>
+
+<table id='eg-attributeValueTemplate' summary='eg-attributeValueTemplate'>
+<tbody>
+  <tr><th colspan='2'>Example 2.&nbsp; Attribute value templates in a
+        <code><a href='#template'>template</a></code>
+      </th>
+  </tr>
+  <tr><th>XSLT
+      </th>
+      <td>
+<pre>
+&lt;?xml version='1.0'?&gt;
+&lt;xsl:<a href='#stylesheet'>stylesheet</a> xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0'&gt;
+  &lt;xsl:<a href='#output'>output</a> method='html'/&gt;
+
+  &lt;xsl:<a href='#variable'>variable</a> name='image-dir'&gt;/images&lt;/xsl:variable&gt;
+
+  &lt;xsl:<a href='#template'>template</a> match='photograph'&gt;
+    &lt;img src='{<span class='attrexpr'>$image-dir</span>}/{<span class='attrexpr'>href</span>}' width='{<span class='attrexpr'>size/@width</span>}'/&gt;
+    &lt;xsl:<a href='#text'>text</a>&gt;
+&lt;/xsl:text&gt;&lt;!-- <i>outputs a newline</i> --&gt;
+  &lt;/xsl:template&gt;
+
+&lt;/xsl:stylesheet&gt;
+</pre>
+      </td>
+  </tr>
+  <tr><th>Input
+      </th>
+      <td>
+<pre>
+&lt;photograph&gt;
+  &lt;href&gt;headquarters.jpg&lt;/href&gt;
+  &lt;size width='300'/&gt;
+&lt;/photograph&gt;
+</pre>
+      </td>
+  </tr>
+  <tr><th>Output
+      </th>
+      <td>
+<pre>
+&lt;img width='300' src='/images/headquarters.jpg'&gt;
+</pre>
+      </td>
+  </tr>
+</tbody>
+</table>
+
+
+<h3 id='attribute'><code>attribute</code></h3>
+
+<p>
+An attribute and its value can be produced in the output
+by an <code><dfn>attribute</dfn></code> element
+in an <code><a href='#element'>element</a></code> child element of the template;&nbsp;
+this allows production of an attribute with a computed name.&nbsp;
+The <code><a href='#attribute'>attribute</a></code>'s
+<code>name</code> gives the output attribute's name,
+and the contents of the <code><a href='#attribute'>attribute</a></code> element
+give its value.&nbsp;
+</p>
+
+<p>
+Unless the attribute's name is computed,
+or it is part of an output element produced with
+<code><a href='#element'>element</a></code>,
+it is simpler and just as effective to
+put the attribute literally in the template and
+use an <a href='#AttributeValueTemplate'>attribute value template</a>
+in its value if necessary,
+rather than use <code><a href='#attribute'>attribute</a></code>.&nbsp;
+</p>
+
+<p>
+Example:&nbsp;
+This <code><a href='#attribute'>attribute</a></code> element outputs
+an attribute of an <code>img</code> element.&nbsp;
+The attribute's name is
+the value of the <code>src-attribute</code> variable or parameter,
+and the attribute's value is the contents of the
+context node's <code>href</code> child element.&nbsp;
+</p>
+
+<pre>
+  &lt;xsl:<a href='#element'>element</a> name='img'&gt;
+    &lt;xsl:<a href='#attribute'>attribute</a> name='{$src-attribute}'&gt;
+      &lt;xsl:<a href='#value-of'>value-of</a> select='{href}'/&gt;
+    &lt;/xsl:attribute&gt;
+  &lt;/xsl:element&gt;
+</pre>
+
+
+<h3 id='element'><code>element</code></h3>
+
+<p>
+An element can be produced in the output
+by an <code><dfn>element</dfn></code> element
+in the template;&nbsp;
+this is used to output an element with a computed name or attribute,
+or to output an XSLT element.&nbsp;
+The <code><a href='#element'>element</a></code>'s <code>name</code> attribute
+gives the output element's name,
+<code><a href='#attribute'>attribute</a></code> child elements
+give the output element's attributes, and
+other contents of the element
+give the content of the output element.&nbsp;
+</p>
+
+<p>
+Unless the output element's name is to be computed,
+the output is to be an XSLT element,
+or the name of one of its attributes must be computed
+(see <code><a href='#attribute'>attribute</a></code>),
+it is simpler and just as effective to put the element literally in the template
+rather than use <code><a href='#element'>element</a></code>.&nbsp;
+</p>
+
+<p>
+Example:&nbsp;
+This <code><a href='#element'>element</a></code> element
+outputs an element whose name is
+the value of the <code>photo-element</code> variable or parameter.&nbsp;
+The output element has a single attribute
+<code>src='headquarters.jpg'</code>,
+and no child elements or text content.&nbsp;
+</p>
+
+<pre>
+  &lt;xsl:<code><a href='#element'>element</a></code> name='{$photo-element}'&gt;
+    &lt;xsl:<code><a href='#attribute'>attribute</a></code> name='src' select='headquarters.jpg'/&gt;
+  &lt;/xsl:element&gt;
+</pre>
+
+
+<h3 id='text'><code>text</code></h3>
+
+<p>
+Text in a <code><a href='#template'>template</a></code> is
+written as output when the template matches,
+usually with <code><a href='#Whitespace'>whitespace collapsed and stripped</a></code>.&nbsp;
+However,
+the text contents of a <code><a href='#text'>text</a></code> child
+of a <code><a href='#template'>template</a></code> element
+are written unchanged.&nbsp;
+This lets you put newlines, tabs, and strings of spaces
+into the output.&nbsp;
+</p>
+
+<p>
+<code><a href='#text'>text</a></code> can't be used to write output elements.&nbsp;
+</p>
+
+<p>
+Unless the text must contain newlines or consecutive whitespace,
+it is simpler and just as effective to put the text literally in the template
+rather than use <code><a href='#text'>text</a></code>.&nbsp;
+</p>
+
+<p>Example:&nbsp;
+This <code>text</code> element outputs a single newline.&nbsp;
+</p>
+
+<pre>
+  &lt;xsl:<code><a href='#text'>text</a></code>&gt;
+  &lt;/xsl:text&gt;
+</pre>
+
+
+<h3 id='comment'><code>comment</code></h3>
+
+<p>
+A <code>&lt;!-- --&gt;</code> comment can be produced in the output
+with the <code><dfn>comment</dfn></code> element.&nbsp;
+The content of the <code><a href='#comment'>comment</a></code> element
+is used as the contents of the output comment.&nbsp;
+Literal comments in a <code><a href='#template'>template</a></code>
+are assumed to be a comment for the XSLT stylesheet,
+and are ignored,
+so a comment in the output can't be produced that way.&nbsp;
+</p>
+
+<p>
+Example:&nbsp;
+This <code><a href='#comment'>comment</a></code> element outputs
+<code>&lt;!-- A comment in the output --&gt;</code>.&nbsp;
+</p>
+
+<pre>
+  &lt;xsl:<code><a href='#comment'>comment</a></code>&gt; A comment in the output &lt;/xsl:comment&gt;
+</pre>
+
+
+<h3 id='value-of'>Computing text with <code>value-of</code></h3>
+
+<p>
+A <code><dfn>value-of</dfn></code> element
+of a <code><a href='#template'>template</a></code>
+outputs text based on an
+<a href='#AttributeValueTemplate'>attribute value template</a>.&nbsp;
+The expression is given as the value of
+the <code><a href='#value-of'>value-of</a></code> element's
+<code>select</code> attribute,
+and is just like an ordinary <a href='#AttributeValueTemplate'>attribute value template</a>
+except that it is not enclosed in <code>{}</code>.&nbsp;
+<code><a href='#value-of'>value-of</a></code> lets you
+put the same kind of computed text in the text of an element
+that an <a href='#AttributeValueTemplate'>attribute value template</a>
+lets you put in an attribute value.&nbsp;
+</p>
+
+<p>
+Example:&nbsp;
+This <code><a href='#value-of'>value-of</a></code> element
+puts the value of the <code>photo-element</code> variable or parameter
+into the contents of an output comment.&nbsp;
+</p>
+
+<pre>
+  &lt;xsl:<code><a href='#comment'>comment</a></code>&gt;photograph becomes
+    &lt;xsl:<code><a href='#value-of'>value-of</a></code> select='$photo-element'/&gt;
+  &lt;/xsl:comment&gt;
+</pre>
+
+
+<h3 id='copy-of'>Computing nodes with <code>copy-of</code></h3>
+
+<p>
+The <code><dfn>copy-of</dfn></code> element
+produces a set of copies of input nodes.&nbsp;
+It is analogous to <code><a href='#value-of'>value-of</a></code>
+except that its <code>select</code> attribute
+may expand to anything, rather than just to a string.&nbsp;
+</p>
+
+
+<h3 id='Example'>Example of producing output from a template</h3>
+
+<p>
+This example shows the use of
+<code><a href='#value-of'>value-of</a></code>,
+<code><a href='#text'>text</a></code>,
+<code><a href='#element'>element</a></code>,
+<code><a href='#attribute'>attribute</a></code>, and
+<code><a href='#comment'>comment</a></code>.&nbsp;
+(It also shows
+<code><a href='#variable'>variable</a></code>,
+which has not been discussed yet.)&nbsp;
+Notice how whitespace is collapsed or stripped
+except within the <code><a href='#text'>text</a></code> element,
+which is used to begin a new line in the output.&nbsp;
+</p>
+
+<table id='eg-outputAll' summary='eg-outputAll'>
+<tbody>
+  <tr><th colspan='2'>Example 3.&nbsp;
+    Template containing
+    <code><a href='#value-of'>value-of</a></code>,
+    <code><a href='#text'>text</a></code>,
+    <code><a href='#element'>element</a></code>,
+    <code><a href='#attribute'>attribute</a></code>,
+    <code><a href='#comment'>comment</a></code>, and
+    <code><a href='#variable'>variable</a></code>
+      </th>
+  </tr>
+  <tr><th>XSLT
+      </th>
+      <td>
+<pre>
+&lt;?xml version='1.0'?&gt;
+&lt;xsl:<a href='#stylesheet'>stylesheet</a> xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0'&gt;
+  &lt;xsl:<a href='#output'>output</a> method='html'/&gt;
+
+  &lt;xsl:<a href='#variable'>variable</a> name='photo-element'&gt;img&lt;/xsl:variable&gt;
+  &lt;xsl:<a href='#variable'>variable</a> name='src-attribute'&gt;src&lt;/xsl:variable&gt;
+
+  &lt;xsl:<a href='#template'>template</a> match='photograph'&gt;
+    &lt;xsl:<a href='#comment'>comment</a>&gt;photograph becomes &lt;xsl:<a href='#value-of'>value-of</a> select='<span class='attrexpr'>$photo-element</span>'/&gt;
+    &lt;/xsl:comment&gt;
+    &lt;xsl:<a href='#text'>text</a>&gt;
+&lt;/xsl:text&gt;&lt;!-- <i>outputs a newline</i> --&gt;
+    &lt;xsl:<a href='#element'>element</a> name='{<span class='attrexpr'>$photo-element</span>}'&gt;
+      &lt;xsl:<a href='#attribute'>attribute</a> name='{<span class='attrexpr'>$src-attribute</span>}'&gt;&lt;xsl:<a href='#value-of'>value-of</a> select='<span class='attrexpr'>href</span>'/&gt;&lt;/xsl:attribute&gt;
+      &lt;xsl:<a href='#apply-templates'>apply-templates</a> select='<span class='attrexpr'>height|width</span>'/&gt;
+    &lt;/xsl:element&gt;
+    &lt;xsl:<a href='#text'>text</a>&gt;
+&lt;/xsl:text&gt;&lt;!-- <i>outputs a newline</i> --&gt;
+  &lt;/xsl:template&gt;
+
+  &lt;xsl:<a href='#template'>template</a> match='height|width'&gt;&lt;xsl:<a href='#copy'>copy</a>/&gt;&lt;/xsl:template&gt;
+
+  &lt;/xsl:stylesheet&gt;</pre>
+      </td>
+  </tr>
+  <tr><th>Input
+      </th>
+      <td>
+<pre>
+&lt;photograph width='2cm'&gt;
+  &lt;href&gt;headquarters.jpg&lt;/href&gt;
+&lt;/photograph&gt;
+</pre>
+      </td>
+  </tr>
+  <tr><th>Output
+      </th>
+      <td>
+<pre>
+&lt;!--photograph becomes img--&gt;
+&lt;img src='headquarters.jpg'&gt;
+</pre>
+      </td>
+  </tr>
+</tbody>
+</table>
+
+
+<h2 id='apply-templates'>Recursively applying templates</h2>
+
+<p>
+A <code><a href='#template'>template</a></code> element
+may use other templates
+to produce part of its output
+by including an <code><dfn>apply-templates</dfn></code>
+child element.&nbsp;
+</p>
+<p>
+The <code>select</code> attribute
+of <code><a href='#apply-templates'>apply-templates</a></code>
+controls which templates are applied.&nbsp;
+If <code>select</code> is not present,
+<code><a href='#apply-templates'>apply-templates</a></code>
+applies templates to each of the current node's child nodes,
+in sequence from first to last.&nbsp;
+If the attribute is given,
+its value must be an <a href='#XPath'>XPath</a> expression
+(see the <a href='#Pattern'>examples</a>)
+that can match nodes;&nbsp;
+then templates are applied to every node that matches the expression.&nbsp;
+</p>
+
+<p>
+Example:&nbsp;
+<span class='FW'>(under construction)</span>
+</p>
+
+
+<h2 id='mode'>Template modes</h2>
+
+<p>
+If there is more than one template that could be applied to a node,
+these template may each be given a different <code><dfn>mode</dfn></code>
+in order to control which one is applied.&nbsp;
+Templates with modes also allow an input element to be processed several times
+with different templates, each one selected by a mode.&nbsp;
+</p>
+
+<ul>
+  <li> If <code><a href='#apply-templates'>apply-templates</a></code>
+    has a <code>mode</code> attribute,
+    only templates with the same <code>mode</code> attribute will be applied.&nbsp;
+  </li>
+  <li> If <code><a href='#apply-templates'>apply-templates</a></code>
+    has no <code>mode</code> attribute,
+    only templates with no <code>mode</code> attribute will be applied.&nbsp;
+  </li>
+</ul>
+
+<p>
+The <code>mode</code> attribute of
+<code><a href='#template'>template</a></code> and
+<code><a href='#apply-templates'>apply-templates</a></code>
+takes a <code><a href='xmlSchema.html#QName'>QName</a></code> value
+(<code>[_A-Za-z][-_:.A-Za-z0-9]*</code>, with at most one colon).&nbsp;
+A <code><a href='#template'>template</a></code>
+with a <code>mode</code> attribute
+must also have a <code>match</code> attribute.&nbsp;
+(See also <a href='#NamedTemplate'>named templates</a>.)&nbsp;
+</p>
+
+
+<h2 id='TemplatePrecedence'>Which template is applied?</h2>
+
+<p>
+What if there is more than one template that could be applied?&nbsp;
+</p>
+
+<ol>
+  <li> If some of the templates have lower
+    <a href='#import'>import precedence</a>,
+    they are eliminated from consideration.&nbsp;
+  </li>
+  <li> If some of the templates have lower
+    priority,
+    they are eliminated from consideration.&nbsp;
+    Each template may be given an explicit priority
+    by its <code>priority</code> attribute,
+    whose value must be an integer (positive, negative, or zero).&nbsp;
+    Templates without a <code>priority</code> attribute
+    are given a default priority
+    that for all child element or attribute value templates is 0;&nbsp;
+    see [<a href='#XSLT'>XSLT</a>]
+    for the default priority of more unusual expressions.
+  </li>
+</ol>
+
+<p>
+If more than one applicable template remains,
+it is an error.&nbsp;
+</p>
+
+
+<h2 id='BuiltInTemplates'>Built-in templates</h2>
+
+<p>
+XSLT processors use built-in templates
+that provide the most common default processing,
+namely to recursively apply templates to each node
+and to copy text through to the output.&nbsp;
+These built-in templates are treated as though they were
+imported and given the lowest import precedence,
+so that every template provided from other sources overrides
+whichever built-in template might apply.&nbsp;
+</p>
+
+<p>
+In effect, there is no built-in processing of
+element nodes with no child nodes or text,
+or of attribute nodes,
+because these built-in templates do nothing for them.&nbsp;
+</p>
+
+<pre>
+  &lt;!-- Built-in template for element nodes --&gt;
+  &lt;xsl:<code><a href='#template'>template</a></code> match='*|/'&gt;
+    &lt;xsl:<code><a href='#apply-templates'>apply-templates</a></code>/&gt;
+  &lt;/xsl:template&gt;
+</pre>
+
+<pre>
+  &lt;!-- A built-in template is imported for each mode --&gt;
+  &lt;xsl:<code><a href='#template'>template</a></code> match='*|/' mode='m'&gt;
+    &lt;xsl:<code><a href='#apply-templates'>apply-templates</a></code> mode='m'/&gt;
+  &lt;/xsl:template&gt;
+</pre>
+
+<pre>
+  &lt;!-- Built-in template for text nodes --&gt;
+  &lt;xsl:<code><a href='#template'>template</a></code> match='text()|@*'&gt;
+    &lt;xsl:<code><a href='#value-of'>value-of</a></code> select='.'/&gt;
+  &lt;/xsl:template&gt;
+</pre>
+
+<p>
+In order to prevent built-in processing of an element,
+define a template that matches it but does nothing,
+as in the example below:&nbsp;
+</p>
+
+<pre>
+  &lt;!-- Template that does nothing for boofle elements ---&gt;
+  &lt;xsl:<code><a href='#template'>template</a></code> match='boofle'/&gt;
+</pre>
+
+
+<h1 id='Whitespace'>Whitespace handling</h1>
+
+<p>
+Whitespace in input or template text is ordinarily collapsed to single spaces,
+and text nodes consisting only of whitespace
+ordinarily are stripped out before processing,
+so that they are not matched and result in no output.&nbsp;
+The only exception is <code><a href='#text'>text</a></code>
+elements of an XSLT file,
+whose whitespace is preserved by default.&nbsp;
+The default whitespace processing for
+<code><a href='#text'>text</a></code> elements and other nodes
+can be changed in several ways:&nbsp;
+the xml:<code><a href='#space'>space</a></code> attribute
+of input or XSLT elements;&nbsp;
+the <code><a href='#preserve-space'>preserve-space</a></code> element
+of XSLT stylesheets,
+which adds elements to the list of those whose whitespace is preserved;&nbsp;
+and
+the <code><a href='#strip-space'>strip-space</a></code> element
+of XSLT stylesheets,
+which is not discussed here.&nbsp;
+</p>
+
+<p id='space'>
+The <code><dfn>xml:space</dfn></code> attribute can be given
+to any XML element in the input or XSLT.&nbsp;
+Text nodes that are descendants of
+an element with the <code>xml:space=preserve</code> attribute
+are neither compressed nor stripped;&nbsp;
+descendants of an element with <code>xml:space=default</code>
+are compressed and stripped.&nbsp;
+The default is, not surprisingly, <code>xml:space=default</code>.&nbsp;
+If a text node has an ancestor with <code>xml:space=preserve</code>
+and an ancestor with <code>xml:space=default</code>,
+the closest ancestor prevails.&nbsp;
+</p>
+
+<p id='preserve-space'>
+An XSLT stylesheet may contain
+<code><dfn>preserve-space</dfn></code> elements.&nbsp;
+The <code>elements</code> attribute of
+<code><a href='#preserve-space'>preserve-space</a></code> elements lists
+input elements whose whitespace is neither compressed nor stripped.&nbsp;
+By default,
+whitespace is preserved for <code><a href='#text'>text</a></code> elements only.&nbsp;
+</p>
+
+
+<h1 id='NamedTemplate'>Named templates</h1>
+
+<p id='call-template'>
+We have seen that a template may have a
+<code><a href='#TemplateMatching'>match</a></code> attribute,
+and be applied using <code><a href='#apply-templates'>apply-templates</a></code>.&nbsp;
+A template may also have a <code>name</code> attribute
+and be called using <code><dfn>call-template</dfn></code>.&nbsp;
+Names must be unique among templates.&nbsp;
+<code><a href='#call-template'>call-template</a></code> has a required
+<code>name</code> attribute,
+and calls the <code><a href='#template'>template</a></code> with that name,
+regardless of its <code>match</code>, <code>mode</code>,
+and <code>priority</code> (if any).&nbsp;
+</p>
+
+
+<h1 id='VariableOrParameter'>Variables and parameters</h1>
+
+<p>
+XSLT allows variables and parameters to be defined
+for stylesheets and for templates.&nbsp;
+A variable or parameter may be given
+any value that an <a href='#Pattern'>expression</a> can return.&nbsp;
+A second value cannot later be given to either a variable or parameter.&nbsp;
+</p>
+
+<p id='variable'>
+A <code><dfn>variable</dfn></code> element defines a named value;&nbsp;
+its name is given by its <code>name</code> attribute,
+and its value is given either by
+its <code>select</code> attribute
+or the element contents.&nbsp;
+</p>
+
+<p id='param'>
+A <code><dfn>param</dfn></code> element defines a named value
+associated with the <code><a href='#template'>template</a></code>
+containing the definition.&nbsp;
+Its name is given by its <code>name</code> attribute,
+and its default value is given either by
+its <code>select</code> attribute
+or the element contents.&nbsp;
+</p>
+
+<p id='with-param'>
+The final value of a <code><a href='#param'>parameter</a></code>
+is set by the contents of a
+<code><a href='#with-param'><dfn>with-param</dfn></a></code> element
+(if present)
+in <code><a href='#call-template'>call-template</a></code> or
+<code><a href='#apply-templates'>apply-templates</a></code>.&nbsp;
+If the
+<code><a href='#call-template'>call-template</a></code> or
+<code><a href='#apply-templates'>apply-templates</a></code>
+does not contain a <code><a href='#with-param'>with-param</a></code> element
+for a parameter,
+the default value set in the
+<code><a href='#param'>parameter</a></code> definition is used.&nbsp;
+</p>
+
+<p>
+Except that <code><a href='#param'>parameters</a></code> may be passed in,
+<code><a href='#param'>parameters</a></code> and
+<code><a href='#variable'>variables</a></code> behave the same
+and are referenced in the same way:&nbsp;
+by a <code>$name</code> expression in an
+<code><a href='#AttributeValueTemplate'>attribute value template</a></code>.&nbsp;
+</p>
+
+<table id='call-template-example' summary='call-template-example'>
+<tbody>
+  <tr><th colspan='2'>Example 3.&nbsp;
+        <code><a href='#variable'>Variables</a></code>,
+        <code><a href='#param'>parameters</a></code>, and
+        <code><a href='#call-template'>call-template</a></code>
+      </th>
+  </tr>
+  <tr><th>XSLT
+      </th>
+      <td>
+<pre>
+&lt;?xml version='1.0'?&gt;
+&lt;xsl:<a href='#stylesheet'>stylesheet</a> xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0'&gt;
+  &lt;xsl:<a href='#output'>output</a> method='html'/&gt;
+
+  &lt;xsl:<a href='#variable'>variable</a> name='title'&gt;Paragraph&lt;/xsl:variable&gt;
+
+  &lt;xsl:<a href='#template'>template</a> name='paragraph'&gt;
+    &lt;xsl:<a href='#param'>param</a> name='number'&gt;* &lt;/xsl:param&gt;
+    &lt;xsl:<a href='#param'>param</a> name='numberStyle' select='<span class='attrexpr'>''</span>'/&gt;
+    &lt;xsl:<a href='#param'>param</a> name='class'/&gt;
+    &lt;p class='{<span class='attrexpr'>$class</span>}' title='{<span class='attrexpr'>$title</span>}'&gt;
+      &lt;span style='{<span class='attrexpr'>$numberStyle</span>}'&gt;&lt;xsl:<a href='#value-of'>value-of</a> select='<span class='attrexpr'>$number</span>'/&gt;&lt;/span&gt;
+      &lt;xsl:<a href='#value-of'>value-of</a> select='<span class='attrexpr'>.</span>'/&gt;
+    &lt;/p&gt;
+    &lt;xsl:<a href='#text'>text</a>&gt;
+&lt;/xsl:text&gt;&lt;!-- <i>outputs a newline</i> --&gt;
+  &lt;/xsl:template&gt;
+
+  &lt;xsl:<a href='#template'>template</a> match='document'&gt;
+    &lt;xsl:<a href='#call-template'>call-template</a> name='paragraph'&gt;
+      &lt;xsl:<a href='#with-param'>with-param</a> name='numberStyle'&gt;bold&lt;/xsl:with-param&gt;
+      &lt;xsl:<a href='#with-param'>with-param</a> name='class' select='<span class='attrexpr'>'indented'</span>'/&gt;
+    &lt;/xsl:call-template&gt;
+    &lt;!--
+      Template is called with values for 'numberStyle' and 'class' parameters,
+      but not for 'number', which will be given the default value
+      set in the 'param' element for it.
+      --&gt;
+  &lt;/xsl:template&gt;
+
+&lt;/xsl:stylesheet&gt;
+</pre>
+      </td>
+  </tr>
+  <tr><th>Input
+      </th>
+      <td>
+<pre>
+&lt;document&gt;
+  &lt;paragraph number='1'&gt;Paragraph contents.&lt;/paragraph&gt;
+&lt;/document&gt;</pre>
+      </td>
+  </tr>
+  <tr><th>Output
+      </th>
+      <td>
+<pre>
+&lt;p title='Paragraph' class='indented'&gt;
+&lt;span style='bold'&gt;* &lt;/span&gt;
+  Paragraph contents.
+&lt;/p&gt;
+</pre>
+      </td>
+  </tr>
+</tbody>
+</table>
+
+
+<h1 id='for-each'><code>for-each</code></h1>
+
+<p>
+The <code><dfn>for-each</dfn></code> element
+selects a set of nodes
+and then produces output for each node in the set.&nbsp;
+The contents of the <code>for-each</code> element
+are expanded for each selected node,
+using that node as the current node.&nbsp;
+</p>
+
+<p id='for-each-pattern'>
+The set of nodes is specified as a <code><a href='#Pattern'>pattern</a></code>
+in the <code><a href='#for-each'>for-each</a></code> element's
+<code>select</code> attribute.&nbsp;
+</p>
+
+<p>
+See <a href='#eg-numbering'>Example 4</a> for an example of its use.&nbsp;
+</p>
+
+
+<h1 id='number'>Numbering things in the output</h1>
+
+<p>
+The <code><dfn>number</dfn></code> element outputs a number
+based on the sequence of nodes in the input node tree.&nbsp;
+Its output is controlled by a large number of attributes,
+of which these three are the most useful:&nbsp;
+</p>
+
+<table summary='number attributes'>
+<caption>Table 2.&nbsp; <code>number</code> attributes</caption>
+<tbody>
+  <tr><th>Attribute
+      </th>
+      <th>Effect
+      </th>
+  </tr>
+  <tr>
+    <td><code>count</code>
+      </td>
+    <td>A <a href='#Pattern'>pattern</a> matching the nodes to be counted.&nbsp;
+      If absent, the current node's name is used.&nbsp;
+      </td>
+  </tr>
+  <tr>
+      <td><code>level</code>
+        </td>
+      <td>
+        <ul>
+          <li>
+            <code>level=single</code>,
+            in which case the number counts the context node's
+            preceding siblings that also match the <code>count</code> pattern;&nbsp;
+            or
+          </li>
+          <li>
+            <code>level=all</code>,
+            in which case the number counts
+            all nodes that match the <code>count</code> pattern
+            and precede the context node,
+            at any level in the input tree.&nbsp;
+          </li>
+          <li>
+            <code>level=multiple</code>,
+            in which case the number gives an outline-style number
+            counting all nodes that match the <code>count</code> pattern
+            and precede the context node,
+            at any level in the input tree.&nbsp;
+          </li>
+        </ul>
+      </td>
+  </tr>
+  <tr>
+      <td>format
+      </td>
+      <td>The sequences used for numbering, and possibly (for <code>level=multiple</code>)
+        the number separators (a dot is the default but can be changed).&nbsp;
+        <ul>
+          <li> <code>1</code> indicates arabic numbering
+            (<code>1</code>, <code>2</code>, <code>3</code>, ...).&nbsp;
+          </li>
+          <li> <code>01</code> indicates a leading zero up to 10
+            (<code>01</code>, <code>02</code>, ... , <code>09</code>,
+            <code>10</code>, ...);&nbsp;
+            <code>001</code> indicates leading zeroes up to 100, etc.&nbsp;
+          </li>
+          <li> <code>A</code> indicates
+            <code>A</code>, <code>B</code>, <code>C</code>, ....&nbsp;
+          </li>
+          <li> <code>a</code> indicates
+            <code>a</code>, <code>b</code>, <code>c</code>, ....&nbsp;
+          </li>
+          <li> <code>I</code> indicates Roman numbering
+            <code>I</code>, <code>II</code>, <code>III</code>, <code>IV</code>, ....&nbsp;
+          </li>
+          <li> <code>i</code> indicates Roman numbering
+            <code>i</code>, <code>ii</code>, <code>iii</code>, <code>iv</code>, ....&nbsp;
+          </li>
+          <li> The interpretation of any other letters or numbers in the
+            <code>format</code> value is not defined, so do not use them.&nbsp;
+            Non-alphanumeric characters are copied literally as separators.&nbsp;
+          </li>
+        </ul>
+      </td>
+  </tr>
+</tbody>
+</table>
+
+<table id='eg-numbering' summary='eg-numbering'>
+<tbody>
+  <tr><th colspan='2'>Example 4.&nbsp;
+        Numbering
+      </th>
+  </tr>
+  <tr><th>XSLT
+      </th>
+      <td>
+<pre>
+&lt;?xml version='1.0'?&gt;
+&lt;xsl:<a href='#stylesheet'>stylesheet</a> xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0'&gt;
+  &lt;xsl:<a href='#output'>output</a> method='xml'/&gt;
+
+  &lt;xsl:<a href='#template'>template</a> match='/'&gt;
+    &lt;Numbered&gt;
+
+      &lt;xsl:<a href='#text'>text</a>&gt;
+All paragraphs in the input numbered within their chapters:
+&lt;/xsl:text&gt;
+      &lt;xsl:<a href='#for-each'>for-each</a> select='<span class='attrexpr'>//paragraph</span>'&gt;
+        &lt;xsl:<a href='#text'>text</a>&gt;  &lt;/xsl:text&gt;
+        &lt;xsl:<a href='#copy'>copy</a>&gt;&lt;xsl:<a href='#number'>number</a> level='single'/&gt;&lt;xsl:<a href='#text'>text</a>&gt;. &lt;/xsl:text&gt;
+          &lt;xsl:<a href='#apply-templates'>apply-templates</a> select='<span class='attrexpr'>text()</span>'/&gt;&lt;/xsl:copy&gt;
+        &lt;xsl:<a href='#text'>text</a>&gt;
+&lt;/xsl:text&gt;
+      &lt;/xsl:for-each&gt;
+
+      &lt;xsl:<a href='#text'>text</a>&gt;
+All paragraphs in the entire input numbered in sequence:
+&lt;/xsl:text&gt;
+      &lt;xsl:<a href='#for-each'>for-each</a> select='<span class='attrexpr'>//paragraph</span>'&gt;
+        &lt;xsl:<a href='#text'>text</a>&gt;  &lt;/xsl:text&gt;
+        &lt;xsl:<a href='#copy'>copy</a>&gt;&lt;xsl:<a href='#number'>number</a> level='any' format='i. '/&gt;
+          &lt;xsl:<a href='#apply-templates'>apply-templates</a> select='<span class='attrexpr'>text()</span>'/&gt;&lt;/xsl:copy&gt;
+        &lt;xsl:<a href='#text'>text</a>&gt;
+&lt;/xsl:text&gt;
+      &lt;/xsl:for-each&gt;
+
+      &lt;xsl:<a href='#text'>text</a>&gt;
+All paragraphs in the input outline-numbered (by chapter) in sequence:
+&lt;/xsl:text&gt;
+      &lt;xsl:<a href='#for-each'>for-each</a> select='<span class='attrexpr'>//paragraph</span>'&gt;
+        &lt;xsl:<a href='#text'>text</a>&gt;  &lt;/xsl:text&gt;
+        &lt;xsl:<a href='#copy'>copy</a>&gt;&lt;xsl:<a href='#number'>number</a> level='multiple' count='chapter|paragraph'
+          format='[I:a.] '/&gt;
+          &lt;xsl:<a href='#apply-templates'>apply-templates</a> select='<span class='attrexpr'>text()</span>'/&gt;&lt;/xsl:copy&gt;
+        &lt;xsl:<a href='#text'>text</a>&gt;
+&lt;/xsl:text&gt;
+      &lt;/xsl:for-each&gt;
+
+    &lt;/Numbered&gt;
+  &lt;/xsl:template&gt;
+
+&lt;/xsl:stylesheet&gt;
+</pre>
+      </td>
+  </tr>
+  <tr><th>Input
+      </th>
+      <td>
+<pre>
+&lt;book&gt;
+  &lt;chapter&gt;
+    &lt;paragraph&gt;First.&lt;/paragraph&gt;
+    &lt;paragraph&gt;Second.&lt;/paragraph&gt;
+  &lt;/chapter&gt;
+  &lt;chapter&gt;
+    &lt;paragraph&gt;First in second chapter.&lt;/paragraph&gt;
+  &lt;/chapter&gt;
+&lt;/book&gt;</pre>
+      </td>
+  </tr>
+  <tr><th>Output
+      </th>
+      <td>
+<pre>
+&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;Numbered&gt;
+All paragraphs in the input numbered within their chapters:
+  &lt;paragraph&gt;1. First.&lt;/paragraph&gt;
+  &lt;paragraph&gt;2. Second.&lt;/paragraph&gt;
+  &lt;paragraph&gt;1. First in second chapter.&lt;/paragraph&gt;
+
+All paragraphs in the entire input numbered in sequence:
+  &lt;paragraph&gt;i. First.&lt;/paragraph&gt;
+  &lt;paragraph&gt;ii. Second.&lt;/paragraph&gt;
+  &lt;paragraph&gt;iii. First in second chapter.&lt;/paragraph&gt;
+
+All paragraphs in the input outline-numbered (by chapter) in sequence:
+  &lt;paragraph&gt;[I:a.] First.&lt;/paragraph&gt;
+  &lt;paragraph&gt;[I:b.] Second.&lt;/paragraph&gt;
+  &lt;paragraph&gt;[II:a.] First in second chapter.&lt;/paragraph&gt;
+&lt;/Numbered&gt;</pre>
+      </td>
+  </tr>
+</tbody>
+</table>
+
+
+<h1 id='sort'><code>sort</code></h1>
+
+<p>
+<code><a href='#apply-templates'>apply-templates</a></code> and
+<code><a href='#for-each'>for-each</a></code>
+process the input nodes they match
+in the order those nodes appear in the input,
+unless one or more <code><dfn>sort</dfn></code> elements are used
+to specify a different order.&nbsp;
+The <code><a href='#sort'>sort</a></code> element(s),
+if present,
+must be the first child element(s) of the
+<code><a href='#apply-templates'>apply-templates</a></code> or
+<code><a href='#for-each'>for-each</a></code>.&nbsp;
+The <code><a href='#sort'>sort</a></code> element's
+<code>select</code> attribute is an
+<a href='#ExpressionAttributes'>attribute value expression</a>
+that is evaluated for each node matched by the
+<code><a href='#apply-templates'>apply-templates</a></code> or
+<code><a href='#for-each'>for-each</a></code>;&nbsp;
+the resulting value is used as a key for that input node.&nbsp;
+</p>
+
+<p>
+There are a variety of text functions
+available with which the keys may be derived
+from attribute values and text contents &mdash;
+see [<a href='#XSLT'>XSLT</a>] for these.&nbsp;
+</p>
+
+<p>
+Additional attributes of <code><a href='#sort'>sort</a></code>
+control how the sorting is done:&nbsp;
+</p>
+
+<ul>
+  <li>
+    Keys are sorted as text by default,
+    but the <code>data-type='number'</code> attribute
+    causes them to be sorted numerically instead.&nbsp;
+  </li>
+  <li>
+    The keys are sorted in ascending order
+    unless the <code>order=descending</code> attribute is present.&nbsp;
+  </li>
+  <li>
+    Text keys are sorted with uppercase first
+    unless the <code>case-order='lower-first'</code> attribute is present.&nbsp;
+  </li>
+</ul>
+
+<table id='eg-for-each' summary='eg-for-each'>
+<tbody>
+  <tr><th colspan='2'>Example 5.&nbsp;
+        Sorting
+      </th>
+  </tr>
+  <tr><th>XSLT
+      </th>
+      <td>
+<pre>
+&lt;?xml version='1.0'?&gt;
+&lt;xsl:<a href='#stylesheet'>stylesheet</a> xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0'&gt;
+  &lt;xsl:<a href='#output'>output</a> method='xml'/&gt;
+
+  &lt;xsl:<a href='#template'>template</a> match='twelveDays'&gt;
+    &lt;xsl:<a href='#copy'>copy</a>&gt;&lt;xsl:<a href='#comment'>comment</a>&gt; Sorted lexicographically &lt;/xsl:comment&gt;
+        &lt;xsl:<a href='#text'>text</a>&gt;
+&lt;/xsl:text&gt;
+      &lt;xsl:<a href='#for-each'>for-each</a> select='<span class='attrexpr'>day</span>'&gt;
+        &lt;xsl:<a href='#sort'>sort</a> select='<span class='attrexpr'>text()</span>'/&gt;
+        &lt;xsl:<a href='#text'>text</a>&gt;  &lt;/xsl:text&gt;&lt;xsl:<a href='#copy'>copy</a>&gt;&lt;xsl:<a href='#apply-templates'>apply-templates</a>/&gt;&lt;/xsl:copy&gt;
+        &lt;xsl:<a href='#text'>text</a>&gt;
+&lt;/xsl:text&gt;
+      &lt;/xsl:for-each&gt;
+    &lt;/xsl:copy&gt;
+    &lt;xsl:<a href='#text'>text</a>&gt;
+&lt;/xsl:text&gt;
+  &lt;/xsl:template&gt;
+
+&lt;/xsl:stylesheet&gt;
+</pre>
+      </td>
+  </tr>
+  <tr><th>Input
+      </th>
+      <td>
+<pre>
+&lt;twelveDays&gt;
+  &lt;day&gt;A partridge in a pear tree&lt;/day&gt;
+  &lt;day&gt;Two turtledoves&lt;/day&gt;
+  &lt;day&gt;Three French hens&lt;/day&gt;
+&lt;/twelveDays&gt;
+</pre>
+      </td>
+  </tr>
+  <tr><th>Output
+      </th>
+      <td>
+<pre>
+&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;twelveDays&gt;&lt;!-- <i>Sorted lexicographically</i> --&gt;
+  &lt;day&gt;A partridge in a pear tree&lt;/day&gt;
+  &lt;day&gt;Three French hens&lt;/day&gt;
+  &lt;day&gt;Two turtledoves&lt;/day&gt;
+&lt;/twelveDays&gt;
+</pre>
+      </td>
+  </tr>
+</tbody>
+</table>
+
+
+<h1 id='Conditional'>If and when</h1>
+
+<p>
+There are two ways to do things conditionally in an XSLT stylesheet.&nbsp;
+</p>
+
+<ul>
+  <li id='if'> An <code><dfn>if</dfn></code> element's contents
+    are expanded if its <code>test</code> attribute is true.&nbsp;
+  </li>
+  <li id='choose'> A <code><dfn>choose</dfn></code> element contains
+    a sequence of <code><a href='#when'>when</a></code> elements
+    possibly followed by
+    an <code><a href='#otherwise'>otherwise</a></code> element.&nbsp;
+    <ul>
+      <li id='when'>
+        The contents of the first <code><dfn>when</dfn></code> element
+        whose <code>test</code> attribute is true
+        are expanded.&nbsp;
+      </li>
+      <li id='otherwise'>
+        If no <code><a href='#when'>when</a></code>'s <code>test</code> is true,
+        the contents of the
+        <code><dfn>otherwise</dfn></code> element (if present)
+        are expanded.&nbsp;
+      </li>
+</ul>
+  </li>
+</ul>
+
+<p>
+The <code>test</code> attribute's value is an
+<code><a href='#ExpressionAttributes'>attribute value pattern</a></code>
+or other <a href='#XPath'>XPath</a> expression
+such as:&nbsp;
+</p>
+
+<ul>
+  <li> <code>contains('abcd','bc')</code>
+    is true if the first string contains the second
+    (in this case, it is true).&nbsp;
+  </li>
+  <li> <code>starts-with('abcd','bc')</code>
+    is true if the first string starts with the second
+    (in this case, it is false).&nbsp;
+  </li>
+</ul>
+
+<p>
+A value of the <code>test</code> attribute
+that is not a condition is true if it is a
+non-zero number,
+non-empty string, or
+non-empty lists of nodes.&nbsp;
+Zero, the empty string, and the empty node-list
+are all false.&nbsp;
+</p>
+
+<p>
+Example:&nbsp;
+</p>
+
+<pre>
+&lt;?xml version='1.0'?&gt;
+&lt;xsl:stylesheet xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0'&gt;
+
+  &lt;xsl:template match='block'&gt;
+
+    &lt;xsl:if test='@depth'&gt;&lt;!-- if the context node has a depth attribute --&gt;
+      &lt;xsl:value-of select='@depth'/&gt;
+    &lt;/xsl:if&gt;
+
+    &lt;xsl:choose&gt;
+      &lt;xsl:when test='0 &amp;lt; @depth'&gt;&lt;xsl:value-of select='@depth'/&gt;&lt;/xsl:when&gt;
+      &lt;xsl:when test='0 = @depth'&gt;Zero&lt;/xsl:when&gt;
+      &lt;xsl:otherwise&gt;Bad Depth&lt;/xsl:otherwise&gt;
+    &lt;/xsl:choose&gt;
+
+  &lt;/xsl:template&gt;
+
+&lt;/xsl:stylesheet&gt;
+</pre>
+
+
+<h1 id='IncludeImport'>Including and importing stylesheets</h1>
+
+<p id='include'>
+An <code><dfn>include</dfn></code> element
+includes another XSLT stylesheet,
+named by the <code>href</code> attribute.&nbsp;
+</p>
+
+<p id='import'>
+An <code><dfn>import</dfn></code> element
+includes another XSLT stylesheet,
+named by the <code>href</code> attribute,
+but the templates in the imported stylesheet
+have a lower <dfn>import precedence</dfn>.
+Import precedence affects
+<a href='#TemplatePrecedence'>which template is applied</a>
+if more than one matches.&nbsp;
+</p>
+
+<p>
+(If you import a stylesheet that imports other stylesheets,
+see [<a href='#XSLT'>XSLT</a>] for
+its more complex but exact definition of
+import precedence.)&nbsp;
+</p>
+
+<p>
+<code><a href='#include'>include</a></code> and
+<code><a href='#import'>import</a></code>
+may only appear as <a href='xmlSchema.html#TopLevel'>top-level</a> elements.&nbsp;
+</p>
+
+
+<h1 id='output'>Output method</h1>
+
+<p>
+The <code><dfn>output</dfn></code> element controls a number of aspects of
+the production of output by an XSLT processor.&nbsp;
+</p>
+
+<ul>
+  <li>
+    The <code>method</code> attribute
+    may have the value <code>xml</code>, <code>html</code>, or <code>text</code>,
+    controlling whether XML, HTML, or text output is produced.&nbsp;
+    <ul>
+      <li> XML output begins with an <code>xml</code> declaration
+        and produces a properly nested tree of XML elements.&nbsp;
+      </li>
+      <li> HTML output doesn't produce end-tags for empty elements
+        such as <code>img</code>
+        (see [<a href='#XSLT'>XSLT</a>] for a complete list);&nbsp;
+        doesn't turn <code>&lt;</code> in attribute values
+        into <code>&amp;lt;</code>;&nbsp;
+        terminates processing instructions with <code>&gt;</code>
+        rather than <code>?&gt;</code>;&nbsp;
+        outputs character entities for characters that have them;&nbsp;
+        and in general produces correct HTML output.&nbsp;
+        See [<a href='#XSLT'>XSLT</a>] for details.&nbsp;
+      </li>
+      <li> Text output just produces the text.&nbsp;
+        No <code><a href='#element'>element</a></code> elements are allowed
+        in the XSLT stylesheet in this case.&nbsp;
+      </li>
+    </ul>
+  </li>
+  <li>
+    The  <code>version</code> atttribute
+    controls which version of the XML or HTML output methods are used.&nbsp;
+  </li>
+  <li>
+    The <code>indent</code> atttribute
+    (value <code>yes</code> or <code>no</code>)
+    controls whether the output method
+    attempts to indent the XML or HTML output automatically
+    based on nesting depth.&nbsp;
+  </li>
+  <li>
+    The <code>omit-xml-declaration</code> atttribute
+    (value <code>yes</code> or <code>no</code>)
+    controls whether an XML declaration is produced
+    by the XML method.&nbsp;
+  </li>
+  <li>
+    The <code>doctype-system</code> and
+    <code>doctype-public</code> atttributes
+    give the identifiers to be used in the document type declaration.&nbsp;
+  </li>
+</ul>
+
+
+<h1 id='NotCovered'>Not here, but in XSLT</h1>
+
+<p>
+See [<a href='#XSLT'>XSLT</a>] for a discussion of these less-needed aspects.&nbsp;
+</p>
+
+<ol>
+  <li> Processing instruction nodes, produced by your XSLT stylesheet
+    and then processed again later.&nbsp;
+  </li>
+  <li> The <code>disable-output-escaping</code> attribute of
+    <code><a href='#text'>text</a></code> and
+    <code><a href='#value-of'>value-of</a></code>.&nbsp;
+  </li>
+  <li id='strip-space'> <code>strip-space</code>,
+    which opposes <code><a href='#preserve-space'>preserve-space</a></code>
+    in a non-simple manner.&nbsp;
+  </li>
+  <li> <code><a href='#sort'>sort</a></code>'s
+    <code>from</code>, <code>grouping-separator</code>,
+    <code>grouping-size</code>, <code>lang</code>, <code>letter-value</code>,
+    and <code>value</code> attributes.&nbsp;
+  </li>
+  <li> Keys.&nbsp;
+  </li>
+  <li> The <code>lang</code> attribute,
+    which can be important if the text being processed is not English.&nbsp;
+  </li>
+  <li> Top-level <code><a href='#param'>parameters</a></code>.&nbsp;
+    These are allowed,
+    and are associated with the <code><a href='#stylesheet'>stylesheet</a></code>,
+    but XSLT provides no way to pass values in to
+    the <code><a href='#stylesheet'>stylesheet</a></code>
+    so use a top-level <code><a href='#variable'>variable</a></code> instead.&nbsp;
+  </li>
+</ol>
+
+<p>
+Erratum:&nbsp;
+[<a href='#XSLT'>XSLT</a>] sometimes puts
+<code>&lt;</code> or <code>&gt;</code>
+in attribute value expressions;&nbsp;
+you must put <code>&amp;lt;</code> or <code>&amp;gt;</code> instead,
+because attribute values cannot contain <code>&lt;</code> or <code>&gt;</code>.&nbsp;
+</p>
+
+<table id='ExpressionAttributes' summary='Attributes interpreted as XPath expressions'>
+<caption>Table 3.&nbsp; Attributes interpreted as XPath expressions</caption>
+<tbody>
+  <tr><th>Element
+      </th>
+      <th>Attributes with expression value
+      </th>
+  </tr>
+  <tr class='tt'>
+      <td>apply-templates
+      </td>
+      <td>select
+      </td>
+  </tr>
+  <tr class='tt'>
+      <td>attribute
+      </td>
+      <td>name, namespace
+      </td>
+  </tr>
+  <tr class='tt'>
+      <td>element
+      </td>
+      <td>name, namespace
+      </td>
+  </tr>
+  <tr class='tt'>
+      <td>for-each
+      </td>
+      <td>select
+      </td>
+  </tr>
+  <tr class='tt'>
+      <td>number
+      </td>
+      <td>lang, format, letter-value, grouping-separator, grouping-size
+      </td>
+  </tr>
+  <tr class='tt'>
+      <td>sort
+      </td>
+      <td>select, lang, data-type, order, case-order
+      </td>
+  </tr>
+  <tr class='tt'>
+      <td>value-of
+      </td>
+      <td>select
+      </td>
+  </tr>
+</tbody>
+</table>
+
+
+<h1 id='References'>References</h1>
+
+<dl>
+  <dt id='XPath'>[XPath]</dt>
+    <dd><a href='http://www.w3.org/TR/xpath'>XML Path Language (XPath)</a>.&nbsp;
+    W3C Recommendation.&nbsp;
+    </dd>
+  <dt id='XSLT'>[XSLT]</dt>
+    <dd><a href='http://www.w3.org/TR/xslt'>XSL Transformations (XSLT)</a>.&nbsp;
+    W3C Recommendation.&nbsp;
+    </dd>
+</dl>
+
+
+<!--xhtml -n -->
+</div>
+
+</div><!-- #TBg -->
+
+<div id='TFooter'>
+<div class='W3C'>
+  <a href='http://validator.w3.org/check?uri=referer'><img class='W3C'
+    src='../../img/valid-xhtml10-blue.png'
+    alt='Valid XHTML 1.0 Strict'/></a>
+  <br/>
+  <a href='http://jigsaw.w3.org/css-validator/check/referer'><img class='W3C'
+    src='../../img/vcss-blue.png'
+    alt='Valid CSS!'/></a>
+</div>
+<div class='timestamp'>2010May16Su21:42</div>
+<div style='padding-top:1px;'>
+<a class='plain' href='./index.html' style='font-variant:small-caps;'
+>Thomas A. Alspaugh</a>
+<span style='padding-left:1em;'><span class='email ss sm'>alspaugh&nbsp;
+    <span class='ss sc sm'>at</span> &middot; ics &middot; uci &middot; edu</span>
+    <!-- -spell alspaugh uci edu --> </span>
+</div>
+</div>
+
+<!-- Google Analytics code -->
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol)
+  ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost +
+  "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-15281497-1");
+pageTracker._trackPageview();
+} catch(err) {}
+</script>
+
+</body>
+</html>
+

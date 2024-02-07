@@ -1,0 +1,627 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+<title>Program 5</title>
+</head>
+<body BGCOLOR="white">
+
+<center>
+<h1>Program 5</h1>
+<h1>
+Inheritance and Simulation
+</h1>
+<p>
+<h2>ICS-33: Intermediate Programming<br>
+</h2>
+<p>
+</center>
+
+
+<!-- Introduction -->
+
+<a name="Introduction">
+<hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Introduction</b></td>
+<td width ="80%">
+This programming assignment is designed to give you experience reading and
+  using an inheritance hierarchy, by extending base classes.
+In this assignment you will also see how to write general GUI applications by
+  using the <b>Model-View-Controller</b> pattern; although you will see GUI
+  components using <b>tkinter</b>, you will not write any of the GUI components,
+  just the <b>Model</b> part of the pattern.
+The application allows the user to place different kinds of objects (called
+  simultons), which behave/display differently, into a simulation and watch
+  them  interact.
+<p>
+
+You should download the
+  <a href="program5.zip">program5</a> project folder and use it to create an
+  Eclipse project.
+This download contains many modules that are already written, and others that
+  you must write: a process simplified by using inheritance.
+The main goal here is to use inheritance to write small classes that usefully
+  inherit the maximal amount of behavior and state, requiring you to write only
+  the minimal amount of code/instance variables for them to behave and display
+  as required.
+Ideally, each class (and only that class) should control the instance variables
+  it defines.
+<p>
+
+You should also download the <a href="program5helper.zip">program5helper</a>
+  which is a working simulation that is a more primitive version of the code
+  that you must write.
+It contains lots of good ideas (in code) about writing simulations, but uses no
+  inheritance.
+Writing your simulation (especially the <b>model</b> module) will be simpler if
+  you study and understand this example; it has lots of code that you can reuse.
+I <b>strongly recommend</b> that you first spend some time examining, running,
+  and experimenting with this code; use the understanding you gain to help you
+  to write (especially the <b>model</b>) code for this project.
+<p>
+
+<b>Important</b>: To run either the regular or helper simulation, you must run
+  the script named <b>script.py</b> which creates the <b>view</b> and
+  <b>controller</b> by importing their modules (and <b>controller</b> imports
+  <b>model</b>).
+<p>
+
+This is our final programming assignment.
+You should <b>work on this assignment by yourself, not in pairs</b>.
+You can discuss aspects of it verbally with other students in the course,
+  draw diagrams, etc. but you should write all the code yourself; of course,
+  you can post questions on the forum (and read questions/answers that other
+  students post).
+For this assignment, every student in class will submit all parts of his/her
+ assignment; because there are so many files, I'm asking you to zip your entire
+project folder, so we can unzip and run it; don't leave anything out (and don't
+  refer to any modules (other than those in <b>courselib</b>that are not
+  included in the zip file).
+<p>
+You do <b>NOT</b> need to put your name in the file as a comment for this
+  assignment.
+We will compute your name from your submission (and because there are no
+  partners for this project, each submitter will get the credit).
+<p>
+Grading will be based on a visual inspection of your program, and watching the
+  behavior of the simulation when it runs.
+<p>
+
+Print this document and carefully read it, marking any parts that contain
+  important detailed information that you find (for review before you turn in
+  the files).
+The code you write should be as compact and elegant as possible, using 
+  appropriate Python idioms.
+</td>
+</tbody>
+</table>
+
+
+<!-- Problem 1 -->
+
+<a name="problem1">
+<hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Inheritance and Simulation</b></td>
+<td width ="80%">
+<h3>Problem Summary:</h3>
+<p>
+I have written the <b>view</b> and <b>controller</b> modules for this
+  simulation; I have also included some base classes used in the <b>model</b>
+  module.
+You will write the complete <b>model</b> module, and a variety of classes
+  derived from the base classes by inheritance.
+You will also use the names <b>controller.the_canvas</b> and
+  <b>controller.the_progress</b> to update what is in the view.
+The former starts with a width 500 pixels and height 300 pixels (the origin,
+  (0,0) is in the upper left-hand corner, with x values getting back going
+  right and y values getting bigger going downward); the user can resize the
+  window and the simulation should respond accordingly.
+The later is a label whose <b>text</b> can be updated by calling the
+   <b>config</b> method.
+
+<p>
+The inheritance hierarchy looks as follows (arrows go from sub-/derived-classes
+  up to their super-/base-classes).
+All classes that do not specify base classes have <b>object</b> as their
+  base class.
+Most classes have just one base class: only the <b>Hunter</b> class inherits
+  from two base classes.
+<p>
+<img src="images/hierarchy.jpg"></img>
+<p>
+Here is a brief description of each class; each is discussed in more detail
+  later in this document.
+Recall that you will also be writing the <b>model</b> module, which does not
+  appear in this hierarchy, but uses objects constructed from the classes in
+  this heirarchy.
+<ul>
+<li>The <b>Simulton</b> base class stores the location (x,y coordinates of the
+      center) and dimensions (width and height) of every object in the
+      simulation.
+    It includes methods to query and update this information.
+<p>
+<li>The <b>Mobile_Simulton</b> base class stores the angle (in radians) and
+      speed (in pixels/update) of every mobile object in the simulation
+      (and inherits the information controlled by the <b>Simulton</b> class).
+    It includes methods to query and update this information.
+<p>       
+<li>The <b>Prey</b> base class is an ancestor of every class that produces
+      "edible" objects; it contains only code to call <b>__init__</b> for
+      <b>Mobile_Simulton</b>s (it base class).
+<p>
+<li>The <b>Ball</b> and <b>Floater</b> classes represent balls (traveling in
+      straight lines) and floaters (travelling more eratically) that traverse
+      the simulation canvas.
+    They are both subclasses (and thus instances) of <b>Prey</b> so they can be
+      "eaten" by <b>Black_Hole</b>s, <b>Pulsator</b>s, <b>Hunter</b>s, 
+<p>       
+<li>The <b>Black_Hole</b> class represents a stationary object that eats
+        (removes from the simulation) any <b>Prey</b> object whose center 
+        becomes contained its perimeter.
+<p>
+<li>The <b>Pulsator</b> class represents a special kind of <b>Black_Hole</b>:
+      one that gets bigger (as it eats <b>Prey</b>) and smaller (as it starves);
+      if it gets too small (starves for too long) it dies: removes itself from
+      the simulation.
+<p>       
+<li>The <b>Hunter</b> class represents a special kind of <b>Pulsator</b>:
+      one that is mobile (hence its two base classes), and moves towards the
+      closest <b>Prey</b> that it can see (there are limits to its vision).
+<p>
+</ul>
+<p>
+
+When you define these classes, you should not modify any code written in their
+  base classes.
+You should also not access by name or duplicate an instance variables
+  (attributes) that are inherited.
+You can call methods in the bases classes to access/update their instance
+  variables and override any methods in the base clases (whose bodies might
+  call the overridden methods to help them accomplish their task).
+You can also define new methods.
+Each leaf class must define or inherit an <b>update</b> and <b>display</b>
+  method, which respectively implement the behavior of objects in that class
+  and the image that they display on the canvas.
+<p>
+
+Finally, you must develop one more class, named <b>Special</b> that appears
+  somewhere in this hierarchy, and exhibits interesting behavior.
+Feel free to define supporting module/classes if necessary.
+<p>
+
+I suggest that you start by looking at the code in the modules that appear in
+  the project folder that you will download.
+Then (see the detailed instructions in this document) you can add/test/debug
+  each of the derived classes in the hierarchy, starting near the top and moving
+  downward to the bottom, until all classes are implemented and behaving as
+  they should.
+<p>
+
+<h3>Details</h3>
+I have written the <b>Simulton</b>, <b>Mobile_Simlton</b> and <b>Prey</b>
+  classes, which you need to understand and use, but do not need to change.
+Note that the <b>Simulton</b> class defines a <b>contains</b> method that is
+  inherited and can be overridden (and should be, in <b>Black_Hole</b>, which
+  changes the meaning of containment).
+This method determines whether an (x,y) coordinate is inside the object by
+  checking whether it is contained in the bounding box of each object: the
+  bounding box is just all coordinates extending from the object's center, going
+  half-height up and down, and half-width left and right.
+The <b>Black_Hole</b> class overrides <b>contains</b> to be whether an (x,y)
+  coordinate is inside the perimeter of the object: this is a "smarter"
+  <b>contains</b> that actually knows about the shape of its simulton, not just
+  the generally useful bounding box.
+<p>
+<b>Important</b>:
+The main goal in writing this derived class is to use inheritance to write
+  small classes that usefully inherit the maximal amount of behavior and state
+  from their base classes, requiring us to write only the minimal amount of
+  code/instance variables for them to behave and display as required.
+Ideally, each class (and only that class) should control the instance variables
+  it defines.
+To meet this goal, study the methods inherited from the <b>Simulton</b> and
+  <b>Mobile_Simulton</b> classes. 
+When you write an <b>__init__</b> method, typically call the <b>__init__</b>
+  method in a base class directly.
+<ul>
+<li>You should start by writing the <b>Ball</b> class, which should be simple
+  because of the state/methods it inherits: each <b>Ball</b> is blue, has
+  radius 5, moves at 5 pixels/update, and starts moving at a random angle.
+Hint: 3 methods (<b>__init__</b>, <b>update</b>, and <b>display</b>), no new
+  instance variables, 1 class variable for the radius constant.
+<p>
+<li>Next write enough of the <b>model</b> module to test this module and the
+   <b>Ball</b>  class.
+Write the <b>world</b>, <b>reset</b>, <b>start</b>, <b>stop</b>, <b>step</b>, 
+  <b>select_object</b>, <b>mouse_click</b>, <b>add</b>, <b>remove</b>, 
+  <b>find</b>, <b>update_all</b>, and <b>display_all</b> functions, most of
+  which can be tested using only <b>Ball</b> objects; as you write more classes
+  later, you will continue to call/test these functions.
+The <b>step</b> button stops the simulation after executing one cycle: if it
+  is running, it stops after one more cycle: if it is stopped it starts for one
+  cycle and then stops again.
+The <b>select_object</b> function remembers (using a global name) the string of
+  the button clicked (which it is passed as an argument: see
+  <b>object_button</b> in the <b>controller</b> module; the <b>mouse_click</b>
+  function creates an object from the last remembered selection at the (x,y)
+  coordinates of the click: using <b>eval</b> makes this method small, and
+  easily extendable to other classes of simultons.
+The <b>__init__</b> method of every <b>Simulton</b> subclass is called with
+  only the (x,y) 2-tuple, supplied by the <b>mouse_click</b> function.
+<b>See the model class in program5helper for many useful details.</b>
+<p>
+
+Recall that a method or function can use the value of any (global) module
+  variable in its body, but if we need to update the binding for any (global)
+ module variable, we need to declare that (global) module variable
+  <b>global</b> in the method/function.
+You can help debug your <b>model</b> module functions by having them print
+  useful information in the console when they are called.
+<p>
+
+<li>Write, test, and debug the <b>Floater</b> class, which is similar to the
+  <b>Ball</b> class, with two important differences: they are displayed as
+  images (a UFO icon) and they move in a strange way.
+Ensure the user can add <b>Floater</b>s to the simulation.
+Initially, each <b>Floater</b> moves at 5 pixels/update, and is moving at a
+   random angle.
+<p>
+<b>IMPORTANT:</b>
+To process the GIF file (a flying saucer) for a floater, you need to download
+  and install Pillow.
+See the instructions at the bottom of this document.
+But, you are NOT required to download/install Pillow.
+You can (with no loss of credit) implement floaters similarly to balls: using a
+  radius 5, but as <b>red</b> circles;
+  you might want to implement floaters this way first, and then try to switch
+  to the flying saucers only if you have time to download/install Pillow.
+<p>
+To process the Floater's image using Pillow (if you elect to use Pillow)
+<p>
+<ol>
+<li>To access the <b>PhotoImage</b> class <b>from PIL.ImageTk</b> module, we
+      must <b>import PhotoImage</b> and store into an instance variable the
+      image returned from  <b>PhotoImage(file='ufo.gif')</b> whose <b>.gif</b>
+      file must be in the  project folder.
+   We can call the <b>width()</b> and <b>height()</b> methods on this image to
+     compute the dimensions of the image.
+<li>Use the <b>create_image</b> function to place the image at its location
+       on <b>the_canvas</b> that is defined/set in the <b>Controller</b> module
+    (similar to the <b>create_oval</b> method used in the <b>Ball</b> class).
+I wrote 
+<b><pre>def display(self,the_canvas):
+    the_canvas.create_image(*self.get_location(),image=self._image)</pre></b>
+</ol>
+<p>
+To move the Floater
+<ol>
+<li>Use random numbers so that 30% of the time both the speed/angle are changed,
+       and 70% of the time neither is changed.
+<li> The speed is changed by a random value betwen -.5 and +.5, but never drops
+       below 3 pixels/update or rises above 7 pixels/update; and the angle is
+       changed by a random value betwen -.5 and +.5 radians.
+</ol>
+<p>
+Hint: 3 methods (<b>__init__</b>, <b>update</b>, and <b>display</b>), 
+1 new instance variable for the <b>PhotoImage</b> (if you implement that),
+otherwise 1 class variable for the radius constant.
+<p>
+
+<li>Write, test, and debug the <b>Black_Hole</b> class.
+Ensure the user can add <b>Black_Hole</b>s to the simulation.
+Each <b>Black_Hole</b> is black and has a radius of 10.
+Override the <b>contains</b> method so that a point is contained in the
+  <b>Black_Hole</b> if the distance from the center of the <b>Black_Hole</b>
+  to the center of the object is less than the radius of the <b>Black_Hole</b>.
+Use the <b>find</b> method in the <b>model</b> module to locate all objects
+  that are instances of <b>Prey</b> (or any of its subclasses no matter how
+  many are added later) and whose locations are contained in the circle
+  representing the <b>Black_Hole</b>.
+The <b>update</b> method should return the set of simultons eaten: this
+  information will be useful when inherited from the <b>Pulsator</b> class
+  (which extends the <b>Black_Hole</b> class).
+Hint: 4 methods (<b>__init__</b>, <b>update</b>, <b>display</b>), and
+   <b>contains</b>), 1 class variable for the radius constant.
+<p>
+
+<li>Write, test, and debug the <b>Pulsator</b> class.
+Ensure the user can add <b>Pulsator</b>s to the simulation.
+Each <b>Pulsator</b> behaves and initially looks like a <b>Black_Hole</b>,
+  except for the following additional behavior.
+For every object a <b>Pulsator</b> eats, its dimension (both width and length)
+  grows by 1 and its "time between meals" counter is reset; whenever it is goes
+  30 updates without eating anything, its dimension (both width and length)
+  shrinks by 1; and if the dimesions ever shrink to 0, the object starves and
+  removes itself from the simulation.
+The <b>update</b> method should still return the set of simultons eaten.
+Hint: 2 methods (<b>__init__</b> and  <b>update</b>), 1 self variable -for
+  that pulsator's counter-, and 1 class variable for the counter constant of
+  30).
+<p>
+
+<li>Write, test, and debug the <b>Hunter</b> class.
+Ensure the user can add <b>Hunter</b>s to the simulation.
+Each <b>Hunter</b> behaves and initially looks like a <b>Pulsator</b>,
+  except for the following additional behavior.
+A <b>Hunter</b> always moves at 5 pixels/update, and intially is moving at a
+   random angle.
+Use the <b>find</b> method in the <b>model</b> module to locate all objects
+  that are instance of <b>Prey</b> (or any of its subclasses no matter how many
+  are added later) and whose locations are within a distance of <b>200</b> of
+  the <b>Hunter</b> (hint: see the methods in the <b>Simulton</b> class); if
+  any are seen, find the closest one and set the hunter's angle to point at
+  that simulton: to hunt it.
+Hint: To determine the angle, compute the difference between the <b>y</b> 
+  coordinates and the difference between the <b>x</b> coordinates of the center
+  of the closest prey simulton minus the center of the <b>Hunter</b>.
+Instead of dividing them to compute the tangent of the angle between them
+  (and then calling <b>math.atan</b> to compute the angle), just call the
+  <b>math.atan2</b> function (with these differences as separate arguments) to
+  determine the angle the <b>Hunter</b> should move to head towards the prey.
+By using <b>math.atan2</b> and avoiding the division, there will not be a
+ "divide by 0" problem, if the prey is directly over the hunter (have the same x
+  coordinate):
+<p>
+The <b>Hunter</b> class inherits some behavior from <b>Pulsator</b> and some
+  from <b>Mobile_Simulton</b>.
+When calling inherited methods, be careful that the correct one is called.
+Hint: 2 methods (<b>__init__</b> and  <b>update</b>), 1 class variable for the
+  distance it can see constant of 200).
+<p>
+
+<li>Write, test, and debug the <b>Special</b> class.
+Ensure the user can add <b>Special</b>s to the simulation.
+Make the <b>Special</b> objects do something interesting; write a comment at
+  the top of the <b>special.py</b> module that describes their behavior so the
+  TA can read it and watch that behvaior when running a simulation.
+If you need to, you can modify you <b>model</b> module or other classes to
+  interact with these <b>Special</b> objects, but the other classes must work
+  as specified above after the <b>model</b> changes.
+<p>
+The reader will award three extra credit point to the most interesting
+  <b>Special</b> submitted in each lab.
+<p>
+
+<h3>Testing</h3>
+If the program is developed in the manner described above, testing for
+  the <b>model</b> module is done after its code and code for the <b>Ball</b>
+  class are written.
+The <b>step</b> function is useful for "slowing-down" simulations to better
+ observe the behavior of the simultons.
+As each new class is written and entered into the simulation, its behavior and
+  appearance are tested (possibly correcting functions in the <b>model</b>
+  module as they are used more extensively in later classes).
+<p>
+You might find it useful (but it is not required) to write <b>__repr__</b>
+  and/or <b>__str__</b> classes for each class and print them occassionally
+  for debugging purposes.
+<p>
+You can download and watch (~4 minutes) a narrated  <a href ="demo.avi">demo</a>
+  of me running my solution, to see how the simultons behave.
+Unfortunately, it does not show the mouse cursor, but when buttons are clicked
+  they momentarily appear depressed.
+Here is the script for the movie.
+<p>
+<ol>
+<li>The simulator begins stopped, with no objects on the canvas.
+<p>
+
+<li>I can click the Ball button, and then click anywhere on the canvas, multiple
+times, to place balls.
+<p>
+
+<li>
+I can click the Start button to start the simulation.
+Notice how the balls move in a straight line and bounce off walls.
+I can click on the canvas to add more balls.
+<p>
+
+<li>I can click the Stop button to stop the simulation.
+<p>
+
+<li>I can click the Start button again to restart it from where it was stopped.
+<p>
+
+<li>I can click the Step button to run the simulation for one cycle.
+I can click this button any number of times; each click advances one cycle.
+This button can be useful for debugging.
+<p>
+
+<li>I can click the Remove button.
+Then the next time I click on the canvas, any object that I click inside will be
+  removed from the simulation; this feature works whether the simulation is
+  running or not, but is easiest to use if the simulation is stopped.
+<p>
+
+<li>Finally, I can click the Reset button to reset the simulation.
+It is stopped with all simultons removed.
+<p>
+
+<li>I have now demonstrated every kind of button in the simulation.
+Let's look more closely at how other kinds of simultons behave and display.
+<p>
+
+<li>I can restart the simulation and click the Floater button to place floaters
+  on the canvas.
+Notice how each moves differently than a ball, while still bouncing off walls.
+<p>
+
+<li>I can click the Black_Hole button and place a black hole on the canvas.
+Notice how it eats any simulton whose center enters its perimeter.
+<p>
+
+<li>I will now remove the black hole.
+<p>
+
+<li>I can click the Pulsator button and place a pulsator on the canvas.
+Notice how when it eats a simulton it grows; if it doesn't eat any simultons in
+30 cycles, it shrinks and ultimately it can remove itself from the simulation
+if its size shrinks to 0.
+<p>
+
+<li>I can click the Hunter button and place a hunter on the canvas.
+Notice how it pursues prey (within its range of vision) and grows and shrinks
+like a pulsator.
+<p>
+
+<li>Finally, I can reduce or enlarge the size of the window and simultons adapt
+  their behavior to the smaller or larger canvas.
+</ol>
+</tbody>
+</table>
+
+
+<a name="PIL">
+<hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Installing PIL/Pillow</b></td>
+<td width ="80%">
+<h3>The Python Imaging Library (Pillow Implementation):</h3>
+Here are the instructions for downloading and installing Pillow (the version of
+  PIL we are using).
+If if come up with a better/corrected way to do the installation, post on
+  the messageboard.
+<p>
+<b>Important</b>: This is not a required part of the assignment; do this to be
+  able to display a floater as a "flying saucer".
+You are allowed to display a "flying saucer" just as a red ball, which does not
+  require installing Pillow (but it is an interesting module to have installed
+  for doing any kind of Python imaging).
+<ul>
+<li>For PCs (I'm assuming you are running Python 3.4 installed in the
+  directory <b>C:\Python34</b> ) follow the 
+  <a href="http://www.lfd.uci.edu/~gohlke/pythonlibs/#pil" target = "_top">link</a>
+  to the page "Unofficial Windows Binaries for Python Extension Packages"
+  and find the
+ <b>Pillow-3.2.0-cp34-cp34m-win32.whl</b> link; clicking this
+  link downloads a <b>.whl</b> file which you can use <b>pip</b> to install.
+Note that if you are using Python 3.5, there is a newer version named
+   <b>Pillow-3.2.0-cp35-cp35m-win32.whl</b>.
+<ol>
+<li>Move the <b>Pillow-3.2.0-cp34-cp34m-win32.whl</b> file into the
+       <b>C:\Python34\Scripts</b> directory link.
+<p>
+<li>Open a <b>DOS</b> window (put a shortcut to the file
+       <b>C:\Windows\System32\cmd.exe</b> on your desktop and then double-click
+       its icon.
+<p>
+<li>Type the command <b>cd ../..</b> to connect to the root (<b>C:</b>)
+       directory.
+<p>
+<li>Type the command <b>cd Python34/Scripts</b> to connect to the
+       <b>Scripts</b>) folder in the <b>Python34</b> folder (where you copied
+       the <b>.whl</b> file).
+<p>
+<li>Type the command <b>pip3.4 install Pillow-3.2.0-cp34-cp34m-win32.whl</b> to
+      intall Pillow.
+If you get an error message about <b>pip</b> not being found or not being up to
+  date, try again after typing the command
+  <b>python -m pip install --upgrade pip</b>.
+<p>
+<li>The entire process looked like the following on my screen.
+<pre><b>C:\Windows\System32>cd ../..
+
+C:\>cd Python34/Scripts
+
+C:\Python34\Scripts>pip3.4 install Pillow-3.2.0-cp34-cp34m-win32.whl
+Processing c:\python34\scripts\Pillow-3.2.0-cp34-cp34m-win32.whl
+Installing collected packages: Pillow
+Successfully installed Pillow-3.3.1</b></pre>
+</ol>
+If you look at the <b>Lib/site-packages</b> folder on the directory where you
+  installed Python, you should see a folder named <b>PIL</b> containing about
+  a hundred <b>.py</b> files.
+<p>
+If the the process above fails, try installing an earlier version
+  of Pillow as follows.
+<ol>
+<li>Click the following <a href="Pillow-2.6.1.win32-py3.4.exe">link</a>
+    which should download the file <b>Pillow-2.6.1.win32-py3.4.exe</b>.
+   Double-click this file to install it.
+</ol>
+</ol>
+<p>
+<li>For Macs follow the instructions below.
+<ol>
+<li>Ensure your Xcode is up to date: update it from the App store if you are
+  unsure.
+<p>
+<li>Install <b>homebrew</b> in a terminal window: copy/paste the following
+command and press <b>enter</b>
+<b><pre>ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"</pre></b>
+<p>
+<li>Install the dependencies needed for Pillow in a terminal window: type
+(or copy/paste) the following command and press <b>enter</b>.
+<b><pre>brew install libtiff libjpeg webp littlecms</pre></b>
+<li>Create a development environment for Python 3.4 (Mac installs 2.7 as the
+  default) in a terminal window:
+  we will need to type the following into the terminal: type (or copy/paste) the
+    following command and press <b>enter</b>.
+<b><pre>brew install python3</pre></b>
+<p>
+Note: this installation can take minutes to complete, depending on your web
+connection speed.
+Test if Python 3.4 was installed correctly in a terminal window: type 
+(or copy/paste) the following command and press <b>enter</b>.
+<b><pre>python3</pre></b>
+<p>
+This should start a Python 3.4.x interpreter in your terminal window.
+If you are on OSX 10.9 Mavericks there is a bug where if you type in more than
+  one line into the interpreter in your terminal, the terminal will crash.
+Fortunately, this bug will not cause any problems with what we want to do.
+<!---There is also an easy workaround for this bug.--->
+Press ctrl/D on your keyboard to terminate the interpreter (or simply close
+  your terminal window and open a new one).
+<p>By installing python3 via Homebrew, we can now use commands such as pip3 to
+    download and install packages and libraries from the Python Package Index
+    automatically.
+<li> To install Pillow in a terminal window: type (or copy/paste) the following
+command and press <b>enter</b>.
+<b><pre>pip3 install Pillow</pre></b>
+<p>
+If this fails (the message might be <b>"Error in linking, to try again type brew link --overwrite python3"</b>) students have recommended to...
+<ul>
+<li>... try closing and re-opening the terminal window and trying the command
+       <b>pip3 install Pillow</b> again.
+<li>... try closing and re-opening the terminal window and trying the command
+        <b>brew link --overwrite python3</b> and then trying the command
+        <b>pip3 install Pillow</b> again.
+</ul>
+<p>
+Wait for the installation to complete.
+Pillow should now be installed for Python3.
+<li>
+Finally, if you installed a new Python3 interpreter, specify this newly
+  installed interpreter to use with Eclipse.
+Start Eclipse, and follow to the end, starting at <b>step 14</b>, the
+  instructions in the
+<a href="http://www.ics.uci.edu/~pattis/common/handouts/pythoneclipsejava/eclipsepython.html">Eclipse Download and Installation (for Python) Instructions</a>.
+<p>
+When it asks for "Interpreter Name" use <b>python3_with_pillow</b>.
+When it asks for "Interpreter Executable" use <b>/usr/local/bin/python3</b>
+  which is the location of the new intepreter.
+Add the <b>courselib</b> too (following the same instructions).
+</ol>
+These are new instructions this quarter.
+If you run into problems, please talk to other Mac users in lab
+  and post issues on the Message Boards.
+</ul>
+Once you have downloaded and installed this software, you should be able to run
+  the script in the <b>pildemo.py</b> module; download it as
+  <a href="piltest.zip">piltest.zip</a>
+Press the enter key for all prompts.
+It should eventually show a few windows with the UCI seal.
+</td>
+</tbody>
+</table>
+
+
+</html>

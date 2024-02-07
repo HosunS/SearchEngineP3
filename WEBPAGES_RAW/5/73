@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC
+ "-//W3C//DTD XHTML 1.1//EN"
+ "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<link rel="stylesheet" href="../../course.css" type="text/css" />
+
+<title>CompSci 141 / CSE 141 / Informatics 101 Spring 2013, Project #1</title>
+</head>
+<body>
+
+<div class="navbar">
+
+<p>
+CompSci 141 / CSE 141 / Informatics 101 Spring 2013 |
+<a href="../../index.html">News</a> |
+<a href="../../CourseReference.html">Course Reference</a> |
+<a href="../../Schedule.html">Schedule</a> |
+<a href="../../ProjectGuide">Project Guide</a> |
+<a href="../../CodeExamples">Code Examples</a> |
+<a href="http://www.ics.uci.edu/~thornton/">About Alex</a>
+</p>
+
+<hr />
+
+</div>
+
+<div class="header">
+
+<p>CompSci 141 / CSE 141 / Informatics 101 Spring 2013<br />
+   Project #1</p>
+
+</div>
+
+<div class="section">
+
+<p class="center"><b>Due date and time:</b> <i>Monday, April 15, 11:59pm</i></p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Introduction</p>
+
+<p>As you begin to formulate an understanding of programming languages this quarter, one of the first things you'll need to learn is how languages are described.  This is a vital skill not just in a course such as this one, but going forward, as well; whether you're learning a new language, becoming more proficient in a language with which you're already familiar, or designing a new language, you must understand how programming languages are described, so that you can read or write a clear description of the language expressed in a way that is familiar to others.</p>
+
+<p>The description of a programming language is generally broken into two main parts, each of which answers an important question about the language.</p>
+
+<ul>
+  <li><i>Syntax</i>.  What do constructs in the language look like?</li>
+  <li><i>Semantics</i>.  What do constructs in the language do?</li>
+</ul>
+
+<p>There is broad agreement amongst programming language designers about the appropriate tools for describing syntax: <i>BNF (Backus-Naur Form)</i> or <i>context-free grammars</i> are often used.  (These two notations are conceptually identical, so I'll refer to them collectively as <i>grammars</i>, as I did in lecture.)  Semantics, on the other hand, have proven to be much more difficult to describe formally; while there are formal methods for describing semantics, there is not one method that is a de facto standard, and semantics are most commonly explained in a natural language such as English.  The downside of using a natural language is that the imprecision inherent in natural languages can leave room in the specification for different interpretations, which can lead to different implementations of the language behaving differently because of the different assumptions made by each implementer; however, the tradeoff is the difficulty in writing complete, correct formal semantics, and that's a trade that's not often made in practice.</p>
+
+<p>As we discussed in class, even a formal notation like grammars can lead to imprecision if not used carefully.  Since language processors &mdash; compilers and interpreters represent the two extremes, with various kinds of hybrid approaches in between &mdash; use grammars not only to determine whether programs are syntactically correct, but also to infer at least some aspects of their meaning, it is important to construct grammars carefully.  In particular, the problem of <i>ambiguity</i> is best avoided whenever possible.  Recall that an ambiguous grammar is one that, for at least one sentence in the language of the grammar, allows more than one parse tree or leftmost derivation to be constructed.  Since the meaning of a program is partly inferred from the structure of a parse tree or derivation, it is worthwhile to ensure that the grammar is unambiguous.  After all, a program with multiple possible parse trees is a program with multiple possible meanings; we'd like it to be the case that any given program in a programming language has only one meaning.</p>
+
+<p>This project will deepen your understanding of grammars by asking you to construct a complete grammar for a relatively simple programming language.  Along the way, you'll explore how to avoid ambiguity, and learn more about precedence and associativity rules, including how to use grammars to specify them.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The FUNCyMonkie language</p>
+
+<p>A FUNCyMonkie program is made up of one or more <i>functions</i>.  Each function is comprised of a name, a list of one or more <i>parameters</i>, an equals sign, and one <i>expression</i>.  A function's name and its parameters are <i>identifiers</i>, which are sequences of one or more upper- and/or lowercase letters that begin with a lowercase letter.  When a function is called, values are passed into each of the parameters, then the expression is evaluated in terms of those values.  The result of the expression becomes the result of the function.</p>
+
+<p>Here are some examples of functions.  (These look like assignment statements from Java, but they're actually more akin to method declarations.)</p>
+
+<pre>
+    -- The function inc takes one parameter, x, and returns the value x + 1.
+    inc x = x + 1
+
+    -- The function h takes four parameters -- x, y, z, and w -- and returns
+    -- one of two results, depending on whether the result of calling f and
+    -- passing it x and y is true or false.  If it's true, the result of
+    -- adding z and w is returned; otherwise, w is returned.  (Notice how
+    -- no parentheses or commas are used in the call to f; we'll come back
+    -- to this later.)
+    h x y z w = if f x y
+                then z + w
+                else w
+                endif
+
+    -- The function square takes one parameter n and squares it, returning
+    -- the result.
+    square n = n ^ 2
+</pre>
+
+<p>Comments are denoted by two dashes; after two dashes, the remainder of a line is considered to be a comment.</p>
+
+<p class="subtitle">The offside rule</p>
+
+<p>One difference that you'll likely notice between FUNCyMonkie syntax and the syntax of languages like Java or C++ is that there are no explicit characters that separate one function from the next; no semicolons, curly braces, or other characters are used to denote program structure.  You may wonder, then, how a FUNCyMonkie language processor would be able to tell when one function ends and another begins.</p>
+
+<p>The answer to this problem lies in a rule that is called the <i>offside rule</i>.  If the first character in a function definition appears at a particular horizontal position on a line, the next line whose first character appears at the same position or an earlier position is considered to be a new function.  As an example, consider this unplesant-looking, but nonetheless syntactically correct, layout of the <b>inc</b> and <b>square</b> functions from the previous code example:</p>
+
+<pre>
+    inc x =           -- beginning of the inc function
+       x +            -- the "inc" function continues
+      1               -- still in the "inc" function
+    
+   square n = n ^ 2   -- a new function!
+</pre>
+
+<p>The <b>square</b> function is distinguished from the <b>inc</b> function because it begins on a line whose first character is one position earlier than the first character on the line that begins <b>inc</b>.  By way of contrast, consider this layout of the same code:</p>
+
+<pre>
+    inc x = x + 1          -- beginning of the inc function
+       square n = n ^ 2    -- a syntax error, since this is interpreted to be part of the "inc" function
+</pre>
+
+<p>(This may seem like a strange way to design the syntax of a programming language, but it has its advantages, and there are well-known programming languages, such as Python and Haskell, that use some form of this rule as part of their syntaxes.)</p>
+
+<p class="subtitle">Executing a FUNCyMonkie program</p>
+
+<p>You won't be writing or executing FUNCyMonkie programs in this assignment, but for a little more background understanding of the language, you should know how they're run.</p>
+
+<p>FUNCyMonkie programs are executed in an interactive, interpreted way, with the interpreter accepting a sequence of expressions from the user, evaluating each of them after it is entered, then printing the result.  An example session with a FUNCyMonkie interpreter might look like this, with =&gt;&gt; representing the prompt that the interpreter prints to ask the user to enter an expression.  (Note that the example below is <i>not</i> a FUNCyMonkie program; it's an example session of a user interacting with a FUNCyMonkie interpreter.)</p>
+
+<pre>
+    =&gt;&gt;  inc 3
+    4
+    
+    =&gt;&gt;  square 9.5
+    90.25
+</pre>
+
+<p class="subtitle">Expressions in FUNCyMonkie</p>
+
+<p>There are two kinds of expressions in FUNCyMonkie: <i>simple expressions</i> and <i>compound expressions</i>.</p>
+
+<p>A simple expression is one of the following:</p>
+
+<ul>
+  <li>An <i>integer literal</i>, such as <tt>5</tt> or <tt>13</tt>.  All integer literals in FUNCyMonkie are non-negative.</li>
+  <li>A <i>real literal</i>, such as <tt>5.5</tt> or <tt>456.789</tt>.  Like integer literals, all real literals are also non-negative.</li>
+  <li>A <i>boolean literal</i>.  There are two possible values for a boolean literal: <tt>True</tt> and <tt>False</tt>.</li>
+  <li>An <i>identifier</i>, such as <tt>monkie</tt> or <tt>alex</tt>.</li>
+</ul>
+
+<p>A compound expression is one of the following:</p>
+
+<ul>
+  <li>A <i>relational expression</i>, which compares the values of two expressions for equality and/or ordering.  There are six relational operators: <tt>==</tt>, <tt>/=</tt>, <tt>&lt;</tt>, <tt>&lt;=</tt>, <tt>&gt;</tt>, and <tt>&gt;=</tt>.  Examples:
+
+<pre>
+    3 == 4                   -- result: False
+    True /= False            -- result: True
+    x &lt; y                    -- result: True if x is less than y, False otherwise
+</pre>
+  </li>
+
+  <li>An <i>arithmetic expression</i>, which combines the values of two expressions using one of these arithmetic operators: <tt>+</tt>, <tt>-</tt>, <tt>*</tt>, <tt>/</tt>, <tt>^</tt> (exponentiation).  Examples:
+  
+<pre>
+    3 + 4                    -- result: 7
+    7 / 2                    -- result: 3.5
+    2 ^ 3                    -- result: 8
+</pre>
+  </li>
+
+  <li>A <i>conditional expression</i>, which evaluates a test expression and then evaluates one of two other expressions based on the value of the test.  Examples:
+  
+<pre>
+    if x < y then 4 else 5 endif            -- result: if x is less than y, result is 4, otherwise 5
+    if 3 == 4 then x + y else 7 / 2 endif   -- result: 3.5
+</pre>
+
+      Any arbitrary expression can be used as the test, placed in the <tt>then</tt> clause, or placed in the <tt>else</tt> clause.  Both the <tt>then</tt> and <tt>else</tt> clauses are mandatory, as is the <tt>endif</tt> that terminates the expression.</li><br />
+
+  <li>A <i>function application</i>, which calls a function, passing the result of one or more expressions as arguments.  Syntactically, function applications in FUNCyMonkie are a bit different than the method calls or function calls you might be accustomed to from other languages.  The function name, an identifier, comes first, followed by its arguments, separated only by whitespace.  There are no mandatory parentheses, commas, or other "punctuation."  Examples:
+
+<pre>
+    f x                      -- calls the function f and passes the value of x as an argument
+    g 3 4                    -- calls the function g and passes 3 and 4 as arguments
+</pre>
+
+      Simple expressions can be passed as arguments as in the examples above.  Compound expressions can only be passed as arguments if they are surrounded by parentheses.  Examples:
+
+<pre>
+    f (3 + 4)                -- calls the function f and passes 7 as its argument
+    f 3 + 4                  -- calls the function f and passes 3 as its argument...
+                             -- ...4 is then added to the result of the function
+</pre>
+
+      The latter example demonstrates that function application binds more tightly than other operators.  In other words, the expression is assumed to be, primarily, an addition operation, with <tt>f 3</tt> being its left operand and <tt>4</tt> being its right.</li>
+</ul>
+
+<p>Compound expressions can be combined together, with precedence and associativity rules used to determine their meaning.  Parentheses can be used to override the precedence and associativity rules.  Examples:</p>
+
+<pre>
+    3 + 4 * 2                -- * has higher precedence than +, so result is 11
+    (3 + 4) * 2              -- result is 14
+    9 - 3 - 2                -- the - operator is left-associative, so result is 4
+    9 - (3 - 2)              -- result is 8
+</pre>
+
+<p>The precedence and associativity rules of the operators are summarized in the following table, with operators listed on the top row having the highest precedence, operators listed on the second row having the next-highest precedence, and so on.</p>
+
+<table class="normal">
+  <tr class="top">
+    <td>Operators</td>
+    <td>Associativity</td>
+  </tr>
+  <tr>
+    <td>^</td>
+    <td>right-associative</td>
+  </tr>
+  <tr>
+    <td>* /</td>
+    <td>left-associative</td>
+  </tr>
+  <tr>
+    <td>+ &minus;</td>
+    <td>left-associative</td>
+  </tr>
+  <tr>
+    <td>== /= &lt; &lt;= &gt; &gt;=</td>
+    <td>non-associative</td>
+  </tr>
+</table>
+
+<p>Function application has a higher "precedence" than any of these.</p>
+
+<p class="subtitle">Writing a grammar for FUNCyMonkie</p>
+
+<p>Design and write a grammar that accepts complete FUNCyMonkie programs, as described above.  The grammar must be unambiguous and must be specified in the BNF-like style discussed in lecture.  (You may not use the Extended BNF shortcuts described in the textbook.)</p>
+
+<p>Your grammar must respect precedence and associativty, meaning, for example, that operators with higher precedences should be forced to appear lower in a parse tree than operators with lower precedences.</p>
+
+<p>You may assume the presence of a "scanner" that takes an input file and turns it into a sequence of tokens, which would then need to be matched against your grammar.  The alphabet of your grammar &mdash; the set of possible tokens &mdash; should include the following special tokens, in addition to the literal ones such as parentheses and the operators:</p>
+
+<ul>
+  <li><b>IntLiteral</b>, which represents an integer literal.</li>
+  <li><b>RealLiteral</b>, which represents a real literal.</li>
+  <li><b>Identifier</b>, which represents an identifier.</li>
+  <li><b>True</b> and <b>False</b>, which represent the boolean literals.</li>
+  <li><b>Offside</b>, which indicates the occurrence of an "offside" condition, as described above.</li>
+</ul>
+
+<p>As an example, consider this FUNCyMonkie program:</p>
+
+<pre>
+    inc x = x + 1
+    circleArea radius = radius ^ 2 * 3.14
+</pre>
+
+<p>It would be scanned and turned into the following token sequence:</p>
+
+<blockquote>
+Identifier, Identifier, =, Identifier, +, IntLiteral, Offside, Identifier, Identifier, =, Identifier, ^, IntLiteral, *, RealLiteral
+</blockquote>
+
+<p>Note, in particular, the presence of the <b>Offside</b> token separating the tokens that make up the <b>inc</b> function from those comprising the <b>circleArea</b> function.</p>
+
+<p>Be sure that it's clear in your grammar which symbols are terminal symbols and which are non-terminal symbols.  Use boldface for terminal symbols and italics for non-terminal symbols, or some other format if you prefer.  Please specify at the top of your document what format you've chosen.</p>
+
+<p class="subtitle">How to test your grammar</p>
+
+<p>As you work on your grammar, you may wonder how you can be sure whether your work is correct.  I suggest working on your grammar in stages &mdash; implementing a language feature at a time &mdash; and developing test cases, as you would when you write code.  Try out your test cases often, assessing what parse tree would result (or, in cases that aren't legal in FUNCyMonkie, checking that building a parse tree is not possible).  If you get results other than you were expecting, you've got a problem in your grammar; if not, move on to another feature and implement it.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Deliverables</p>
+
+<p>Include your solution to this assignment in one document in either Microsoft Word (.doc or .docx), Rich Text Format (.rtf), or Adobe Acrobat (.pdf) format.  Follow <a href="../SubmittingProjects.html">this link</a> for a discussion of how to submit your document.  Remember that we do not accept paper submissions of your assignments, nor do we accept them via email <i>under any circumstances</i>.</p>
+
+</div>
+
+<div class="history">
+
+<hr />
+
+<ul class="nomarker">
+  <li>Some minor tweaks by Alex Thornton, Spring 2013.</li>
+  <li>A "how to test" section added by Alex Thornton, Summer 2009.</li>
+  <li>The rules of FUNCyMonkie cleaned up and a fair amount of additional explanation added by Alex Thornton, Fall 2007.</li>
+  <li>Originally written by Alex Thornton, with portions adapted from a previous ICS 141 assignment, Fall 2005.</li>
+</ul>
+
+</div>
+
+</body>
+</html>

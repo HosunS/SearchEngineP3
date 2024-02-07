@@ -1,0 +1,33 @@
+source("bayesD_cocktail.r")
+
+## setting up information matrices for an exponential regression model
+n=30
+m=3
+X=matrix(nrow=n, ncol=m)
+X[,1]=1
+s=3*(1:n)/n
+
+A=array(dim=c(10, n, m, m));
+for(i in 1:10){
+  theta=i/5;
+  X[,2]=exp(-s*theta)
+  X[,3]=s*exp(-s*theta)
+  for(k in 1:n)
+    A[i, k, ,]=X[k,]%*% t(X[k,]);
+}
+prior=rep(1/10, 10);
+
+print("Bayesian D-optimal design for an exponential regression model");
+print("model: y ~ b1 + b3*exp(-b2*x) + N(0, sig^2)");
+print("design variable: 0<=x<=3 discretized");
+print("prior on b2: uniform on {i/5: i=1,2,...,10}"); 
+
+## use cocktail algorithm (alg=1)
+w=bayesD(A, prior, maxiter=10000, small=1e-4, alpha=0, alg=1)
+
+print("output:");
+print("optimal support points x(i)");
+print(s[w>0]);
+print("optimal weights w(i)");
+print(w[w>0]);
+

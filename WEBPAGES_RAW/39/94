@@ -1,0 +1,46 @@
+// GuessNumberUserInterface.java
+//
+// ICS 21: Lab 0
+//
+// Written by Alex Thornton for ICS 21 Summer 2009
+//
+// This class implements the user interface for the "guess a number"
+// game, where the computer chooses a number at random, then asks the
+// user to guess what it is, giving hints along the way.
+
+import java.util.Scanner;
+
+public class GuessNumberUserInterface
+{
+	private static int RANGE = 10;
+
+	public static void main(String[] args)
+	{
+		Scanner s = new Scanner(System.in);
+		GuessNumberGame game = new GuessNumberGame(RANGE);
+		
+		System.out.println("I'm thinking of a number between 1 and 10.  Can you guess what it is?");		
+		GuessResponse response;	
+		do
+		{
+			System.out.print("Enter a number between 1 and 10: ");
+			
+			int guess = s.nextInt();
+			s.nextLine();
+			
+			response = game.checkGuess(guess);
+
+			if (response == GuessResponse.TARGET_IS_SMALLER)
+			{
+				System.out.println("The number I'm thinking of is smaller than that.");
+			}
+			else if (response == GuessResponse.TARGET_IS_LARGER)
+			{
+				System.out.println("The number I'm thinking of is larger than that.");
+			}
+		}
+		while (response != GuessResponse.CORRECT);
+
+		System.out.println("Great job!  That's exactly the number I was thinking of!");
+	}
+}

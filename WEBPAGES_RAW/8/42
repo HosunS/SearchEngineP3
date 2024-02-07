@@ -1,0 +1,894 @@
+		Problem Solving with Recursive Backtracking
+
+
+Introduction: 
+
+In the next two lectures we will look at how to think about solving certain
+kinds of problems, by thinking about finding their solutions as the process of
+searching through trees. In this lecture, we will look at problem solving using
+"depth first search" and backtracking.
+
+Actually no tree gets constructed explicitly (no new TreeNode() statements will
+appear in any code), but the pattern of recursive calls to try solving the
+problem can be nicely visualized as a tree of choices, which the recursive code
+generates piece by piece until it finds one solution, all solutions, or fails
+to find any solution. Really, this is just a variant of some recursive
+calls/structure that we found in the size or height of a tree (especially N-ary
+trees), by recurring on each subtree. We will illustrate backtracking search
+with a few different examples and then some code.
+
+Generally, we start with a problem of some specific SIZE and we repeatedly
+reduce the size of a problem by choosing some ASPECT of the problem and
+generating all the possible VALUES for that aspect. Think of every node in
+the tree representing some problem and the children of that node each
+representing a smaller problem: we label the edge between each parent and child
+with the aspect chosen and the value for that aspect, which reduces the problem
+size.
+
+Eventually either there are no aspects left to choose for a problem, or an
+aspect has no possible values. If the problem has been reduced to size 0,
+we can check for a solution by examining all the aspects and their chosen
+values. If they do not correspond to a solution, then we can BACKTRACK, undoing
+some aspect/value choices and continue to examine other aspect/value choices
+(either if we did not find a solution or found a solution but want ALL
+solutions).
+
+We use the term "combinatorial searching" to characterize this approach to
+solving these problems, because we search through all possible combinations
+of aspects and their values. If we drew out complete search trees, we would
+generate a tremendous number of nodes (this is called the "combinatorial
+explosion"). For a problem of size N, If the average number of children of a
+node in the solution tree is C (meaning each aspect chosen has C possible
+values), then there will be C^N nodes at depth N. So even if C is small, say 2,
+a problem with 10 aspects will require a search tree with 1,000 leaf nodes; a
+problem with twice as many aspects (20) will require a search tree with
+1,000,000 leaf nodes. Examing all these nodes is in complexity class O((C^N):
+exponential in the N.
+
+We will now look at three problems that can be solved simply by recursive
+backtracking: satisfiability of boolean formulas, N-queens (placing N queens
+on an NxN chessboard so that no queen can attack another), N-colorability
+(finding N colors, if possible, to color a graph so that no connected nodes
+are the same color). Finally, we will look at a general algorithm to solve all
+these problems.
+
+
+Satisfiability:
+
+The first problem that we will show how to solve with bactracking search is:
+Given some boolean formula, try to find one or all assignments to each of its
+variables (each is assigned either true or false) that "satisfies" the formula:
+i.e., make the formula evaluate to true.
+
+For some formulas, there may be just one assignment, for others many
+assignments, for others all assignments work (such a formula is called a
+tautology: e.g., a || !a), and for others no assignments work (such a formula
+is called a contradiction or unsatisfiable: a && !a:). We might want to stop
+when we find the first solution, or continue searching until we find all
+solutions.
+
+We will examine the formula (!a || b) && (a || !b) && (a || b).
+
+We show the root of the solution tree as a problem with two unknown
+aspects/variables a and b: {a=?,b=?}. 
+
+          {a=?,b=?}
+
+Then we start by choosing some unknown aspect of the problem: any variable that
+we have not assigned a value to. In some problems we might use some special
+information to determine which aspect to choose (sometimes it is better to
+choose one aspect over another). In this problem, we just choose the first
+variable, a. Then, there are two possible choices for values of a: false and
+true. So we draw these choices as follows (using T to abbreviate true and F to
+abbreviate false). The children each have one fewer unknown aspect of the
+problem.
+
+                      {a=?,b=?}
+         a=F/                       \a=T
+        {a=F,b=?}                {a=T,b=?}
+
+Let's explore the left subtree first (and the right one later). On the left we
+choose any unknown aspect: the only variable remaining is b, so we choose it.
+Likewise, it has two possible values, true and false. Each leads to a node with
+no unknown aspects.
+
+                    {a=?,b=?}
+         a=F/                       \a=T
+       {a=F,b=?}                 {a=T,b=?}
+     b=F/     \b=T
+ {a=F,b=F} {a=F,b=T}
+   
+Again, let's explore the left subtree first (and the right one later). There
+are no unknown aspects of the problem (we have assigned values to all the
+variables) so we can evaluate the formula with a=false and b=false; the result
+is false (the third conjunct is false), so this assignment is not a solution
+to our problem, so we mark it NS.
+
+                    {a=?,b=?}
+         a=F/                       \a=T
+       {a=F,b=?}                 {a=T,b=?}
+     b=F/     \b=T
+ {a=F,b=F} {a=F,b=T}
+    NS
+
+So we now explore the right subtree (of the left child of the root). Again
+there are no unknown aspects of the problem, so we can evaluate the formula
+with a=false and b=true; the result is false again (the second conjunct is
+false), so this assignment is not a solution to our problem either.
+
+                    {a=?,b=?}
+         a=F/                       \a=T
+       {a=F,b=?}                 {a=T,b=?}
+     b=F/     \b=T
+ {a=F,b=F} {a=F,b=T}
+    NS          NS
+
+Now we have completely explored the left subtree of the root (all possibilites
+when a = F), but have found no solutions. We next backtrack to explore the
+right subtree of the root (where a is assigned a different value, T). On the
+right we choose any unknown aspect: the only variable remaining is b, so we
+choose it. Likewise, it has two possible values, true and false. Each leads to
+a node with no unknown aspects.
+
+                    {a=?,b=?}
+         a=F/                       \a=T
+        {a=F,b=?}                {a=T,b=?}
+     b=F/       \b=T          b=F/       \b=T
+ {a=F,b=F}   {a=F,b=T}      {a=T,b=F}   {a=T,b=T}
+    NS          NS
+
+Again, let's explore the left subtree first (and the right one later). There
+are no unknown aspects of the problem (we have assigned values to all the
+variables) so we can evaluate the formula with a=true and b=false; the result
+is false (the first conjunct is false), so this assignment is not a solution
+to our problem, so we mark it NS.
+
+                    {a=?,b=?}
+         a=F/                       \a=T
+        {a=F,b=?}                {a=T,b=?}
+     b=F/       \b=T          b=F/       \b=T
+ {a=F,b=F}   {a=F,b=T}      {a=T,b=F}   {a=T,b=T}
+    NS          NS             NS
+
+So we now explore the right subtree (of the right child of the root). Again
+there are no unknown aspects of the problem, so we can evaluate the formula
+with a=true and b=true; the result is true (all conjuncts are true), so this
+assignment is a solution to the problem and we mark it S.
+
+                    {a=?,b=?}
+         a=F/                       \a=T
+        {a=F,b=?}                {a=T,b=?}
+     b=F/       \b=T          b=F/       \b=T
+ {a=F,b=F}   {a=F,b=T}      {a=T,b=F}   {a=T,b=T}
+    NS          NS             NS           S
+
+So, we have systematically generated and examined all possible combinations of
+values for the variables a and for b. We represented all these choices in a
+binary tree (two choice for each variable), where each node shows the known and
+unknown aspects of a problem.
+
+Note that each time the problem size (the number of boolean variables in the
+formula) goes up by 1, the depth of the tree increases by 1, and the total
+number of nodes at the bottom (where we evaluate the formula) doubles. Thus,
+the height of the tree is the same as the problem size, and there are 2^height
+leaves in the tree of possible solutions. The complexity class of solving this
+problem is thus O(2^n) which is a function that grows more quickly than any
+polynomial function of N: e.g. O(N^1000) is more slowly growing than O(2^N).
+(at what value is 2^N = N^1000? when N = 1000Log2N, or N = 13,747; so 2^N is
+bigger when N > 13,747.
+
+Again, this is called a "combinatorial explosion": the number of combinations
+of variables and values "explodes" for larger and larger N.  The satisfiability
+problem is a well studied and useful problem in computing. Often proving the
+correctness of a circuit (or a protocol for transfering information) can
+written as a boolean formula with a very large number of variables. There are
+no algorithms that are known to have a complexity class below O(2^N) although
+clever algorithms have a constant so low that problem of N in the thousands can
+be solved. 
+
+If anyone discovers an algorithm for solving this problem that is polynomial
+(not exponential) in time, variants of that algorithm can be used to solve very
+many problems that are all similar and important: all such problems are in a
+class of problems called NP, which stands for problems whose solution is
+"checkable in  Polynomial time). The satisfiability problem is an NP-complete
+problem: as hard as any problem in the NP class, and a polynnomial solution to
+it implies a polynomial solution to all problems in the NP class).
+
+Proving whether NP problems can be solved by an algorithm in polynomial time is
+one of the most famous open problems in mathematics. It can be proven by
+finding an algorithm that solves an NP-complete problem in polynomial time
+(which no one has done); it can be disproven by showing that no such
+algorithm can exist (a harder problem, which no one has proven).
+
+In fact, the Clay Institute of Mathematics has offered a $1 million prize for
+anyone proving or disproving the existence of this kind of algorithm. They
+have prizes for other mathematical conjectures (one of which has been solved
+since the prizes were offered). See http://www.claymath.org/index.php. For the
+problems, see http://www.claymath.org/millennium/ and click P vs. NP for this
+particular problem.
+
+
+N-Queens:
+
+We can use this same approach to generate solutions for the N-Queens problem.
+In the N-Queens problem, we ask whether it is possible to place N queens on an
+NxN chessboard so that no queen is able to capture any of the others (moving
+vertically, horizontally, or diagonally; it is not possible to place N+1 queens
+on such a board, because then 2 queens would be on the same row, and could
+capture each other). If such a configuration is possible, we want to know the
+row and column positions of every queen.
+
+This problem is more interesting than the satisfiability problem (although
+nowhere near as important in computer science) because there is not a fixed
+branching factor at every node: the branching factor is based on where queens
+have previously been placed.
+
+Let's choose a small-sized problem: the 6-Queens problem. We will represent
+the root of the problem tree by 6 aspects: in which column does the queen in
+rows 1-6 reside.
+
+                        {r1=?,r2=?,r3=?,r4=?,r5=?,r6=?}
+
+For writing purposes, this notation is actually too big, so we will just
+abbreviate it more compactly as {??????}, 6 question marks, where the ith ?
+represents ri (row i): the value there represents the columns in which the
+queen is placed for that row.
+
+We will use a board to keep track of where queens are placed and which squares
+can be attacked. We will choose the aspects as row 1, row 2, ... row 6 in that
+order. So, to start we choose r1 and see that we can assign it 6 different
+values: columns 1-6. So the branching factor for root node is 6.
+
+			       {??????}
+   r1=c1/      r1=c2/      r1=c3/     \r1=c4      \r1=c5       r1=c6  
+   {1?????}    {2?????}    {3?????}    {4?????}    {5?????}    {6?????}
+
+Next we explore the leftmost child. Note that the edge is labeled r1=c1 meaning
+that the queen in row 1 is in column 1. Here is a picture of that queen and all
+the squares that other queens CANNOT occupy.
+
+    1   2   3   4   5   6
+  +---+---+---+---+---+---+
+1 | Q | X | X | X | X | X |
+  +---+---+---+---+---+---+
+2 | X | X |   |   |   |   |
+  +---+---+---+---+---+---+
+3 | X |   | X |   |   |   |
+  +---+---+---+---+---+---+
+4 | X |   |   | X |   |   |
+  +---+---+---+---+---+---+
+5 | X |   |   |   | X |   |
+  +---+---+---+---+---+---+
+6 | X |   |   |   |   | X |
+  +---+---+---+---+---+---+
+
+Now let's explore the children of {1?????}. We will zoom in on the part of the
+search tree and elide the other parts for now, because of space constraints.
+For this node r2 can have the values c3, c4, c5, and c6 (the queen in r1,c1
+can capture queens at r2,c1 and r2,c2.
+
+
+				{??????}
+                         r1=c1/                         \\\\\
+                         {1?????}                       .....
+       r2=c3/      r2=c4/      \r2=c5      \r2=c6
+       {13????}    {14????}    {15????}    {16????}
+
+So the branching factor for the leftmost child of the root {1?????} is 4: its
+choices are a bit more constrained.
+
+Next we explore the leftmost child (13????}. Here is a picture of both queens
+and all the squares that other queens CANNOT occupy.
+
+    1   2   3   4   5   6
+  +---+---+---+---+---+---+
+1 | Q | X | X | X | X | X |
+  +---+---+---+---+---+---+
+2 | X | X | Q | X | X | X |
+  +---+---+---+---+---+---+
+3 | X | X | X | X |   |   |
+  +---+---+---+---+---+---+
+4 | X |   | X | X | X |   |
+  +---+---+---+---+---+---+
+5 | X |   | X |   | X | X |
+  +---+---+---+---+---+---+
+6 | X |   | X |   |   | X |
+  +---+---+---+---+---+---+
+
+Now let's explore the children of {13????}. We will again zoom in on the part
+of the search tree and elide the other parts for now, because of space
+constraints. For this node r3 can have the values c5, and c6.
+
+
+				{??????}
+                         r1=c1/                         \\\\\
+                         {1?????}                       ...
+       r2=c3/      r2=c4/      \r2=c5      \r2=c6
+       {13????}    {14????}    {15????}    {16????}
+  r3=c5/    \r3=c6
+{135???}    {136???}
+
+So the branching factor for {13???} is 2: its choices are even more
+constrained.
+
+Next we explore the leftmost child (135??}. Here is a picture of all three
+queens and all the squares that other queens CANNOT occupy.
+
+    1   2   3   4   5   6
+  +---+---+---+---+---+---+
+1 | Q | X | X | X | X | X |
+  +---+---+---+---+---+---+
+2 | X | X | Q | X | X | X |
+  +---+---+---+---+---+---+
+3 | X | X | X | X | Q | X |
+  +---+---+---+---+---+---+
+4 | X |   | X | X | X | X |
+  +---+---+---+---+---+---+
+5 | X |   | X |   | X | X |
+  +---+---+---+---+---+---+
+6 | X | X | X |   | X | X |
+  +---+---+---+---+---+---+
+
+Now let's explore the children of {135???}. For this node r4 can have only the
+value c2.
+
+				{??????}
+                         r1=c1/                         \\\\\
+                         {1?????}                       ...
+       r2=c3/      r2=c4/      \r2=c5      \r2=c6
+       {13????}    {14????}    {15????}    {16????}
+  r3=c5/    \r3=c6
+{135???}    {136???}
+r4=c2|
+{1352??}
+
+So the branching factor for {135???} is 1!
+
+Next we explore the only child (1352??}. Here is a picture of all four
+queens and all the squares that other queens CANNOT occupy.
+
+Of course, we can see a problem here on row 6: every column in that row can
+be captured by a previously placed queen. But let us still constinue running
+the algorithm.
+
+    1   2   3   4   5   6
+  +---+---+---+---+---+---+
+1 | Q | X | X | X | X | X |
+  +---+---+---+---+---+---+
+2 | X | X | Q | X | X | X |
+  +---+---+---+---+---+---+
+3 | X | X | X | X | Q | X |
+  +---+---+---+---+---+---+
+4 | X | Q | X | X | X | X |
+  +---+---+---+---+---+---+
+5 | X | X | X |   | X | X |
+  +---+---+---+---+---+---+
+6 | X | X | X | X | X | X |
+  +---+---+---+---+---+---+
+
+Now let's explore the children of {1352??}. For this node r5 can have only the
+value c4.
+
+				{??????}
+                         r1=c1/                         \\\\\
+                         {1?????}                       ...
+       r2=c3/      r2=c4/      \r2=c5      \r2=c6
+       {13????}    {14????}    {15????}    {16????}
+  r3=c5/    \r3=c6
+{135???}    {136???}
+r4=c2|
+{1352??}
+r5=c4|
+{13524?}
+
+So the branching factor for {1352??} is also 1
+
+Next we explore the only child (13524?}. Here is a picture of all five queens
+and all the squares that other queens CANNOT occupy.
+
+    1   2   3   4   5   6
+  +---+---+---+---+---+---+
+1 | Q | X | X | X | X | X |
+  +---+---+---+---+---+---+
+2 | X | X | Q | X | X | X |
+  +---+---+---+---+---+---+
+3 | X | X | X | X | Q | X |
+  +---+---+---+---+---+---+
+4 | X | Q | X | X | X | X |
+  +---+---+---+---+---+---+
+5 | X | X | X | Q | X | X |
+  +---+---+---+---+---+---+
+6 | X | X | X | X | X | X |
+  +---+---+---+---+---+---+
+
+Now let's explore the children of {13524?}. THERE CAN BE NONE! With the
+positions already chosen for the previous queens, there is no choice for
+the queen in the 6th row that will not be captured by another queen. So
+we mark that path NS
+
+				{??????}
+                         r1=c1/                         \\\\\
+                         {1?????}                       ...
+       r2=c3/      r2=c4/      \r2=c5      \r2=c6
+       {13????}    {14????}    {15????}    {16????}
+  r3=c5/    \r3=c6
+{135???}    {136???}
+r4=c2|
+{1352??}
+r5=c4|
+{13524?}
+   NS
+
+Now we must backtrack to this node's parent: {1352??}. There are no other
+children of this node, so we must backtrackyu to its parent: {135???}. There
+are no other children of this node, so we must backtrack to its parent:
+{13???}. There is another child of this node, so we explore it: {136???}. Here
+is a picture of all three queens and all the squares that other queens CANNOT
+occupy after backtracking. Note that backtracking just means undoing a decision
+(binding a value to an aspect) that we have explored, so that we can explore
+other decisions.
+
+
+    1   2   3   4   5   6
+  +---+---+---+---+---+---+
+1 | Q | X | X | X | X | X |
+  +---+---+---+---+---+---+
+2 | X | X | Q | X | X | X |
+  +---+---+---+---+---+---+
+3 | X | X | X | X | X | Q |
+  +---+---+---+---+---+---+
+4 | X |   | X | X | X | X |
+  +---+---+---+---+---+---+
+5 | X |   | X | X | X | X |
+  +---+---+---+---+---+---+
+6 | X |   | X |   |   | X |
+  +---+---+---+---+---+---+
+
+Now let's explore the children of {136???}. For this node r4 can have only the
+value c2.
+
+				{??????}
+                         r1=c1/                         \\\\\
+                         {1?????}                       ...
+       r2=c3/      r2=c4/      \r2=c5      \r2=c6
+       {13????}    {14????}    {15????}    {16????}
+  r3=c5/    \r3=c6
+{135???}    {136???}
+r4=c2|     r4=c2|
+{1352??}  {1362??}
+r5=c4|
+{13524?}
+   NS
+
+So the branching factor for {136???} is 1!
+
+Next we explore the only child (1362??}. Here is a picture of all three
+queens and all the squares that other queens CANNOT occupy.
+
+    1   2   3   4   5   6
+  +---+---+---+---+---+---+
+1 | Q | X | X | X | X | X |
+  +---+---+---+---+---+---+
+2 | X | X | Q | X | X | X |
+  +---+---+---+---+---+---+
+3 | X | X | X | X | X | Q |
+  +---+---+---+---+---+---+
+4 | X | Q | X | X | X | X |
+  +---+---+---+---+---+---+
+5 | X | X | X | X | X | X |
+  +---+---+---+---+---+---+
+6 | X | X | X | X |   | X |
+  +---+---+---+---+---+---+
+
+Now let's explore the children of {1362??}. THERE CAN BE NONE! With the
+positions already chosen for the previous queens, there is not choice for
+the queen in the 5th row that will not be captured by another queen. So
+we mark that path NS.
+
+				{??????}
+                         r1=c1/                         \\\\\
+                         {1?????}                       ...
+       r2=c3/      r2=c4/      \r2=c5      \r2=c6
+       {13????}    {14????}    {15????}    {16????}
+  r3=c5/    \r3=c6
+{135???}    {136???}
+r4=c2|       r4=c2|
+{1352??}     {1362??}
+r5=c4|          NS
+{13524?}
+   NS
+
+Now we must backtrack to this node's parent: {136???}. There are no other
+children of this node, so we must backtrack to its parent: {13????}. There are
+no other children of this node, so we must backtrack to its parent: {1?????}.
+There is another child of this node, so we explore it: {14????}.
+
+OK, so we won't explore it. This process is much better carried out by a
+machine than us. But I have shown the details of how the machine does it. There
+are 4 solutions to the 6-Queens problem, but we would have to do a lot of hard
+work to find them.
+
+See the following references.
+
+http://mathworld.wolfram.com/QueensProblem.html
+http://en.wikipedia.org/wiki/Eight_queens_puzzle
+
+
+
+N-Coloring a Graph:
+
+We can use this same approach to generate solutions for the N-color problem.
+In the N-Color problem, we ask whether it is possible to color a graph (and 
+what those colors would be) with N different colors, such that no nodes in the
+graph that are connected by an edge are the same color. Not all graphs can be
+N-colored. For example the following graph cannot be 3-colored because each of
+its 4 nodes is connected by edges to the 3 others, so with only 3 colors one
+of the 4 nodes would have the same color as a node that it is connected to.
+
+   1  -  2
+   | \ / |
+   |  +  |
+   | / \ |
+   3  -  4
+
+This problem is related to a very old and interesting mathematical problem,
+known as the 4-color conjecture. It concerns the number of colors needed
+to display a geographic map, such that two adjacent "countries" (consider
+oceans countries too) are not the same color. We can tranform any geographic
+map into an equivalent graph (if you can N-color one, you can N-color the
+other) by representing each "country" by a node, with edges connecting nodes
+representing countries that share a border. The resulting graph will be called
+"planar" meaning it can be drawn in the plane, with no intersecting edges.
+
+Note that the graph above is not planar, because the + sign in the middle shows
+where two edges cross. The graph below has 4 nodes and 5 edges, and is planer.
+It can be 3 colored with the colors red, green, and blue (labeled R, G, and B).
+Note that the two nodes labeled r are not connected by an edge. Such a graph
+cannot be 2 colored (try it).
+
+   R  -  G
+   |   / |
+   |  /  |
+   | /   |
+   B  -  R
+
+It was proven in the late 1800s that any geographic map can be 5-colored. There
+were many known examples of geographic maps that could not be 3-colored. But
+no one had a proof, or a counter example, as to whether every geographic map
+could be 4-colored. A few (incorrect) proofs of this conjecture were proposed
+and one was accepted as proof (no one could find a mistake at the time), but
+many years later it was shown to be incorrect. Finally, in 1976 Appel and Haken
+proved that every geographic map was reducable to one of 1936 different ones,
+and they wrote a computer program that verified that each was 4-colorable. The
+use of a computer program in a mathematical proof raised all sorts of
+philosophical questions about the nature of mathematical proof that are still
+being debated today. A well-written account of the history of this problem is:
+Wilson, "Four Colors Suffice: How the Map Problem Was Solved."
+
+Like the N-Queens problem, the branching factor for a node depends on the
+previously chosen aspects and their values.
+
+Let's attempt to 3-color the following graph (you have to draw in the edges).
+
+
+                      1
+                 
+             2        3        4
+
+                 5        6
+
+
+                 7        8
+
+             9                 10
+
+Connections:
+  1: to 2, 3, and 4
+  2: to 1, 5, and 9
+  3: to 1, 7, and 8
+  4: to 1, 6, and 10
+  5: to 2, 6, and 8
+  6: to 4, 5, and 7
+  7: to 3, 6, and 9
+  8: to 3, 5, and 10
+  9: to 2, 7, and 10
+ 10: to 4, 8, and 9
+
+We will represent each node as
+
+              {1=?,2=?,3=?,4=?,5=?,6=?,7=?,8=?,9=?,10=?}
+
+where each ? can be the color red, green, or blue. For writing purposes, we
+will abbrevate these colors as R, G, and B and abbreviate this notation  as
+{??????????} where the ith ? represents node i. We will choose these aspects
+in the order 1, 2, ... It might be better (generate solutions faster) to
+choose the node that has the most number of edges (or the fewest) as the next
+aspect to try. This would be an interesting topic to explore on the computer,
+but is beyond what I can discuss here.
+
+We start by choosing an aspect (node in a graph) and the colors that it can be
+(say, Red, Green, or Blue), given the nodes that it is connected to that
+already have colors. Let's choose 1.
+
+                           {??????????}
+              1=R/            1=G|              \1=B                
+           {R?????????}    {G?????????}      {B?????????}
+
+We continue by exploring the left-most node and choose aspect 2. Since node 2
+is connected to node 1, which already has color R, there are only 2 choices for
+colors for aspect 2.
+
+                           {??????????}
+              1=R/            1=G|              \1=B                
+           {R?????????}    {G?????????}      {B?????????}
+        2=G/            \2=B       
+     {RG????????}  {RB????????}
+
+We continue by exploring the left-most node and choose aspect 3. Since it is
+connected to 1, which already has color R, there are only 2 choices for
+colors for aspect 3. In the tree below we will focus on {RGG???????} eliding
+its siblings.
+
+                               {??????????}
+                                   1=R/                1=G|             \1=B
+                               {R?????????}         {G?????????}   {B?????????}
+                       2=G/                    \2=B       
+                  RG????????}              {RB????????}
+            3=G/                \3=B       
+       {RGG???????}        {RGB???????}
+
+We continue by exploring the left-most node and choose aspect 4. Since it is
+connected to 1, which already has color R, there are only 2 choices for
+colors for aspect 4. In the tree below we will focus on {RGGG??????}.
+
+                               {??????????}
+                                   1=R/                1=G|             \1=B
+                               {R?????????}         {G?????????}   {B?????????}
+                       2=G/                    \2=B       
+                  RG????????}              {RB????????}
+            3=G/                \3=B       
+       {RGG???????}        {RGB???????}
+    4=G/          \4=B       
+{RGGG??????}      {RGGB???????}
+
+We continue by exploring the left-most node and choose aspect 5. Since it is
+connected to 2, which already has color G, there are only 2 choices for
+colors for aspect 5. In the tree below we will focus on {RGGGR?????}.
+
+                                 {??????????}
+                                   1=R/                1=G|             \1=B
+                               {R?????????}         {G?????????}   {B?????????}
+                       2=G/                    \2=B       
+                  RG????????}              {RB????????}
+            3=G/                \3=B       
+       {RGG???????}        {RGB???????}
+    4=G/          \4=B       
+{RGGG??????}      {RGGB???????}
+5=R/         \5=B       
+{RGGGR?????} {RGGGB??????}
+
+We continue by exploring the left-most node and choose aspect 6. Since it is
+connected to 4 and 5, which already have colors G and R, there is only 1
+choice for the color for aspect 6. In the tree below we will focus on
+{RGGGRB????}.
+
+                                 {??????????}
+                                     1=R/             1=G|              \1=B
+                               {R?????????}         {G?????????}   {B?????????}
+                       2=G/                    \2=B       
+                  RG????????}              {RB????????}
+            3=G/                \3=B       
+       {RGG???????}        {RGB???????}
+    4=G/          \4=B       
+{RGGG??????}      {RGGB???????}
+5=R/         \5=B       
+{RGGGR?????} {RGGGB??????}
+6=B|
+{RGGGRB????}
+
+We continue by exploring this node and choose aspect 7. Since it is connected
+to 3 and 6, which already have colors G and B, there is only 1 choice for the
+color for aspect 7. In the tree below we will focus on {RGGGRBR???}.
+
+                                 {??????????}
+                                    1=R/             1=G|              \1=B 
+                               {R?????????}         {G?????????}   {B?????????}
+                       2=G/                    \2=B       
+                  RG????????}              {RB????????}
+            3=G/                \3=B       
+       {RGG???????}        {RGB???????}
+    4=G/          \4=B       
+{RGGG??????}      {RGGB???????}
+5=R/         \5=B       
+{RGGGR?????} {RGGGB??????}
+6=B|
+{RGGGRB????}
+7=R|
+{RGGGRBR???}
+
+We continue by exploring this node and choose aspect 8. Since it is connected
+to 3 and 5, which already have colors G and R, there is only 1 choice for the
+color for aspect 8. In the tree below we will focus on {RGGGRBRB??}.
+
+                                 {??????????}
+                                     1=R/             1=G|              \1=B
+                               {R?????????}         {G?????????}   {B?????????}
+                       2=G/                    \2=B       
+                  RG????????}              {RB????????}
+            3=G/                \3=B       
+       {RGG???????}        {RGB???????}
+    4=G/          \4=B       
+{RGGG??????}      {RGGB???????}
+5=R/         \5=B       
+{RGGGR?????} {RGGGB??????}
+6=B|
+{RGGGRB????}
+7=R|
+{RGGGRBR???}
+8=B|
+{RGGGRBRB??}
+
+We continue by exploring this node and choose aspect 9. Since it is connected
+to 2 and 7, which already have colors G and R, there is only 1 choice for the
+color for aspect 8. In the tree below we will focus on {RGGGRBRBB?}.
+
+                                 {??????????}
+                                     1=R/             1=G|              \1=B
+                               {R?????????}         {G?????????}   {B?????????}
+                       2=G/                    \2=B       
+                  RG????????}              {RB????????}
+            3=G/                \3=B       
+       {RGG???????}        {RGB???????}
+    4=G/          \4=B       
+{RGGG??????}      {RGGB???????}
+5=R/         \5=B       
+{RGGGR?????} {RGGGB??????}
+6=B|
+{RGGGRB????}
+7=R|
+{RGGGRBR???}
+8=B|
+{RGGGRBRB??}
+9=B|
+{RGGGRBRB??}
+
+We continue by exploring this node and choose aspect 10. Since it is connected
+to 4, 8, and 9, which already have colors G, B, and B, there is only 1 choice
+for the color for aspect 8. In the tree below we will focus on {RGGGRBRBBR}.
+
+                                 {??????????}
+                                     1=R/             1=G|              \1=B
+                               {R?????????}         {G?????????}   {B?????????}
+                       2=G/                    \2=B       
+                  RG????????}              {RB????????}
+            3=G/                \3=B       
+       {RGG???????}        {RGB???????}
+    4=G/          \4=B       
+{RGGG??????}      {RGGB???????}
+5=R/         \5=B       
+{RGGGR?????} {RGGGB??????}
+6=B|
+{RGGGRB????}
+7=R|
+{RGGGRBR???}
+8=B|
+{RGGGRBRB??}
+9=B|
+{RGGGRBRBB?}
+10=R|
+{RGGGRBRBBR}
+
+There are no aspects left for the problem, so the apsects and their values
+describe a solution: 1 is red, 2 is green, 3 is green, 4 is green, 5 is red,
+6 is blue, 7 is red, 8 is blue, 9 is blue, and 10 is red.
+
+To generate more solutions we would backtrack to node 4 (the last time we
+generated two subtrees), and take the right subtree by assigning aspect 5 a
+value of B. Then we would choose aspect 6 again. Since it is connected to 4 and
+5, which now have colors G and B, there is only 1 choice for colors for aspect
+6.
+
+                                 {??????????}
+                                     1=R/             1=G|              \1=B
+                               {R?????????}         {G?????????}   {B?????????}
+                       2=G/                    \2=B       
+                  RG????????}              {RB????????}
+            3=G/                \3=B       
+       {RGG???????}        {RGB???????}
+    4=G/          \4=B       
+{RGGG??????}      {RGGB???????}
+5=R/         \5=B       
+{RGGGR?????} {RGGGB??????}
+                6=R|
+              {RGGGRB????}
+
+And the search would continue through all combination of colors.
+
+In the worst case, each aspect would have three possible values, which would
+lead to 3^N leaves. But, we see that some aspects (especially those "lower" in
+the tree) are constrained to have fewer: 2, or even 1 (or possibly 0 aspects,
+meaning no solution is possible for the choices already made).
+
+
+General Algorithm:
+
+There is a rather compact algorithm for implementing recursive-backtracking
+search. Generally, each recursive call reduces the problem size by choosing an
+aspect and iterating through all possible values for it (like searching an
+N-ary tree) finding those values for the aspect that lead to a solution. All
+solutions are accumulated in a set of solution maps: each solution map in the
+set has all the aspects as keys, with each key mapping to its value in that
+solution.
+
+  //Find all solutions to a problem  (each is a Map) and return a Set of them
+  public static void solveAll (Problem problem,
+                               Set<Map<Problem.Aspect,Object>> solutions) { 
+    try {
+      //Choose an aspect (and exclude it from being chosen again)
+      //  Possibly throw Succeed/Fail
+      //Succeed if no more aspect to choose from and problem solved
+      //Fail    if no more aspect to choose from and problem NOT solved
+      Problem.Aspect aspect = problem.chooseAndExcludeAspect();
+
+      //For every possible value for that aspect, recursively attempt to
+      //  solve a copy of the problem with that aspect bound to that value
+      //If a solution is found, return it; if not, unbind the aspect and
+      //  continue looping (finding a new value to bind to the aspect).
+      for (Object value : aspect) {
+        problem.assignAspectValue(aspect, value);
+        solveAll (problem.copy(), solutions);
+        problem.removeAspectValue(aspect);
+      } 
+    } catch (Succeed s){solutions.add(problem.getSolution());}
+      catch (Fail    f){}
+  }
+}
+
+On the page that lists sample programs, there is a download for "Backtracking"
+which include a few classes comprising this general problem solver, as well
+as  classes to represent and solve the satisfiability problem, the N-Queens
+problem, and Sudoku. Here is a recap of the aspects and values for these
+problems as well as N-Coloring of maps and maze escaping.
+
+When writing code to solve a new problem, you must examine the Problem and
+Aspect classes. If you can correctly write the Problem and Aspect classes,
+ supplying all the specified methods to represent and manipulate a specific 
+problem to solve, the code in the backtracking package will solve that problem.
+
+That code works without knowing what problem it is solving, much like sort
+methods can sort using a comparison function, without knowing what they are
+sorting, so long as the comparison function correctly determines which is
+smaller.
+
+Examples
+
+  Satisfiability: Illustrate with
+    Aspect  : a variable
+    Values  : false, true
+    Solution: Map[variable] -> boolean
+
+  N-Queens
+    Aspect  : a row for the queen
+    Values  : a column for the queen (not attacked by any placed queen)
+    Solution: Map[row] -> column of queen in that row
+
+  N-Coloring a Graph (related to 3-Coloring a Geographic Map)
+    Aspect  : a node to color
+    Values  : one color (number them 1-N) not the same as an adjacent node
+    Solution: Map[node] -> color of that node
+
+  Sudoku:
+    Aspect  : an entry in the digit matrix
+    Values  : a digit allowable in that entry by the Sudoku rules
+              (unique digits in colunns, rows, and 3x3 blocks/regions)
+    Solution: Map[entry in digit matrix] -> digit in the matrix position
+
+  Maze Exploration
+    Aspect  : the spot you are standing if you are not at the exit
+    Values  : the spots you can move to in one step (not moving through walls)
+    Solution: Map[time] -> which-way you stepped at that time (North, South,
+              East, or West)
+
+I'm looking for students to implement classes that my problem solver can use
+to solve N-Coloring, Maze Exploration, and other problems solvable within
+this framework.

@@ -1,0 +1,223 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>10.7 Using NewConf</title>
+<META NAME="description" CONTENT="10.7 Using NewConf">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="previous" HREF="node114.html">
+<LINK REL="up" HREF="node108.html">
+<LINK REL="next" HREF="node116.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node114.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node108.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node116.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node114.html">10.6 Sprouting Hydrogens in</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node108.html">10. Creating Atoms, Bonds,</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node116.html">11. Connectivity Processing</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION0013700000000000000000">
+10.7 Using NewConf</A>
+</H1>
+
+<P>
+The most common method to create conformers in a molecule is by reading a
+molecule from a file (see chapter "Reading and Writing Molecules").
+However, when manipulating molecules it is often necessary to create
+conformers on-the-fly.  In OEChem, this is done with the
+<code>OEMCMolBase::NewConf</code> function.  There are five prominent overloads
+of <code>NewConf</code>.  All of the overloads create conformers with the
+capacity to store coordinates for the current number of atoms in the
+molecule.  <code>NewAtom</code> and <code>NewBond</code> adjust this capacity as
+necessary.  The default OEMCMolBase constructor puts the molecule in a
+state with a single empty conformer (as does the <code>OEMCMolBase::Clear</code>
+function).  The <code>DeleteConfs</code> function of the OEMCMolBase removes
+<i>all</i> of the conformers of the molecule.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include "oesystem.h"
+
+using namespace OEChem;
+using namespace std;
+
+int main()
+{
+  OEMol mol;
+
+  cerr &lt;&#60; "Default NumConfs = " &lt;&#60; mol.NumConfs() &lt;&#60; endl;
+
+  mol.NewConf();
+
+  cerr &lt;&#60; "After One Additional, NumConfs = " &lt;&#60; mol.NumConfs() &lt;&#60; endl;
+
+  mol.DeleteConfs();
+
+  cerr &lt;&#60; "After Deletion, NumConfs = " &lt;&#60; mol.NumConfs() &lt;&#60; endl;
+
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch10-5.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+The code above will produce the output:
+<dl><dd><pre class="verbatim">1
+2
+0
+</pre></dl>
+
+<P>
+The overloads of the <code>NewConf</code> function are:
+<dl><dd><pre class="verbatim">NewConf()
+NewConf(const float *coords)
+NewConf(const OEMolBase *mol)
+NewConf(const OEConfBase *conf)
+</pre></dl>
+
+<P>
+After the <code>NewConf</code> with no arguments has been called, the coordinates
+of individual atoms can be set using the <code>OEConfBase::SetCoords</code>
+function which takes an atom, or all of the atoms can be set at once with
+the <code>OEConfBase::SetCoords</code> which takes only a <code>float*</code> or only a
+<code>double*</code>.
+
+<P>
+The <code>NewConf</code> overload which takes an argument float* is expecting an
+array of size <code>3*GetMaxAtomIdx()*sizeof(float)</code> with the Cartesian
+coordinates of each <code>OEAtomBase atom</code> of the new conformer in
+<code>coords[atom-&gt;GetIdx()*3]</code>.
+
+<P>
+The <code>NewConf</code> which takes a pointer to a OEMolBase is expecting the
+molecule passed in to have the same graph as the OEMCMolBase which is the
+parent of the new conformer.  It is important to note that this version of
+<code>NewConf</code> can take an OEGraphMol, OEMol, or OEMCMol.  In the latter
+two cases, the coordinates of the new conformer will come from the active
+conformation of the molecule passed.
+
+<P>
+Finally, there is an overload which takes a pointer to a conformer.  This
+function behaves the same as the overload which takes an OEMolBase.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oesystem.h"
+#include "oechem.h"
+
+using namespace OESystem;
+using namespace OEChem;
+
+void GetGoodMol(OEMCMolBase &amp;destination,const OEMCMolBase &amp;source)
+{
+  destination.DeleteConfs();
+  OEConfBase *newConf;
+  char buf[2048];
+
+  OEIter&lt;OEConfBase&gt; conf;
+  for(conf = source.GetConfs();conf;++conf)
+  {
+    if(conf-&gt;GetEnergy() &lt; -15.5f)
+    {
+      newConf = destination.NewConf(conf);
+      sprintf(buf,"Low Energy Conformer: energy = %.3f",newConf-&gt;GetEnergy());
+      newConf-&gt;SetTitle(buf);
+    }
+  }
+}
+
+int main()
+{
+  OEMol mol;
+  OEMol goodmol;
+
+  oemolistream mis("input.oeb");
+  oemolostream mos("output.sdf");
+
+  while(OEReadMolecule(mis,mol))
+  {
+    GetGoodMol(goodmol,mol);
+    OEWriteMolecule(mos,goodmol);
+  }
+
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch10-6.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+The Example above demonstrates copying conformers from one OEMol to another
+using the <code>NewConf</code> and <code>DeleteConfs</code> functions.  The main
+routine reads all of the molecules from the file "input.oeb" and writes the
+molecules with only their low-energy conformations to "output.sdf".  The
+function <code>GetGoodMol</code> generates a destination molecule that contains
+only the low-energy conformations of the source molecule.  The title of
+each new conformer is set to reflect its energy.
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node114.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node108.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node116.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node114.html">10.6 Sprouting Hydrogens in</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node108.html">10. Creating Atoms, Bonds,</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node116.html">11. Connectivity Processing</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

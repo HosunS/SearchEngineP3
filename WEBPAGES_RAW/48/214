@@ -1,0 +1,245 @@
+<HTML>
+<HEAD>
+<TITLE>Notes from WebDAV Advanced Collections Breakout, IETF-43, Orlando,
+Florida, December 8, 1998</TITLE>
+</HEAD>
+<BODY>
+<H2 ALIGN=CENTER>Breakout Session on Advanced Collections</H2>
+
+<H3 ALIGN=CENTER>IETF-43, Orlando, Florida<BR>
+Tuesday, December 8, starting at 13:00</H3>
+
+<P>A breakout session on WebDAV Advanced Collections was held Tuesday,
+December 8, 1998.  This was not an official meeting of the WebDAV
+working group.  However, since the discussions are of general interest
+to working group members, these minutes were taken to record the
+discussion. Judy Slein recorded the minutes.
+
+<P>The breakout session on advanced collections discussed several issues
+related to referencing: (1) whether we need to provide backpointers from
+target resources to the references that point to them, (2) whether we should
+reconsider our earlier decision to exclude referential integrity from our
+scope, (3) how to allow clients to operate on references as well as on their
+targets, (4) whether we really need both direct and redirect references, (5)
+whether to drop a requirement to be able to hide the location of a target
+resource, and (6) the relationship between the versioning spec and
+referencing.
+
+<P>Attending:
+ 
+<P>Jim Whitehead (University of California / Irvine)<BR>
+Judy Slein (Xerox)<BR>
+Ken Coar (IBM, Apache)<BR>
+Manoj Kasichainula (IBM, Apache)<BR>
+Geoff Clemm (Rational - ClearCase)<BR>
+Yuri Demchenko (TERENA)<BR>
+
+<P><B>BACKPOINTERS</B>
+
+<P>There has been a lot of controversy about whether to expose in the protocol
+a property (DAV:references) that lists the references to a given resource.
+An alternative is to perform a DASL search for resources that have
+DAV:reftarget equal to the URI of the resource in question.  (Since
+DAV:reftarget is a structured property, this strategy is only possible if
+DASL includes search on structured properties.)
+
+<P>Performance considerations are not decisive between the two strategies.
+Search could be efficient.  This particular query could be optimized to
+examine a property (not exposed through the protocol).  A DAV:references
+property might be implemented as a list, or might be computed on the fly by
+scanning the file system.
+
+<P>Clients need to know whether the search will be optimized before they
+request the search.  There is no way to find out.  DASL does include a
+mechanism for clients to limit the resources a server spends on a given
+query.
+
+<P>Clients need to know whether the property is computed on the fly before
+requesting it.  There is no way to find out.  The impact of computing on the
+fly is especially significant when a client requests allprop.  There may be
+other properties that are computed on the fly as well.  DAV:getetag is
+computed, and some versioning history properties may also be computed.
+
+<P>We could include an implementation note for clients, warning them not to
+assume that examining DAV:references will be more efficient that searching
+on DAV:reftarget.
+ 
+<P>We could include an implementation note for servers, warning them to use
+computed properties with care, because of their potential impact on allprop.
+Servers that are built on file systems may be unable to provide
+backpointers.  In a Unix environment, if references are aliases it is easy
+to discover the references to a given resource; but if references are
+symbolic links it is difficult or impossible.  Servers that are based on
+file systems are unlikely to implement backpointers.
+
+<P>From a client's point of view, since many servers will not provide
+backpointers, only advanced clients will take advantage of them. Clients
+that are tailored for use with document management systems are the most
+likely to make use of backpointers.
+  
+<P>DAV:references includes both direct and redirect references to the target
+resource.
+ 
+<P>Systems that provide strong references (e.g., systems that provide versioned
+collections) use backpointers internally to keep DAV:reftargets up to date.
+Users do want to be able to find out which versions and collections ever
+contained this resource.
+  
+<P>Versioned collections need backpointers.  If backpointers are not provided
+in the collections protocol spec, the versioning spec will extend the
+semantics of some sort of reference to get this functionality.
+ 
+<P>Conclusion: The attendees favor a DAV:references property, optional at the
+resource level.  There should be an implementation note addressed to
+servers: Be cautious about implementing DAV:references as a computed
+property, because of the possible impact of computation on allprop.  Be
+clear about the semantics of DAV:references: when it gets created, deleted,
+and updated.  If servers do implement backpointers, we want them to use the
+same name for the property, and the same semantics.
+
+<P><B>STRONG REFERENCES</B>
+ 
+<P>Geoff Clemm is interested in reopening the issue of strong references.  He
+believes that support for strong references may not require much more than
+backpointers. He believes that strong references will be important for
+versioning / configuration management systems.  If the collections spec does
+not provide strong references, the versioning spec may have to.
+
+<P>Geoff will send a mailnote on this subject at least to the attendees of this
+meeting.
+  
+<P>We need to try to recreate and capture for the record the considerations
+that led to ruling strong references out of scope in the first place.
+
+<P><B>RE-DIRECT VS. NO-PASSTHROUGH HEADER</B>
+
+<P>The new Re-Direct header applies only to direct references, and makes them
+behave like redirect references just for the request that includes the
+Redirect header.  It asks the server to apply the request to the reference
+itself, rather than to its target.
+
+<P>Jim Whitehead suggests that we really need a header like this for both
+redirect and direct references.
+
+<P>At the moment the collections spec requires servers to respond to HTTP
+requests on redirect references with a 302.  This makes it possible for
+plain HTTP clients to take advantage of redirect references.  In fact, we
+should require servers to respond with a 302 to WebDAV requests as well as
+to HTTP requests, so that non-referencing WebDAV clients can take advantage
+of redirect references.   Once we have made this change, there is no way to
+operate on the redirect reference itself.
+  
+<P>So we need a header that can be applied to both redirect and direct
+references, asking the server to apply the request to the reference itself,
+not to its target.  Let's call it No-Passthrough.  The more common case is
+for the client to want the request to be applied to the target.  So the
+header will just be used for the less common case.
+
+<P><B>REDIRECT + DIRECT</B>
+
+<P>Judy Slein asked whether we really need both redirect and direct references.
+They started out being very different from each other.  In the first draft,
+redirect references were just resources with no content and a DAV:reftarget
+property that a client could retrieve to locate the target resource, and
+then perform operations on that resource.   But over time redirect and
+direct references have become more similar.  First the semantics of redirect
+references changed to accommodate plain HTTP clients: responses to HTTP
+requests got a 302 response accompanied by the DAV:reftarget property in the
+Location header.  Now if we take Jim Whitehead's advice, all requests on
+redirect references will use this semantics, so that non-referencing WebDAV
+clients can be accommodated.  For both direct and redirect references, if
+the client wants to operate on the reference itself, it must use the
+No-Passthrough header.  At this point, is the distinction between redirect
+and direct references significant?
+
+<P>There is still an important difference in the difficulty of the server
+implementation.  We need redirect references for cases where the target is
+on a different server from the reference.  Direct references could not work
+across servers unless the server had proxy capabilities or used some
+server-to-server protocol.
+ 
+<P>We might want to let direct references respond with 302 if the target is on
+a different server.
+
+<P>The direct / redirect distinction mirrors Apache's internal / external
+redirects.  Both are useful.
+ 
+<P>We may want redirect references to allow clients to update their tables. 
+
+<P>Conclusion: We need both redirect and direct references.
+  
+<P><B>DELETE, MOVE, AND COPY</B>
+
+<P>Delete and move are special cases.  They always get applied to the
+reference, not to its target.  Why?
+ 
+<P>They amount to editing the collection containing the reference, not the
+object being referenced.   In some systems performing a delete or a move
+only requires a permission on the directory, not on the object.  This is a
+common semantics.  It is Unix semantics.
+
+<P>MOVE: We need to define the semantics for what happens to the backpointers
+when a reference gets moved.
+ 
+<P>What about MOVE requests from non-referencing clients?  Should these
+requests ever result in the target being moved?  Would you ever want to do
+move with pass-through?  In many systems it would be literally wrong to do a
+move with pass-through semantics.  We don't want other references to the
+target to get broken.  We should not allow a pass-through move.
+ 
+<P>Conclusion: Stay with the status quo - DELETE, MOVE, and COPY are always
+applied to the reference, never to its target.
+ 
+<P><B>HIDING THE TARGET</B>
+ 
+<P>The requirement to be able to hide the location of a target resource was
+motivated by a scenario.  Sue has a collection full of highly confidential
+information.  She doesn't want anyone to know about it.  But she needs to
+give Tom access to one resource in the collection to get his comments on it.
+So she would like to create a reference to it for him, but prevent him from
+knowing the location where it and all the other confidential resources
+reside.
+  
+<P>Another motivation: Tilde-name directories provide point of attack by
+revealing a user name.
+
+<P>This is "security through obscurity."  Security through obscurity is rarely
+the right answer.
+  
+<P>Don't keep things in directory structures that reveal information you want
+to hide.
+
+<P>If we have access control, we don't need this.  We would need access control
+on properties, so that we could prevent clients from seeing DAV:reftarget.  
+In any case, this is not very important.  The security exposure is limited. 
+We can add this capability later if it really looks as if people want it.
+Wait and see whether people implement it with properties.
+
+<P>Add a discussion of the risk to security considerations rather than add a
+header.
+  
+<P>Conclusion: Drop the requirement that it be possible to hide the location of
+a target resource.
+
+<P><B>VERSIONING AND REFERENCES</B>
+
+<P>Versioning of collections is being implemented on top of referencing.
+
+<P>Judy Slein requests that before extensions to referencing capabilities are
+put into the versioning spec, the team consider whether they would be more
+generally useful.  If so, they should be added to the collections
+(referencing) spec instead.
+
+<P>Do we need to extend the syntax of DAV:reftarget, to allow it to contain
+more than just a URL?  Versioning may need it to include the URL of a
+version graph, together with information about which member of the graph to
+select.
+ 
+<P>We may want to make the syntax of DAV:reftarget extensible by using
+attribute-value pairs. The Ref-Target header would also have to become more
+flexible, and might need to be incorporated in an xml body.
+
+<P>*** Meeting Adjourned ***
+
+</BODY>
+</HTML>

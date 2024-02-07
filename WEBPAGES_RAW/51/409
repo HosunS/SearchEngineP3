@@ -1,0 +1,21 @@
+1. Search for q in the suffix tree. If the search ends in an edge for which the bottom endpoint has no children, then q is not repeated. If the search ends at a node (necessarily a node with multiple children, since q doesn't contain a $ and every path to a leaf node is labeled with a string ending in $) or if it ends in a path whose bottom endpoint has more than one child, then q is repeated.
+
+2. Build a segment tree with the integers 1, 2, ... n as the dividing points. At each node x of the segment tree, store three numbers:
+- x.count is the number of dynamic intervals associated with the node,
+- x.deep is a point in the range associated with node x that is covered by as many dynamic intervals as possible, among the dynamic intervals associated with x and its descendants
+- x.depth is the number of dynamic intervals that cover point x.deep
+
+When inserting or deleting a dynamic interval I, increment or decrement the count instance-variables of each of the O(log n) nodes associated with I. Then, for these nodes and all of their ancestors, in bottom up order, recompute the deep and depth instance variables, as follows:
+    x.depth = x.count + max(x.left.depth, x.right.depth)
+    if x.left.depth > x.right.depth:
+        x.deep = x.left.deep
+    else:
+        x.deep = x.right.deep
+(When x is a leaf node of the segment tree, x.deep can be set to a constant, any point within the range of x, and x.depth is always equal to x.count.)
+
+Then, the deepest point and its depth can be found as the .deep and .depth instance variables of the root node.
+
+3. If the intervals are all disjoint from each other (e.g. the intervals [1,2], [3,4], [5,6], ...) then each node can only store one interval. Since each interval has to be stored at some node of the tree, there must be at least n nodes in this case.
+
+4. (a) No, because if there are two points very close together then (even when there are only as few as three points altogether) the quadtree can have very many levels before they are split apart.
+(b) Yes. Each leaf of the kD-tree contains exactly one point, so there are at most n leaves, and a binary tree with at most n leaves can have at most 2n-1 nodes altogether.

@@ -1,0 +1,476 @@
+				Binary Trees
+
+
+Trees are one of the two most important data structure studied in Computer
+Science and Mathematics (the other is Graphs; in fact, trees are just a special
+-but important- kind of a graph: one with no cycles, and each node having at
+most one node with an edge leading to it). Trees are useful for representing
+all kinds of interesting information and relationships (like the structure of a
+file system or the inheritance hierarchy of classes in C++  libraries), and
+have been studied extensively. There are entire books written about trees.
+
+In this lecture we will continue our study of self-referential classes by
+examining trees. Like linked lists, trees contain nodes: these nodes are
+objects instantiated from a class that contains instance variables that refer
+to other nodes from this same class. Whereas references in the linked list
+class indicate a "follows" relationship (and in the case of doubly-linked lists
+also a "precedes" relationship), references in tree classes indicate an
+inclusion relationship (where a parent node includes all its children nodes):
+these relationships are much more interesting in terms of the kinds of
+information and relationships that they can represent.
+
+Although we will first examine general tree structures, we will focus most of
+our attention in the upcoming lectures on defining and processing binary trees.
+Within this category we will soon see examples of ordered (search) trees and
+structure (expression) trees. In the next lecture we will use ordered search
+trees to store sets/maps of values that can be searched quickly: on average in
+O(Log2 N). In the lecture after that we will use another kind of ordered binary
+tree (a heap) to store values in a priority queue that can be enqueued and
+dequeued quickly: at worst in O(Log2 N). In the lecture after that, we will
+discuss self-balancing search trees. Finally, we continue for a few more
+lectures, discussing other variants of trees and their uses.
+
+Because tree nodes typically have two or more, we will often find it much more
+natural to write recursive code to process trees (as opposed to iterative code).
+
+------------------------------------------------------------------------------
+
+Terminology and Metrics:
+
+All kinds of trees illustate one important relationship: inclusion between
+parts and a whole; another way to describe this relationship is that between
+a parent node that includes children nodes. Every child node has a unique parent
+(although root nodes have no parent); every parent node can have any number of
+children (including none). As in trees used in geneology, we will write each
+parent node directly above its child(ren) node(s). In fact, we will use other
+geneological terms, like ancestor and descendant, when describing nodes in a
+tree. We draw lines between parent/child nodes to illustrate their direct
+relationship.
+
+There is one unique node in every tree: this node has no parent and is called
+the "root" of the tree; because all other nodes in the tree are its descendants,
+we write the root node at the top of the tree.
+
+A mutually exclusive way to classify tree nodes is as "internal" or "leaf". An
+internal node has one or more children; a leaf node has no children. So, any
+node that is a parent is an internal node; a node that is only a child (not a
+parent to another child) is a leaf node.
+
+For linked lists we defined one metric: the size of the linked list (or its
+length: the number of LNs it contains).
+
+For trees we also define the size of a tree as the total number of nodes that it
+contains. In addition, we define a second metric: height. The height of a tree
+is the length of the longest path (each line in the path counts as one step)
+from a root to one of its descendants. Alternatively, we can define the depth
+of a node as the length of the path from the root to that node, which is the
+same as the number of direct ancestors it has; given this definition of depth,
+we can define the height of a tree as the largest depth of any of its nodes; we
+can define the height of any node (not just the root) as the length of the
+longest path from that node to any of its descendants.
+
+Note that the root is at depth 0, because it has no ancestors; a tree
+consisting solely of a root also has a height of 0. The concepts of size and
+height for trees generalize the length of linear linked list. We will examine
+the numerical relationship between these two metrics at the end of this lecture.
+
+------------------------------------------------------------------------------
+
+Trees and Tree Functions for Metics:
+
+We will start by looking at a simple templated class named TN, which we use to
+represent (binary) Tree Nodes:  each TN<T> object points to (the root of) its
+left and right subtrees, from that same class -or to nothing, represented by
+nullptr).
+
+This class declares three public instance variables, instead of private ones
+with accessor/setter methods (just as we did for LN: list nodes): note the
+setters would allow any value to be stored there, so setters aren't of much use
+(and would increase the syntactic complexity). It also declares one default and
+copy constructor and another useful constructor (also all public).
+
+template<class T>
+class TN {
+  public:
+    TN ()                        : left(nullptr), right(nullptr){}
+    TN (const TN<T>& tn)         : value(tn.value), left(tn.next), right(tn.right){}
+    TN (T v, TN<T>* l = nullptr,
+             TN<T>* r = nullptr) : value(v), left(l), right(r){}
+
+    T      value;
+    TN<T>* left;
+    TN<T>* right;
+};
+
+Binary Trees have a natural, recursive definition:
+
+  1) An empty tree (the smallest tree) is nullptr 
+
+  2) Any non-empty tree is a pointer to an object (from class TN) whose left and
+     right instance variables point to some smaller tree (fewer TN objects
+     based on size or smaller height TN objects) either empty or not.
+
+Using this defintion as a guide, we can often write tree processing code
+recursively. This definition suggests an idiom for writing recursive functions,
+treating an empty tree as the base case. We start our discussion of tree
+processing with a function that recursively computes the size of a tree: the
+number of TNs it contains. This function is simlar to/generalizes the
+size/length function for linked lists. Most functions on trees naturally use
+recursion (although we will see a few in the next lecture that can be written
+iteratively more simply: but not size).
+
+template<class T>
+int size(TN<T>* t) {
+  if (t == nullptr)
+    return 0;
+  else
+    return 1 + size(t->left) + size(t->right);
+}
+
+This function computes the size of an empty tree as 0, and the size of a
+non-empty tree is 1 (for the node of the tree t points to) plus the sizes of
+its left and right subtrees (which may be empty). Note that here (and in many
+other recursive functions operating on binary trees) we write two recursive
+calls: one to process (the root of) the left subtree and one to process (the
+root of) the right subtree.
+
+We can prove that this function is correct as follows.
+
+1) The size of the smallest/empty tree is 0. This function immediately
+   recognizes an empty tree as this base case and returns 0 because it
+   has no nodes.
+
+2) For any non-empty tree t, a recursive call on t->left and t->right is always
+   using an argument closer to the base case than t: each contains at least 1
+   fewer TNs than t does (and each can contain fewer than 1/2 the TNs t does);
+   and the height of a subtree is always smaller by at least 1.
+
+3) Assuming size(t->left) and size(t->right) compute the size correctly of
+   these subtrees, adding 1 (for the TN t points to) to these sized correctly
+   computes the size of the entire tree.
+
+Note that without some kind of array or other data type, we CANNOT write this
+function iteratively. If we try to use one cursor (as opposed to an array or
+stack of cursors) once we point the cursor to one subtree (say the left one) we
+have lost our pointer to its parent and therefore its right subtree. This was
+not often a problem in linked lists, where once we processed a node we could
+set the cursor to the next node, not having to go back to its predecessor.
+
+It mayb be useful for you to hand simulate this recursive function on a small
+tree to understand its workings better. In a hand simulation, calls would
+go up and down the call frames, unlike linear (linked list) recursion, which
+tends to go all the way down once and then back to the top.
+
+Below is an iterative function that uses an explicit Stack to compute the size
+of a tree. It remembers the roots of both the left and right subtrees for each
+TN it visits on a Stack, where it can use each TN value when needed.
+
+template<class T>
+int size (TN<T>* t) {
+  int answer = 0;
+  ArrayStack<TN<T>*> s;     //Stack contains pointers to TN<T> objects
+  s.push(t);	     	    //Put the root on the 
+  while (!s.empty()) {
+    TN<T>* next = s.pop();  //Examine some subtree (possibly empty)
+    if (next != nullptr) {  //If not empty
+      ++answer;		    //  Count it
+      s.push(next->left);   //  Put roots of its left/right subtrees ontoStack
+      s.push(next->right);
+    }
+  }
+
+  return answer;
+}
+
+This is not as elegant or clear as the recursive size function. It uses an
+explicit stack, whereas recursion uses an implicit one.
+
+We can also write a recursive function to compute the height of binary tree.
+First, we will do so by directly translating the meaning of height; then we
+will write a smaller and simpler to understand function using a different
+different meaning of height (allowing the height of empty trees to be computed,
+which leads to a dramatic simplification of the code).
+
+Note that height of a (sub)tree that is a leaf node is just 0: the length of the
+longest path from a leaf node to its deepest descendant is 0 (it is its own
+deepest descendent). Also note that the height of an internal node is 1 more
+than the biggest height of its subtrees. Using these facts we can write the
+following recursive function to compute the height of any non-empty tree.
+
+template<class T>
+int height (TN<T>* t) {
+  if (t->left == nullptr && t->right == nullptr)//leaf check
+    return 0;
+  else if (t->left == nullptr)			//1 subtree: branch to right
+    return 1 + height(t->right);
+  else if (t->right == nullptr)			//1 subtree: branch to left
+    return 1 + height(t->left);
+  else						//2 subtrees: branch left/right
+    return 1 + std::max(height(t->left),height(t->right));
+}
+
+This function deals with all the necessary cases in a binary tree: a leaf node,
+an internal node with only a left (or only a right) subtree, and an internal
+node with both left and right subtrees. But, this function does not work on
+empty trees, which have no directly defined height from the previous definition.
+
+Now, let us simplify this code by defining the height of an empty tree to be -1.
+In one case this seems very strange, but in another it seems obvious: an empty
+tree should have a height that is one less than a leaf node (whose height is 0).
+By expanding the domain of computing heights to empty trees using this
+definition (and what we know previously), we can simplify the height function
+(as well as defining it for all possible trees, even empty ones) into the
+elegant function written below.
+
+template<class T>
+int height (TN<T>* t) {
+  if (t == nullptr)
+    return -1;
+  else
+    return 1 + std::max(height(t->left),height(t->right));
+}
+
+Again, if t is a leaf node (height 0), then its left and right subtrees are
+empty, so this function would perform the two recursive calls and return
+1 + std::max(-1,-1) which returns 0: the correct answer for a leaf node. So,
+using this generalization of height, our code is simpler and always works (no
+matter whether an empty or non-empty tree is passed as an argument); in the
+earlier method, passing an empty tree as a parameter would cause C++ to try to
+follow a nullptr when it tried to determine if the node was a leaf.
+
+Mathematicians generalize definitions such as this one all the time. You may or
+may not know that a^0 is defined as 1 (even when a is 0). There are many ways to
+justify this definition (some quite complicated); the simplest way is to note
+the simple algebraic law a^x * a^y = a^(x+y). By this law (a quite useful one to
+have) a^0 * a^x = a^(0+x) = a^x; which means that a^0 must be equal to 1 for
+this identity to hold. Note even 0^0 is 1.
+
+So, although it might make no intuitive sense to define an empty tree to have a
+height of -1 (height would seem to be required to be positive, or at least non-
+negative), by using this definition we can define the height of any tree
+(nullptr or not) and simplify the method that computes heights.
+
+Here is a function (and its helper function) that computes the depth of the
+node containing a value: this node must be unique, occurring only once in the
+tree. If the node is not in the binary tree, it returns -1. We sometimes will
+need to write a helper function (typicaly one with more parameters) to process a
+tree recursively.
+
+template<class T>
+int depth (TN<T>* t, const T& value)
+{return depth(t,value,0);}
+
+template<class T>
+int depth (TN<T>* t, const T& value, int current_depth) {
+  if (t == nullptr)
+    return -1;			//Not in tree
+  else if (t->value == value)
+    return current_depth;       //In tree, return accumulated
+  else
+    return std::max(depth(t->left,  value, current_depth+1),
+                    depth(t->right, value, current_depth+1));
+
+Note, we are not yet dealing with binary search trees, so the value might be
+in the left or right subtree. At most one recursive call will return a value
+not equal to -1 (and both may return -1). If both recursive calls return -1,
+then -1 is returned; if one returns a non-negative value, then that value is
+returned.
+
+We could improve the speed of this function by not computing depth(t->right...)
+when it finds value in the left subtree: we can change the final return
+statement into the block
+
+...
+  else {
+    int left_depth = depth(t->left, value, current_depth+1);
+    if (left_depth != -1)
+      return left_depth;
+    else
+      return depth(t->right, value, current_depth+1);
+} 
+
+Can you think of a way to compute depth for a single function whose prototype is
+
+  int depth (TN<T>* t, T value)
+
+
+As a last function in this mold (a non-recursive function calling a recursive
+helper function), here is how to overload << for printing binary trees (rotated
+90 degrees counter-clockwise). That is, if we had the binary tree
+
+                        a
+                     /      \
+                  b            c
+               /    \        /   \
+             d        e     f     g
+
+it would print as follows (notice that each value at depth d has 2*d dots
+preceding its value).
+
+....g
+..c
+....f
+a
+....e
+..b
+....d
+
+template<class T>
+void print_rotated(TN<T>* t,std::string  indent, std::ostream& outs) {
+  if (t == nullptr)
+    return;
+  else {
+    print_rotated(t->right, indent+"..", outs);
+    outs << indent << t->value << std::endl;
+    print_rotated(t->left, indent+"..", outs);
+  }
+}
+
+template<class T>
+std::ostream& operator << (std::ostream& outs, TN<T>* t) {
+  print_rotated(t,"",outs);
+  return outs;
+}
+
+We can prove that this function is correct as follows.
+
+1) An empty tree has no values and prints nothing. This function immediately
+   recognizes this base case and returns.
+
+2) For any non-empty tree t, a recursive call on t->right and t->left is always
+   using an argument closer to the base case than t: each contains at least 1
+   fewer TNs than t does (and often each contains about 1/2 the TNs t does).
+
+3) Assuming print_rotated(t->right) and print_rotated(t->left) print these
+   subtrees correctly, by printing t->value indented by some number of .. based
+   on the depth of the node, with t->right printed first (rotated 90 degrees 
+   counter-clockwise, with every node indented two more than t->value), and
+   t->left printed second (rotated 90 degrees counter-clockwise with every node
+   indented two more than t->value), the entire tree t is printed rotated 90
+   degrees counter-clockwise with every node printed correctly.
+
+Note that in trees rotated 90 degrees counter-clockwise, the right subtree
+is printed first (on top of) the TN followed by the left subtree, each with
+the correct .. indentation.
+
+------------------------------------------------------------------------------
+
+Relationships between size and height
+
+We can use the structure of binary trees to derive some mathematical
+relationships between their sizes and heights. First, we should reiterate that
+the "inclusion" relationships modeled by trees is much more interesting than
+the "follows" relationship that is modeled by linear linked lists. One way to
+illustrate the difference in "interestingness" is by examining all structurally
+different (different looking) linked lists containing 4 nodes, independent of
+the values they store: there is only one. Although all 4 node linear linked
+lists have the same structure, there are 14 differently-structured binary trees
+with 4 nodes (and 42 different trees with 5 nodes). See the picture accompanying
+this lecture.
+
+-----
+Side note:
+
+There is a formula using combinatorics to compute the number of different binary
+trees of size n: (2n)!/( n!(n+1)! ), which is closely approximated by
+4^n/sqrt(pi*n^3) having about a 10% error for n=10 and less than a 1% error for
+n=100, and even less error for larger n. There are Cn different n node trees
+(Cn is the nth Catalan number). Here is a method that is more intuitive for
+computing this value
+
+  int count_binary_trees (int n) {
+    if (n == 0 || n == 1)
+      return 1;
+    else {
+      int count = 0;
+      for (int left_n = 0; left_n < n; ++left_n)
+        count += count_binary_trees(left_n) * count_binary_trees(n-left_n-1) ;
+      return count;
+    }
+  }
+
+This function uses both iteration and recursion together to compute its
+result (and it won't be the last function that we see with this combination).
+Here the base cases shows that all empty or 1 node trees look the same (there is
+exactly one structure for each). Otherwise, we sum the number of trees  whose
+left subtree is of size 0, 1, 2, ... , n-1 and whose right subtree is the
+remaining size (minus 1 for the parent of the two subtrees). If there are l
+different trees on the left and r different trees on the right, for that size
+there are a total of l*r different trees for that n.
+
+This computation is similar to computing the number of isomers of a chemical
+molecule (which is more a graph than a tree, because of possible double-bonds).
+-----
+
+We define a pathological tree as one with only one node at each depth (the 8 at
+the bottom of the picture). In all pathological trees, we have height = size-1.
+
+At the other end of the spectrum is a perfect tree, in which every depth is
+filled with as many nodes as possible (none of the trees mentioned above satisfy
+this criteria). The next picture shows perfect trees of height 0, 1, 2, and 3.
+
+If we tabulate this data we have.
+
+height	maximum size
+  0	  1
+  1	  3
+  2	  7
+  3	 15
+
+If we study and extend this table, we can guess a simple but interesting
+relationship between the height of a perfect tree and its size:
+maximum size = 2^(height+1) - 1. First, verify that this formula is correct for
+the heights/sizes shown. Now, let's prove it by induction.
+
+1. For a perfect tree of height 0, the formula is true (by evaluation).
+
+2. Lets's assume that this formula is true for all perfect trees of height less
+   than or equal to h, and prove that it is true for a tree of height h+1.
+   To construct a perfect tree of height h+1 examine the last picture for this
+   lecture. The number of nodes in the entire perfect tree is
+
+   1 + 2^(h+1) - 1 + 2^(h+1) - 1 = 2^( (h+1) + 1 ) - 1
+
+   Which matches the formula and complete the proof.
+
+Rewriting this equality to express minimum height as a function of size, we
+have, minimum height = Log2(size+1) - 1.
+
+Now we will look at the relationship between the two tree metrics: size and
+height. We will use N for the size and H for the height.
+
+It is simple to see that the maximum height of a tree with N nodes is N-1 (each
+parent node in the tree has one child). So H <= N-1. From the proof above, the
+maximum size of a tree has N <= 2^(H+1)-1. So, H-1 <= N <= 2^(H+1)-1. Thus, we
+can say that N is Omega(H) and O(2^H): N must grow at least as fast as the
+height, but no faster than 2 raised to the height power. Note that since
+N <= 2(H+1) - 1 = 2 * 2^H -1, which is O(2^H) by removing the multiplicative
+and additive constants
+
+We can look at this relationship from the perspective from N as well, to compute
+bounds on H from N: 
+
+  (1) H <= N-1
+  (2) H >= (Log2 N+1) - 1 >=  (Log2 N) - 1
+
+So H is O(N) and H is Omega(Log2 N): H must grow at least as fast as Log2 of
+the size, but can grow no faster than the size.
+
+So, here are two more examples where we have lower-bounds and upper-bounds
+relating N and H, so we can use big-Omega and big-O notation in a meaningful
+way. There is no big-Theta because these bounds are in different complexity
+classes.
+
+In the next lecture we will learn that the complexity class for searching a
+Binary Search Tree (BST) is related to its height: it is O(H). For perfect
+trees the complexity class is O(Log2 N), but in the worst case it is O(N). If we
+can keep our binary trees reasonably full/well-balanced, we will be able to
+search them in the same complexity class as doing binary search on sorted
+arrays.
+
+In fact, balanced BSTs allow us to simultaneously (on average) achieve O(Log2 N)
+behavior for adding, searching, and removing values -not achievable with arrays
+or linked lists: where some operations can have this complexity class, but
+others will be O(N). For example, we can search a sorted array in O(Log2 N), but
+adding or removing values requires, in the worst case, shifting N values in the
+array, so that operation is O(N).

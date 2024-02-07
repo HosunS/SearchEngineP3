@@ -1,0 +1,211 @@
+<!DOCTYPE html 
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+  <title>SLI | PmWiki / Backup and Restore </title>
+  <meta http-equiv='Content-Style-Type' content='text/css' />
+  <link rel='stylesheet' href='http://sli.ics.uci.edu/pmwiki/pub/skins/custom/pmwiki.css' type='text/css' />
+  <!--HTMLHeader--><style type='text/css'><!--
+  ul, ol, pre, dl, p { margin-top:0px; margin-bottom:0px; }
+  code.escaped { white-space: nowrap; }
+  .vspace { margin-top:1.33em; }
+  .indent { margin-left:40px; }
+  .outdent { margin-left:40px; text-indent:-40px; }
+  a.createlinktext { text-decoration:none; border-bottom:1px dotted gray; }
+  a.createlink { text-decoration:none; position:relative; top:-0.5em;
+    font-weight:bold; font-size:smaller; border-bottom:none; }
+  img { border:0px; }
+  .editconflict { color:green; 
+  font-style:italic; margin-top:1.33em; margin-bottom:1.33em; }
+
+  table.markup { border:2px dotted #ccf; width:90%; }
+  td.markup1, td.markup2 { padding-left:10px; padding-right:10px; }
+  table.vert td.markup1 { border-bottom:1px solid #ccf; }
+  table.horiz td.markup1 { width:23em; border-right:1px solid #ccf; }
+  table.markup caption { text-align:left; }
+  div.faq p, div.faq pre { margin-left:2em; }
+  div.faq p.question { margin:1em 0 0.75em 0; font-weight:bold; }
+  div.faqtoc div.faq * { display:none; }
+  div.faqtoc div.faq p.question 
+    { display:block; font-weight:normal; margin:0.5em 0 0.5em 20px; line-height:normal; }
+  div.faqtoc div.faq p.question * { display:inline; }
+   
+    .frame 
+      { border:1px solid #cccccc; padding:4px; background-color:#f9f9f9; }
+    .lfloat { float:left; margin-right:0.5em; }
+    .rfloat { float:right; margin-left:0.5em; }
+a.varlink { text-decoration:none;}
+
+--></style>  <meta name='robots' content='noindex,nofollow' />
+
+</head>
+<body>
+<!--PageHeaderFmt-->
+  <div id='wikilogo'><a href='http://sli.ics.uci.edu'><img src='/pmwiki/pub/skins/custom/SLI_white.png'
+    alt='SLI' border='0' /></a></div>
+  <div id='wikihead'>
+  <form action='http://sli.ics.uci.edu'>
+    <!-- <span class='headnav'><a href='http://sli.ics.uci.edu/PmWiki/RecentChanges'
+      accesskey='c'>Recent Changes</a> -</span> --> 
+    <input type='hidden' name='n' value='PmWiki.BackupAndRestore' />
+    <input type='hidden' name='action' value='search' />
+    <!-- <a href='http://sli.ics.uci.edu/Site/Search'>Search</a>: -->
+    <input type='text' name='q' value='' class='inputbox searchbox' />
+    <input type='submit' class='inputbutton searchbutton'
+      value='Search' />
+    <a href='http://sli.ics.uci.edu/Site/Search'>(?)</a>
+  </form></div>
+<!--/PageHeaderFmt-->
+  <table id='wikimid' width='100%' cellspacing='0' cellpadding='0'><tr>
+<!--PageLeftFmt-->
+      <td id='wikileft' valign='top'>
+        <ul><li><a class='wikilink' href='http://sli.ics.uci.edu/Classes/Classes'>Classes</a>
+</li><li><a class='wikilink' href='http://sli.ics.uci.edu/Group/Group'>Group</a>
+</li><li><a class='wikilink' href='http://sli.ics.uci.edu/Projects/Projects'>Research</a>
+</li><li><a class='urllink' href='http://www.ics.uci.edu/~ihler/pubs.html' rel='nofollow'>Publications</a>
+</li><li><a class='wikilink' href='http://sli.ics.uci.edu/Code/Code'>Code</a>
+</li></ul><div class='vspace'></div><hr />
+<div class='vspace'></div>
+</td>
+<!--/PageLeftFmt-->
+      <td id='wikibody' valign='top'>
+<!--PageActionFmt-->
+        <div id='wikicmds'><ul><li class='browse'><a class='wikilink' href='http://sli.ics.uci.edu/PmWiki/BackupAndRestore?action=login'>login</a>
+</li></ul>
+</div>
+<!--PageTitleFmt-->
+        <div id='wikititle'>
+          <div class='pagegroup'><a href='http://sli.ics.uci.edu/PmWiki'>PmWiki</a> /</div>
+          <h1 class='pagetitle'>Backup and Restore</h1></div>
+<!--PageText-->
+<div id='wikitext'>
+<p>
+<a name='trailstart' id='trailstart'></a> 
+</p><div style='clear:right; float:right; font-size:smaller; background-color:#eee;' >
+<p><span class='wikitrail'>&lt; <a class='wikilink' href='http://sli.ics.uci.edu/PmWiki/Upgrades'>Upgrades</a> | <a class='wikilink' href='http://sli.ics.uci.edu/PmWiki/DocumentationIndex#trailstart'>Documentation Index</a> | <a class='wikilink' href='http://sli.ics.uci.edu/PmWiki/UploadsAdmin'>Uploads administration</a> &gt;</span> 
+</p></div>
+<div style='clear:right;' >
+</div>
+<p class='vspace'>This page has some background information on making backups and explains some basic *nix backup and restore procedures.
+</p>
+<div class='vspace'></div><h2>Introduction</h2>
+<p>Your wiki installation contains some unique data in the following directories:
+</p>
+<div class='vspace'></div><pre>    local/         Local configuration scripts
+    cookbook/      Recipes obtained from the <a class='urllink' href='http://www.pmwiki.org/wiki/Cookbook/Cookbook' rel='nofollow'>Cookbook</a>
+    pub/           Publicly accessible files
+    wiki.d/        Wiki pages
+    uploads/       <a class='wikilink' href='http://sli.ics.uci.edu/PmWiki/Uploads'>Uploaded files</a> (attachments)
+</pre><p class='vspace'>A good backup plan will include periodically archiving these directories &mdash; or at bare minimum <code class='escaped'>local/</code> and <code class='escaped'>wiki.d/</code>.  Good practice dictates keeping your backup archives on a separate machine.
+</p>
+<div class='vspace'></div><h2>Simple Backup and Restore (*nix)</h2>
+<p>When it comes to backup, simpler is better.  
+Since the pmwiki distribution is very small (about 1/4 megabyte), it's simplest to just archive the distribution files along with the data.
+</p>
+<div class='vspace'></div><h3>Making a Backup Archive</h3>
+<p>The following *nix command, executed from the parent directory of your wiki's directory, will put a complete backup archive of your site in your home directory.
+</p>
+<div class='vspace'></div><div class='indent'><pre class='escaped'>
+tar -zcvf  ~/wiki-backup-`date +%Y%m`.tar.gz  wiki/
+</pre>
+</div><p class='vspace'><a name='restore' id='restore'></a>
+</p><h3>Restoring the Backup Archive</h3>
+<h4>Simple Method</h4>
+<p>Your site can be restored and running in under 30 seconds with
+</p>
+<div class='vspace'></div><div class='indent'><pre class='escaped'>
+tar -zxvf ~/wiki-backup-200512.tar.gz
+find wiki/uploads/ -type d |xargs chmod 777
+find wiki/wiki.d/ -type d |xargs chmod 777
+</pre>
+</div><div class='vspace'></div><h4>A Slightly-More-Secure Method</h4>
+<p>The simple restore commands above will give you world-writable files and directories.  You can avoid world-writable permissions by letting PmWiki create directories with the proper attributes (ownership and permissions) for you.
+</p>
+<p class='vspace'>Start with
+</p>
+<div class='vspace'></div><div class='indent'><pre class='escaped'>
+tar -zxvf ~/wiki-backup-200512.tar.gz
+rm -rf wiki/wiki.d
+rm -rf uploads
+chmod 2777 wiki/
+</pre>
+</div><p class='vspace'>Now upload a file in each group that had uploads.  If your site doesn't have uploads, just visit your site once so the wiki.d/ directory will be created.
+</p>
+<p class='vspace'>Finish your installation with
+</p>
+<div class='vspace'></div><div class='indent'><pre class='escaped'>
+chmod 755 wiki/
+tar -zxvf ~/wiki-backup-200512.tar.gz
+</pre>
+</div><div class='vspace'></div><h3>Details</h3>
+<p>The commands on this page assume your site is in a directory called "wiki/".  The test backup was made in December, 2005 so it's named accordingly.
+</p>
+<p class='vspace'>Your site will only have an uploads/ directory if uploads are enabled.
+</p>
+<p class='vspace'>The backup command uses a date stamp (YYYYMM) in the filename.  If you automate the command via cron you'll wind up with monthly snapshots of your site.  You can get a daily snapshot by appending %d to the date command (<code class='escaped'>`date +%Y%m%d`</code> will get you YYYYMMDD).  Be wary of space limitations if you have a large uploads/ directory.
+</p>
+<div class='vspace'></div><h2>See Also</h2>
+<ul><li>A <a class='urllink' href='http://thread.gmane.org/gmane.comp.web.wiki.pmwiki.user/20317' rel='nofollow'>thread</a> [gmane.org] on the pmwiki-users mailing list.
+</li><li>A <a class='urllink' href='http://www.pmwiki.org/wiki/Cookbook/Backup%20Pages' rel='nofollow'>Backup Pages</a> recipe in the cookbook.
+</li></ul><div class='vspace'></div><h2>Miscellaneous</h2>
+<div class='vspace'></div><h2>Backup via FTP</h2>
+<p>Download and install a ftp client like <a class='urllink' href='http://filezilla-project.org/download.php?type=client' rel='nofollow'>Filezilla</a>
+</p>
+<div class='vspace'></div><ol><li>Using the ftp client connect to the server where you host pmWiki using
+<ol><li>the IP address (ex: 123.234.56.67) or the ftp name (ex: ftp.myhost.com)
+</li><li>supply your account name (ex: mylogin) and password (ex: myp4ssw0rd)
+</li></ol></li><li>Move to your pmWiki directory (ex: <code>/usr/mylogin/web/wiki/</code> or <code>/tahi/public_html/pmwiki</code> )
+</li><li>Select the folder you want to backup as explained before (probably either only the data or the whole wiki directory)
+<ul><li>for data you will want to backup both the directories
+<ul><li><code>wiki.d</code> for user page data
+</li><li><code>pmwikiuploads</code> (or <code>uploads</code>) for your attachments (uploads)
+</li></ul></li><li>for system you will want, at a minimum, to backup both the directories
+<ul><li><code>local</code> for configuration data 
+</li><li><code>pub</code> for local CSS and skins customisations
+</li></ul></li></ul></li><li>Download them to a local folder
+</li><li>Use <a class='urllink' href='http://www.7-zip.org/' rel='nofollow'>7zip</a> or a similar software to build an archive of this backup
+</li></ol><p class='vspace'>You can also very easily sync your FTP directories with your hard disc via this command line:
+</p><div class='indent'> <code class='escaped'> wget -nv -np -m ftp://user:password@ftp.yourhost.net/ </code>
+</div><p><small>Download <a class='urllink' href='http://gnuwin32.sourceforge.net/packages/wget.htm' rel='nofollow'>Wget for Windows</a> (other systems normally have it installed).</small>
+</p>
+<p class='vspace'>Alternatively, you can also mirror your FTP directories with lftp:
+</p><div class='indent'><code class='escaped'> lftp -u your_user_name,your_password -e "mirror --verbose  /wiki.d /path/to/local/folder" ftp://your_host </code>
+</div><p>(this will mirror only the /wiki.d folder, replace with / to mirror everything)
+</p>
+<p class='vspace'><a name='rsync' id='rsync'></a>
+</p><h2>Using rsync</h2>
+<p>See <a class='urllink' href='http://www.pmwiki.org/wiki/Cookbook/BackupWithRsync' rel='nofollow'>Cookbook:BackupWithRsync</a> and <a class='urllink' href='http://www.pmwiki.org/wiki/Cookbook/TwoWayMirroringWithRsync' rel='nofollow'>Cookbook:TwoWayMirroringWithRsync</a>.
+ 
+</p><div style='clear:right; float:right; font-size:smaller; background-color:#eee;' >
+<p><span class='wikitrail'>&lt; <a class='wikilink' href='http://sli.ics.uci.edu/PmWiki/Upgrades'>Upgrades</a> | <a class='wikilink' href='http://sli.ics.uci.edu/PmWiki/DocumentationIndex#trailstart'>Documentation Index</a> | <a class='wikilink' href='http://sli.ics.uci.edu/PmWiki/UploadsAdmin'>Uploads administration</a> &gt;</span> 
+</p></div>
+<p><a name='trailend' id='trailend'></a>
+<br clear='all' />
+</p><div  style='background-color: #ffe; border-top: 1px solid black; font-size: .8em;' > 
+<p>This page may have <span class='commentout-pmwikiorg'> a more recent version on <a class='urllink' href='http://www.pmwiki.org' rel='nofollow'>pmwiki.org</a>: <a class='urllink' href='http://www.pmwiki.org/wiki/PmWiki/BackupAndRestore' rel='nofollow'>PmWiki:BackupAndRestore</a>, and </span> a talk page: <a class='urllink' href='http://www.pmwiki.org/wiki/PmWiki/BackupAndRestore-Talk' rel='nofollow'>PmWiki:BackupAndRestore-Talk</a>.
+</p></div>
+</div>
+
+      </td>
+    </tr></table>
+<!--PageFooterFmt-->
+  <div id='wikifoot'>
+    <div class='footnav' style='float:left'> Last modified December 28, 2011, at 09:08 AM</div>
+    <div class='footnav' style='float:right; text-align:right'>
+    <a href="http://www.ics.uci.edu">Bren School of Information and Computer Science</a><br>
+    <a href="http://www.uci.edu">University of California, Irvine</a>
+    </div>
+  </div>
+<!--HTMLFooter--><script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(["_setAccount", "UA-24148957-2"]);
+	_gaq.push(["_trackPageview"]);
+	(function() {
+	  var ga = document.createElement("script"); ga.type = "text/javascript"; ga.async = true;
+	  ga.src = ("https:" == document.location.protocol ? "https://ssl" : "http://www") + ".google-analytics.com/ga.js";
+	  var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ga, s);
+	  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,1140 @@
+__author__ = 'Joel Ross; originally by Ping Chen, David G. Kay, Gabriela Marcu, Alex Thornton'
+### Informatics 42, Amusement Park Simulator
+### Original version by Ping Chen, David G. Kay, Gabriela Marcu, Alex Thornton
+
+from datetime import datetime, date, time, timedelta #for time keeping
+import math
+
+##########################
+##### AMUSEMENT PARK #####
+##########################
+
+class AmusementPark():
+	"""
+	 A class that handles the set of rides and customers, moving them around and ticking them as needed
+	 Acts as a container for rides and active customers
+	 Attributes:
+		 name (string naming the park)
+		 attractions (dictionary of Attraction, with the names as keys (to enable lookup))
+		 entrance (2-item tuple (x,y))
+		 exit (2-item tuple (x,y))
+		 openTime (time, when the park opens)
+		 closeTime (time, when the park closes)
+		 isOpen (boolean, whether the park is open or not)
+		 customers (list, the customers who are inside the park)
+	 """
+
+	def __init__(self, name: str, attractions: list, entrance: tuple, exit:tuple, openTime: time, closeTime: time):
+		"""Initialize the park with a set of attractions and other parameters"""
+		self.name = name
+		self.attractions = dict((ride.name, ride) for ride in attractions)
+		self.entrance = entrance
+		self.exit = exit
+		self.openTime = openTime
+		self.closeTime = closeTime
+		self.isOpen = False
+		self.customers = []
+
+	def open(self):
+		"""opens the park"""
+		self.isOpen = True
+	# open all the rides ??
+
+	def close(self):
+		"""closes the park"""
+		self.isOpen = False
+	# close all the rides ??
+
+	def admitCustomer(self,customer:'Customer'):
+		"""admits a customer to the park"""
+		customer.enterPark(self) #tell the customer they have entered
+		self.customers.append(customer)
+
+	def deadmitCustomer(self,customer:'Customer'):
+		"""removes a customer from the park"""
+		customer.exitPark()
+		self.customers.remove(customer)
+
+	def tick(self):
+		"""does a clock tick"""
+		toRemove = [] # a list to hold people we want to deadmit
+		for customer in self.customers:
+			customer.tick()
+			if customer.status == Customer.ARRIVED:
+				self.attractions[customer.nextRide()].enqueue(customer)
+			if customer.status == Customer.LEFT:
+				toRemove.append(customer)
+		for customer in toRemove:
+			self.deadmitCustomer(customer)
+		for ride in self.attractions.values():
+			ride.tick()
+
+	def getClosestRides(self, location:list, count:int):
+		"""Gets the names of the <count> closest rides to <location>."""
+		return sorted(self.attractions.values(), key=lambda ride:dist(ride.entrance, location))[0:count]
+
+	def getRideNames(self):
+		"""Returns a list of the names of rides we have. Useful."""
+		return list(self.attractions.keys())
+
+class Clock():
+	"""
+	 A simple wrapper for datetime that lets us pass around a reference for everyone to refer to.
+	 Also makes ticking cleaner.
+	 Attributes:
+		 clock (a datetime we use to keep track of things)
+		 initDate (the date we initialize on, to enable resetting)
+		 initTime (the time we initialize on, to enable resetting)
+	 """
+
+	def __init__(self, day:date = date.today(), time:time = time(0,0)):
+		"""Initializes the clock. Takes a starting date and time parameter (which default to TODAY and time(0,0))"""
+		self.clock = datetime.combine(day,time)
+		self.initDate = date
+		self.initTime = time
+
+	def __str__(self):
+		"""Returns a string of the time."""
+		return self.clock.time().strftime("%H:%M")
+
+	def __repr__(self):
+		"""Returns a string of the time."""
+		return self.clock.time().strftime("%H:%M")
+
+	def time(self):
+		"""gets the time from the clock (for comparisons/measuring)"""
+		return self.clock.time()
+
+	def reset(self):
+		self.clock = datetime.combine(self.initDate,self.initTime)
+
+	def tick(self):
+		"""increments the clock by 1 minute"""
+		self.clock += timedelta(minutes=1)
+
+
+#######################
+##### ATTRACTIONS #####
+#######################
+
+class Attraction():
+	"""
+	 A base class for attractions. Handles most of the work of moving customers through lines and through the ride
+	 Attributes:
+		 name (string name of the ride)
+		 entrance (2-item tuple (x,y))
+		 exit (2-item tuple (x,y))
+		 numCars (int current number of cars)
+		 maxCars (int maximum number of cars)
+		 carCapacity (int)
+		 rideCars (list of RideCar objects, which hold their own status and customers)
+		 waitQueue (list of Customers, the queue of people waiting)
+		 isOpen (boolean, telling if the ride is open)
+		 emptyCarCounter (int, a counter to keep track of how many empty cars we've had. Helps determine when to add/remove cars)
+		 stats (dictionary, stores values used to calculate statistics)
+	 """
+
+	def __init__(self, name: str, entrance: tuple, exit: tuple, carStats: tuple, rideTime: int, loadTime: int):
+		"""Initialize the attraction with the given parameters."""
+		self.name = name
+		self.entrance = entrance
+		self.exit = exit
+		self.numCars, self.maxCars, self.carCapacity = carStats
+		self.rideTime = rideTime
+		self.loadTime = loadTime
+		self.rideCars = [RideCar(self.carCapacity,self.loadTime,self.rideTime) for i in range(self.numCars)]
+		self.waitQueue = []
+		self.isOpen = True
+		self.emptyCarCounter = 0
+		self.stats = {'timeRunning':0,'totalRiders':0,'riderMinutes':0,'carMinutes':0,
+					  'minCars':len(self.rideCars),'maxCars':len(self.rideCars), 'lineMinutes':0,
+					  'minLine':float('inf'),'maxLine':0, 'totalWaiters':0, 'minWait':0, 'maxWait':0}
+
+	def __str__(self):
+		"""String representation. For debugging"""
+		return "%s(%s, %s)" % (self.__class__.__name__, self.name, self.waitQueue)
+
+	def __repr__(self):
+		"""String representation as used by lists and dictionaries. For debugging"""
+		return "%s(%s)" % (self.__class__.__name__, self.name)
+
+	def addCar(self):
+		"""adds a new car to the ride"""
+		self.rideCars.append(RideCar(self.carCapacity,self.loadTime,self.rideTime))
+
+	def removeCar(self):
+		"""removes the first empty car"""
+		for car in self.rideCars:
+			if car.status == RideCar.WAITING and car.isEmpty():
+				self.rideCars.remove(car)
+				break
+
+	def enqueue(self, customer:'Customer'):
+		"""add the customer to the line, returns a boolean if successfully added or not"""
+		# java version has some extra checks, like maximum line lengths, which we're not dealing with
+		success = False
+		if self.isOpen:
+			self.waitQueue.append(customer)
+			customer.enterAttraction(self) #notifies the customer that they're now in line
+			success = True
+		return success
+
+	def dequeue(self):
+		"""get customers out of line (to be put into cars). Returns a list of customers removed from the line"""
+		dequeued = self.waitQueue[0:self.carCapacity]
+		self.waitQueue = self.waitQueue[self.carCapacity:]
+		return dequeued
+
+	def unloadCars(self):
+		"""goes through the cars and unloads any that are finished"""
+		for car in self.rideCars:
+			if car.status == RideCar.DONE:
+				unloaded = car.unloadCustomers()
+				for customer in unloaded:
+					customer.exitAttraction(self)
+				#print("unloaded",unloaded,"from Car",self.rideCars.index(car))
+
+	def loadCars(self):
+		"""goes through the cars and loads any that are waiting for people"""
+		for car in self.rideCars:
+			if car.status == RideCar.WAITING:
+				toload = self.dequeue()
+				if len(toload) > 0: #if we have people to load
+					car.loadCustomers(toload)
+				#print("loaded",toload,"into Car",self.rideCars.index(car))
+				#don't update customers, since loading is considered still being in line
+
+	def tick(self):
+		raise NotImplementedError("Attraction class must be subclassed to be tickable")
+
+	def estimatedWait(self):
+		raise NotImplementedError("Attraction class must be subclassed to report estimated wait")
+
+	def updateStats(self):
+		"""Updates the statistics variable based on the current state of the attraction this minute.
+			  DO NOT CALL MORE THAN ONCE PER ROUND.
+		  """
+		self.stats['timeRunning'] += 1
+		numRidersLoaded = 0
+		numPeopleRiding = 0
+		for car in self.rideCars: #iterate through the cars
+			numRidersLoaded += car.justLaunched()
+			numPeopleRiding += car.numRiders()
+		self.stats['totalRiders'] += numRidersLoaded
+		self.stats['riderMinutes'] += numPeopleRiding
+		self.stats['carMinutes'] += len(self.rideCars)
+		self.stats['minCars'] = min(self.stats['minCars'],len(self.rideCars))
+		self.stats['maxCars'] = max(self.stats['maxCars'],len(self.rideCars))
+		self.stats['lineMinutes'] += len(self.waitQueue)
+		self.stats['minLine'] = min(self.stats['minLine'],len(self.waitQueue))
+		self.stats['maxLine'] = max(self.stats['maxLine'],len(self.waitQueue))
+		newWaiters = 0
+		minWaitTime = float('inf') #infinity, so first thing will always be smaller
+		maxWaitTime = 0
+		for customer in self.waitQueue: #iterate through the customers in line
+			newWaiters += customer.isNewWaiter() #slightly awkward method, but lets us put stats all in 1 place
+			waitTime = customer.timeWaiting()
+			minWaitTime = min(minWaitTime,waitTime)
+			maxWaitTime = max(maxWaitTime,waitTime)
+		self.stats['totalWaiters'] += newWaiters
+		self.stats['minWait'] = min(self.stats['minWait'],minWaitTime)
+		self.stats['maxWait'] = max(self.stats['maxWait'],maxWaitTime)
+
+	def getFinalStatistics(self):
+		"""Returns a dictionary containing calculated statistics"""
+		self.stats['totalWaiters'] = max(self.stats['totalWaiters'],1) #set to 1 if 0, to avoid ZeroDivisionError
+		return {
+			'Total Number of Riders':self.stats['totalRiders'],
+			'Avg Riders per Minute': self.stats['totalRiders']/self.stats['timeRunning'],
+			'Min Number of Cars':self.stats['minCars'],
+			'Max Number of Cars':self.stats['maxCars'],
+			'Avg Number of Cars':self.stats['carMinutes']/self.stats['timeRunning'],
+			'Min Line Length': self.stats['minLine'],
+			'Max Line Length': self.stats['maxLine'],
+			'Avg Line Length': self.stats['lineMinutes']/self.stats['timeRunning'],
+			'Min Wait Time': self.stats['minWait'],
+			'Max Wait Time': self.stats['maxWait'],
+			'Avg Wait Time': self.stats['lineMinutes']/self.stats['totalWaiters']
+		}
+
+class CycleAttraction(Attraction):
+	"""A subclass of Attraction representing a Cycle Ride
+	 """
+
+	def tick(self):
+		"""Takes a turn. We base behavior off of the first car, since they all work on the same loop"""
+		# first unload the people
+		if self.rideCars[0].status == RideCar.DONE:
+			self.unloadCars()
+
+		# check if we need to adjust cars--adjust if we're waiting (and so has no people loading or riding)
+		if self.rideCars[0].status == RideCar.WAITING:
+			self.adjustCars()
+
+		# load the cars if needed
+		if self.rideCars[0].status == RideCar.WAITING:
+			self.loadCars()
+
+		# dispatch the cars if ready (and so have people done loading--won't occur if empty)
+		# we count empty cars at launch time, so that functionality is mixed in here. Would be nice to move it out
+		if self.rideCars[0].status == RideCar.READY:
+			emptyCount = 0 #how many empty cars are we launching
+			for car in self.rideCars:
+				car.dispatch()
+				for customer in car.riders:
+					customer.rideAttraction(self)
+				if car.isEmpty():
+					emptyCount += 1
+			if emptyCount >= 2:
+				self.emptyCarCounter += 1
+			else:
+				self.emptyCarCounter = 0
+
+		self.updateStats()
+		for car in self.rideCars:
+			car.tick() # tick all the cars
+
+	def adjustCars(self):
+		"""Adjusts the number of cars based on parameters:
+			  If the number of people waiting in line is greater than the current capacity of the ride,
+			  and if fewer than the maximum number of cars are in use, it will add one car. It will
+			  remove one car from the ride if two or more cars were empty during each of the last three
+			  cycles.
+		  """
+		currCars = len(self.rideCars)
+		if len(self.waitQueue) > currCars*self.carCapacity and currCars < self.maxCars:
+			self.addCar()
+		elif self.emptyCarCounter >= 3 and currCars > 1:
+			self.removeCar()
+			self.emptyCarCounter -= 1 #to make sure we don't remove on the next tick, but only after the next launch
+
+	def estimatedWait(self):
+		"""Returns an estimated wait time for this attraction.
+			  Comes up with a rough estimate (should be within "rideTime" minutes though).
+			  Does not currently account for potential change in number of cars.
+			  Making this more accurate would be a potential upgrade
+		  """
+		timeLeftOnRun = 0
+		if self.rideCars[0].status == RideCar.LOADING:
+			timeLeftOnRun += self.loadTime - (self.rideCars[0].timeSpent) + self.rideTime
+		elif self.rideCars[0].status == RideCar.RUNNING:
+			timeLeftOnRun += self.rideTime - (self.rideCars[0].timeSpent)
+		return timeLeftOnRun + math.ceil(len(self.waitQueue)/(len(self.rideCars)*self.carCapacity))*(self.loadTime+self.rideTime)
+
+class ContinuousAttraction(Attraction):
+	"""A subclass of Attraction representing a Continuous Ride
+	 """
+
+	def tick(self):
+		"""Takes a turn."""
+		# unload the people from any finished cars
+		self.unloadCars()
+
+		# check if we need to adjust cars while there might be something stopped we can remove
+		self.adjustCars()
+
+		# load the cars if needed
+		self.loadCars()
+		for car in self.rideCars:
+			if car.status == RideCar.WAITING or car.status == RideCar.LOADING:
+				car.status = RideCar.READY #if we're waiting, then we're ready to go (no matter what--had no loadtime)
+
+		# dispatch the cars if ready (and so have people done loading--won't occur if empty)
+		# we count empty cars at launch time, so that functionality is mixed in here. Would be nice to move it out
+		carDispatched = False
+		for car in self.rideCars:
+			if car.status == RideCar.READY and not carDispatched:
+				car.dispatch()
+				for customer in car.riders:
+					customer.rideAttraction(self)
+				carDispatched = True
+				self.rideCars.append(self.rideCars.pop(self.rideCars.index(car))) #move car to the back of the queue
+				if car.isEmpty():
+					self.emptyCarCounter += 1
+				else:
+					self.emptyCarCounter = 0
+
+		self.updateStats()
+		for car in self.rideCars:
+			car.tick() # tick all the cars
+
+	def adjustCars(self):
+		"""Adjusts the number of cars based on parameters:
+			  If more than five carloads of people are waiting in line, the ride will add one car (up
+			  to the maximum). If there has been a sequence of empty cars launched that's longer than
+			  one-third of the number of cars on the ride, then the ride will remove one car.
+		  """
+		currCars = len(self.rideCars)
+		if len(self.waitQueue) > 5*self.carCapacity and currCars < self.maxCars:
+			self.addCar()
+		elif self.emptyCarCounter > currCars/3 and currCars > 1:
+			self.removeCar()
+
+	def estimatedWait(self):
+		"""Returns an estimated wait time for this attraction.
+			  Comes up with a rough estimate (should be within "rideTime" minutes though).
+			  Does not currently account for potential change in number of cars.
+			  Making this more accurate would be a potential upgrade
+		  """
+		return math.ceil( len(self.waitQueue)/(len(self.rideCars)*self.carCapacity) )*self.rideTime
+
+class IntervalAttraction(Attraction):
+	"""A subclass of Attraction representing an Interval Ride
+	 """
+
+	def tick(self):
+		"""Takes a turn."""
+		# unload the people from any finished cars
+		self.unloadCars()
+
+		# check if we need to adjust cars
+		self.adjustCars()
+
+		# go through the cars and see if someone is ready to load.
+		# don't call self.loadCars() because we only load one at a time
+		for car in self.rideCars:
+			if car.status == RideCar.WAITING:
+				toload = self.dequeue()
+				if len(toload) > 0: #if we have people to load
+					car.loadCustomers(toload)
+					#print("loaded",toload,"into Car",self.rideCars.index(car))
+					#don't update customers, since loading is considered still being in line
+					break
+
+		# dispatch the cars if ready (and so have people done loading--won't occur if empty)
+		carDispatched = False
+		for car in self.rideCars:
+			if car.status == RideCar.READY and not carDispatched:
+				car.dispatch()
+				for customer in car.riders:
+					customer.rideAttraction(self)
+				carDispatched = True
+				self.rideCars.append(self.rideCars.pop(self.rideCars.index(car))) #move car to the back of the queue
+
+		self.updateStats()
+		for car in self.rideCars:
+			car.tick() # tick all the cars
+
+	def adjustCars(self):
+		"""Adjusts the number of cars based on parameters:
+			  If more than five carloads of people are waiting in line, the ride will add one car (up
+			  to the maximum). If there has been a sequence of empty cars launched that's longer than
+			  one-third of the number of cars on the ride, then the ride will remove one car.
+		  """
+		currCars = len(self.rideCars)
+		if len(self.waitQueue) > self.carCapacity*currCars and currCars < self.maxCars:
+			#print("adding car")
+			self.addCar()
+		else:
+			# calc time we've had an empty (waiting) car
+			self.emptyCarCounter = 0
+			for car in self.rideCars:
+				if car.status == RideCar.WAITING:
+					self.emptyCarCounter = max(self.emptyCarCounter,car.timeSpent)
+			if self.emptyCarCounter > 10 and currCars > 1:
+				#print("removing car")
+				self.removeCar()
+
+	def estimatedWait(self):
+		"""Returns an estimated wait time for this attraction.
+			  Comes up with a rough estimate (should be within "rideTime" minutes though).
+			  Does not currently account for potential change in number of cars.
+			  Making this more accurate would be a potential upgrade
+		  """
+		return math.ceil( len(self.waitQueue)/(len(self.rideCars)*self.carCapacity) )*(self.loadTime+self.rideTime)
+
+class RideCar():
+	"""
+	 A individual car on an attraction. Each car loads in people, runs the ride, and then unloads. Keeps track of status (e.g., how long it has been on the ride).
+	 Attributes:
+		 capacity (int)
+		 loadTime (int, time required to load)
+		 rideTime (int, time required to load)
+		 status (int, the current status of the car (see class constants))
+		 timeSpent (int, the amount of time spent on the current activity (e.g., loading))
+		 riders (list of Customers, the people currently on the ride)
+	 """
+	#constants to track car status
+	WAITING = 1 #waiting to load
+	LOADING = 2 #loading people
+	READY = 3 #ready to run
+	RUNNING = 4 #running the ride
+	DONE = 5 #done running
+	STATUS = {WAITING:'WAITING', LOADING:'LOADING', READY:'READY', RUNNING:'RUNNING', DONE:'DONE'} #a hash for converting constants to strings for debugging
+
+	def __init__(self, capacity:int, loadTime: int, rideTime:int):
+		"""Creates a new car with the given parameters. Initialized as waiting and empty."""
+		self.capacity = capacity
+		self.loadTime = loadTime
+		self.rideTime = rideTime
+		self.status = RideCar.WAITING #init to waiting
+		self.timeSpent = 0
+		self.riders = []
+
+	def __str__(self):
+		"""String representation. For debugging"""
+		return "RideCar(%s, %s)" % (self.riders, RideCar.STATUS[self.status])
+
+	def __repr__(self):
+		"""String representation as used by lists and dictionaries. For debugging"""
+		return "RideCar(%s, %s)" % (self.riders, RideCar.STATUS[self.status])
+
+	def unloadCustomers(self):
+		"""Returns a list of Customers who were unloaded, or an empty list if no one to unload
+		   Note that customers immediately unload when the ride is done
+		"""
+		if self.status == RideCar.DONE:
+			unloaded = list(self.riders)
+			self.riders = []
+			self.status = RideCar.WAITING
+			self.timeSpent = 0
+			return unloaded
+		return []
+
+	def loadCustomers(self, customers:list):
+		"""loads the given Customers into the car. Returns the number of people loaded (-1 if problem)"""
+		# do we need to deal with partial loads? Or do we always go in up to full batches?
+		if len(customers) > self.capacity:
+			raise ValueError("Unable to load more customers than the maximum number of riders allowed per car.")
+		if self.status == RideCar.WAITING:
+			self.riders += customers
+			self.status = RideCar.LOADING
+			self.timeSpent = 0
+			return len(self.riders)
+		return -1
+
+	def dispatch(self):
+		"""Sends the car out on the ride."""
+		if self.status == RideCar.READY:
+			self.status = RideCar.RUNNING
+			self.timeSpent = 0
+
+	def tick(self):
+		"""does a clock tick, updating status"""
+		self.timeSpent += 1
+		if self.status == RideCar.LOADING and self.timeSpent >= self.loadTime:
+			self.status = RideCar.READY
+		if self.status == RideCar.RUNNING and self.timeSpent >= self.rideTime:
+			self.status = RideCar.DONE
+
+	def isEmpty(self):
+		"""returns if we're empty or not"""
+		return len(self.riders) == 0
+
+	def numRiders(self):
+		"""returns the number of *riders* (if we're running). If we're loading/waiting, then do not have 'riders'."""
+		if self.status == RideCar.RUNNING or self.status == RideCar.DONE: #done is the last round we were riding
+			return len(self.riders)
+		return 0
+
+	def justLaunched(self):
+		"""returns the number of people who were just loaded (this tick) into the car, for statistics"""
+		if (self.status == RideCar.RUNNING and self.timeSpent == 0):
+			return len(self.riders)
+		return 0
+
+	def justLoaded(self):
+		"""returns the number of people who were just loaded (this tick) into the car, for statistics
+			  Method currently redundant.
+		  """
+		if self.status == RideCar.LOADING and self.timeSpent == 0:
+			return len(self.riders)
+		return 0
+
+
+#####################
+##### CUSTOMERS #####
+#####################
+
+class Customer():
+	"""A fat class representing a customer. Customers make their own decisions about which rides to get on, and keep track of walking around. They also keep track of the amount of time they've spent waiting in line, and log every ride they get on.
+	 Attributes:
+		 name (str, the customer's name)
+		 arrival (time, when the customer arrives at the park)
+		 decisionStrategy (string, the strategy the customer uses to pick the next ride to go on)
+		 exitStrategy (string, the strategy the customer uses to choose when to leave)
+		 exitTime (time, when the customer wants to leave (if needed))
+		 wishlist (dictionary, ride names with priorities, for lookup)
+		 agenda (list, priority queue of things to do)
+		 agendaRefilled (boolean, whether this customer has refilled the agenda at least once)
+		 status (int, tracks the customer's current activity (see class constants))
+		 timeSpent (int, the amount of time spent on a particular status (e.g., walking))
+		 location (2-item list, our last reported location (x,y))
+		 travelTime (int, the time required to reach destination)
+		 park (AmusementPark, a reference to the park we're inside, so we can get information)
+		 clock (Clock, a reference to the simulation's clock, so we can keep track of what time it is (for logging and decision making). Should not be changed internally.)
+		 log (list, tuples representing each action taken. Tuples take the form
+			 (ridename, time entered line, time started ride, time completed ride)
+			 the first and last item should be times for entering/leaving the park)
+	 """
+	#constants to track customer status
+	WAITING = 1 #waiting in line
+	RIDING = 2 #riding a ride
+	WALKING = 3 #moving between rides
+	ARRIVED = 4 #has reached destination
+	HOLDING = 5 #holding for further instructions
+	LEAVING = 6 #walking to leave the park
+	LEFT = 7 #got to the exit so can leave the park
+	STATUS = {WAITING:'WAITING', RIDING:'RIDING', WALKING:'WALKING', ARRIVED:'ARRIVED', HOLDING:'HOLDING', LEAVING:'LEAVING', LEFT:'LEFT'} #a hash for converting constants to strings for easier debugging
+
+	def __init__(self, name: str, arrival: time, decisionStrategy, exitStrategy: str, exitTime: time, wishlist: list):
+		"""Initialize the customer with the given parameters.
+			  Note: wishlist should be a priority queue (list of tuples (priority,name))
+		  """
+		self.name = name
+		self.arrival = arrival
+		self.decisionStrategy = decisionStrategy
+		self.exitStrategy = exitStrategy
+		self.exitTime = exitTime
+		self.wishlist = dict((rideName,priority) for priority,rideName in wishlist)
+		self.agenda = sorted(wishlist)
+		self.agendaRefilled = False
+		self.status = Customer.HOLDING
+		self.timeSpent = 0
+		self.location = [0,0]
+		self.travelTime = 0
+		self.park = None
+		self.clock = None
+		self.log = []
+
+	def __str__(self):
+		"""String representation. For debugging"""
+		return "%s(%s, %s, %s, %s, %s)" % (self.__class__.__name__,
+										   self.name,self.arrival,self.exitStrategy,str(self.time),str(self.wishlist))
+
+	def __repr__(self):
+		"""String representation as used by lists and dictionaries. For debugging"""
+		# return "%s(%s, %s, %s, %s, %s)" % (self.__class__.__name__,
+		#	self.name,self.arrival,self.exitStrategy,str(self.exitTime),str(self.wishlist))
+		return "%s(%s)" % (self.__class__.__name__, self.name)
+
+	def tick(self):
+		"""takes a turn"""
+		self.timeSpent += 1
+		if self.status == Customer.HOLDING:
+			if not self.decideToStay(): #first check if we want to leave. If so, start walking to the exit
+				self.status = Customer.LEAVING
+				self.travelTime = math.ceil(dist(self.location,self.park.exit))
+				self.timeSpent = 0
+			else:
+				if len(self.agenda) == 0:
+					self.refillAgenda()
+				self.decideAgenda() # make a decision about what to do next (reorganize the agenda)
+				self.status = Customer.WALKING
+				self.travelTime = math.ceil(dist(self.location,self.park.attractions[self.nextRide()].entrance))
+				self.timeSpent = 0
+		if self.status == Customer.WALKING and self.timeSpent >= self.travelTime:
+			self.status = Customer.ARRIVED
+		if self.status == Customer.LEAVING and self.timeSpent >= self.travelTime:
+			self.status = Customer.LEFT
+
+	def decideToStay(self):
+		"""Decides whether to leave or not (executes the exitStrategy)."""
+		if not self.park.isOpen:
+			return False
+		if self.exitStrategy == 'Park Closing Time':
+			return self.clock.time() < self.park.closeTime #redundant with general check for park openness
+		elif self.exitStrategy == 'Empty Wish List':
+			return len(self.agenda) > 0
+		elif self.exitStrategy == 'Set Time':
+			return self.clock.time() < self.exitTime
+
+	def decideAgenda(self):
+		"""Assigns priorities based on some decision system, then resorts the agenda.
+			  Sorts the agenda based on some decision system (i.e., using a different sorting condition)
+		  """
+		if self.decisionStrategy == 'Closest Ride First':
+			self.agenda = [(dist(self.park.attractions[rideName].entrance, self.location), rideName)
+			for priority,rideName in self.agenda] #priority equal to distance
+		elif self.decisionStrategy == 'Shortest Time First':
+			self.agenda = [(self.park.attractions[rideName].estimatedWait(), rideName)
+			for priority,rideName in self.agenda] #priority equal to waitTime
+		else: #elif self.decisionStrategy == 'Highest Priority First': #default
+			self.agenda = [(self.wishlist.get(rideName,float('inf')),rideName) for priority,rideName in self.agenda]
+		self.agenda = sorted(self.agenda) #sort the agenda based on updated priorities
+
+	def refillAgenda(self):
+		"""Refills the agenda if it is empty.
+			  Adds all the rides in the park that the customer hasn't visited yet (on first refill),
+			  and if the agenda runs out again, adds the closest 15 rides to the customer's current location.
+		  """
+		if not self.agendaRefilled and len(self.wishlist) < len(self.park.attractions): #if there was something we haven't visited
+			unvisited = set(self.park.getRideNames()) - set(self.wishlist.keys()) #using set subtraction
+			self.agenda += [(self.wishlist.get(ride,float('inf')),ride) for ride in unvisited]
+			self.agendaRefilled = True
+		else:
+			closestRides = self.park.getClosestRides(self.location, 15)
+			self.agenda += [(self.wishlist.get(ride.name,float('inf')),ride.name) for ride in closestRides]
+
+	def enterPark(self, park: 'AmusementPark'):
+		self.park = park
+		self.location = self.park.entrance
+		#print("%s entered park" % (self.name,))
+		self.log.append((park.name, self.clock.time(), 'entered')) #log that we entered the park
+
+	def exitPark(self):
+		#print("%s exited park" % (self.name,))
+		self.log.append((self.park.name, self.clock.time(), 'exited')) # log that we left the park
+		self.park = None
+
+	def enterAttraction(self, ride:'Attraction'):
+		"""get in line at an attraction"""
+		if self.status == Customer.ARRIVED: ##normally can only enter if we've arrived, here for debugging
+			self.location = ride.entrance
+			self.status = Customer.WAITING
+			self.timeSpent = 0
+		#print("Customer",self.name,"entered",ride.name)
+		self.log.append((ride.name, self.clock.time())) #add ride to the log
+
+	def rideAttraction(self, ride:'Attraction'):
+		"""starts riding the attraction (update internal representation)"""
+		if self.status == Customer.WAITING:
+			self.status = Customer.RIDING
+			self.timeSpent = 0
+		#print("Customer",self.name,"started riding",ride.name)
+		self.log[-1] += (self.clock.time(),) #append the start time to the latest log
+
+	def exitAttraction(self, ride:'Attraction'):
+		"""gets off an attraction after riding"""
+		if self.status == Customer.RIDING:
+			self.location = ride.exit
+			self.agenda.pop([r for p,r in self.agenda].index(ride.name)) #pop the first thing in our agenda with the name
+			self.status = Customer.HOLDING
+			self.timeSpent = 0
+		#print("Customer",self.name,"exited",ride.name)
+		self.log[-1] += (self.clock.time(),) #append the exiting time to the latest log
+
+	def assignClock(self, clock: 'Clock'):
+		"""Assigns a clock for the customer to reference."""
+		self.clock = clock
+
+	def nextRide(self):
+		"""Returns the name of the next ride on the agenda. Used for easier calls from elsewher/eoutside"""
+		return self.agenda[0][1]
+
+	def timeWaiting(self):
+		"""returns the amount of minutes we have been waiting; 0 if we are not waiting"""
+		if self.status == Customer.WAITING:
+			return self.timeSpent
+		return 0
+
+	def isNewWaiter(self):
+		"""Returns if the customer is newly waiting. Kind of odd method"""
+		return self.status == Customer.WAITING and self.timeSpent == 0
+
+	def getFinalStatistics(self):
+		"""Returns a dictionary containing calculated statistics"""
+		stats = {}
+		stats['Total Time in Park'] = minutesFrom(self.log[0][1],self.log[-1][1])
+		stats['Total Time in Line'] = 0
+		stats['Total Time on Rides'] = 0
+		ridesVisited = set()
+		ridelog = self.log[1:-1] #the rides are everything but the first and last entry (so far)
+		for entry in ridelog:
+			ridesVisited |= set([entry[0]]) #union entry name with the set; will only add if unique
+			stats['Total Time in Line'] += minutesFrom(entry[1],entry[2])
+			stats['Total Time on Rides'] += minutesFrom(entry[2],entry[3])
+		stats['Percent Wishlist Visited'] = (1 - ((len(set(self.wishlist.keys()) - ridesVisited))) / max(len(self.wishlist),1))*100
+		stats['log'] = self.log
+		return stats
+
+
+################################
+##### CONVENIENCE METHODS ######
+################################
+
+def dist(p:tuple, q:tuple):
+	"""Calcuates the Euclidian distance between two (x,y) iterables"""
+	return math.sqrt((p[0]-q[0])**2+(p[1]-q[1])**2)
+
+def minutesFrom(t1:time, t2:time):
+	"""returns the minutes from one time to another"""
+	diff = datetime.combine(date.today(),t2) - datetime.combine(date.today(),t1)
+	return diff.seconds/60
+
+def minutesToStr(m:int):
+	"""returns an HR:MN string out of the given number of minutes"""
+	return datetime.strftime(datetime.combine(date.today(),time(0,0))+timedelta(minutes=m),"%H:%M")
+
+
+########################
+##### MAIN PROGRAM #####
+########################
+
+class AmusementParkSimulation():
+	"""
+	 A class that runs a simulation on a park by feeding it customers, handling the clock, etc.
+	 Can then fetch information from the park and from the customers
+	 Has a UI handler attached, so that the simulation processing is separate from the UI
+	 Attributes:
+		 park (an AmusementPark to simulate on)
+		 clock (a Clock to keep track of the time, shared by everyone)
+		 notYetAdmitted (list of Customers who are part of the simulation but haven't yet entered the park)
+		 admittedCustomers (list of Customers who have entered the park--all the customers by the end of the sim)
+		 observer (a SimulationUI or other object we can inform when something happens that should be displayed)
+	 """
+
+	def __init__(self, park: 'AmusementPark', customers: list, observer: 'SimulationUI'):
+		"""Sets up a simulation for a particular park with a particular list of customers and a specified observer"""
+		self.park = park
+		self.clock = Clock(time=park.openTime) #initialize to when the park is going to open
+		for customer in customers:
+			customer.assignClock(self.clock) #give all the customers a clock
+		self.notYetAdmitted = sorted(customers, key=lambda customer:customer.arrival) #store as a sorted list
+		self.admittedCustomers = [] #keep track of people once they've been admitted, for statistics
+		self.observer = observer
+
+	def run(self):
+		"""Runs the simulation. Returns the results."""
+		self.park.open()
+		while self.park.isOpen or len(self.park.customers) > 0: #while open or we have people
+			self.clock.tick()
+			#print(self.clock)
+			if self.clock.time() >= self.park.closeTime: # equal so that we can close at 11:59
+				self.park.close()
+			if self.park.isOpen:
+				#admit customers
+				while len(self.notYetAdmitted) > 0 and self.notYetAdmitted[0].arrival <= self.clock.time(): #while whoever is in front of the line gets in before now
+					customer = self.notYetAdmitted.pop(0)
+					self.park.admitCustomer(customer)
+					self.admittedCustomers.append(customer)
+			self.park.tick()
+			numTicks = minutesFrom(self.park.openTime,self.clock.time())
+			if numTicks % 30 == 0: #every 30mins, notify the observers (in 12 hours, should produce 24 notifications)
+				if self.observer:
+					self.observer.update('MINUTE_30_TICK')
+		return self.getResults()
+
+	def getResults(self):
+		"""Constructs dictionaries of results. Returns a tuple of dictionaries (customer results, attraction results)"""
+		customerResults = {customer.name:customer.getFinalStatistics() for customer in self.admittedCustomers}
+		attractionResults = {name:ride.getFinalStatistics() for (name,ride) in self.park.attractions.items()}
+		return (customerResults,attractionResults)
+
+class SimulationUI():
+	"""
+	 The UI and menu handling class. Contains multiple methods for enabling user interaction.
+	 Attributes:
+		 simulation (AmusementParkSimulation that we're running/have run)
+		 customerResults (a dictionary of the customer statistics from the last simulation. None if have not run)
+		 attractionResults (a dictionary of the attraction statistics from the last simulation. None if have not run)
+	 """
+
+	def __init__(self):
+		"""Initializes variables for the simulation (to None).
+			  Also starts the main menu."""
+		self.simulation = None
+		self.customerResults = None
+		self.attractionResults = None
+		self.mainMenu() #on creation, bring up the main menu ??
+
+	def mainMenu(self):
+		"""main menu for the simulation"""
+		while True:
+			print("-- Amusement Park Simulator | Main Menu --")
+			if self.customerResults:
+				print("[C] View customer results of simulation")
+			if self.attractionResults:
+				print("[A] View attraction results of simulation")
+			# if self.simulation:
+			#	print("[R] Repeat simulation")
+			print("[N] Start a new simulation")
+			print("[Q] Quit")
+			cmd = input('> ').upper()
+			if cmd == 'N':
+				self.buildSimulation()
+				self.runSimulation()
+			# elif cmd == 'R' and self.simulation:
+			#	self.runSimulation()
+			elif cmd == 'C' and self.customerResults:
+				self.customerResultsMenu()
+			elif cmd == 'A' and self.attractionResults:
+				self.attractionResultsMenu()
+			elif cmd == 'Q':
+				print("Thank you for using the Amusement Park Simulator")
+				return
+			else:
+				self.invalidCommand(cmd)
+
+	def runSimulation(self):
+		"""Runs the simulation"""
+		print("\nStarting simulation of '%s'."%self.simulation.park.name)
+		results = self.simulation.run()
+		print("\nSimulation complete.\n")
+		self.customerResults, self.attractionResults = results
+
+	def buildSimulation(self):
+		"""Queries the user for parameters for the simulation, then builds and stores it."""
+		print("Please enter a name for the amusement park.")
+		name = input('> ')
+		openTime = time(9,0)
+		while True:
+			print("Please specify an opening time for the park (ex: '9:00' or '17:30').")
+			try:
+				openTime = datetime.strptime(input('> '),"%H:%M").time()
+			except ValueError:
+				print("Error: bad time format.")
+			else:
+				break
+		closeTime = time(21,0)
+		while True:
+			print("Please specify a closing time for the park (ex: '9:00' or '17:30').")
+			try:
+				closeTime = datetime.strptime(input('> '),"%H:%M").time()
+			except ValueError:
+				print("Error: bad time format.")
+			else:
+				break
+		# can query for other parameters here; currently set as defaults
+		entrance = (0,0)
+		exit = (0,0)
+		attractions = []
+		while True:
+			print("Please specify a file containing attractions for the park.")
+			try:
+				attractionFile = open(input('> '))
+				attractions = parseAttractionFile(attractionFile,self)
+				attractionFile.close()
+			except Exception as error:
+				print("Error reading file (%s)."% error)
+			else:
+				break
+		customers = []
+		while True:
+			print("Please specify a file containing customers for the park.")
+			try:
+				customerFile = open(input('> '))
+				customers = parseCustomerFile(customerFile,self)
+				customerFile.close()
+			except Exception as error:
+				print("Error reading file (%s)."% error)
+			else:
+				break
+		park = AmusementPark(name, attractions, entrance, exit, openTime, closeTime)
+		self.simulation = AmusementParkSimulation(park, customers, self)
+
+	def customerResultsMenu(self):
+		"""Menu for viewing customer results"""
+		while True:
+			print("-- Amusement Park Simulator | Customer Results Menu --")
+			print("""[S] Search for customer by name
+[1] Show customer with most time in park
+[2] Show customer with least time in park
+[3] Show customer with most time in line
+[4] Show customer with least time in line
+[W] Write all customer statistics to file
+[B] Go back""")
+			cmd = input('> ').upper()
+			if cmd == 'S':
+				print("Please enter a customer name.")
+				name = input('> ')
+				try:
+					self.showCustomerStatistics(name)
+				except KeyError:
+					print("No such customer '%s'" % name)
+			elif cmd == '1':
+				maxtime = (0,'')
+				for name,customer in self.customerResults.items():
+					if customer['Total Time in Park'] > maxtime[0]:
+						maxtime = (customer['Total Time in Park'], name)
+				self.showCustomerStatistics(maxtime[1])
+			elif cmd == '2':
+				mintime = (float('inf'),'')
+				for name,customer in self.customerResults.items():
+					if customer['Total Time in Park'] < mintime[0]:
+						mintime = (customer['Total Time in Park'], name)
+				self.showCustomerStatistics(mintime[1])
+			elif cmd == '3':
+				maxtime = (0,'')
+				for name,customer in self.customerResults.items():
+					if customer['Total Time in Line'] > maxtime[0]:
+						maxtime = (customer['Total Time in Line'], name)
+				self.showCustomerStatistics(maxtime[1])
+			elif cmd == '4':
+				mintime = (float('inf'),'')
+				for name,customer in self.customerResults.items():
+					if customer['Total Time in Line'] < mintime[0]:
+						mintime = (customer['Total Time in Line'], name)
+				self.showCustomerStatistics(mintime[1])
+			elif cmd == 'W':
+				print("File output not yet implemented")
+			elif cmd == 'B':
+				return
+			else:
+				self.invalidCommand(cmd)
+			print('')
+
+	def showCustomerStatistics(self, name:str):
+		"""Shows the stats for a named customer"""
+		stats = self.customerResults[name] #if doesn't exist, will raise an error (caught by searching)
+		print("-- Statistics for customer %s --" % name)
+		print("Time spent in park: %s" % minutesToStr(stats['Total Time in Park']))
+		print("Time spent in line: %s" % minutesToStr(stats['Total Time in Line']))
+		print("Time spent on rides: %s" % minutesToStr(stats['Total Time on Rides']))
+		print("Percent wishlist visited: %d%%" % stats['Percent Wishlist Visited'])
+	# do we want to print the ride log as well??
+
+	def attractionResultsMenu(self):
+		"""Menu for viewing attraction results"""
+		while True:
+			print("-- Amusement Park Simulator | Attraction Results Menu --")
+			print("""[S] Search for attraction by name
+[1] Show attraction with the most riders
+[2] Show attraction with the least riders
+[3] Show attraction with the longest average wait time
+[4] Show attraction with the shortest average wait time
+[W] Write all attraction statistics to file
+[B] Go back""")
+			cmd = input('> ').upper()
+			if cmd == 'S':
+				print("Please enter an attraction name.")
+				name = input('> ')
+				try:
+					self.showAttractionStatistics(name)
+				except KeyError:
+					print("No such attraction '%s'" % name)
+			elif cmd == '1':
+				maxcust = (0,'')
+				for name,ride in self.attractionResults.items():
+					if ride['Total Number of Riders'] > maxcust[0]:
+						maxcust = (ride['Total Number of Riders'], name)
+				self.showAttractionStatistics(maxcust[1])
+			elif cmd == '2':
+				mincust = (float('inf'),'')
+				for name,ride in self.attractionResults.items():
+					if ride['Total Number of Riders'] < mincust[0]:
+						mincust = (ride['Total Number of Riders'], name)
+				self.showAttractionStatistics(mincust[1])
+			elif cmd == '3':
+				maxtime = (0,'')
+				for name,ride in self.attractionResults.items():
+					if ride['Avg Wait Time'] > maxtime[0]:
+						maxtime = (ride['Avg Wait Time'], name)
+				self.showAttractionStatistics(maxtime[1])
+			elif cmd == '4':
+				mintime = (float('inf'),'')
+				for name,ride in self.attractionResults.items():
+					if ride['Avg Wait Time'] < mintime[0]:
+						mintime = (ride['Avg Wait Time'], name)
+				self.showAttractionStatistics(mintime[1])
+			elif cmd == 'W':
+				print("File output not yet implemented")
+			elif cmd == 'B':
+				return
+			else:
+				self.invalidCommand(cmd)
+			print('')
+
+	def showAttractionStatistics(self, name:str):
+		"""Shows the stats for a named attraction"""
+		stats = self.attractionResults[name] #if doesn't exist, will raise an error (caught by searching)
+		print("-- Statistics for attraction '%s' --" % name)
+
+		for key,value in stats.items():
+			print("%s: %.1f"% (key,value))
+
+	def invalidCommand(self, cmd):
+		""" Print message for invalid menu command."""
+		print("Invalid command '%s'. Please try again." % cmd)
+
+	def update(self, msg:str):
+		"""A method to display details from the observed simulator.
+			  Currently only prints out time progress bar when we're notified
+		  """
+		if msg=='MINUTE_30_TICK':
+			print('*',end='')
+		else:
+			print(msg)
+
+def parseAttractionFile(f: 'file', observer:SimulationUI=None):
+	"""Parses the given file (containing ride specifications) into a list of Attractions.
+		 Returns a list of Attraction objects.
+	 """
+	rides = {}
+	line = readline(f)
+	while line:
+		while line.strip() == '': #spin through the empty lines
+			line = readline(f)
+		line = line.strip() #first line is the name
+		name = line
+		line = readline(f).strip() #second line is the entrance
+		entrance = tuple([int(x) for x in line.split()])
+		line = readline(f).strip() #third line is the exit
+		exit = tuple([int(x) for x in line.split()])
+		line = readline(f).strip() #fourth line is about cars (initial, max, capacity)
+		cars = tuple([int(x) for x in line.split()])
+		line = readline(f).strip() #fifth line is the type
+		rideType = line
+		line = readline(f).strip() #sixth line is the times
+		times = [int(x) for x in line.split()]
+		if not name in rides:
+			if rideType == 'Cycle':
+				rides[name] = CycleAttraction(name,entrance,exit,cars,times[0],times[1])
+				#rides.append(CycleAttraction(name,entrance,exit,cars,times[0],times[1]))
+			elif rideType == 'Continuous':
+				rides[name] = ContinuousAttraction(name,entrance,exit,cars,times[0],0)
+				#rides.append(ContinuousAttraction(name,entrance,exit,cars,times[0],0))
+			elif rideType == 'Interval':
+				rides[name] = IntervalAttraction(name,entrance,exit,cars,times[0],times[1])
+				#rides.append(IntervalAttraction(name,entrance,exit,cars,times[0],times[1]))
+			else:
+				raise Exception("Unexpected ride type for attraction '"+name+"'")
+		elif observer:
+			observer.update("Ignoring duplicate ride '%s'."%name)
+		else:
+			print("Ignoring duplicate ride '%s'."%name)
+		line = readline(f) #grab the first line for the next run
+
+	return rides.values()
+
+def parseCustomerFile(f: 'file', observer:SimulationUI=None):
+	"""Parses the given file (containing customers who will show up) into a list of Customers
+		 Returns a list of Customer objects.
+	 """
+	customers = {}
+	line = readline(f)
+	while line:
+		while line.strip() == '': #spin through any empty lines
+			line = readline(f)
+		line = line.strip() #first line is the name
+		name = line
+		line = readline(f).strip() #second line is the arrival time
+		t = [int(x) for x in line.split()]
+		arrivalTime = time(t[0],t[1])
+		line = readline(f).strip() #third line is the decision strategy
+		decisionStrategy = line
+		line = readline(f).strip() #fourth line is the exit strategy
+		exitStrategy = line
+		exitTime = None
+		if exitStrategy == 'Set Time':
+			line = readline(f).strip() #next line is the exit time
+			t = [int(x) for x in line.split()]
+			exitTime = time(t[0],t[1])
+		wishlist = []
+		line = readline(f).strip()
+		while line != '----': #subsequent lines are part of the wishlist
+			parts = line.partition(' ')
+			wishlist.append((int(parts[0]),parts[2]))
+			line = readline(f).strip()
+		if not name in customers:
+			customers[name] = Customer(name,arrivalTime,decisionStrategy,exitStrategy,exitTime,wishlist)
+		elif observer:
+			observer.update("Ignoring duplicate customer '%s'."%name)
+		else:
+			print("Ignoring duplicate customer '%s'."%name)
+			
+		line = readline(f) #grab the first line for the next run
+
+	return customers.values()
+
+def readline(f: 'file'):
+	"""Returns the next line from the file that isn't a comment (starting with *)"""
+	line = f.readline()
+	while line!='' and line[0]=='*':
+		line = f.readline()
+	return line
+
+
+if __name__ == '__main__':
+	SimulationUI()
+

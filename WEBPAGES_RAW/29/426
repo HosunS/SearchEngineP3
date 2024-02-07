@@ -1,0 +1,407 @@
+			Writing Classes (continued)
+
+In this lecture we will look at the scope of names: the places that the names
+can be used and how Python determines the object associated with a name. We
+will first look at scope in modules. Then we will look at class names refering
+to value objects (not methods). Finally we will examine how to define one
+function inside another and discuss the full generality of the LEGB rule
+(Local, Enclosing, Global, and Builtins). We close with a discussion of the
+different kinds of names in Python.
+
+------------------------------------------------------------------------------
+
+Scope in Modules: Global and Local Names for Functions
+
+Modules (that do not define/import classes) typically define names that refer
+to value objects and names that refer to functions, as is illustrated below.
+
+  x = 1
+
+  def factorial(n):
+      answer = 1
+      for i in irange(2,n):
+          answer *= i
+      return answer
+
+  g = factorial
+
+print(factorial(3),g(3))
+
+In this code Python binds names (x, factorial, g) to objects (a value object
+that is an instance of the class int, a function object). Note that after
+defining g = factorial, the names g and factorial both refer to (share) the same
+function object. So calling either factorial(3) or g(3) calls the same function
+object with the argument 3 (matching its parameter n) and both return a result
+of 6 (which is 3!=1*2*3). So this script prints: 6 6
+
+Names defined at the module level are called "global" names. So in this module,
+x, factorial, and g are all examples of global names.
+
+Functions also define names: parameter names and local names (we might more
+accurately define parameter names as a special kind of local name). When a
+function is called, all its parameter names are bound to the arguments from the
+call; when the function returns, these names disappear, only to be rebound when
+the function is called again. The factorial function defines only the parameter
+n.
+
+When a function executes, it can define local names which are initialized and
+used within the function. As with parameters, when the function returns, these
+names disappear, only to be redefined again when the function is executed again.
+The factorial function defines the local names answer and i.
+
+    Contrast this with the instance/self names for objects; when an object is
+    constructed in the __init__ method, it defines instance/self names which
+    stay with the object through all its method calls: in fact most method
+    calls examine, change the state, or rebind of these instance/self names.
+
+The script outside a function cannot refer to any parameters or local names
+defined inside the fucntion: these names are for use only within that function
+(inside the scope of the function). Also two functions that are both global
+cannot refer to/examine any names defined in the other. At the end of this
+lecture we will see how to define one function INSIDE another, in which case
+the inner function can examine the names in the outer function (in the outer
+function's scope).
+
+There is one interesting interaction between global names and names used in
+functions. A function may use (refer to, but not change the binding of) a global
+name. For example, we can trivially use the global name x in the function f.
+
+  x = 1
+
+  def f(n):
+      print(n,x)
+
+  f(3)
+
+This script prints: 3 1
+
+In a more interesting way, we could define
+
+  tracing = True
+
+  def f(n):
+      if tracing:
+          print('f called with argument', n)
+      ....
+
+  f(3)
+
+  tracing = False
+
+  f(3)
+
+When the first f(3) is called, the global name tracing is bound to True, so the
+function's if test evaluates to True and the function prints
+
+  f called with argument 3.
+
+But the next statement rebinds the name tracing to False, so when the second
+f(3) is called, the global name tracing is bound to False, so the function's if
+test evaluates to False and it skips the print.
+
+Generally, when a function is called, and it refers to a non-local name, it
+tries to find a binding of that global name.
+
+Of course, it is better style to not use global names in a function, but
+instead pass it as an argument to some parameter in the function. But in the
+case of a global tracing name (which might affect many functions), sometimes it
+is easier to just define it as a global name and use that global name in each
+function. Beginners often use global names too frequently: they are sometimes
+useful, but functions should mostly use only information passed to their
+parameters.
+
+Now we will come to something confusing, but we will learn the right way to
+think about it. I'm cutting this example down to the bare bones. In previous
+examples we examined functions that examined a global name; here it "looks like"
+we are trying to change the binding of such a global name (from 1 to 2).
+
+  x = 1
+
+  def f(n):
+      x = 2
+      print(n,x)
+
+  f(3)
+
+  print(x)
+
+But what actually happens is that x = 2 defines a new local name in the
+function f; it DOES NOT change the binding of the global name (but we will see
+how this can be done soon). So, the function prints the value associated with
+this local name (2) and then the function terminates and the local name goes
+away. The print in the script after the function call refers to the global name
+x whose binding is unchanged, and prints its value (1).
+
+If we want to change the binding for the global name x inside the function f, we
+can do so, but it requires a special "global" declaration.
+
+  x = 1
+
+  def f(n):
+      global x
+      x = 2
+      print(n,x)
+
+  f(3)
+
+  print(x)
+
+Here, the global x declaration means that the function should not define x as
+a local name, so x = 2 should rebind the global name x, not introduce a local
+name x in the function; so it DOES change the binding of the global name. The
+function prints the value associated with this updated global name (2) and then
+the function terminates. The print in the script after the function call refers
+to the global name x whose binding the function changed and prints its new
+value (2).
+
+In fact, if we didn't start by defining a global name x, but still wrote
+
+  def f(n):
+      global x
+      x = 2
+      print(n,x)
+
+  f(3)
+
+  print(x)
+
+Then the definition x = 2 inside the function f defines a (new) global name and
+binds it to 2, so this code prints what the code above prints.
+
+To summarize what we know at this point
+
+(1) We can refer to global names in a function without a special mechanism, but
+       not rebind the values of global names (see 2-3)
+
+(2) If we assign to a global name in a function, the function instead creates
+       a local name and leaves the global name untouched (bound to the same
+       value).
+
+(3) If we declare a name global in a function then in contrast to (2), any
+       assignment to that name binds (if the name is not already bound)
+       or rebinds (if the name is already bound) the global name to a new value
+
+Finally, these rules combine to create a confusing situation. Look at the code
+below, which has no "global x" declaration. There are two natural ways to
+interpret what is happening: the simple one is WRONG, the more complicated one
+is RIGHT.
+
+  x = 1
+
+  def f(n):
+      print(n,x)
+      x = 2
+      print(n,x)
+
+  f(3)
+
+  print(x)
+
+WRONG: We might think that Python binds the global x to 1; then calls the
+function f, which prints the value 1, bound to the global name (by 1 above) and
+then defines and intializes to 2 a local name (by 2 above); and then prints 2,
+the value bound to the local name. But this is not what Python does.
+
+RIGHT: Python raises an exception on the first print(n,x) in f:
+
+   UnboundLocalError: local variable 'x' referenced before assignment
+
+Python's reasoning goes as follows. When f is declared (before it is called)
+Python determines that it doesn't declare x to be global, so it knows that x
+will be defined as a local name, and ALL USES of x will be to that local name.
+But the first use of x occurs BEFORE that local name is defined and initialized
+to 2, so Python raises an exception.
+
+By this reasoning, examine the following code, which is the same but includes
+a global decaration for x at the very end of the function.
+
+  x = 1
+
+  def f(n):
+      print(n,x)
+      x = 2
+      print(n,x)
+      global x
+
+  f(3)
+
+  print(x)
+
+This code calls f, which first prints the value 1, of the global name x; then
+it rebinds the global name x to the value 2, then it prints the new value 2,
+of the global name x, and terminates the function. Then the script prints the
+value 2, bound to the global name x.
+
+Python's reasoning goes as follows. When f is declared (before it is called)
+Python determines that it DOES declare x to be global (even though this
+declaration is written at the end of the function (good programming practice
+would place it first in the function), so it knows that x will mean the global
+name x, so ALL USES of x will be to that global name.
+
+Summary: Python has special rules for how functions use global and local names.
+But these rules can be a source of confusion and errors. If possible, use NO
+global names in functions; if a function must use information bound to a global
+name, use that name as an argument to pass that information to the parameter of
+a function.
+
+Can you carefully use the rules above to predict (and explain) what is printed
+by the following code. The problem is compounded by the fact that we are using
+names of function objects, not names of value objects, but in Python objects
+are objects.
+
+  def f():
+      print(1)
+
+  def g():
+      global f
+      def f():
+          print(2)
+      f()
+    
+  g()
+  f()
+
+
+------------------------------------------------------------------------------
+
+Class Names: Methods and Values
+
+We have learned that we can define classes in modules: doing so defines the
+class name, which refers to the class object from which instance of the class
+can be constructed, when called). When we define a class, primarily we define
+all the methods in the class. Every object constructed from a class has its
+state initialized by Python automatically calling the __init__ method (which
+defines and initializes instance/self names in the object's namespace). And
+then we can call class methods on the object in the form o.m(arguments).
+
+But classes can also define other names besides methods: names that are bound
+to values. In the methods of the class we refer to such names by using qualified
+name syntax: writing them as the name of the class, followed by a period,
+followed by the name. Outside the class methods, we can refer to such names via
+the same qualified name, or via an object of the class. Again Python translates
+the access o.n as type(o).n. A name defined in this way is shared by all the
+objects constructed from the class (unlike instance names which are different
+for each object constructed from the class).
+
+Here is an example of a class C that defines and manipulates a name bound to a
+value object. This class does nothing but use this name to count how many
+objects are constructed from the class: how many times __init__ is called.
+Sometimes this counting is useful, and this is the standard way to do it.
+Note that this class uses no intstance names (no self.name)
+
+class C:
+    objects_created = 0
+    
+    def __init__(self):
+        C.objects_created += 1
+        
+    def how_many(self):
+        return C.objects_created
+
+Here objects_created is defined and initialized in the class, just as the
+__init__ and how_many methods are defined. Notice how this name is referred in
+the methods as C.objects_created.
+
+Here are 5 statements that use the class.
+
+a = C()
+b = C()
+
+print(a.how_many()) 
+print(C.objects_created)
+print(c.objects_created)
+
+The last three all print 2, but in different ways:
+
+a.how_many()      calls a method that returns the value
+C.objects_created refers to this name directly
+a.objects_created uses the fundamental equation of object-oriented to refer to
+                  this name: Python translates a.objects_created  into
+                  type(a).objects_created into C.objects_created
+
+------------------------------------------------------------------------------
+
+Defining Functions with Functions and the full LEGB Rules
+
+Python allows us to define functions within functions. Often this is done to
+write a helper function (and later we will see how we can use this technique 
+to write functions that return functions). In this lecture we will examine one
+function defined in a function to study the scope rules involved.
+
+The following function takes two lists as a parameter: a list of values and a
+list of checks. It returns a list the same size as the check list: for every 
+value in the second list, the result list shows the number of times that value
+appears in the first list.
+
+count_all([1, 5, 3, 5, 2, 6, 5, 3, 2, 7, 4], [3, 4, 5]) returns [2, 1, 3]
+because 3 occurs 2 times in the first list, 4 occurs 1 time in the first list,
+and 5 occurs 3 times in the first list.
+
+def count_all(alist,checks):
+    # computed result (by appending values)
+    result = []
+
+    # inner function
+    def count_one(check):
+        count = 0
+        for v in alist:
+            if v == check:
+                count += 1
+        result.append(count)
+
+    # body of count_all, to compute the result
+    # result changes in count_one (alist is examined there)
+    for c in checks:
+        count_one(c)
+    return result
+
+Here are the names the outer/check_all and inner/check_one functions define
+  (1) count_all defines two parameter names: alist and checks
+  (2) count_all defines three local names: result, c, and the function count_one
+
+  (3) count_one defines one parameter name: check
+  (3) count_one defines two local names: count and v
+
+The interesting scoping issue here is that the inner/count_one function uses
+the names alist and result, which refer to names defined in the outer/count_all
+function (alist is defined there as a parameter, result is defined there as a
+local variable).
+
+Why can an inner function refer to names defined in an outer function?
+Generally, Python uses the LEGB rule to determine what name to use (and what
+names are legal to use) in a scope. These abbreviate Local, Enclosing, Global,
+and Builtins. Whenever we use a name in Python, it looks at the following scopes
+IN THE FOLLOWING ORDER:
+
+(1) Local scope (of a module or function)
+(2) Enclosing scope (count_all is the enclosing scope of count_one)
+(3) Global scope (in the module; discussed at length above)
+(4) Builtins (names defined in the builtins module, automatically imported)
+
+So, when defining function inside functions, the inner function (by rule 2) can
+refer to names defined in the outer function. We have already discussed rules
+1 and 3 earlier in this lecture. And rule 4 much earlier in the quarter. But we
+can now put all these rules together under the LEGB name.
+
+Note that although we referred to and mutated result in count_one, we never
+changed its binding. If we wrote result = ['strange'] instead of 
+result.append(count), we might first imagine that count_all would return
+['strange']? But it would return [] (the value initially assigned to result).
+
+This is because like with global names, names in an enclosing scope can be
+examined, but if we assign to them Python creates a new local name in the
+enclosed scope. So writing result = ['strange'] doesn't change the binding of
+the name in the enclosing scope, it defines a new name in the enclosed scope.
+As with the "global" declaration, there is a "nonlocal" declaration. If we
+declare nonlocal result in check_one, then the assignment result = ['strange']
+would change the binding of the result defined as a local name in the enclosing
+scope, and the function would ultimately return that strange value.
+
+Finally, now is a good time to review a classification of names:
+
+(1) global names   : defined in a module (via =, def, or class)
+(2) parameter names: defined in the header of functions/methods
+(3) local names    : defined in the body of functions/methods
+(4) instance names : defined in class methods (typically in __initi__ via
+                       self.name = value) and used in class method
+(5) class names    : defined in a class (see the discussion above)

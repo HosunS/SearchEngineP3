@@ -1,0 +1,430 @@
+		Equivalence Relations/Equivalence Classes
+
+
+In this lecture we will examine equivalence relations and a useful (and simple)
+tree data structure to represent and efficiently manipulate equivalence
+relations. The tree structure is fundamentally different from other trees that
+we have studied: nodes refer only to parents, not other children. Any
+equivalence relation (R) has the following three properties
+
+  (1) Reflexivity : a R a
+  (2) Symmetry    : a R b implies b R a
+  (3) Transitivity: a R b, and b R c implies a R c
+
+Here a R b means a is equivalent (by R) to b.
+
+A simple equivalence relation is "has the same birthday as" (here meaning on the
+same month/day, not including the year): (1) Everyone has the same birthday as
+themself. (2) If a has the same birthday as b, then b has the same birthday as
+a. (3) if a has the same birthday as b, and b has the same birthday as c, then
+a has the same birthday as c.
+
+All the values in an equivalence relation are partitioned into equivalence
+classes: where every value in an equivalence class is considered to be
+equivalent to every other value in that same equivalence class, but not to any
+other values in other equivalence classes. So if we partition people by their
+birthday, each equivalence class contains all the people with the same birthday.
+
+Fundamentally there are three basic operations that we can perfrom on
+equivalence relations/equivalence classes
+
+  (1) Add a new value to the equivalence, starting in its own equivalence class
+
+  (2) Determine whether or not two values are in the same equivalence class
+
+  (3) Merge the equivalence classes of two values, creating one equivalence
+       class containing all the values in each of the equivalence classes: all
+       those values are now equivalent.
+
+When restricted to these three operatioins, to put a value into an existing 
+equivalence class we must first add it to its own/new equivalence class, and
+then merge its own/new class with the class in which we want to add it.
+
+We will define a class for storing equivalences as follows.
+
+template<class T>
+class ...Equivalence { //Actually Array/BST/Hash Equivalence
+  public:
+    //Fundamental constructors, destructors, and methods
+    Equivalence();
+    ~Equivalence();
+    void add_singleton    (const T& a);
+    bool in_same_class    (const T& a, const T& b);
+    void merge_classes_of (const T& a, const T& b);
+
+    //Other methods
+    int size        () const;
+    int class_count () const;
+    ics::ArraySet<ics::ArraySet<T>> classes ();  //Or other Set implementations
+
+    //Useful for debugging
+    ics::ArrayMap<T,int> heights () const;
+    int max_height               () const;
+    void show_equivalence        () const;
+  private:
+  //implementation discussed later
+}
+
+In addition to the three fundamental methods discussed above, there are 6 more
+in the class.
+
+  1) size returns the number of values in all the equivalence classes
+       (equal to the number of times that add_singleton was called)
+
+  2) class_count returns the number of different equivalence classes.
+     It always returns a value between 1 and size inclusive: if everything
+     has been merged, it returns 1; if nothing has been merged, it returns size.
+
+  3) classes returns a Set of equivalence classes, where each value is another
+       Set (which represents one equivalence class: that is, all the values in
+       that equivalence class).
+
+  4) heights returns the heights of all trees representing an equivalence class
+       (based on the implementation discussed below).
+
+  5) max_height returns the maximum height from heights (see above).
+
+  6) show_equivalence prints the data structures used in the implementation
+       (useful for debugging small equivalence classes)
+
+If we called classes() before merging any equivalence classes, we would get a
+Set in which each value is a Set containing a singleton that we initially added.
+If we merged all the values into one big equivalence class, classes() we would
+return a Set with just one value: that value would be a Set containing all the
+values that we orginally added as singletons.
+
+Let's look at these operations abstractly first. For an example, suppose that
+we start out with 5 singletons: a, b, c, d, and e each in their own equivalence
+class. We could represent these equivalence clases as follows (similar to what
+classes() would return, but in a simpler format).
+
+  { {a}, {b}, {c}, {d}, {e} }
+
+Here, in_same_class would return false for any different values (of course a
+value is always in the same equivalence class as itself, so in_same_class(a,a)
+would return true). If we called merge_classes_of(a,b) to merge the equivalence
+class of a with the equivalence class of b, we would show the result as
+
+  { {a,b}, {c}, {d}, {e} }
+
+Of course, that has the same meaning as reversing the order of a and b in the
+first set.
+
+  { {b,a}, {c}, {d}, {e} }   which is the same as   { {d}, {c}, {e}, {a,b} }
+
+so the order of the values in any set are irrelevant.
+
+Here, in_same_class(a,b) would return true; calls with all other different
+arguments would return false. Likewise, if called merge_classes_of(d,e) to
+merge the equivalence class of d with the equivalence class of e, we would show
+the result as
+
+  { {a,b}, {c}, {d,e} }
+
+Here, size() returns 5 and class_count() returns 3.
+
+And if we did one more merge: merge_classes_of(b,e), the equivalence class of
+b would merge with the equivalence class of e, we would show the result as
+
+  { {a,b,d,e}, {c} }
+
+Here, size() returns 5 and class_count() returns 2.
+
+We could also perform this merge three other ways: as merge_classes_of(a,d),
+merge_classes_of(a,e), and merge_classes_of(b,d).
+
+------------------------------------------------------------------------------
+
+Implementations and Algorithms:
+
+One simple implementation of equivalence classes would be a Map from each value
+to a pointer to a Set that contains that value (the Set of all values that are
+in the same equivalence class; so all values in the Set would map/point to
+the same Set). In this implementation:
+
+  1) add_singleton(a) creates a Set with just a in it, and puts an association
+     in the Map from a to a pointer with that Set.
+
+  2) in_same_class(a,b) returns whether the pointer to the associated Set for a
+     and the pointer to the associated set for b are identical: this means the
+     pointers have the same address (very quick to check), NOT that the sets
+     store the same values (much slower to check); see below for how this
+     occurs when merging.
+
+  3) merge_classes_of(a,b) puts every value in the smaller Set into the
+     bigger Set, and changes the Map so that each of the values in the smaller
+     Set now is associated with a pointer to the bigger Set. We operate on the
+     smaller Set because it has fewer values to process as a result.
+
+The complexity classes for these operations are O(1), O(1), and O(N)
+respectively (where N is the size of the smallest Set, and we are using a
+hashing version of sets).
+
+For example { {a,b}, {c}, {d,e} } would be represented by the map
+
+  a-> {a,b}
+  b---^
+  c-> {c}
+  d->{d,e}
+  e--^
+
+Note that a and b point to the same Set object; and d and e point to the same
+Set object (not two copies of this set). So there are 3 different Set objects
+stored and 5 pointers pointing to them. If we merged the set with b with the
+set with e, the resulting map is
+
+  a-> {a,b,d,e}
+  b---^ ^ ^
+  d-----+ |
+  e-------+
+  c-> {c}
+
+Note that when merging the equivalence classes for b and d, they are equal
+sizes, so we could add the values d and e to the set containing a and b, and
+make d and e (in the Map) refer to this newly-enlarged set, or do it the other
+way add the values a and b to the set containing d and e, and make a and b (in
+the Map) refer to this newly-enlarged set.
+
+------------------------------------------------------------------------------
+
+A Faster (N-ary Tree of Parent Pointers) Implementation of Equivalence Classes:
+
+A more efficient way to store these values and perform these operations on them
+involves thinking about the equivalence classes as trees with parent pointers
+(but NO children pointers). Instead of constructing actual tree object from
+a TN class, we employ two simple Maps to keep track of the required
+information, where all the values in the same equivalence class appear in the
+same tree: 
+
+(1) parent map: map every value to its parent: if a value is the root of a
+      tree, map it to ITSELF.
+
+(2) size map: map every VALUE THAT IS THE ROOT OF A TREE to the size of its
+      tree: the number of values contained in the tree is the number of values
+      in the equivalence class that the tree represents.
+    Only the ROOTS of trees (values that map to themself in the parent map)
+      should appear in the size map; no other values.
+
+For this implementation, we also define a private helper method named
+compress_to_root, which operates on a single value: it follows the parent
+associations from that value all the way up to its root, and makes each of the
+values that it finds on the path have as its parent the ultimate root that it
+reaches; the method finally returns its new parent, which is the root of the
+tree for that equivalnce class.
+
+After compression, more values are associated with a parent that is the root of
+of its tree. The speed of most operations below depends on how fast we can
+traverse from any node to the root of the tree representing its equivalence
+class: the operation times are proportional to the depth of that node (in the
+worst case, the height of the tree); compression will make such a process
+faster for subsequent operations on every node on the path that was compressed,
+because those nodes now directly associate with the tree's root: they no longer
+have to search through intermediate parents to reach the root.
+
+We must search for the root for most operations (2 and 3 below). Also doing
+compression does not add much time to the execution.
+
+In this implementation:
+
+  1) add_singleton(a): (1) in the parent map, map the value to itself;
+     (2) in the size map, map the value to 1 (it is in a size 1 equivalence
+      class).
+
+  2) in_same_class(a,b) compress_to_root each parameter and return whether the
+     returned roots are == (see below for how this occurs).
+
+  3) merge_classes_of(a,b) compress_to_root each parameter and if the roots are
+     the same, do nothing: they are already in the same equivalence class.
+     Otherwise (1) in the parent map, change the root of the smaller-sized
+     equivalence class to map to the root of the larger-sized equivalence class,
+     and (2) in the size map, update the size for the root of the larger-sized
+     equivalence class (to be the sum of the two sizes) and remove the key that
+     is the root of the smaller-sized equivalence class (it is no longer a
+     root).
+
+The complexity classes for these operations are O(1), a bit more than O(1), and
+a bit more than O(1) respectively (where "a bit more than O(1)" is
+characterized below). Actually, for the last two operations their complexity
+class is O(height of the highest tree), but we are saying that on average these
+heights are very small: almost constant. Again, here we assume that we are
+using a hashing version of maps.
+
+Another way to say this is that if we perform each of these operation N times
+(adding N singletons, doing N checks/merges), the total complexity is a bit
+more than O(N), so each operation is a bit more than O(1).
+
+When we start to discuss graphs and graph algorithms, we will see a few good
+uses for storing/manipulating equivalence relations: two nodes in a graph will
+be in the same equivalence class if both are reachable from each other. One of
+the problems we discuss will eventually merge all the values into one
+equivalence class, requiring N-1 mergings (and will be complexity class about
+O(N)).
+
+------------------------------------------------------------------------------
+
+Equivalence Tree Sizes and Heights:
+
+What can we easily prove about the structure of equivalence trees? Even without
+compression (just using the fact that we make the root of the smaller tree
+refer to the root of the larger tree), we will first prove that a tree of height
+h contains at least 2^h nodes. So even without compression all the trees are
+bushy, not pathological, and cannot be too high. And the complexity class of
+in_same_class and merge_class would be at most O(Log2 N).
+
+With compression we do better: we can end up with an equivalence class whose
+tree is a smaller height: even height 1 (with all nodes referring to the root).
+These are NOT binary trees but are N-ary Trees, represented by nodes pointing
+to their PARENTS, not nodes pointing to their CHILDREN.
+
+For the following discussion, see the pictures below. 
+
+0) A tree of height 0 requires at least 1 node; that is just a singleton.
+
+1) A tree of height 1 (the result of merging two singletons) requires at least
+2 nodes: by merging the roots of two minimal-sized singletons (trees of height
+0) their sizes are the same, one root points to the other; so the height of the
+resulting tree is 1 + the height of a singleton). Note that if we added another
+singleton to a tree of height 1, it would remain at height 1, with the root
+having another child (now 2 children). Adding any number of other singletons
+would leave the height of the resulting tree the same.
+
+2) A tree of height 2 (the result of merging two minimal-sized trees of height
+1) requires 4 nodes: since their sizes are the same, one root points to the
+other; again the height of the resulting tree is 1 + the height of one
+component tree. Note that if we added another height 1 tree to a tree of height
+2, it would remain at height 2, with the root having another child (now 3).
+Adding any number of other height 1 tress would leave the height of the
+resulting tree the same.
+
+3) A tree of height 3 (the result of merging two minimal-sized trees of height
+2) requires 8 nodes: since their sizes are the same, one root points to the
+other; again the height of the resulting tree is 1 + the height of one
+component tree. Note that if we added another height 2 tree to a tree of height
+3, it would remain at height 3, with the root having another child (now 3).
+Adding more height 1 tress would leave the height of the resulting tree the
+same.
+
+In the examples below, note that the number of children of the root grows by 1
+each time (so by the time we get to h = 3, it isn't a binary tree any more).
+
+ h = 0    h = 1     h = 2         h = 3                 h = 4
+   O        O         O             O                     O
+           /         / \          / |  \           /  /  /         \  
+          O         O   O       O   O   O         O  O   O         O
+                       /           /   / \          /   / \      / |  \
+                      O           O   O   O        O    O  O    O  O   O
+                                         /                /       /   / \
+                                        O                O       O   O  O  
+                                                                        /
+                                                                       O
+ 
+Each minimal tree is built by merging two minimal trees with one less height.
+So, the minimum number of nodes in a tree of heigh h (call it m(h)) is given as
+m(0)=1 and m(h) = 2*m(h-1) so
+
+   m(h) = 2 * m(h-1)
+        = 4 * m(h-2)
+        = 2^i * m(h-i), and m(0) = 1 (when i = h), so
+        = 2^h
+
+We can also prove to build a tree of height h requires 2^h - 1 merges. Which
+means that to build a tree with N nodes requires N-1 merges. First observe that
+for h = 3, for example, we must merge the roots of two trees of h = 2. So if
+merges(h) computes the minimnum number of merges required to build a tree of
+height h, generally we have merges(h) = 1 + 2*merges(h-1). So
+
+  merges(h) = 2^0 + 2^1*merges(h-1)
+            = 2^0 + 2^1 + 2^2*merges(h-2)
+            = 2^0 + 2^1 + 2^2 + 2^3*merges(h-3), and m(0) = 0 when i = h
+            = 2^0 + 2^1 + 2^2 + ... + 2^(h-1) + 2^h * 0
+
+Generally, merges(h) = 1 + 2 + ... 2^(h-1) = 2^h - 1
+
+Of course, if we merged equivalence classes based on values that were NOT at
+the roots, compression would occur and the trees' heights could be reduced.
+And, whenever we checked in_same_class on two nodes that were not the roots of
+their trees, the trees' heights could be reduced.
+
+So, what kind of performance can we expect after creating N add_singleton values
+and doing N random calls to merge_classes_of (when we account for doing
+compression)? The mathematics is too complicated, so I'll just state the
+results here without proof:
+
+-----------
+
+Doing N merge_classes_of requires O(N Log2* N) operations: notice the *: it
+means something different than O(N Log2 N), without the *. Log2* is called the
+iterated logarithm function.
+
+-----------
+
+Now let's explore the Log2* function (notice the *)
+
+The Log2* function is the inverse of the "tower-of-2 function" (just as the
+Log2 x function is the inverse of the 2^x function). We define the tower-of-2
+function on n to be a tower of n twos with the exponentiation operator. Notice
+that ^ is RIGHT associative in mathematics, so 2^2^2 is 2^(2^2)
+
+tower-of-2(1) = 2               = 2
+tower-of-2(2) = 2^2             = 4
+tower-of-2(3) = 2^(2^2)         = 16
+tower-of-2(4) = 2^(2^(2^2))     = 65,536
+tower-of-2(5) = 2^(2^(2^(2^2))) = 2^65,536 or about (2^10)^6,553  = 1000^6,553
+                                = 10^19,659
+(since 1000^6,553 = (10^3)^6,553 = 10^(3*6,533) = 10^19,659)
+
+generally, we can recursively define: tower-of-2(n) = 2^tower-of-2(n-1)
+
+So, for Log2* (the inverse function), we have
+Log2*(2) =  1
+Log2*(n) <= 2 for 2      < n <=      4
+Log2*(n) <= 3 for 4      < n <=     16
+Log2*(n) <= 4 for 16     < n <= 65,536
+Log2*(n) <= 5 for 65,536 < n <= 10^19,659
+
+Generally, Log2* N is the number of times that we need to repeatedly take a
+logarithm base 2 to get to 1. We know Log2 16 = 4, Log2 4 = 2, and Log2 2 = 1.
+So, we need to take a logarithm base 2 of 16 exactly 3 times to get to 1. So
+Log2*(16) = 3.
+
+We saw that 2^x is a very fast growing function, so its inverse function,
+Log2 x grows very slowly. The tower-of-two function grows much more quickly
+than 2^x, so its inverse function, Log2*, is an incredibly slowly growing
+function (much slower than the Log2 function, which itself grows slowly). In
+fact, Log2*(N) <= 5 for all sizes of inputs that we are ever likely to compute
+(the number of atoms in the universe is estimated to be between 10^78 to 10^82).
+Thus, we can think about a bound of the Log2*(N) as approximately 5: like  a
+constant function (in this universe of computations). But technically it grows
+without bound, as Log2 does, but Log2* grows even much more slowly.
+
+So, the actual complexity of doing N operation in the Equivalence class (using
+HashMap) is O(N Log2* N), which as we have seen is about O(5N) for all sizes of
+inputs that we are ever likely to compute with in this universe, and therefore
+will look very much like O(N), with each operation about O(1).
+
+The problem with Equivalence classes is also classically known as the
+UNION/FIND problem (in which we union the set associated with equivalence
+classes and find which equivalence class any value in it). So, the find method
+would return the value that is at the root of a value's tree (and do
+compression). I did not provide a find method (and compression is a helper
+method), but instead provided an in_same_class method, which computes the
+"find" of both its arguments and  returns whether they are the same, which is
+typically all that is done with the result of the "find" method.
+
+Google the union/find and the real complexity class of Equivalence, which is
+known as the inverse of Ackerman's function: it grows even more slowsly than
+Log2* (that is, Ackerman's function grows more quickly that the tower-of-2
+function). Both Log2* and Ackerman's function grow very slowly, but they do
+grow. Is there an Equivalence relation implementation that is truely O(1).
+Fredman and Saks proved that the lower bound is not O(1) but is the inverse of
+Ackerman's function.
+
+Finally, to be fail-safe, the methods implementing Equivalence must sometimes
+check whether or not the parameter value(s) is in the equivalence (in the
+parent map at all). If not, they should raise an exception. Also, we must be
+careful to determine if two values whose equivalence classes must be merged are
+already in the same equivalence class (in which case we do nothing: doing the
+merging operations would mess-up the size map, but not the parent map).
+
+This week's quiz will give you a chance to implement the equivalence data type
+and investigate its complexity.

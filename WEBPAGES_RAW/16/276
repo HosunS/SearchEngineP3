@@ -1,0 +1,122 @@
+Persistent data structures:
+
+- update operations (change data) and query operations (don't change data)
+- each update creates and returns a new version of the data structure
+- each query can specify a version, search that version instead of new
+
+Partial persistence: only queries can specify version
+	set of versions has linear structure
+Full persistence: updates can also specify version to modify
+	set of versions has branching (tree-like) structure
+Confluent persistence: updates may combine information from mult. vers.
+	set of versions has DAG structure
+
+
+Simple example: fully persistent stack
+    used e.g. in languages where function calls can be preserved as objects
+	("continuations") and examined or resumed at a later time
+
+    stack version represented by nil or stack object
+    stack object has fields value,next
+
+    def top(version):
+	return version.value
+
+    def pop(version):	# NOTE RETURNS VERSION NOT STACK TOP
+	return stack.next
+
+    def push(version,data):
+	return stackobject(data,version)
+
+Fully persistent priority queue
+(partially persistent = not very different from unpersistent)
+	use binary heap structure (balanced binary tree)
+	BUT use explicit object for each tree node (not array layout)
+	represent version => object at root of the tree
+
+	each update => change single path on tree =>
+		make new objects for each changed object
+		=> O(log n) time
+	ALSO HIGH SPACE PENALTY, O(LOG N) PER VERSION
+
+Methods for persistence:
+	(1) create new objects in oriented-structure (above)
+
+		works when updates have good WORST CASE time
+		can often handle full dynamism
+
+		may have to create some new objects even when
+		they don't change, in order to be able to get
+		root object with correct version
+		(e.g. pq insert low priority item)
+
+	(2) "fat objects":
+		each object in data structure stores history of
+		its own versions
+
+		every time a query accesses object info it looks
+		at the version history to find what to do
+
+		optimal space (proportional to # changes)
+		very general (can treat each memory cell as object)
+		time penalty O(fatness) per memory access
+
+		hard to handle search structure for branching history =>
+			works best for partial persistence
+		(version = small integers, use van Emde Boas, O(log log n)
+		time penalty)
+
+	(3) let objects get a little fat (O(1) versions each)
+		but replace them when they get too fat
+		=> can be more space efficient without time penalty
+
+
+Partially persistent search tree:
+	base on red-black tree
+	note red-black bits can be stored without persistence
+		(used only for non-persistent updates, not queries)
+
+	also: O(1) rotations per update
+
+	partial fatness method:
+		each tree node stores O(1) versions (e.g. <=4)
+		of its left and right child pointers,
+		each version marked with update time
+
+		query: traverse down tree using version timestamps
+		to tell which left/right pointer to follow
+
+		update: perform normal red-black update in
+		most recent version of tree
+
+		when update changes red-black bits, just do it
+		(not persistent)
+	
+		when update changes left/right pointers of node,
+		make new version of node
+		
+		when would make too many versions in same node,
+		replace node by copy, make new version of parent
+
+	time per query: O(log n)
+		[same as RB tree + version checking]
+
+	time per update: O(log n)
+		[follow path to root rebalancing]
+
+	amortized space per update: O(1)
+
+With more work, can be made fully persistent => better fully persistent PQ
+
+Another application: planar point location
+	O(n log n) preprocessing
+	O(n) space
+	O(log n) query time
+
+General principles:
+
+Full persistence mixes badly with amortization:
+can repeat same bad update over and over
+
+For both methods, space = # changes per update,
+so prefer data structures where updates avoid making much change

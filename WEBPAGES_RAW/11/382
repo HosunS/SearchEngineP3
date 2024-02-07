@@ -1,0 +1,359 @@
+<html><head><title>Extending User-Interface Toolkits with Hypermedia Functionality</title>
+</head>
+<body bgcolor="#FFFFFF" text="#000000">
+<H6>Copyright 1996 IEEE. Published in the Proceedings of the 30th Hawaii International Conference on System Sciences, January 7-10 1997, Wailea, Maui, Hawaii, USA.</H6>
+<CENTER>
+<H1>Extending User-Interface Toolkits with Hypermedia Functionality</H1>
+<ADDRESS>Kenneth M. Anderson<BR>
+University of California, Irvine<BR>
+<a href="mailto:kanderso@ics.uci.edu">kanderso@ics.uci.edu</a>
+</ADDRESS>
+</CENTER>
+<H2>Abstract</H2>
+<P>
+<EM>This paper<A HREF="#footnote1"><SUP>1</SUP></A> describes a technique for extending user-interface toolkits with hypermedia functionality. The technique employs a separation-of-concerns approach which is incremental, reusable, and maintainable. The essence of the approach is to integrate a user-interface toolkit with an open hypermedia system. The integration occurs through a set of integrated widgets and a hypermedia infrastructure. The infrastructure acts as a gateway between the toolkit and the open hypermedia system. The integrated widgets use the infrastructure to augment their behavior with hypermedia services. Applications constructed with the resulting toolkit contain hypermedia-enabled widgets, automatically providing consistent cross-application hypermedia services with little effort required by the application developer. The benefits of generalizing the technique to other services, such as groupware, are also discussed.
+</EM></P>
+<H2>1. Introduction</H2>
+<P>
+The Augment system [7] by Douglas Englebart demonstrates the power hypermedia functionality provides its users. All documents in this text-based system are hypermedia-enabled. Users can link any type of structure to any other type of structure, from simple character strings to paragraphs to sections to entire documents. In addition to creating documents and links, users can traverse links and search the hyperweb of documents for relevant information. These pervasive features enable users to perform sophisticated collaborative work [8].
+</P>
+<P>
+Recent work in hypermedia focuses on two approaches to providing similar features for users in modern computing environments. The hyperbase approach [18] provides a hypermedia database to store all participating applications' data in a centralized server. Once an application is adapted to use the hyperbase, the application's users gain access to hypermedia functionality. The open hypermedia systems approach [20, 23] separates hypermedia functionality and application data. Applications manage their own data storage but depend on an open hypermedia system (OHS) to provide hypermedia services to their users. Often called link servers, these systems manage the storage and retrieval of hypermedia structures and provide hypermedia operations over these structures.
+These approaches have yielded a significant number of systems [1, 3, 11, 17, 21, 22] that have demonstrated the ability to integrate a wide range of applications with various levels of hypermedia support [4]. Even techniques for integrating third-party "black-box" applications have emerged providing a modest level of hypermedia support. However, in order to utilize the complete range of hypermedia services available from these systems, developers must expend a significant amount of effort modifying their applications to comply with the protocol of the target hypermedia system.
+</P>
+<P>
+In order to provide hypermedia functionality either automatically or with significantly reduced effort on the part of developers, one new approach being pursued is the definition of an object-oriented hypermedia framework which can be used to augment existing object-oriented applications with hypermedia functionality [10]. This paper describes a different approach which attempts to minimize the modifications required to a target application. This new technique extends a user-interface toolkit to enable its widgets with hypermedia services. The technique leverages the power of open hypermedia systems by making the user-interface toolkit a client of an OHS. As a result, the toolkit's widgets are able to create persistent hypermedia structures and provide access to hypermedia operations.
+</P>
+<P>
+This paper is organized as follows. Section&nbsp;2 discusses the technique's conceptual architecture in detail. Section&nbsp;3 presents a prototype system demonstrating the technique, while Section&nbsp;4 examines the technique's benefits. The paper concludes with a discussion of related work and future research directions.
+</P>
+<TABLE BORDER="1">
+<TR ALIGN=CENTER><TD><A NAME="fig1"><IMG SRC="anderson1.gif"></A></TD></TR>
+<TR>
+<TD><STRONG>Figure 1. The conceptual architecture of the integrated toolkit.</STRONG> A line from one box to another signifies the flow of information. Unless indicated by a black arrow, information flows both ways across the line. The gray arrow indicates the potential reuse of user-interface toolkit widgets by the extended widgets.</TD>
+</TR>
+</TABLE>
+<H2>2. Toolkit integration technique</H2>
+<P>
+The toolkit integration technique (TI technique) applies the conceptual architecture shown in <A HREF="#fig1">Figure&nbsp;1</A>. The major components of the conceptual architecture are the integrated toolkit, the OHS, and the set of applications using the toolkit. The integrated toolkit consists of the original user-interface toolkit, a set of extended widgets, and a hypermedia infrastructure. It is important to note the technique's potential for toolkit independence, since any user-interface toolkit can likely be integrated by building these extensions. The variable across toolkits will be the amount of effort a toolkit integrator expends to achieve the required extensions. For instance, a toolkit constructed with an object-oriented programming language is fairly easy to integrate. The extended widgets reuse the appearance and behavior provided by the original widgets via inheritance and can be mixed and matched with the original widgets via polymorphism. On the other end of the spectrum, a library-based toolkit will require more effort since the extended widgets may have to reimplement some or all of the original widgets and employ potentially toolkit-specific mechanisms to compose these new widgets into an interface with the original widgets. The developmental effort for the former toolkit is minimal while the effort for the latter is, most likely, prohibitive. Section&nbsp;2.3 addresses this issue by modifying the conceptual architecture to facilitate "plug-and-play" of certain architectural elements.
+</P>
+<P>
+The hypermedia services provided by this technique to applications constructed with the integrated toolkit include navigation, search, history, and bookmarks. Some of these services are provided by every extended widget while others are provided only by specialized widgets. The upper bound of possible services is defined by the functionality of the underlying OHS. The lower bound will vary depending on the affordances of the widget. Thus, for instance, a button widget might only be able to initiate or receive link traversals, whereas a canvas widget might provide a popup menu to access services such as bookmark creation or search and query. Specialized widgets can keep track of a user's navigation path or display a user's bookmarks. Although not all hypermedia operations may be provided by the widgets, this does not prohibit the user from accessing these services. For instance, some services may only be available via specialized clients of the underlying OHS such as hyperweb viewers or link editors. These applications can be used in combination with toolkit-constructed applications to provide users with a complete range of hypermedia functionality.
+</P>
+<P>
+The responsibilities placed on an application using the integrated toolkit are minor. As discussed in the next section, an application must supply context information to the extended widgets during initialization. This information is required by the underlying OHS. The only other responsibility is providing a callback routine to the toolkit to respond to link traversal events which require a new object to be displayed. This is similar to what Kacmar calls a directive from the OHS to the application [13]. The hypermedia infrastructure will call this routine as needed to display the relevant objects. If the destination of a link traversal is already displayed, the extended widgets automatically handle the event.
+</P>
+<H3>2.1. Extended widgets</H3>
+<P>
+A completely integrated toolkit will have at most one extended widget for each widget present in the user-interface toolkit. These extended widgets behave exactly as the original widgets with the addition of providing access to hypermedia services. As noted above, the hypermedia services available for a particular widget will vary depending on the affordances of the widget but will typically include some way to add the widget (i.e. the widget's anchor) to a link and to initiate a link traversal from the widget. The user-interface to these services for each widget may also vary depending on the affordances of the widget. While it is important to ensure a consistent interface to hypermedia services across widgets, research has shown that only iterative usability testing with end-users will result in a "usable" interface [14]. As such, this paper will not attempt to define the specific interface for each widget. Instead, it is important to note that once defined, these widgets will behave the same in each application providing consistent cross-application access to hypermedia services.
+</P>
+<P>
+The programmatic interface to an extended widget is virtually identical to the original widget. The difference is limited to initialization of the widget, in which certain hypermedia-specific information is required. Typically, open hypermedia systems require a context in order to persistently store and access hypermedia structures such as anchors and links. Thus, before a hypermedia-enabled widget can create hypermedia structures, the developer must initialize it with context information. The developmental effort of using an extended widget is therefore minimal. There are several techniques which may prove useful to eliminate the need for this context information. These techniques are discussed in Section&nbsp;6.2.
+</P>
+<P>
+From the standpoint of a toolkit integrator, the work required to create an extended widget consists of identifying the hypermedia services available for a widget, defining a user-interface to those services, constructing a new widget to mimic the original widget (trivial if the toolkit is constructed in an object-oriented language), and extending the new widget to appropriately interact with the hypermedia infrastructure to provide the identified services. The latter includes properly handling the context information supplied at initialization, creating the appropriate hypermedia structures, engaging in the protocols of the hypermedia system, and supplying the end-user with appropriate feedback to hypermedia events, such as link traversal.
+</P>
+<P>
+While these steps imply a non-trivial amount of work for the toolkit integrator, several characteristics help to make the effort manageable. First, not all widgets need to be integrated for developers to benefit from the extensions. Widgets can be prioritized according to some criterion such as developer requests or perceived utility, and incrementally integrated. Second, widgets are, in general, independent of each other and thus integration work can be done in parallel by a team of toolkit integrators. Third, since the original widgets are unmodified by the construction of the integrated widgets, existing toolkit applications continue to function; no effort is needed to keep the toolkit "backward-compatible." The result of the integration is a suite of extended widgets that automatically provide hypermedia services in a consistent fashion and utilize common mechanisms provided by the hypermedia infrastructure.
+</P>
+<H3>2.2. Hypermedia infrastructure</H3>
+<P>
+The hypermedia infrastructure provides an interface to the underlying OHS and implements common services for the extended widgets. This is similar to the role played by HyperDisco's tool integrator [22] which provides this functionality to HyperDisco clients. In the TI technique, however, client applications will primarily interact only with the extended widgets not with the hypermedia infrastructure. The only interaction between them occurs when handling link-traversal directives.
+</P>
+<P>
+The extended widgets use the OHS interface to access hypermedia services. The interface provides component, anchor, link, and composite operations. These are standard hypermedia concepts [2] in which a component maps to a particular object, anchors specify regions of interest within the object, links specify a relationship of some type over a set of anchors, and composites allow components to be grouped and hierarchically composed. The operations support the creation, deletion, and manipulation of these concepts. In addition, operations are provided to query and search the resulting hyperweb and initiate link traversal. Note that the simple existence of an operation in the infrastructure does not imply each widget will make use of the operation. Instead widgets will use the minimum set of operations needed to implement their hypermedia services.
+</P>
+<P>
+The abstractions provided by the hypermedia infrastructure allow widgets to create hypermedia structures to model their hypermedia needs. For instance, a scrollbar may register itself as a component with one anchor for each of its thumb positions. Traversing to one of its anchors could then cause it to jump to the specified thumb position. A button may be modeled as a component with a single anchor. Traversing to the button's anchor could then cause the button to execute its action just as if the user had clicked on it. A panel may be modeled as a composite managing a set of components. A user-interface thus creates a set of hypermedia structures within the OHS, allowing it to participate in a hyperweb.
+</P>
+<P>
+The hypermedia infrastructure also implements the common services required by all of the extended widgets. This prevents having to replicate the services in each widget, provides a consistent behavior across widgets, and localizes the code for them in one place. Common services include managing a connection with the OHS, handling hypermedia-related errors, and providing a consistent interface to link traversals. Initially, the common services use the original toolkit to provide the user feedback. For example, a link traversal dialog may need to make use of window, scrolling list, and button widgets. This use, of course, is not desirable from the standpoint of reuse, since toolkit-specific code is placed in the hypermedia infrastructure. Fortunately, as the toolkit integration progresses, the common services can migrate from using the widgets in the toolkit to using their counterparts in the set of extended widgets. The next section considers other issues related to making the extensions reusable across multiple toolkits and hypermedia systems.
+</P>
+<TABLE BORDER="1">
+<TR ALIGN=CENTER><TD><A NAME="fig2"><IMG SRC="anderson2.gif"></A></TD></TR>
+<TR>
+<TD><STRONG>Figure 2. The conceptual architecture modified to highlight reuse issues.</STRONG> The extended widgets are implemented solely in terms of the abstract toolkit and hypermedia interfaces. This eases the task of reusing the extensions with a different user-interface toolkit or open hypermedia system. The common services of the hypermedia infrastructure initially make use of actual toolkit widgets (gray line) to provide user feedback. Extended widgets are eventually used (black line) as they become available. This bootstrapping process is required for only the initial implementation of the technique since subsequent implementations simply reuse the resulting code.</TD>
+</TR>
+</TABLE>
+<H3>2.3. Plug-and-play issues</H3>
+<P>
+A goal for the TI technique is reusability across the wide range of user-interface toolkits and open hypermedia systems. The technique would have little practical value if applying the technique required the same amount of work the second time as it required the first. In order to address these issues, the conceptual architecture presented in Figure&nbsp;1 has been modified slightly to bring reuse issues to the forefront (see <A HREF="#fig2">Figure&nbsp;2</A>). The major change is to identify and isolate the areas in which code specific to the user-interface toolkit or OHS is likely to exist. The second change is to indicate the bootstrapping of the hypermedia infrastructure with respect to the widgets used by its common services.
+</P>
+<P>
+The new elements are the abstract toolkit and hypermedia interfaces. These abstract interfaces hide the details of the actual systems used from the extended widgets, which are implemented solely in terms of these new interfaces. Moving to a new hypermedia system or user-interface toolkit involves constructing a mapping between the abstract interface and the actual system used. Once the mapping is complete the extended widgets and the common services can be used without modification. Implementations using an object-oriented programming language can benefit from the use of the Bridge design pattern [9] to aid in the construction of these abstract interfaces.
+</P>
+<P>
+One design choice used in previous work on providing abstract interfaces to multiple toolkits is the least common denominator approach [19]. This technique hides the differences between user-interface toolkits by providing only the functionality common to all of them. While these issues are relevant to the TI technique, they are not as significant, since the goal is to make the extended widgets as reusable as possible across multiple toolkits. This is different from the goal of making the applications using the extended widgets on one integrated toolkit portable to other integrated toolkits. The interoperability provided by the hypermedia services to the applications reduces the importance of this latter goal. Instead the ability to re-host the extended widgets on a different user-interface toolkit with a minimum of effort is more important. This goal should be achievable since the differences between modern user-interface toolkits are not so significant as to be prohibitive.The next section presents a proof-of-concept prototype representing the first attempt at implementing the conceptual architecture of the TI technique.
+</P>
+<H2>3. Proof-of-concept prototype</H2>
+<P>
+An initial implementation of the TI technique is currently under construction. The results represent a proof-of-concept of a majority of the ideas presented here. The current prototype does not yet implement the abstract toolkit and hypermedia interfaces discussed in Section&nbsp;2.3. The extended widgets are implemented directly using the interfaces of the target user-interface toolkit and OHS. The reason for this choice was due to externally induced time constraints. As the prototype evolves into a full-fledged integration, the abstract interfaces will be developed and employed.
+</P>
+<P>
+The target user-interface toolkit for the prototype is the Abstract Windowing Toolkit (AWT) implemented in the Java programming language. The Java AWT was chosen for three reasons. First, Java is an object-oriented language with an emphasis on portability. Since implementations of the Java virtual machine exist for a variety of platforms, extending the Java AWT to be hypermedia-aware would benefit a large audience of developers and users. Second, as discussed previously, the object-oriented features of Java such as inheritance and polymorphism ease the construction of the extended widgets. Third, Java is currently being positioned as a development language for Internet-aware applets. Since applets execute in Web browsers, they appear in a context in which hypermedia principles are familiar to end-users. Applets constructed with the hypermedia-aware version of the Java AWT are thus suitable to introduce users with the notion of pervasive environment-wide hypermedia links. The target hypermedia system for the prototype is the Chimera OHS [1]. Chimera is a client-server based system providing a flexible set of hypermedia concepts and operations which meet the requirements outlined in Section&nbsp;2.2.
+</P>
+<P>
+The prototype currently implements several common services and has integrated one widget. The prototype was constructed rapidly over a period of two weeks in three distinct stages. The first stage developed a Chimera application program interface (API) in Java. This API was developed in one week by an experienced Chimera developer and represents the interface to the hypermedia system provided by the hypermedia infrastructure. The API provides access to all of Chimera's hypermedia concepts, and their associated operations, in addition to providing a mechanism to receive events from the Chimera server such as link traversal notifications. The second stage consisted of developing a common service in the hypermedia infrastructure to initialize and monitor the connection to the Chimera server. If the connection to the Chimera server is unexpectedly lost, the connection service provides a dialog box to the user allowing them to reestablish a connection. The third stage integrated a button widget and constructed additional common services. These two developmental tasks were performed iteratively with the integrated button driving the demand for common services such as error handling and link traversal management.
+</P>
+<P>
+The difference between the interfaces of the original button widget and the integrated widget occurs only in the constructors of the widgets.
+</P>
+<P>
+The original constructor<A HREF="#footnote2"><SUP>2</SUP></A> is:
+</P>
+<PRE>public Button(String label);
+</PRE>
+<P>
+The constructor for the integrated widget is:
+</P>
+<PRE>public HButton(	String label,
+		String viewerName,
+		String objectName);
+</PRE>
+<P>
+As discussed in Section&nbsp;2.2, the difference is caused by the context information required by the underlying OHS. In Chimera, the required information is the name of an object and the name of the viewer which displays the object. The HButton<A HREF="#footnote3"><SUP>3</SUP></A> class registers itself as a component with a single anchor using the following code in its constructor:
+</P>
+<PRE>// Register viewer.
+theViewer = new viewer();
+theViewer.register(this.viewerName);
+// Register object.
+theObject = new object();
+theObject.register(this.objectName);
+// Register view (i.e. component).
+theView = new view();
+theView.register(theViewer, theObject);
+// Register anchor.
+theAnchor = new anchor();
+theAnchor.register(theView);
+</PRE>
+<P>
+The integrated button provides access to two hypermedia services: link creation and link traversal. The former allows the button's anchor to be included in links while the latter allows these links to be traversed. In addition, the button can receive link traversal events. When a link traversal event is received, the following code is executed:
+</P>
+<PRE>public synchronized void handleEvent( chimeraEvent theEvent ) {
+	switch (theEvent.event) {
+		case chimeraEvent.linkTraversal:
+			doBlink();
+			Event e = new Event(
+				this,
+				Event.ACTION_EVENT,
+				getLabel());
+			postEvent(e);
+			...
+}
+</PRE>
+<P>
+This code blinks the button (using a simple reverse-video technique not shown) and invokes the button's associated action (by generating an event for the button to handle). The handleEvent routine is called by the hypermedia infrastructure when an event is received from the Chimera server for a particular widget.
+</P>
+<P>
+The extended button makes use of a common service provided by the hypermedia infrastructure for the initiation of link traversals. As a result the code for a link traversal is short and simple and can be reused in a similar fashion by all subsequent extended widgets. It is shown below:
+</P>
+<PRE>HConnection.traverse( theAnchor );</PRE>
+<P>
+In other words, the extended widget need only pass the source anchor for the traversal and the common service takes care of the rest. The code for the traverse routine is shown below:
+</P>
+<PRE>public synchronized void traverse( Anchor a ) {<BR>
+	int number;<BR>
+	number = link.howManyLinks( a );
+	if (number > 1) {
+		HTraversalDialog htd =
+		new HTraversalDialog( a );
+		return;
+	} else {
+		link[] links = link.getLinks( a );
+		link theLink = links[0];
+		number = theLink.howManyAnchors();
+		if (number > 2) {
+			HTraversalDialog htd =
+			new HTraversalDialog( a );
+			return;
+		}
+	}
+	HConnection.theAPI.traverseFrom( a );
+}
+</PRE>
+<P>
+This code executes a simple algorithm. If the link traversal has a single destination, the traversal is activated. Otherwise a link traversal dialog is displayed (see <A HREF="#fig3">Figure&nbsp;3</A>) allowing the user to specify the desired destinations before activating the traversal. Since all hypermedia-enabled widgets will make use of this service, link traversal behavior is consistent across widgets and across applications constructed with the integrated toolkit. In addition, the behavior is easily modified and maintained, since it is isolated in one place in the hypermedia infrastructure layer. Additional benefits of the TI technique are discussed in the next section.
+</P>
+<TABLE BORDER="1">
+<TR ALIGN=CENTER><TD><A NAME="fig3"><IMG SRC="anderson3.gif"></A></TD></TR>
+<TR>
+<TD><STRONG>Figure 3. The link traversal dialog provided by the hypermedia infrastructure. This dialog lists the destinations for the current link traversal. Destinations consist of a viewer name, object name, and anchor identifier. The dialog allows users to select the desired destinations and traverse to them. Since all link traversals use this dialog, consistent behavior is achieved.
+</TR>
+</TABLE>
+<H2>4. Benefits of toolkit integration technique</H2>
+<P>
+The TI technique provides the following benefits.
+</P>
+<BLOCKQUOTE>
+<P>
+<STRONG>Minimally-Invasive</STRONG>: The technique extends the services of the target toolkit without extensive modifications. In fact, the prototype of the previous section did not modify the Java AWT at all. Instead only new code was written to implement the hypermedia infrastructure. The HButton class gained most of its functionality via inheritance. This approach allows existing toolkit applications to continue to function, while allowing new applications to make use of the new services. Existing applications must be modified to use the integrated toolkit. The cost of doing so is mitigated by the near identical interface of the extended widgets in comparison to the original widgets.
+</P>
+<P>
+<STRONG>Incremental</STRONG>: The target user-interface toolkit can be extended incrementally. Developers are not forced to wait for the entire integration to occur but can take advantage of integrated widgets as they become available. In fact, the minimum work required of a toolkit integrator as demonstrated by the proof-of-concept prototype is providing the interface to the hypermedia system and implementing the service which manages a connection with the OHS. At that point, widgets and common services can be incrementally built using an iterative development process.
+</P>
+<P>
+<STRONG>Reusable</STRONG>: The extensions to the toolkit can be built such that code specific to a particular user-interface toolkit or OHS is localized. Subsequent implementations of the technique can reuse a large portion of the code implementing the extensions. The primary task in moving to a new toolkit or hypermedia system is mapping the new system to the abstract toolkit/hypermedia interfaces.
+</P>
+<P>
+<STRONG>Maintainable</STRONG>: The resulting architecture is maintainable for two reasons. First, code specific to the user-interface toolkit or OHS is localized, making it easier to locate problems concerning their use. Second, changes to either one of the two subsystems results only in work for the toolkit integrator who must modify the extensions to comply with the changes or take advantage of new services. Application which use the integrated toolkit are completely shielded from changes to the hypermedia system, and in fact will transparently take advantage of any new services, once the extensions have been updated by the toolkit integrator. Changes to the user-interface toolkit may impact developers who use the integrated toolkit, but these changes would have affected them anyway.
+</P>
+<P>
+<STRONG>Pervasive</STRONG>: Applications which contain integrated widgets provide hypermedia services pervasively throughout their user-interface. These services provide end-users with several advantages. First, hypermedia services are consistent across applications. Users can reuse the hypermedia-related skills learned in one application in all others. Second, users have the power to create hypermedia links throughout their computing environment. Third, depending on the link-traversal behavior implemented for the integrated widgets, users can perform a limited type of scripting in which traversals started in one application can control the actions of other applications. Finally, toolkit applications can interoperate with any existing client of the OHS. Since most open hypermedia systems have the power to integrate third-party applications, such as word processors, spreadsheets, and Web browsers, the range of applications and data which can be linked into the hyperweb is considerable.
+</P>
+<P>
+<STRONG>Scalable</STRONG>: Finally, this technique is partially scalable in the sense that it should be possible to substitute some other system in place of the OHS and produce widgets that access the services of this system. For instance, as discussed in Section&nbsp;5, groupware is a likely target domain for this technique. This type of scalability is limited, however, since there is no guarantee widgets integrated with one service will interoperate with the integrated widgets of another. In addition, there is no guarantee widgets can be integrated with multiple services in a cost-effective manner. Scalability issues are discussed further in Section&nbsp;6.3.
+</P>
+</BLOCKQUOTE>
+<H2>5. Related work</H2>
+<P>
+This section describes related work in hypermedia toolkits, open hypermedia systems, groupware toolkits, and integration techniques.
+</P>
+<P>
+Hypermedia toolkits provide applications with hypermedia abstractions and services in much the same way user-interface toolkits provide user-interface services. Typically, applications make use of these toolkits by subclassing the hypermedia classes provided. This allows an application to specialize the classes for its domain while taking advantage of the hypermedia services provided. HOT [15] provides a set of C++ data and view classes and is useful for constructing closed hypermedia-enabled applications. Garrido and Rossi [10] provide similar services to SmallTalk applications. This hypermedia framework, however, provides specialized graphical widgets which can be used to provide link markers and navigational services. These widgets depend on the application using the rest of the hypermedia framework in order to function properly.
+The primary difference between these toolkits and the TI technique is one of focus. The former provides classes used to gain hypermedia functionality; the latter provides graphical widgets which provide hypermedia services automatically. In the former, the impact on an existing application is greater since the application must be modified to explicitly use the provided classes. In the latter, the application simply swaps non-integrated widgets with integrated ones. Not all widgets have to be swapped either, since integrated and non-integrated widgets can coexist freely in the same interface. The effort associated with the swap is minimal, at most the developer has to provide the context information required by the integrated widgets' constructors and implement a callback routine to respond to link traversal events which require the display of a different object. Finally, the latter makes use of an OHS, allowing toolkit-constructed applications to interact with any other OHS client, whereas the former can only create closed hypermedia applications.
+</P>
+<P>
+DHM [11], Hyperform [21], and HyperDisco [22] all provide hypermedia frameworks which make use of an underlying OHS. These toolkits share the differences the ones above have with the TI technique except for the last; since these frameworks access an underlying OHS, the integrated applications can interoperate with any other OHS client. However, the TI technique shields the interaction with the OHS from the application developer since this interaction occurs within the integrated widgets. Thus the effort associated with using the technique is still lower than with these frameworks and the services provided by the technique match the navigational capabilities of partially-integrated OHS clients [22].
+</P>
+<P>
+The TI technique however cannot match the high-end features provided to both partially- and fully-integrated OHS clients since these frameworks are capable of providing sophisticated features like versioning and collaboration [22]. Support for such features can be provided in one of two ways. If the underlying OHS provides these features, the toolkit integrator can use them within the integrated widgets. Otherwise, the TI technique could possibly be used to integrate a different type of system which provides the desired features. The application would then make use of the widgets which accessed both the OHS and the new system. This approach and its associated problems are discussed in Section&nbsp;6.3.
+</P>
+<P>
+The CSCW field has conducted research into the requirements of groupware, and has produced toolkits to aid in the construction of groupware systems. Three notable examples are GroupKit [16], Rendezvous [12], and Suite [5]. These toolkits are relevant to the TI technique in the way in which they integrate user-interface and groupware services. There are several major differences. First, these systems do not use a separate service to provide groupware features; instead, the toolkit is the groupware system. Second, the focus of these systems is not on enabling widgets with groupware services. Rather it is on sharing entire applications between participants of a collaborative session, including not just an application's user-interface but application state as well. Finally, as a result of the previous difference, these toolkits place significant architectural requirements on client applications in order to take advantage of their services. This encourages the development of new applications built in the toolkit's style but makes it more difficult to adapt existing applications.
+</P>
+<P>
+Additional work has been performed in the area of integrating hypermedia services into applications. One simple but powerful example is reported in [6]. A text widget was modified to access the hypermedia services of an OHS. As a result, any application which made use of the new widget gained hypermedia functionality. The TI technique provides this type of integration to all toolkit widgets, however at a potentially lower level of service. The difference is that the source code of the text widget was directly modified to achieve the integration. The TI technique attempts to provide its services without modifying the original widget. Thus the level of service provided may not be the same as achieved with a custom integration.
+</P>
+<P>
+Kacmar provides a different integration technique in Freckles [13]. Freckles integrates the windowing system of a user's environment with an OHS. The title of an application's window is used as the context to associate hypermedia structures with an application. Link markers appear as small rectangles (actually separate windows) which are associated with particular windows. Mouse clicks on these markers invoke hypermedia operations. Additional operations are accessible in a menu provided by the hypermedia system in a separate window. Since all link markers appear and behave the same, this technique provides consistent cross-application hypermedia services similar to the TI technique.
+</P>
+<P>
+This technique requires less effort to integrate an application than the TI technique. The only modification required is for the application to respond to a link traversal. The TI technique further requires the application make use of the integrated widgets. This additional requirement, however, provides a deeper integration than the Freckles technique. Freckles provides an environment to rapidly prototype and evaluate hypermedia functionality within an application. The visual look and feel provided by the link markers, however, cannot be easily incorporated into the application as a functional component. In the TI technique, the integrated widgets are the link markers and already exist as a functional part of the application. Thus, in this context, the TI technique can be seen as a way for developers to ease the developmental process of incorporating hypermedia functionality, once they have determined from the prototypes that it is appropriate for their applications.
+</P>
+<H2>6. Future work</H2>
+<P>
+This section considers further issues for exploration. First, future plans for the prototype are presented. Second, techniques for increasing the transparency of the integrated toolkit are examined. Finally, this section concludes with a discussion of issues related to scalability.
+</P>
+<H3>6.1. Proof-of-concept prototype</H3>
+<P>
+The prototype described in Section&nbsp;3 will be evolved into a full integration of the Java AWT with the Chimera OHS. As the rest of the widgets are extended, the abstract toolkit and hypermedia interfaces will be developed. Plans are in place to test the reusability benefits provided by these interfaces. The technique will be applied to a different toolkit such as the Tk toolkit associated most closely with the Tcl scripting language. While there will have to be a syntactic conversion of the interfaces, common services, and extended widgets from Java to Tcl (or some other language such as C++), the semantics and structure of the code is expected to be largely preserved.
+</P>
+<P>
+The other area of future research raised by the prototype is the need for session management capabilities for the integrated toolkit. Currently if two applications constructed with the prototype are running and the connection to the Chimera server is lost, then two connection dialogs are shown. This is because the hypermedia infrastructure cannot currently detect when more than one instance of itself is activated. New designs for this component of the conceptual architecture will be investigated so that its run-time sophistication is increased.
+</P>
+<H3>6.2. Transparency</H3>
+<P>
+Currently, the TI technique constructs a set of extended widgets which are used explicitly by application developers to include hypermedia services in their applications. The advantages of this are the freedom to include hypermedia-enabled widgets into specific areas of a user-interface and the maintenance benefits of having the code for these widgets located in one place. The disadvantages are the slight differences between the original widgets and the extended widgets; more importantly, developers have to modify existing applications or write new applications in order to take advantage of the provided capabilities. To reduce the effort required to use the integrated toolkit, the transparency of the technique to developers will be increased.
+</P>
+<P>
+A first step in this direction is to eliminate the need for the hypermedia context information required by the extended widgets, thus making the interface to the these widgets identical to the originals. In the case of the prototype, Chimera requires as context information the name of the object and the name of the viewer displaying the object. One approach is to automatically construct an object name by using the concatenation of the widget's name and all its parents while using the name of the application containing the widget as the viewer name. For example, a button labelled "Quit" in an application named ChimeraEditor might have the automatically constructed view:
+</P>
+<PRE>(ChimeraEditor, HFrame:HPanel:HButton:Quit)
+</PRE>
+<P>
+This particular algorithm may not be reusable across all open hypermedia systems (because of potential differences in the kinds of information required) but the conceptual architecture can be protected against these differences by the use of abstraction. Having eliminated the differences in the interfaces of the two sets of widgets, techniques in which one widget library is substituted for another may be possible<A HREF="#footnote4"><SUP>4</SUP></A>. This would allow the inclusion of hypermedia-enabled widgets in pre-existing applications simply by relinking them or dynamically loading in the appropriate library at run-time. Thus, the potential exists for significantly reducing the developmental effort required to adopt the services provided by the integrated toolkit.
+</P>
+<H3>6.3. Scalability</H3>
+<P>
+As discussed previously, the TI technique can be used to integrate a toolkit with other services. For a particular toolkit, this approach creates one set of extended widgets for each service integrated. Unfortunately, there is no guarantee these diverse sets of widgets will interoperate. First, there is the cost of connecting to each integrated service. The prototype typically connects the Java AWT to the Chimera server in less than one second but as additional services are added, the start-up time will increase. This increase will seem cumbersome to users if it is incurred with each toolkit application. Second, the complexity of error handling increases. How should the toolkit indicate the currently available services? Third, integrated services send events to the widgets at unpredictable times. Since these events may cause application state changes, how does the toolkit manage the scheduling of these potentially conflicting events?
+</P>
+<P>
+Fortunately, these problems are not insurmountable. It seems likely the first two problems can be solved with a more sophisticated run-time architecture for the integrated toolkit. In this hypothetical run-time, start-up costs are incurred once for the first toolkit application used but not for subsequent toolkit applications. A common service could display the systems currently connected to the toolkit. The third problem, while difficult, already has a suite of techniques for solving it from the research performed in the CSCW domain of synchronous groupware (See [12] for details).
+</P>
+<P>
+The real scalability issue occurs when a single widget provides access to multiple services simultaneously. Using the current technique described in this paper leads to a combinatorial explosion of extended widgets. For instance, for services A, B, and C, the technique would produce (in addition to the original widget) widget A, widget B, widget C, widget AB, widget AC, and widget ABC. This is clearly unacceptable. An alternative conceptual architecture is being investigated based on the idea behind the Decorator design pattern [9]. The Decorator pattern is used in object-oriented toolkits to "decorate" a toolkit component such as adding scrollbars and a border to a text edit widget. The benefit of this pattern is any component can be decorated in this manner, allowing a clean separation of functionality. Text widgets can focus on sophisticated text editing capabilities while the scrollbar decorator can focus on providing advanced scrolling capabilities. Applying this pattern to services, may allow a widget's behaviors to be extended without having to modify the widget itself. The problems mentioned in the previous paragraph are still relevant (and still solvable) but there are many advantages to this potential technique such as increased transparency and being able to change a widget's service decorators dynamically at run-time.
+</P>
+<H2>7. Conclusions</H2>
+<P>
+This paper has outlined a new approach to the provision of hypermedia functionality to graphical user-interface applications. The TI technique is novel in the way it provides the extensions to the user-interface toolkit. Rather than using the approach of groupware toolkits, which combine user-interface and groupware services into one system, a separation-of-concerns approach is utilized allowing the user-interface toolkit to leverage the power of an open hypermedia system. This results in a maintainable, reusable, architecture that presents a low-entry barrier to use by application developers.
+</P>
+<H2>8. Acknowledgments</H2>
+<P>
+Richard N. Taylor, for his support and guidance, and his comments on early versions of this paper, is gratefully acknowledged. In addition, thanks go to the participants of the HTF II workshop at Hypertext'96 for their feedback on the proof-of-concept prototype. Leysia Palen provided support and helpful comments. Finally, the anonymous reviewers provided insightful comments which substantially improved the quality of this paper.
+</P>
+<H2>9. References</H2>
+<P>
+[1] K.&nbsp;M. Anderson, R.&nbsp;N. Taylor, and E.&nbsp;J. Whitehead, Jr. Chimera: Hypertext for heterogeneous software environments. In Proceedings of the ACM Conference on Hypertext, pages 94--107, Edinburgh, Scotland, September 1994.
+</P>
+<P>
+[2] J.&nbsp;Conklin. Hypertext: An introduction and survey. IEEE Computer, 20(9):17--41, September 1987.
+</P>
+<P>
+[3] H.&nbsp;Davis, W.&nbsp;Hall, I.&nbsp;Heath, G.&nbsp;Hill, and R.&nbsp;Wilkins. Towards an integrated information environment with open hypermedia systems. In Proceedings of the ACM Conference on Hypertext, Milano, Italy, November 1992.
+</P>
+<P>
+[4] H.&nbsp;Davis, S.&nbsp;Knight, and W.&nbsp;Hall. Light hypermedia link services: A study of third party application integration. In Proceedings of the ACM Conference on Hypertext, pages 41--50, Edinburgh, Scotland, September 1994.
+</P>
+<P>
+[5] P.&nbsp;Dewan. A tour of the Suite user interface software. In Proceedings of the Third Annual Symposium on User Interface Software and Technology, pages 57--65, Snowbird, UT, October 1990. Association for Computing Machinery.
+</P>
+<P>
+[6] J.&nbsp;E. Drufke, Jr., J.&nbsp;J. Leggett, D.&nbsp;L. Hicks, and J.&nbsp;L. Schnase. The derivation of a hypertext widget class from the athena text widget. Technical Report TAMU-HRL 91-002, Hypertext Research Lab, Texas A&M University, College Station, Texas, USA, April 1991.
+</P>
+<P>
+[7] D.&nbsp;C. Engelbart. Authorship provisions in AUGMENT. In Proceedings of the 1984 COMPCON Conference, pages 465--472, San Francisco, CA, USA, February 1984.
+</P>
+<P>
+[8] D.&nbsp;C. Engelbart. Toward high-performance organizations: A strategic role for groupware. In Proceedings of the GroupWare'92 Conference, San Jose, CA, USA, August 1992. Morgan Kaufmann.
+</P>
+<P>
+[9] E.&nbsp;Gamma, R.&nbsp;Helm, R.&nbsp;Johnson, and J.&nbsp;Vlissides. Design Patterns: Elements of Reusable Object-Oriented Software. Addison-Wesley, Reading, Massachusetts, 1995.
+</P>
+<P>
+[10] A.&nbsp;Garrido and G.&nbsp;Rossi. A framework for extending object-oriented applications with hypermedia functionality. Submitted to the Hypermedia Journal, January, 1996.
+</P>
+<P>
+[11] K.&nbsp;Gr&oslash;nb&aelig;k and R.&nbsp;H. Trigg. Design issues for a dexter-based hypermedia system. Communications of the ACM, 37(2):40--49, February 1994.
+</P>
+<P>
+[12] R.&nbsp;D. Hill, T.&nbsp;Brinck, S.&nbsp;L. Rohall, J.&nbsp;F. Patterson, and W.&nbsp;Wilner. The Rendezvous architecture and language for constructing multiuser applications. ACM Transactions on Computer-Human Interaction, 1(2):81--125, June 1994.
+</P>
+<P>
+[13] C.&nbsp;J. Kacmar. A process approach for providing hypermedia services to existing, non-hypermedia applications. Electronic Publishing: Organization, Dissemination, and Distribution, 8(1):31--48, March 1995.
+</P>
+<P>
+[14] J.&nbsp;Nielsen. Usability Engineering. AP Professional, Boston, MA, USA, 1993.
+</P>
+<P>
+[15] J.&nbsp;J. Puttress and N.&nbsp;M. Guimaraes. The toolkit approach to hypermedia. In Proceedings of the European Conference on Hypertext, pages 25--37, Versailles, France, November 1990.
+</P>
+<P>
+[16] M.&nbsp;Roseman and S.&nbsp;Greenberg. Building real-time groupware with groupkit, a groupware toolkit. ACM Transactions on Computer-Human Interaction, 3(1):66--106, March 1996.
+</P>
+<P>
+[17] J.&nbsp;L. Schnase. HB2: A Hyperbase Management System for Open, Distributed Hypermedia System Architectures. PhD thesis, Texas A&M University, College Station, Texas, August 1992.
+</P>
+<P>
+[18] J.&nbsp;L. Schnase, J.&nbsp;J. Leggett, D.&nbsp;L. Hicks, P.&nbsp;J. Nurnberg, and J.&nbsp;A. Sanchez. Design and implementation of the HB1 hyperbase management system. Electronic Publishing: Origination, Dissemination, and Design, 6(2):35--63, July 1993.
+</P>
+<P>
+[19] R.&nbsp;N. Taylor, K.&nbsp;A. Nies, G.&nbsp;A. Bolcer, C.&nbsp;A. MacFarlane, K.&nbsp;M. Anderson, and G.&nbsp;F. Johnson. Chiron-1: A software architecture for user interface development, maintenance, and run-time support. ACM Transactions on Computer-Human Interaction, 2(2):105--144, June 1995.
+</P>
+<P>
+[20] U.&nbsp;K. Wiil and S.&nbsp;Demeyer. Proceedings of the 2nd workshop on open hypermedia systems. UCI--ICS Technical Report UCI-96-10, University of California, April 1996.
+</P>
+<P>
+[21] U.&nbsp;K. Wiil and J.&nbsp;J. Leggett. Hyperform: Using extensibility to develop dynamic, open and distributed hypertext systems. In Proceedings of the ACM Conference on Hypertext, pages 251--261, Milano, Italy, November 1992.
+</P>
+<P>
+[22] U.&nbsp;K. Wiil and J.&nbsp;J. Leggett. The hyperdisco approach to open hypermedia systems. In Proceedings of the Hypertext'96 Conference, pages 140--148, Washington D.C., USA, March 1996.
+</P>
+<P>
+[23] U.&nbsp;K. Wiil and K.&nbsp;&Oslash;sterbye. Proceedings of the ECHT'94 workshop on open hypermedia systems. Technical Report R-94-2038, Aalborg University, Department of Computer Science, October 1994.
+</P>
+<HR>
+<H2>Footnotes</H2>
+<P>
+<A NAME="footnote1">1.</A> This material is based upon work sponsored by the Air Force Materiel Command and the Advanced Research Projects Agency under Contract Number F30602-94-C-0218. The content of the information does not necessarily reflect the position or the policy of the Government and no official endorsement should be inferred.
+</P>
+<P>
+<A NAME="footnote2">2.</A> All of the code snippets in this section have been simplified for demonstrational purposes. Error checking and event registration code has been removed and procedure calls have been inlined for clarity.
+</P>
+<P>
+<A NAME="footnote3">3.</A> Note, the fact the extended widget has a different name than the original widget implies that existing applications must be modified to take advantage of the hypermedia services. This is clearly a disadvantage since developers may decide the benefits of the integrated toolkit do not outweigh the effort required to modify their existing applications. Techniques for avoiding this limitation are considered in Section&nbsp;6.2.
+</P>
+<P>
+<A NAME="footnote4">4.</A> See, for instance, the Abstract Factory pattern in [9] for a potential object-oriented solution.
+</P>
+<hr>
+</body></html>

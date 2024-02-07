@@ -1,0 +1,197 @@
+<html>
+<head>
+    <title>Ucigame - Gallery - PongWithScenes</title>
+<link href="../stylesheet.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+
+<center><h2>Ucigame - Gallery - PongWithScenes</h2></center>
+
+<h4>
+<a href="../index.html">Home</a> |
+<a href="../getting-started.html">Getting Started</a> |
+<a href="../reference.html">Reference</a> |
+<a href="../java.html">Introduction to Java</a> |
+<a href="../gallery.html">Gallery</a>
+</h4>
+
+<p>
+<applet code="UcigameJavaVersion15Checker.class"
+   codebase="." width="1" height="1">
+</applet>
+<table>
+<tr>
+<td width="300" valign="top">
+<applet
+   code="PongWithScenes.class"
+   codebase="."
+   archive="../ucigame.jar"
+   width="250"
+   height="250"
+   border="0"
+>
+Your browser cannot show Java applets.
+</applet>
+</td>
+<td width=600 valign="top" halign="center">
+PongWithScenes works just like the
+Ucigame version of Pong, except that it also has an
+instructions screen shown initially.
+Press any keyboard key to proceed to the Pong game,
+which is a simple version of the traditional video game.
+There is only one paddle, and no scoring.
+<p>
+Press Space to toggle between normal speed and slow speed
+(implemented as two different scenes).
+</td>
+</tr>
+<tr>
+<td colspan=2>
+<br>
+<b>PongWithScenes.java</b>
+<br>
+<pre>
+// This version of Pong is implemented with three scenes:
+// "Instructions" "PlayGame" and "PlayGameSlowly"
+import ucigame.*;
+
+public class PongWithScenes extends Ucigame
+{
+    Sprite ball;
+    Sprite paddle;
+    boolean startPlayGameHasRun = false;
+    boolean startPlayGameSlowlyHasRun = false;
+
+    public void setup()
+    {
+        window.size(250, 250);
+        window.title("Pong");
+        framerate(30);
+        setIconImage(getImage("images/ball.gif", 255, 0, 0));
+
+        ball = makeSprite(getImage("images/ball.gif", 255, 0, 0));
+        paddle = makeSprite(getImage("images/paddle.png"));
+
+        ball.position(canvas.width()/2 - ball.width()/2,
+                      canvas.height()/2 - ball.height()/2);
+        paddle.position(canvas.width() - paddle.width() - 10,
+                       (canvas.height() - paddle.height()) / 2);
+
+        keyboard.typematicOff(keyboard.SPACE);
+
+        startScene("Instructions");
+    }
+
+///////////////////////
+    public void startInstructions()
+    {
+        canvas.background(0, 0, 255);
+        String[] fontlist = arrayOfAvailableFonts();
+        println("fontlist[3]: " + fontlist[3]);   // arbitrarily choose fourth font
+        canvas.font(fontlist[3], BOLD, 12);
+    }
+
+    public void drawInstructions()
+    {
+        canvas.clear();
+        canvas.putText("Avoid missing ball for high score", 5, 100);
+    }
+
+    // Press any key to start game.
+    public void onKeyPressInstructions()
+    {
+        startScene("PlayGame");
+    }
+
+///////////////////////
+    public void startPlayGame()
+    {
+        ball.motion(6, 3);
+        Image bkg = getImage("images/background.png");
+        canvas.background(bkg);
+        startPlayGameHasRun = true;
+    }
+
+    public void drawPlayGame()
+    {
+        if (!startPlayGameHasRun)
+            println("drawPlayGame running before startPlayGame.");
+        canvas.clear();
+
+        ball.move();
+        ball.bounceIfCollidesWith(paddle);
+        ball.bounceIfCollidesWith(TOPEDGE, BOTTOMEDGE, LEFTEDGE, RIGHTEDGE);
+        paddle.stopIfCollidesWith(TOPEDGE, BOTTOMEDGE, LEFTEDGE, RIGHTEDGE);
+
+        paddle.draw();
+        ball.draw();
+    }
+
+    public void onKeyPressPlayGame()
+    {
+        // Arrow keys and WASD keys move the paddle
+        if (keyboard.isDown(keyboard.UP, keyboard.W))
+            paddle.nextY(paddle.y() - 2);
+        if (keyboard.isDown(keyboard.DOWN, keyboard.S))
+            paddle.nextY(paddle.y() + 2);
+        if (keyboard.isDown(keyboard.LEFT, keyboard.A))
+            paddle.nextX(paddle.x() - 2);
+        if (keyboard.isDown(keyboard.RIGHT, keyboard.D))
+            paddle.nextX(paddle.x() + 2);
+        if (keyboard.isDown(keyboard.SPACE))
+        {
+            println("Switch to slow");
+            startScene("PlayGameSlowly");
+        }
+    }
+
+///////////////////////
+    public void startPlayGameSlowly()
+    {
+        ball.motion(2, 1);
+        startPlayGameSlowlyHasRun = true;
+    }
+
+    public void drawPlayGameSlowly()
+    {
+        if (!startPlayGameSlowlyHasRun)
+            println("drawPlayGameSlowly running before startPlayGameSlowly.");
+        canvas.clear();
+
+        ball.move();
+        ball.bounceIfCollidesWith(paddle);
+        ball.bounceIfCollidesWith(TOPEDGE, BOTTOMEDGE, LEFTEDGE, RIGHTEDGE);
+        paddle.stopIfCollidesWith(TOPEDGE, BOTTOMEDGE, LEFTEDGE, RIGHTEDGE);
+
+        paddle.draw();
+        ball.draw();
+    }
+
+    public void onKeyPressPlayGameSlowly()
+    {
+        // Arrow keys and WASD keys move the paddle
+        if (keyboard.isDown(keyboard.UP, keyboard.W))
+            paddle.nextY(paddle.y() - 1);
+        if (keyboard.isDown(keyboard.DOWN, keyboard.S))
+            paddle.nextY(paddle.y() + 1);
+        if (keyboard.isDown(keyboard.LEFT, keyboard.A))
+            paddle.nextX(paddle.x() - 1);
+        if (keyboard.isDown(keyboard.RIGHT, keyboard.D))
+            paddle.nextX(paddle.x() + 1);
+        if (keyboard.isDown(keyboard.SPACE))
+        {
+            println("Switch to normal");
+            startScene("PlayGame");
+        }
+    }
+}
+</pre>
+</td>
+</tr>
+</table>
+
+<br>
+<br>
+
+</body>
+</html>

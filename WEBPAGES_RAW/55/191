@@ -1,0 +1,448 @@
+<HTML>
+<HEAD>
+<TITLE> Data Compression -- Section 1 </TITLE>
+</HEAD><BODY>
+
+<H1> Data Compression </H1>
+
+<a name="Sec_1">
+<H2> 1.  FUNDAMENTAL CONCEPTS</H2> </a>
+
+<A HREF="DataCompression.html"><IMG SRC="prev.gif" ALT="PREV section"></A>
+<A HREF="DC-Sec2.html"><IMG SRC="next.gif" ALT="NEXT section"></A>
+<P>
+
+	A brief introduction to information theory is
+provided in this section.  The definitions and assumptions
+necessary to a comprehensive discussion and evaluation of
+data compression methods are discussed.  The following string of 
+characters is used to illustrate the concepts defined:  
+<VAR>EXAMPLE</VAR> = <kbd>aa bbb cccc ddddd eeeeee fffffffgggggggg</kbd>.
+
+<a name="Sec_1.1">
+<H3> 1.1  Definitions</H3> </a>
+
+	A code is a mapping of <EM>source messages</EM> (words from the source 
+alphabet <VAR>alpha</VAR>) into <EM>codewords</EM> (words of the code alphabet <VAR>beta</VAR>).  
+The source messages are the basic units into which the string to be
+represented is partitioned.  These basic units may be single symbols
+from the source alphabet, or they may be strings of symbols. 
+For string <VAR>EXAMPLE</VAR>, <VAR>alpha</VAR> = { a, b, c, d, e, f, g, <VAR>space</VAR>}.  
+For purposes of explanation, <VAR>beta</VAR> will be taken to be { 0, 1 }. 
+Codes can be categorized as block-block, 
+block-variable, variable-block or variable-variable, where block-block
+indicates that the source messages and codewords are of fixed
+length and variable-variable codes map variable-length source messages
+into variable-length codewords.  A block-block code for <VAR>EXAMPLE</VAR> 
+is shown in Figure 1.1 and a variable-variable code is given in Figure 1.2.
+If the string <VAR>EXAMPLE</VAR> were coded using the Figure 1.1 code, the 
+length of the coded message would be 120; using Figure 1.2 the length would
+be 30.  
+
+<PRE>
+source message   codeword             source message   codeword
+
+     <VAR>a</VAR>             000                    <VAR>aa</VAR>             0
+     <VAR>b</VAR>             001                    <VAR>bbb</VAR>            1
+     <VAR>c</VAR>             010                    <VAR>cccc</VAR>           10
+     <VAR>d</VAR>             011                    <VAR>ddddd</VAR>          11
+     <VAR>e</VAR>             100                    <VAR>eeeeee</VAR>         100
+     <VAR>f</VAR>             101                    <VAR>fffffff</VAR>        101
+     <VAR>g</VAR>             110                    <VAR>gggggggg</VAR>       110
+   <VAR>space</VAR>           111                    <VAR>space</VAR>          111
+
+Figure 1.1: A block-block code     Figure 1.2: A variable-variable code.
+</PRE>
+
+The oldest and most widely used codes,
+ASCII and EBCDIC, are examples of block-block codes, mapping 
+an alphabet of 64 (or 256) single
+characters onto 6-bit (or 8-bit) codewords.  These are not
+discussed, as they do not provide compression.
+The codes featured in this survey are of the block-variable,
+variable-variable, and variable-block types.  
+<P>
+When source 
+messages of variable length are allowed, the question
+of how a message <EM>ensemble</EM> (sequence of messages) is parsed into
+individual messages arises.  Many of the algorithms 
+described here are <EM>defined-word schemes</EM>.  That is, the set of 
+source messages is determined prior to the invocation of the 
+coding scheme.  
+For example, in text file processing each character may constitute
+a message, or messages may be defined to consist of alphanumeric
+and non-alphanumeric strings.  In Pascal source code, each token
+may represent a message.  All codes involving fixed-length source
+messages are, by default, defined-word codes.
+In <EM>free-parse</EM> methods, the coding algorithm itself parses the ensemble
+into variable-length sequences of symbols.  Most of the known data
+compression methods are defined-word schemes; the free-parse model
+differs in a fundamental way from the classical coding paradigm.
+<P>
+	A code is <EM>distinct</EM> if each codeword is distinguishable
+from every other (i.e., the mapping from source messages to codewords is one-to-one).
+A distinct code is <EM>uniquely decodable</EM> if every codeword is identifiable
+when immersed in a sequence of codewords.  Clearly, each of these features is 
+desirable.  The codes of Figure 1.1 and Figure 1.2 are both distinct, but
+the code of Figure 1.2 is not uniquely decodable.  For example, the coded
+message 11 could be decoded as either <kbd>ddddd</kbd> or <kbd>bbbbbb</kbd>.
+A uniquely decodable code
+is a <EM>prefix code</EM> (or <EM>prefix-free code</EM>) if it has the prefix property,
+which requires that no codeword is a proper prefix
+of any other codeword.  All uniquely decodable block-block and 
+variable-block codes are
+prefix codes.  The code with codewords { 1, 100000, 00 } is an example  
+of a code which is uniquely decodable but which does not have the prefix
+property.  Prefix codes are <EM>instantaneously
+decodable</EM>; that is, they have the desirable property that
+the coded message can be parsed into codewords
+without the need for lookahead.  In order to decode a message encoded using
+the codeword set { 1, 100000, 00 }, lookahead is required.  
+For example, the first codeword of the message 1000000001 is 1,
+but this cannot be determined until the last (tenth) symbol of the message 
+is read (if the string of zeros had been of odd length, then the first 
+codeword would have been 100000).
+<P>
+A <EM>minimal</EM> prefix
+code is a prefix code such that if <VAR>x</VAR> is a proper prefix of some codeword, 
+then <VAR>x sigma</VAR> is either a codeword or a proper prefix of a codeword,
+for each letter <VAR>sigma</VAR> in <VAR>beta</VAR>.  The set of codewords { <kbd>00, 01, 10</kbd> }
+is an example of a prefix code which is not minimal.  The fact that <kbd>1</kbd> is
+a proper prefix of the codeword <kbd>10</kbd> requires that <kbd>11</kbd> be either a codeword
+or a proper prefix of a codeword, and it is neither.
+Intuitively, the minimality constraint prevents 
+the use of codewords which are longer than necessary.  In the above example 
+the codeword <kbd>10</kbd> could be replaced by the codeword <kbd>1</kbd>, yielding a 
+minimal prefix code with shorter codewords.  The codes discussed
+in this paper are all minimal prefix codes.
+<P>
+In this section, a <EM>code</EM> has been defined to be a mapping from a 
+source alphabet to a code alphabet; we now define related terms.
+The process of transforming a source ensemble into a coded message
+is <EM>coding</EM> or <EM>encoding</EM>.  The encoded message may be
+referred to as an <EM>encoding</EM> of the source ensemble.  The
+algorithm which constructs the mapping and uses it to transform the
+source ensemble is called the <EM>encoder</EM>.  The <EM>decoder</EM>
+performs the inverse operation, restoring the coded message to its
+original form.
+
+<a name="Sec_1.2">
+<H3> 1.2  Classification of Methods</H3> </a>
+
+	In addition to the categorization of data compression schemes
+with respect to message and codeword lengths, these methods are
+classified as either static or dynamic.
+A <EM>static</EM> method is one in which the mapping from the set of messages
+to the set of codewords is fixed before transmission begins, so that
+a given message is represented by the same codeword
+every time it appears in the message ensemble.  The classic static
+defined-word scheme is Huffman coding [Huffman 1952].  In Huffman 
+coding, the assignment of codewords to source messages is based on the 
+probabilities with which the source messages appear in the 
+message ensemble.  Messages which appear more frequently are represented
+by short codewords; messages with smaller probabilities map to longer 
+codewords.  These probabilities are determined before transmission begins.
+A Huffman code for the ensemble <VAR>EXAMPLE</VAR> is given in Figure 1.3.
+If <VAR>EXAMPLE</VAR> were coded using this Huffman mapping, the length of the
+coded message would be 117.
+Static Huffman coding is discussed in
+<a href="DC-Sec3.html#Sec_3.2">Section 3.2</a>.  Other  static schemes are
+discussed in
+<a href="DC-Sec2.html#Sec_2">Sections 2</a> and <a href="DC-Sec3.html#Sec_3">3</a>. 
+
+<PRE>
+   source message   probability      codeword
+
+        <VAR>a</VAR>             2/40           1001
+        <VAR>b</VAR>             3/40           1000
+        <VAR>c</VAR>             4/40           011
+        <VAR>d</VAR>             5/40           010
+        <VAR>e</VAR>             6/40           111
+        <VAR>f</VAR>             7/40           110
+        <VAR>g</VAR>             8/40           00
+      <VAR>space</VAR>           5/40           101
+
+Figure 1.3 -- A Huffman code for the message <VAR>EXAMPLE</VAR> (code length=117).
+</PRE>
+
+	A code is <EM>dynamic</EM> if the mapping from the set of messages to the
+set of codewords changes over time.  For example, dynamic Huffman coding 
+involves computing an approximation to the probabilities of occurrence 
+"on the fly", as the ensemble is being
+transmitted.  The assignment of codewords to messages is based on
+the values of the relative frequencies of occurrence at each point in time.  
+A message <VAR>x</VAR> may
+be represented by a short codeword early in the transmission because 
+it occurs frequently at the beginning of the ensemble, even though its 
+probability of occurrence over the total ensemble is low.  Later, 
+when the more probable messages begin to occur with higher frequency, 
+the short codeword will be mapped to one of the higher probability
+messages and <VAR>x</VAR> will be mapped to a longer codeword.  As an illustration,
+Figure 1.4 presents a dynamic Huffman code table corresponding to the
+prefix <kbd>aa bbb</kbd> of <VAR>EXAMPLE</VAR>.  Although the frequency of <VAR>space</VAR>
+over the entire message is greater than that of <VAR>b</VAR>,  at this
+point in time <VAR>b</VAR> has higher frequency and therefore is 
+mapped to the shorter codeword.
+
+<PRE>
+   source message   probability      codeword
+
+        <VAR>a</VAR>             2/6            10
+        <VAR>b</VAR>             3/6            0
+      <VAR>space</VAR>           1/6            11
+
+Figure 1.4 -- A dynamic Huffman code table for the prefix
+              <kbd>aa bbb</kbd> of message <VAR>EXAMPLE</VAR>.
+</PRE>
+
+	Dynamic codes are also referred to in the literature as
+<EM>adaptive</EM>, in that they adapt to changes in ensemble characteristics
+over time.  The term adaptive will be used for the remainder of this
+paper; the fact that these codes adapt to changing characteristics is
+the source of their appeal.  Some adaptive methods adapt to changing patterns
+in the source [Welch 1984] while others exploit locality of reference 
+[Bentley et al. 1986].  Locality of reference is the tendency, common 
+in a wide variety of text types, for a particular word to occur
+frequently for short periods of time then fall into disuse for long
+periods.
+<P>
+All of the adaptive methods are <EM>one-pass</EM> methods; only
+one scan of the ensemble is required. 
+Static Huffman coding requires two passes:
+one pass to compute probabilities and determine the mapping, and a
+second pass for transmission.  Thus, as long as the encoding and decoding 
+times of an adaptive method are not substantially greater than those of
+a static method, the fact that an initial scan is not needed implies
+a speed improvement in the adaptive case.   In addition, the mapping 
+determined in the first pass of a static coding scheme 
+must be transmitted by the encoder to the decoder.  The mapping may
+preface each transmission (that is, each file sent), or a single mapping 
+may be agreed upon and used for multiple transmissions.
+In one-pass methods the encoder defines and redefines the mapping dynamically, 
+during transmission.  The decoder must define and redefine the mapping in
+sympathy, in essence "learning" the mapping as codewords are received.
+Adaptive methods are discussed in
+<a href="DC-Sec4.html#Sec_4">Sections 4</a> and <a href="DC-Sec5.html#Sec_5">5</a>.  
+<P>
+An algorithm may also be a <EM>hybrid</EM>, neither completely
+static nor completely dynamic.  In a simple hybrid scheme,
+sender and receiver maintain identical <EM>codebooks</EM> 
+containing <VAR>k</VAR> static codes.  For each transmission, 
+the sender must choose one of the <VAR>k</VAR> previously-agreed-upon codes 
+and inform the receiver of his choice (by transmitting first the
+"name" or number of the chosen code).
+Hybrid methods are discussed further in
+<a href="DC-Sec2.html#Sec_2">Section 2</a> and <a href="DC-Sec3.html#Sec_3.2">Section 3.2</a>.
+
+<a name="Sec_1.3">
+<H3> 1.3  A Data Compression Model</H3> </a>
+
+	In order to discuss the relative merits of data compression
+techniques, a framework for comparison must be established.  There
+are two dimensions along which each of the schemes discussed here
+may be measured, algorithm complexity and amount of compression.
+When data compression is used in a data transmission application,
+the goal is speed.  Speed of transmission depends upon the number
+of bits sent, the time required for the encoder to generate the
+coded message, and the time required for the decoder to recover
+the original ensemble.  In a data storage application, although the
+degree of compression is the primary concern, it is nonetheless
+necessary that the algorithm be efficient in order for the
+scheme to be practical. 
+For a static scheme, there are three algorithms to analyze:
+the map construction algorithm, the encoding algorithm, and the
+decoding algorithm.  For a dynamic scheme, there are just two algorithms:
+the encoding algorithm, and the decoding algorithm.
+<P>
+	Several common measures of compression have been 
+suggested:  redundancy [Shannon and Weaver 1949], average message
+length [Huffman 1952], and compression ratio [Rubin 1976; 
+Ruth and Kreutzer 1972].  These measures are defined below.  Related to each of these measures
+are assumptions about the characteristics of the source.
+It is generally assumed in information theory that all statistical
+parameters of a message source are known with perfect accuracy
+[Gilbert 1971].  The most common model is that of a discrete
+memoryless source; a source whose output is a sequence of letters
+(or messages),
+each letter being a selection from some fixed alphabet <kbd>a</kbd>,...
+The letters are taken to be random, statistically independent
+selections from the alphabet, the selection being made according
+to some fixed probability assignment <VAR>p</VAR>(<kbd>a</kbd>),... [Gallager 1968].
+Without loss of generality, the code alphabet is assumed
+to be {0,1} throughout this paper.  The modifications
+necessary for larger code alphabets are straightforward.
+<P>
+	It is assumed that any cost associated with the code 
+letters is uniform.  This is a reasonable assumption, although it
+omits applications like telegraphy where the code symbols are of
+different durations.  The assumption is also important, since 
+the problem of constructing optimal codes over unequal code letter costs 
+is a significantly different and more difficult problem.
+Perl et al. and Varn have developed algorithms for minimum-redundancy 
+prefix coding in the case of arbitrary symbol cost and equal 
+codeword probability [Perl et al. 1975; Varn 1971].  
+The assumption of equal probabilities mitigates the difficulty
+presented by the variable symbol cost.  For the more general unequal 
+letter costs and unequal probabilities model, Karp has proposed an 
+integer linear programming approach [Karp 1961].  There have been 
+several approximation algorithms proposed for this more difficult 
+problem [Krause 1962; Cot 1977; Mehlhorn 1980].
+<P>
+	When data is compressed, the goal is to reduce redundancy,
+leaving only the informational content.  The measure of information
+of a source message <VAR>x</VAR> (in bits) is -lg <VAR>p</VAR>(<VAR>x</VAR>)
+[lg denotes the base 2 logarithm].  This definition
+has intuitive appeal; in the case that <VAR>p</VAR>(<VAR>x</VAR>=1,
+it is clear that <VAR>x</VAR> is not at all informative since it had to occur.
+Similarly, the smaller the value of <VAR>p</VAR>(<VAR>x</VAR>,
+the more unlikely <VAR>x</VAR>
+is to appear, hence the larger its information content.  The reader
+is referred to Abramson for a longer, more elegant
+discussion of the legitimacy of this technical definition of the
+concept of information [Abramson 1963, pp. 6-13].  
+The average information content over
+the source alphabet can be computed by weighting the information content
+of each source letter by its probability of occurrence, yielding the
+expression SUM{i=1 to n} [-<VAR>p</VAR>(<VAR>a</VAR>(<VAR>i</VAR>)) lg <VAR>p</VAR>(<VAR>a</VAR>(<VAR>i</VAR>))].  This quantity is
+referred to as the <VAR>entropy</VAR> of a source letter, or the entropy of the 
+source, and is denoted by <VAR>H</VAR>.   
+Since the length of a codeword for message <VAR>a</VAR>(<VAR>i</VAR>)
+must be sufficient to carry the information content of <VAR>a</VAR>(<VAR>i</VAR>),
+entropy imposes a lower bound on the number of bits required for the
+coded message.  The total number of bits must be at least as large as
+the product of <VAR>H</VAR> and the length of the source ensemble.
+Since the value of <VAR>H</VAR> is generally not an integer, variable length
+codewords must be used if the lower bound is to be achieved.
+Given that message <VAR>EXAMPLE</VAR> is to be encoded one letter at a time,
+the entropy of its source can be calculated using the probabilities 
+given in Figure 1.3:
+<VAR>H</VAR> = 2.894, so that the minimum number of bits contained 
+in an encoding of <VAR>EXAMPLE</VAR> is 116.
+The Huffman code given in <a href="#Sec_1.2">Section 1.2</a> does not quite
+achieve the theoretical minimum in this case.
+<P>
+Both of these definitions of information content are due to 
+Shannon.  A derivation of the concept of entropy as it relates 
+to information theory is presented by Shannon [Shannon and Weaver 1949].
+A simpler, more intuitive explanation of entropy is offered by Ash
+[Ash 1965].
+<P>
+	The most common notion of a "good" code is one which 
+is <EM>optimal</EM> in the sense of having minimum redundancy.  <EM>Redundancy</EM>
+can be defined as:  SUM <VAR>p</VAR>(<VAR>a</VAR>(<VAR>i</VAR>)) <VAR>l</VAR>(<VAR>i</VAR>)
+- SUM [-<VAR>p</VAR>(<VAR>a</VAR>(<VAR>i</VAR>)) lg <VAR>p</VAR>(<VAR>a</VAR>(<VAR>i</VAR>))] where <VAR>l</VAR>(<VAR>i</VAR>) is
+the length of the codeword representing message <VAR>a</VAR>(<VAR>i</VAR>).  The expression
+SUM <VAR>p</VAR>(<VAR>a</VAR>(<VAR>i</VAR>)) <VAR>l</VAR>(<VAR>i</VAR>) represents the lengths of the codewords weighted
+by their probabilities of occurrence, that is, the average codeword length.
+The expression SUM [-<VAR>p</VAR>(<VAR>a</VAR>(<VAR>i</VAR>)) lg <VAR>p</VAR>(<VAR>a</VAR>(<VAR>i</VAR>))] is entropy, <VAR>H</VAR>.  Thus,
+redundancy is a measure of the difference between average 
+codeword length and average information content.  If a code has 
+minimum average codeword length for a given discrete probability distribution,
+it is said to be a minimum redundancy code.
+<P>
+We define the term <EM>local redundancy</EM> to capture the notion
+of redundancy caused by local properties of a message ensemble,
+rather than its global characteristics.  While the model used for
+analyzing general-purpose coding techniques assumes a random distribution
+of the source messages, this may not actually be the case.  In particular
+applications the tendency for messages to cluster in predictable patterns
+may be known.  The existence of predictable patterns may be exploited 
+to minimize local redundancy.  Examples of applications in which local
+redundancy is common, and methods for dealing with local redundancy,
+are discussed in
+<a href="DC-Sec2.html#Sec_2">Section 2</a> and <a href="DC-Sec678.html#Sec_6.2">Section 6.2</a>.
+<P>
+Huffman uses <EM>average message length</EM>, SUM <VAR>p</VAR>(<VAR>a</VAR>(<VAR>i</VAR>)) <VAR>l</VAR>(<VAR>i</VAR>), as
+a measure of the efficiency of a code.  Clearly the meaning of
+this term is the average length of a <EM>coded</EM> message. 
+We will use the term <EM>average codeword length</EM> to represent
+this quantity.  Since redundancy is defined to be average codeword
+length minus entropy and entropy is constant
+for a given probability distribution, minimizing average codeword
+length minimizes redundancy.
+<P>
+A code is <EM>asymptotically optimal</EM> if it has the property
+that for a given probability distribution, the ratio of average
+codeword length to entropy approaches 1 as entropy tends to infinity.
+That is, asymptotic optimality guarantees that average codeword length
+approaches the theoretical minimum (entropy represents information content,
+which imposes a lower bound on codeword length).
+<P>
+	The amount of compression yielded by a coding scheme can be
+measured by a <EM>compression ratio</EM>.  The term compression ratio
+has been defined in several ways.  The definition   
+<VAR>C</VAR> = (average message length)/(average codeword length) 
+captures the common meaning, which is a comparison of the length of the coded
+message to the length of the original ensemble [Cappellini 1985].  
+If we think of the characters of the ensemble <VAR>EXAMPLE</VAR> as 6-bit ASCII
+characters, then the average message length is 6 bits.  The Huffman
+code of
+<a href="#Sec_1.2">Section 1.2</a> represents <VAR>EXAMPLE</VAR> in 117 bits,
+or 2.9 bits per character.  This yields a compression ratio of 6/2.9,
+representing compression by a factor of more than 2.  Alternatively,
+we may say that Huffman encoding produces a file whose size is
+49% of the original ASCII file, or that 49% compression has been achieved.
+ 
+A somewhat different definition of compression ratio, by Rubin,
+<VAR>C</VAR> = (<VAR>S</VAR> - <VAR>O</VAR> - <VAR>OR</VAR>)/<VAR>S</VAR>, includes the representation 
+of the code itself in the transmission cost [Rubin 1976].  In this
+definition <VAR>S</VAR> represents the length of the source ensemble, <VAR>O</VAR> the 
+length of the output (coded message), and <VAR>OR</VAR> the size of the "output 
+representation" (eg., the number of bits required for the encoder to
+transmit the code mapping to the decoder).  The quantity <VAR>OR</VAR> 
+constitutes a "charge" to an algorithm for transmission of information 
+about the coding scheme.  The intention is to measure the total size
+of the transmission (or file to be stored).
+
+<a name="Sec_1.4">
+<H3> 1.4  Motivation</H3> </a>
+
+	As discussed in the Introduction, data compression has 
+wide application in terms of information
+storage, including representation of the abstract data type <EM>string</EM>
+[Standish 1980] and file compression.  Huffman coding is used for 
+compression in several file archival systems [ARC 1986; PKARC 1987], 
+as is Lempel-Ziv coding, one of the adaptive schemes to be discussed 
+in <a href="DC-Sec5.html#Sec_5">Section 5</a>.
+An adaptive Huffman coding technique is the basis for the <EM>compact</EM>
+command of the UNIX operating system, and the UNIX 
+<EM>compress</EM> utility employs the Lempel-Ziv approach [UNIX 1984].
+<P>
+	In the area of data transmission, Huffman coding has been
+passed over for years in favor of block-block codes, notably ASCII.
+The advantage of Huffman coding is in the average number of bits per character
+transmitted, which may be much smaller than the lg <VAR>n</VAR> bits per
+character (where <VAR>n</VAR> is the source alphabet size) of a block-block
+system.  The primary difficulty associated with variable-length
+codewords is that the rate at which bits are presented to the 
+transmission channel will fluctuate, depending on the relative
+frequencies of the source messages.  This requires buffering between
+the source and the channel.  Advances in technology have both overcome
+this difficulty and contributed to the appeal of variable-length
+codes.  Current data networks allocate communication resources to
+sources on the basis of need and provide buffering as part of the 
+system.  These systems require significant amounts of protocol, and 
+fixed-length codes are quite inefficient for applications such as 
+packet headers.  In addition, communication costs are beginning to
+dominate storage and processing costs, so that variable-length coding
+schemes which reduce communication costs are attractive even if they
+are more complex.  For these reasons, one could expect to see even
+greater use of variable-length coding in the future.
+<P>
+	It is interesting to note that the Huffman coding algorithm,
+originally developed for the efficient transmission of data, also
+has a wide variety of applications outside the sphere of data
+compression.  These include construction of optimal search trees
+[Zimmerman 1959; Hu and Tucker 1971; Itai 1976], list merging [Brent
+and Kung 1978], and generating optimal evaluation trees in the 
+compilation of expressions [Parker 1980].  Additional applications
+involve search for jumps in a monotone function of a single variable,
+sources of pollution along a river, and leaks in a pipeline [Glassey
+and Karp 1976].  The fact that this elegant combinatorial algorithm
+has influenced so many diverse areas underscores its importance. 
+
+<P>
+<A HREF="DataCompression.html"><IMG SRC="prev.gif" ALT="PREV section"></A>
+<A HREF="DC-Sec2.html"><IMG SRC="next.gif" ALT="NEXT section"></A>
+<P>
+</BODY></HTML>

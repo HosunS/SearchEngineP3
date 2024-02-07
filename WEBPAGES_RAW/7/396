@@ -1,0 +1,40 @@
+-- This test bench corresponds to the example given with lab1.
+-- This is the guideline how to make multiple imputs within just one testbench file.
+-- You may choose not to have assert statement in your testbench.
+
+
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.all;
+
+entity example_tb is
+end example_tb;
+
+architecture example_tb_arch of example_tb is
+-- component declaration
+	component example
+	port( input_vector	: in  STD_LOGIC_VECTOR(3 downto 0);
+	      output	: out  STD_LOGIC);
+	end component;
+	
+-- component specification
+for all: example use entity work.example(example_arch);
+
+-- signal declaration
+	signal A : STD_LOGIC_VECTOR (3 downto 0) := "0110";
+	signal Z: STD_LOGIC;
+	signal expected_Z	: STD_LOGIC := '0';
+	
+begin
+	A <= "0101" after 50 ns, "0000" after 100 ns;
+	expected_Z <= '1' after 50 ns, '0' after 100 ns;
+	C1: example port map(A, Z);  
+	
+process
+begin	
+	wait for 40 ns;
+ 	assert Z = expected_Z report "Z not equal to expected_Z" severity ERROR;
+	wait for 10 ns;
+end process;
+
+end example_tb_arch;

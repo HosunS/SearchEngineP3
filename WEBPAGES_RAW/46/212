@@ -1,0 +1,499 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+  <title>Program 3</title>
+</head>
+
+<body BGCOLOR="white">
+
+<center>
+<h1>Program 3</h1>
+<h1>Implementing Priority Queues and Maps<br>
+    (and their iterators) with Binary Trees
+</h1>
+<p>
+<h2>ICS-46: Data Strcuture Implementation and Analysis
+</h2>
+<p>
+</center>
+
+
+<!-- Introduction -->
+
+<a name="Introduction">
+<hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Introduction</b></td>
+<td width ="80%">
+This programming assignment is designed to ensure that you know how to
+  implement two templated classes (<b>Priority Queue</b> and <b>Map</b>)
+  with binary trees (max-heap and Binary Search Tree respectively).
+Your implementations will also include fully-functional iterators for
+  these classes.
+For the priority queue you will be writing code that processes the underlying
+   array storing the values as a max-heap.
+For the map you will be writing iterative and recursive code that processes the
+  BST.
+<p>
+You can test these implementations by using the standard drivers (provided
+  with the download) and GoogleTests that we will use when grading your
+  code for correctness; recall that you can augment the GoogleTest with whatever
+  code you want, to aid your debugging: a GoogleTest is just a C++ program.
+You can also test the code you wrote for Programming Assignment #1 (which used
+  array implementations of these classes) by substituting these binary tree
+  implementations -typically by changing a few <b>typedef</b> statements.
+In fact, you will be required to translate my solution to the
+  <b>wordgenerator</b> program to use <b>HeapPriorityQueue</b> and <b>BSTMap</b>
+  and indicate the performance improvement (over the original priority queue and
+  map classes) on a large text file (<b>wghuck.txt</b>).
+<p>
+Write and use the standard <b>insertion</b> (<b>&lt;&lt;</b>) operator and
+  <b>str()</b> method in each class for debugging.
+Note that there are few tested requirements for what these operators/methods
+  return, but this code will make debugging easier, and we may examine it by
+  hand. 
+<p>
+For <b>str</b> in <b>HeapPriorityQueue</b> return in a <b>std::string</b> the
+  entire contents array for all indexes (ascending) along with the other
+  instance variables: from this information you can easily reconstruct the
+  max-heap-as-binary_tree.
+After enqueueing <b>b</b>, <b>a</b>, <b>c</b>, the <b>HeapPriorityQueue</b>'s
+  <b>str()</b> prints as
+<b>heap_priority_queue[0:a,1:b,2:c,3:](length=4,used=3,mod_count=4)</b>.
+<p>
+For <b>str</b> in <b>BSTMap</b> return a <b>std::string</b> that shows the BST
+  rotated left by 90 degrees  along with the other instance variables, so you
+  can easily examine the structure of the BST.
+After assocating  <b>b</b> with <b>2</b>, <b>a</b> with <b>1</b>, and
+ <b>c</b> with <b>3</b>, the <b>BSTMap</b>'s <b>str()</b> prints as
+<b><pre>
+bst_map[
+..c->3
+b->2
+..a->1
+](used=3,mod_count=3)
+</pre></b>
+<p>
+You should download the 
+  <a href="program3.zip">program3</a> project folder and use it to create an
+  CLion project.
+You will write the required methods in the <b>heap_priority_queue.hpp</b> and
+  <b>bst_map.hpp</b> files in this project, and submit each separately in
+  Checkmate.
+The project folder also contains two pairs of <b>.hpp</b> and <b>.cpp</b>
+  files: a driver/GoogleTest pair for each class that you will write, and the
+  <b>driver.cpp</b> file which has a <b>main</b> function that can be made to
+  run any of the two drivers.
+<p>
+<!---
+Alternatively, you can also use a existing/working project folder that already
+  is connected to both the <b>courselib</b> and <b>googletest</b> libraries:
+  to do so, first remove (but save) all the files in its src folder and then
+  copy all the <b>.hpp</b> and <b>.cpp</b> files from the downloaded project's
+  <b>src</b> folder into the existing/working project's <b>src</b> folder;
+  finally, right-click the project and select <b>Refresh</b> (F5).
+<p>
+--->
+<b>Important:</b> Only one of the <b>.cpp</b> files with a <b>main</b> method
+  can be active/compiling at any time.
+In the download, only the <b>driver.cpp</b> file is active; the GoogleTests are
+  inactive.
+To make a progam inactive, select it (in the editor tab), use the <b>Ctrl-a</b>
+  command to select all its lines, and then type <b>Ctrl-/</b> (or click
+  <b>Source</b> at the top left of the menu and choose <b>Toggle Comment</b>):
+  ever line will now appear in a comment (so the <b>main</b> function is
+  commented-out); by using these same instructions, you can toggle back those
+  lines to not have comments.
+<p>
+I recommend that you work on this assignment in pairs.
+Try to find someone who lives near you, with similar programming skills,
+  and work habits/schedule: e.g., talk about whether you prefer to work
+  mornings, nights, or weekends; what kind of commitment you will make to submit
+  program early.
+<p>
+Only <b>ONE STUDENT</b> should submit the assignment (all parts of it).
+If students work in pairs, <b>BOTH NAMES</b> and their UCInetID names must
+  appear in a comment at the top of each submitted program.
+For example if Romeo Montague (whose UCInetID is romeo1) submitted a program
+  that he worked on with his partner Juliet Capulet (whose UCInetID is jcapulet)
+  the comment at the top of each submitted file would appear as:
+<pre><b>  // Submitter: romeo1(Montague, Romeo)
+  // Partner  : jcapulet(Capulet, Juliet)
+  // We certify that we worked cooperatively on this programming
+  //   assignment, according to the rules for pair programming</b></pre>
+If you do not know what the terms <b>cooperatively</b> and/or
+  <b>rules for pair programming</b> mean, please read about
+  <a href="../../../common/handouts/pairprogramming.html">Pair Programming</a> 
+  before starting this assignment.
+If the names do not appear at the top of all your submissions in exactly this
+  form, points will be deducted.
+If you are submitting by yourself, you may omit all lines but the first
+  (<b>Submitter</b>).
+Please <b>do</b> turn in each program <b>as you finish it</b>, so that I can
+  accurately assess the progress of the class as a whole during this assignment;
+  <b>do not</b> turn in all the programs at the same time.
+<p>
+Print this document and carefully read it, marking any parts that contain
+  important detailed information that you find (for review before you turn in
+  the files).
+<p>
+<p>
+This assignment has 3 parts: pairs should work on each part together, not split
+  them up and do them separately.
+Part 1 is worth 30 points; part 2 is worth 25 points; part 3 is worth 5 pts.
+Remember I'm going to be running MOSS on the parts of this assignment.
+<p>
+<b>Important:</b> The courselib contains array implementations for all these
+  data types (and you have written linked-list versions of them); although this
+  assignment requires you to use binary trees, there are still
+  <b>many strong similarities</b> at a high level in all these implementations.
+So, I encourage you to examine these implementations closely, and understand
+  them; possibly, experiment with them (using their drivers or GoogleTests),
+  while you are writing your binary tree implementations: this advice is
+  especially true as you begin to study, understand, and implement iterators.
+Please feel free about asking questions about these methods: both their syntax
+  and semantics.
+</td>
+</tbody>
+</table>
+
+
+<!-- priorityqueue -->
+
+<a name="priorityqueue">
+<hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Priority Queues (30 pts)</b></td>
+<td width ="80%">
+Priority Queues can be implemented by a variety of data structures (where the
+  highest priority value is always removed first).
+How does a specific priority queue determine which value has the highest
+  priority?
+We supply the priority queue with a <b>gt</b> (greater-than) function that
+  computes whether or not its first argument has a greater priority than its
+  second argument.
+This <b>gt</b> can be passed to any constructor or instantiated in the
+  template.
+So, we cannot ask, "What is the priority of a value." But, we can ask
+  "Does the priority of a first value have a higher priority than a second
+  value", by calling the gt function. 
+For example, we cannot determine the priority of a <b>std::string</b> value, but
+  we can determine whether one <b>std::string</b> value has a higher
+  priority than another <b>std::string</b> value.
+<p>
+We can implement priority queues efficiently using a max-heap (stored in an
+  array), whose <b>enqueue</b> and <b>dequeue</b> operations are each O(Log N).
+Enqueuing/Dequeuing N values is O(N Log N).
+<p>
+The file <b>heap_priority_queue.hpp</b> declares the appropriate constructors,
+  methods, operators, and instance variables.
+Note the simple helper methods <b>left_child</b>, <b>right_child</b>, 
+  <b>parent</b>, <b>is_root</b>, and <b>in_heap</b>, which abstract the
+  mapping functions and two useful <b>bool</b> functions.
+Use these methods to simplify writing the helper methods <b>percolate_up</b> and
+  <b>percolate_down (int i)</b>, which do most of the work in the <b>enqueue</b>
+  and <b>dequeue</b> methods (respectively) and may be called in other places
+  as well (e.g., the iterator's <b>erase</b> method).
+Think <b>carefully</b> about how to write these percolate methods simply (or you
+  will never get them properly debugged): my method bodies used <b>for</b> loops
+  and were 2 lines and 9 lines long each (each using <b>std::swap</b>
+  included from <b>&lt;utility&gt;</b>).
+<p>
+I suggest copying/pasting the methods from the <b>array_priority_queue.hpp</b>
+  file, and then translating these methods from using an array to using a
+  max-heap, since both fundamentally process arrays (e.g., see/call the
+  <b>ensure_length</b> helper method).
+Pay close attention to ensure <b>all instance variables</b> receive values in
+  the constructors and are used/set correctly in queries and commands.
+<p>
+<b>Special Requirements:</b>
+<ul>
+<li><b>copy</b>, <b>initializer_list</b> and <b>iterable</b> constructors, and
+  <b>operator=</b>:
+    These operations can all execute in O(N); they should <b>not</b> work by
+      enqueueing each value into an empty max-heap, which would be O(N Log N).
+    If there are two <b>gt</b> functions and they are the same, then directly
+      copy the array.
+    If there is only one <b>gt</b> function or the two are different, then first
+      copy the array, and then make it into a max-heap by using the linear
+      "heapify" algorithm discussed in the notes.
+<p>
+<li>Note that the two priority queues in the <b>copy</b> constructor and
+      <b>operator=</b> each store their own <b>gt</b> function, which may be
+       the same or different.
+    The one priority queue in the <b>initializer_list</b> and <b>iterable</b>
+      constructors stores only its <b>gt</b> function; in these cases copy
+      the information (by iterating through the parameter) into an array first
+      and then always heapify it.
+<p>
+<li>For <b>operator=</b>, copy the <b>gt</b> function on the right-hand side
+  priority queue into the <b>gt</b> function for the (target) left-hand side
+  priority queue (because after assignment, these priority queues must be ==;
+  the <b>gt</b>s may already be the same).
+</ul>
+<p>
+<b>Iterators:</b>
+There is no simple/efficient way to write an iterator for this max-heap
+  implementation of priority queues, because the iterator is supposed to
+  produce its values from highest to lowest priority, but the array is a
+  max-heap (so we cannot just traverse its values); being able to <b>erase</b>
+  values with an iterator makes this task even harder.
+Here is how to implement the iterator for this class.
+<ul>
+<li>Notice the <b>ics::HeapPriorityQueue<T> it;</b> instance variable in the
+      <b>Iterator</b> class in the <b>HeapPriorityQueue</b> class.
+<p>
+<li>Call the first constructor for <b>Iterator</b> (the one that specifies a
+      last <b>bool</b> parameter) when called from <b>begin</b>.
+    It doesn't matter what value is passed: the point is to call the first
+      <b>Iterator</b> constructor, not the second.
+    The initializer for this <b>Iterator</b> constructor should copy the
+      <b>ref_pq HeapPriorityQueue</b> into the instance variable <b>it</b>,
+      and use this copy for iteration purposes.
+    Examining the the current iterator value calls <b>peek()</b> on <b>it</b>;
+      advancing the iterator calls <b>dequeue it</b>
+    Overall, the "cursor" is the highest priority value in the <b>it</b>
+      priority queue (the one that can be peeked and dequeued).
+<p>
+<li>Call the second constructor for <b>Iterator</b> (the one that does
+      <b>not</b> specify a last <b>bool</b> parameter) when called from
+      <b>end</b>.
+    The initializer for this <b>Iterator</b> constructor should leave <b>it</b>
+       empty).
+<p>
+<li>Two iterators that point to the same <b>ref_pq</b> are equal (index the
+       same value) if their sizes are equal.
+<p>
+<li>To <b>erase</b> the iterator's "cursor" use the following algorithm:
+    <ol>
+       <li>Dequeue a value.
+       <li>Scan the max-heap in the real (<b>ref_pq</b>) priority queue to find
+             the index of the value to erase.
+       <li>Use that index like the root in the <b>dequeue</b> algorithm with one
+             difference: the value put there from the end of the max-heap might
+             have to be percolated up instead of down.
+           Look at the <b>iterator_erase_heap_special_case</b> GoogleTest to
+             see an example of a max-heap (construct its array), where removing
+             a value (<b>"f"</b>) causes the value to percolate up.
+    </ol>
+</ul>
+This approach makes the iterators easy to write but expensive in time and space
+  to use (especially erase): e.g., storing the second heap requires O(N) extra
+  space; creating the iterator requires O(N); <b>++</b> is O(Log N) not O(1):
+  erase can be O(N) since it performs a linear scan of the array representing
+  a heap.
+<p>
+Feel free to question/discuss iterators for <b>HeapPriorityQueue</b> on the
+  message boards, so long as no code is posted or described in too much detail.
+</td>
+</tbody>
+</table>
+
+
+<!-- map -->
+
+<a name="priorityqueue">
+<hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Maps (25 pts)</b></td>
+<td width ="80%">
+Maps can be implemented by a variety of data structures: they all associate
+  unique keys with values, by storing an <b>ics::pair</b> holding both the
+  key and its value.
+The data structure should allow us quickly to find the value associated with
+  a key, and possibly change/update such a value.
+We must supply <b>BSTMap</b> with a <b>lt</b> (less-than) function that
+  computes whether its first argument key belongs in the left subtree
+  (if not, and the two values are <b>!=</b>, it belongs in the right subtree).
+This <b>lt</b> can be passed to any constructor or instantiated in the
+  template.
+<p>
+We can implement maps efficiently by using a binary search tree (BST) whose
+  order property is determined by comparing only the key (<b>first</b>) part
+  of the <b>pair</b>.
+Most operations updating BSTs are O(height of BST) which for non-pathological
+  BSTs is O(Log N).
+<p>
+The file <b>bst_map.hpp</b> declares the appropriate constructors, methods,
+  operators, and instance variables.
+Note the declaration of many helper methods that operate on BSTs: most
+  (in fact, all but <b>find_key</b>) are more simply implemented recursively.
+These recursive methods typically are passed the root of a BST (using some
+  parameter mode), and then call themselves recursively on a left and/or right
+  subtree (passing their left/right child as the root of a smaller tree).
+<p>
+Many of the standard <b>map</b> methods call one or more of these helper
+  methods to retrieve information from a BST or change it (e.g., add/remove
+  key->value assocations).
+These include the functions <b>find_key</b>, <b>has_value</b>, <b>copy</b>,
+   <b>copy_to_queue</b> (a helper for creating iterators), <b>equals</b>
+  (a helper for <b>operator == </b>), and <b>string_rotated</b> (a helper
+  for <b>str()</b>; and the mutators <b>insert</b> (a helpder for <b>put</b>),
+  <b>find_addempty</b> (a helper for <b>[]</b>), <b>remove_closest</b>
+  (a helper for <b>remove</b>),  <b>remove</b> (a helper for <b>erase</b>),
+  and <b>delete_BST</b>.
+<p>
+I suggest examining code in the <b>array_map.hpp</b> file to help you understand
+  some of the bookkeeping requirements of these methods.
+Many of the recursive helper functions you need to write have similar functions
+  in the notes on processing binary trees (including BSTs) recursively.
+Pay close attention to ensure <b>all instance variables</b> receive values in
+  the constructors and are used/set correctly in queries and commands.
+<p>
+<b>Special Requirements:</b>
+<ul>
+<li><b>copy</b> and <b>operator=</b>:
+    These operations can sometimes execute in O(N); they should <b>not</b>
+      always work by putting each key/value pair into an empty BST, which would
+      likely be O(N Log N), but in a pathological case would be O(N^2).
+<p>
+<li>If the <b>lt</b> functions for the two maps are the same, then directly
+      copy the entire BST in O(N): it is already "a BST with the correct order
+      property".
+    But, if the <b>lt</b> functions for the two maps are different, then put
+      all the key/value pairs from one into the other (normally O(N Log N), but
+      pathologically O(N^2)).
+<p>
+<li><b>operator=</b>: don't worry about reusing <b>TN</b>s in the <b>lhs</b>
+  BST; just deallocate all them and copy the tree of the right-hand side.
+</ul>
+
+<p>
+<b>Iterators:</b>
+Note that map iterators produce <b>Entry</b> which is defined by 
+  <b>typedef ics::pair&lt;KEY,T&gt; Entry;</b>
+There are moderately simple/efficient ways to write iterators for a BST
+  implementation of maps, but only if we don't allow iterators to <b>erase</b>
+  any key/value.
+Because we are allowing erasure, we will adopt a simple but
+  time/space-inefficient iterator for this class: it has some similarities
+  implementing iterators for the heap priority queue.
+<ul>
+<li>Notice the <b>ics::ArrayQueue<T> it;</b> instance variable in the
+      <b>Iterator</b> class in the <b>BSTMap</b> class.
+<p>
+<li>In the constructor for <b>Iterator</b>, the second argument should be
+      <b>true</b> when called from <b>begin</b> but <b>false</b> when called
+      from <b>end</b>.
+<p>
+<li>When this parameter is <b>true</b> the <b>Iterator</b> constructor should
+      copy all key->value pairs in the BST storing the map into the <b>it</b>
+      queue; it then uses this queue for iteration purposes (when <b>false</b>
+      it should leave <b>it</b> empty): examining the current iterator value
+      calls <b>peek()</b> on </b>it</b>; advancing the iterator calls
+       <b>dequeue</b> on <b>it</b>.
+    Overall, the "cursor" is the front key->value pair in the <b>it</b>
+      queue (the one that can be peeked and dequeued).
+<p>
+<li>Two iterators that point to the same <b>ref_map</b> are equal (index the
+       same value) if their queue sizes are equal.
+<li>To <b>erase</b> a the iterator's "cursor" <b>erase</b> its key->value pair
+      from the BST storing the map.
+</ul>
+This approach makes the iterators easy to write but expensive in time to
+  create (copying all the key->value pairs from the BST to the queue is O(N))
+  and space (storing each key->pair value in the BST and in the queue requires
+  O(N) extra space).
+<p>
+Feel free to question/discuss iterators for <b>BSTMap</b> on the
+  message boards, so long as no code is posted or described in too much detail.
+</td>
+</tbody>
+</table>
+
+
+<!-- wordgenerator -->
+
+<a name="wordgenerator">
+<hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>wordgenerator (5 pts)</td>
+<td width ="80%">
+The download contains the file <b>wordgenerator.cpp</b>: my solution to the 
+  last part of Programming Assignment #1 (which also times itself running for
+  building the corpus and creating a priority queue of its values in order).
+It also contains <b>wghuck.txt</b>: the text, appropriately formated, of 
+  Mark Twain's book, "The Adventures of Huckleberry Finn".
+For this part of the assignment, you must alter the <b>#include</b>s and
+  any <b>typedef</b>s and code in this program, so that it uses the improved
+  data type implementations (<b>HeapPriorityQueue</b> and <b>BSTMap</b>)
+  instead of the "high-complexity" (inefficient) simple array versions of these
+  data types.
+<p>
+In the comment at the bottom of this program, fill in the running times
+  produced by the program
+ (see the output line starting
+  <b>read_corpus time =</b> and <b>print_corpus (sort not print) time =</b>)
+  using both the array version and this improved version.
+Use an <b>order statistic</b> of <b>2</b>.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- testing -->
+
+<a name="testing">
+<hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Testing</b></td>
+<td width ="80%">
+There are various ways to test each of the classes you are writing in this
+  programming assignment.
+First, though, you should write all the methods, paying careful attention to
+  the array implementations and previously written linked list implementations.
+For some, you might just boiler-plate simple code that is not correct, but
+  allows the methods to compile, allowing other methods in the classes to be
+  tested.
+<p>
+The easiest way to start testing//debugging is by using the driver program.
+It allows you to perform any method call supported by the templated classes,
+  and see the state of the class (or view the debugger).
+Of course, 
+<b>you must get the <b>insertion</b> (&lt;&lt;) operator and str() method to
+  work before using it to debug the other methods.</b>
+<p>
+After you test and debug your code with the driver, try running the appropriate
+  GoogleTest code.
+Again, this form of testing is useful only as you approach a finished solution.
+We will use the GoogleTest, and visual inspection, to grade this
+  assignment.
+<b>Important Note</b>: While you are debugging your classes, you can edit the
+  GoogleTest (for example, putting <b>std::cout</b> statements at strategic
+  points), but don't accidentally remove any of the assertions, otherwise you
+  won't be fully checking your code the way we will.
+All debugging <b>std::cout</b> should end in <b>std::endl</b> to flush the
+  output stream: ensure the output it displayed before executing the next
+  statement (which may throw an exception, and thus the output buffer may not
+  be flushed).
+<p>
+When you run the GoogleTest, initially choose small values for the first and
+  third prompts (just press return to the second prompt) or comment-out these
+  prompts and assign small values to these variables instead.
+Besides an indication of which tests pass and fail, the console window
+  will show a speed for the speed test (which will vary depending on how
+  fast a machine you run your code on): don't worry about it.
+When your code is passing all the tests, put in values like 10,000 for these
+  prompts.
+<p>
+
+</td>
+</tbody>
+</table>
+
+
+</table>
+</body>
+</html>

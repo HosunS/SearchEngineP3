@@ -1,0 +1,157 @@
+<!-- received="Tue Sep  3 05:13:30 1996 PDT" -->
+<!-- sent="Wed, 28 Aug 1996 23:24:03 -0400" -->
+<!-- name="David G. Durand" -->
+<!-- email="dgd@cs.bu.edu" -->
+<!-- subject="Re: Seiwald Q &amp; A" -->
+<!-- id="v02130502ae4aae39cd34@[128.148.157.46]" -->
+<!-- inreplyto="Seiwald Q &amp; A" -->
+<title>Archive of Working Group on Versioning and Configuration Management of World Wide Web Content: Re: Seiwald Q &amp; A</title>
+<h1>Re: Seiwald Q &amp; A</h1>
+<b>David G. Durand</b> (<a href="mailto:dgd@cs.bu.edu"><i>dgd@cs.bu.edu</i></a>)<br>
+<i>Wed, 28 Aug 1996 23:24:03 -0400</i>
+<p>
+<ul>
+<li> <b>Messages sorted by:</b> <a href="index.html#113">[ date ]</a><a href="thread.html#113">[ thread ]</a><a href="subject.html#113">[ subject ]</a><a href="author.html#113">[ author ]</a>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0114.html">Christopher Seiwald: "Re: Seiwald Q &amp; A -- "GET for EDIT" cookies"</a>
+<li> <b>Previous message:</b> <a href="0112.html">Jim Whitehead: "Technical Working Meeting 9/16"</a>
+<!-- nextthread="start" -->
+<!-- reply="end" -->
+</ul>
+<hr>
+<!-- body="start" -->
+<pre>
+At 3:17 PM 8/27/96, Jim Whitehead wrote:
+&gt;Christopher Seiwald sent me some interesting questions this morning, and I
+&gt;thought I would share the Q &amp; A.
+&gt;&gt;1.  A fundamental component of "GET for EDIT" has to be a cookie that
+&gt;&gt;represents any stored context in the document server that needs to be
+&gt;&gt;reunited with the document on checkin.  Most, if not all, SCM systems
+&gt;&gt;are aware of their users' activity and use this awareness to keep users
+&gt;&gt;from stomping on each other's work.
+&gt;
+&gt;I think that use of cookies might be necessary in an implementation.
+&gt;However, I suspect that you can maybe do it all with only MD5
+&gt;authentication (i.e., only knowing the user).
+I'm not sure of the role for the cookie in this (just call me dense (later
+on in this mail I guess why you might use one)). But the reservation and
+context establishment should be handled by LOCK. If a server requires
+special reservation for editing, it's the client's responsibility to obtain
+a lock on the file before doing a PUT. If the client already has a cached
+copy, a "conditional GET" based on the version at the server might be
+useful.
+
+I think decoupling the access control aspects (LOCKing and so forth) from
+the GET/PUT operations gives us a lot more generality, extremely easily. I
+don't see any situation where "get for edit" is really different from "LOCK
+resource for writing" followed by GET. If the client has a local copy, the
+GET could even be conditional on the version they have being a leaf (though
+this would not be a requirement). Then we might even be able to PUT a few
+times before releasing the lock!
+
+Attempts to PUT without a needed lock could bounce on servers that need or
+want to enforce such a discipline on their clients.
+
+&gt;
+&gt;&gt;2.  "GET for EDIT" also, mind you, has to be able to GET something other
+&gt;&gt;than the head ("tip") revision of the document.  Not everybody wants to
+&gt;&gt;start their edits with the most current rev.  And I assume we both agree
+&gt;&gt;that "GET for EDIT" means get the source, not any derived version.
+&gt;
+&gt;Absolutely.  GET for EDIT would apply to an entity, and a versioned
+&gt;resource would contain many entities, one for each version.
+
+In the requirements, since "GET for edit" is the same as GET, this is a given.
+
+&gt;&gt;3.  MkDir is nonsensical, since directories are artifacts of filesystems,
+&gt;&gt;and the URL namespace is not a filesystem!  I say if you PUT the blinkin
+&gt;&gt;document somewhere, the directory gets created if that's what the server
+&gt;&gt;needs.
+&gt;
+&gt;Well, I've been very careful to couch my discussion in terms of hierarchy
+&gt;levels, since I know that a filesystem mapping is only one possible name
+&gt;space mapping for the URL namespace for a server.
+&gt;
+&gt;That acknowledged, I think a PUT that automatically creates hierarchy
+&gt;levels is not a great idea, since a user who mistypes the name of a level
+&gt;could inadvertently create a new hierarchy level, when they really would
+&gt;have preferred an error message, and been forced to re-enter the name.
+
+Now we get into Yaron's requirements (about which I can only comment in
+general terms. However I'll note that a lot of the file-management
+operations (DELETE, COPY, MKDIR) seem to me to be out of scope of
+Versioning (and maybe even collaborative editing). I also don't think that
+HTTP resources map 1-1 into filesystem objects, and would like to keep the
+separation in our standards.
+
+I don't necessarily want to suggest that we rule out these operations, but
+they seem to be more general HTTP issues than versioning or authoring
+issues to me.
+
+&gt;
+&gt;&gt;4.  For new documents, I think rather than a blind, out of the blue PUT
+&gt;&gt;there should be something analogous to "GET for EDIT" -- e.g. a "fake GET
+&gt;&gt;for ADD".  The primary reason for this is to support item #1 above --
+&gt;&gt;to let the document server/SCM system know what the user is up to.
+&gt;
+&gt;Couldn't cookies handle this?
+Can you guys explain the cookies to me? Do we use a hash (like MD5) to
+determine if another GET is required, or what? At any rate,as I've said
+already a few times, I think that separation of concerns makes "GET for
+edit" into a composite operation.
+
+&gt;&gt;5.  Versioning of directories is also non-sensical, for the same reason
+&gt;&gt;as #3 above.  Supporting renaming is one thing, but buying into a solution
+&gt;&gt;that involves versioned directories is brainocide.
+&gt;
+&gt;Hmmm.  Well some form of configuration support is definitely necessary.  A
+&gt;versioned hierarchy level seemed like a good idea to me, and is backed up
+&gt;by real-world use.
+
+Well, Brainocide sounds fun to the researcher in me... But I agree with Jim
+(if that's what he really means) that versioned directories belong with
+configuration management in the second phase of versioning work: there are
+a lot of dissimilar/funky models of this stuff floating around, and we will
+need to find a clean compromise. I think this needs to go to the back
+burner for the immediate crunch of work.
+
+&gt;&gt;6.  I think locking can be punted.  Add it in the next rev.
+&gt;
+&gt;Why?  I think there's a better case for locking than for versioning
+&gt;capability.  Also, the next rev. is HTTP/NG. I don't think there will be a
+&gt;1.3.
+
+Locking is better IMHO than special variants of GET. Let's make the
+concerns of access and update completely separate.
+
+I'm trying not to be a partisan for my own point of view, but rather to
+find common ground that covers all the versioning scenarios around. But I
+will note that my goal is to make locking unnecessary for some kinds of
+collaborative update. Now, my research may fail, but separating locking
+functionality from GET functionality doesn't hurt the rest of the world,
+and lets my kind of apporach fit in with the world.
+
+   Anyway, even systems like CVS try to keep locking to a bare minimum, so
+it's not just me...
+
+HTTP has flourished on the basis of incredible simplicity and orthogonality
+-- so even though versioning is complex, let's try to preserve these
+virtues to the greatest extent that we can...
+
+   -- David
+
+--------------------------------------------+--------------------------
+David Durand                  <a href="mailto:dgd@cs.bu.edu">dgd@cs.bu.edu</a> | david@dynamicDiagrams.com
+Boston University Computer Science          | Dynamic Diagrams
+<a href="http://www.cs.bu.edu/students/grads/dgd/">http://www.cs.bu.edu/students/grads/dgd/</a>    | http://dynamicDiagrams.com/
+</pre>
+<!-- body="end" -->
+<hr>
+<p>
+<ul>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0114.html">Christopher Seiwald: "Re: Seiwald Q &amp; A -- "GET for EDIT" cookies"</a>
+<li> <b>Previous message:</b> <a href="0112.html">Jim Whitehead: "Technical Working Meeting 9/16"</a>
+<!-- nextthread="start" -->
+<!-- reply="end" -->
+</ul>

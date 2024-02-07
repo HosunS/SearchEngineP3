@@ -1,0 +1,422 @@
+;; The first three lines of this file were inserted by DrRacket. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-advanced-reader.ss" "lang")((modname gradebook) (read-case-sensitive #t) (teachpacks ((lib "advanced-file-io.ss" "installed-teachpacks"))) (htdp-settings #(#t constructor repeating-decimal #t #t none #f ((lib "advanced-file-io.ss" "installed-teachpacks")))))
+;; Gradebook Program, Andrea Anteater, Applied Epistemology 101
+;; Partial solution to Lab 9, Informatics 41, Fall 2010
+
+;; This version is compatible with DrRacket's Advanced Student Language.
+;; It requires the advanced-file-io.ss teachpack.
+
+
+;                                                                                                    
+;                        ;;                                                                          
+;   ;;;    ;;;           ;;                                                                          
+;   ;;;    ;;;                                                                                       
+;   ;;;;  ;;;;    ;;;;   ;;  ;;;;;;       ;;;;;;   ;;;;;  ;;;;;    ;;;;;;  ;;;;;   ;;;;   ;;;;;;;;;  
+;   ;; ;  ; ;;   ;   ;;  ;;  ;;;  ;;      ;;; ;;;  ;;;   ;;; ;;;  ;;; ;;;  ;;;    ;   ;;  ;;  ;;  ;; 
+;   ;; ;;;; ;;       ;;  ;;  ;;   ;;      ;;   ;;  ;;    ;;   ;;  ;;   ;;  ;;         ;;  ;;  ;;  ;; 
+;   ;; ;;;  ;;   ;;;;;;  ;;  ;;   ;;      ;;   ;;  ;;    ;;   ;;  ;;   ;;  ;;     ;;;;;;  ;;  ;;  ;; 
+;   ;;  ;;  ;;  ;;   ;;  ;;  ;;   ;;      ;;   ;;  ;;    ;;   ;;  ;;   ;;  ;;    ;;   ;;  ;;  ;;  ;; 
+;   ;;      ;;  ;;  ;;;  ;;  ;;   ;;      ;;; ;;;  ;;    ;;; ;;;  ;;; ;;;  ;;    ;;  ;;;  ;;  ;;  ;; 
+;   ;;      ;;   ;;;;;;  ;;  ;;   ;;      ;;;;;;   ;;     ;;;;;    ;;;;;;  ;;     ;;;;;;  ;;  ;;  ;; 
+;                                         ;;                           ;;                            
+;                                         ;;                       ;   ;;                            
+;                                         ;;                        ;;;;                             
+
+;; Top-level Application Functions
+
+; Specify the files containing assignments and students.
+(define assignment-port (open-input-file "Assignments.txt"))
+(define student-port (open-input-file "Students.txt"))
+
+; gradebook: none -> nothing (side effects--printing)
+; Main driver function; call this to get started (see end of definitions)
+(define gradebook ; Based on the restaurants program
+  (lambda () ; No parameters. In Advanced Student Language, we don't need the placeholder x.
+    (begin
+      (display "Welcome to the AE 101 Gradebook Program") (newline)
+      
+      (local ((define assignments (asst-collect-read))
+              (define students (stnt-collect-read (asst-collect-size assignments))))
+        (begin
+          (handle-commands assignments students) ; This program doesn't change the collections
+                                                 ; so it doesn't need to save them.
+          (display "Thank you.  Good-bye.") 
+          (newline))))))
+
+; handle-commands: asst-collect stnt-collect -> nothing
+; Take collection, display info according to commands from user
+(define handle-commands                  
+  (lambda (A S)
+    (local ((define response (get-menu-response)))  ; Get a response from the user
+      (cond                        
+        ((equal? response 'q) 'whatever) ; Don't care what we return       
+        ((equal? response 'a) (begin (asst-collect-print A) (handle-commands A S)))
+        ((equal? response 's) (begin (stnt-collect-print
+                                      (stnt-collect-sort S 'score)) (handle-commands A S)))
+        ((equal? response 'r) (begin (stnt-collect-print
+                                      (stnt-collect-sort S 'name))  (handle-commands A S)))
+        ((equal? response 'sn) (begin (stnt-collect-print
+                                       (stnt-collect-filter S (make-test-for-name "search for")))
+                                      (handle-commands A S)))
+        ((equal? response 'si) (begin (stnt-collect-print
+                                       (stnt-collect-filter S (make-test-for-ID "search for")))
+                                      (handle-commands A S)))
+        ((equal? response 'ho) (begin (stnt-collect-score-histogram S) 
+                                      (handle-commands A S)))
+        ((equal? response 'ha) (begin (stnt-collect-asst-histogram S (pick-assignment-number A))
+                                      (handle-commands A S)))
+        (else (begin (invalid-command response) (handle-commands A S)))))))
+
+;; get-menu-response: none -> symbol
+;; Prompt the user with a command menu, read a response, and return it.
+(define  get-menu-response
+  (lambda ()
+    (begin
+      (newline)
+      (display "AE101 Gradebook Program --- Choose one:") (newline)
+      (display "   a:  Display all assignment information") (newline)
+      (display "   s:  Display all student information (sorted by score)") (newline)
+      (display "   r:  Display all student information (a roster, sorted by name)") (newline)
+      (display "   sn: Search for a student by name") (newline)
+      (display "   si: Search for a student by ID") (newline)
+      (display "   ho: Display a histogram for overall scores") (newline)
+      (display "   ha: Display a histogram for a particular assignment") (newline)
+      (display "   q:  Quit") (newline)
+      (read))))
+
+;; invalid-command: symbol -> don't care (side effect--display)
+;; Print an informative error message about incorrect/invalid command
+(define invalid-command                       
+  (lambda (response)  
+    (begin
+      (display "Sorry; '") 
+      (display response) 
+      (display "' isn't a valid command.  Please try again.")
+      (newline))))
+
+;; The following three functions could be refactored.
+
+;; make-test-for-name: string -> (student->boolean)
+;; Take as input a phrase describing what to do with a student;
+;; using that phrase, prompt the user for the name of a student
+;; and return a predicate that tests a student for that name.
+(define make-test-for-name   
+  (lambda (what-to-do)
+    (local ((define name (get-it (string-append "name of the student to " what-to-do))))
+      (lambda (s)
+        (string=? name (student-name s))))))
+
+;; make-test-for-ID: string -> (student->boolean)
+;; Take as input a phrase describing what to do with a student;
+;; using that phrase, prompt the user for the ID of a student
+;; and return a predicate that tests a student for that ID.
+(define make-test-for-ID  
+  (lambda (what-to-do)
+    (local ((define ID (get-it (string-append "ID of the student to " what-to-do))))
+      (lambda (s)
+        (string=? ID (student-ID s))))))
+
+; pick-assignment-number:  asst-collect -> number
+; Prompt the user for the name of the assignment to search for;
+; then find that assignment's position in the collection and return that (zero-based) number
+(define pick-assignment-number
+  (lambda (A)
+    0 )) ; always return first assignment, for now
+
+;                                                                                     
+;                            ;;                                                       
+;     ;;;                    ;;                                                  ;;   
+;     ;;;                                                                        ;;   
+;    ;; ;;    ;;;;    ;;;;   ;;   ;;;;;;  ;;;;;;   ;;;;;;;;;     ;;;    ;;;;;;  ;;;;; 
+;    ;; ;;   ;;   ;  ;;   ;  ;;  ;;; ;;;  ;;;  ;;  ;;  ;;  ;;   ;;  ;   ;;;  ;;  ;;   
+;    ;; ;;   ;;      ;;      ;;  ;;   ;;  ;;   ;;  ;;  ;;  ;;  ;;   ;;  ;;   ;;  ;;   
+;   ;;   ;;   ;;;;    ;;;;   ;;  ;;   ;;  ;;   ;;  ;;  ;;  ;;  ;;;;;;;  ;;   ;;  ;;   
+;   ;;;;;;;      ;;      ;;  ;;  ;;   ;;  ;;   ;;  ;;  ;;  ;;  ;;       ;;   ;;  ;;   
+;   ;;   ;;  ;   ;;  ;   ;;  ;;  ;;; ;;;  ;;   ;;  ;;  ;;  ;;   ;;   ;  ;;   ;;  ;;   
+;  ;;     ;;  ;;;;    ;;;;   ;;   ;;;;;;  ;;   ;;  ;;  ;;  ;;    ;;;;   ;;   ;;  ;;;; 
+;                                     ;;                                              
+;                                 ;   ;;                                              
+;                                  ;;;;                                               
+; Assignments, each represented by a name, a weight in computing the course grade [the
+; weights of all assignments should sum to 100, though we're not requiring you to check 
+; this], and a number of points possible [which is independent of the weight; a 
+; three-point assignment could be worth 50% of the course grade]. ("Graded item" would
+; be a better term, since it includes things like exams and projects. But we'll use
+; "assignment" just because it's shorter.)
+(define-struct assignment (name weight possible))
+; name is a string; weight and possible are numbers
+
+; assignment-read: none -> assignment
+; Read values from assignment file and create an assignment structure
+(define assignment-read
+  (lambda ()
+    (local
+      ((define n (read-line assignment-port 'any)) ; name is on first line
+       (define w (read assignment-port)) ; next number is weight
+       (define p (read assignment-port)) ; second number on line is points possible
+       (define skip (read-line assignment-port 'any))) ; Like hitting RETURN, to position at start of next line
+      (make-assignment n w p))))
+
+; assignment-print: assignment -> nothing (side effect--printing)
+; Print the assignment's information, nicely formatted.
+(define assignment-print
+  (lambda (a)
+    (begin
+      (display "Asst:   ") (display (assignment-name a)) (newline)
+      (display "Weight: ") (display (assignment-weight a)) (newline)
+      (display "Points: ") (display (assignment-possible a)) (newline) (newline))))
+
+
+;                                                                                             
+;                                                           ;;  ;;                            
+;     ;;;                    ;;                             ;;  ;;                  ;;        
+;     ;;;                    ;;                             ;;  ;;                  ;;        
+;    ;; ;;    ;;;;    ;;;;  ;;;;;             ;;;   ;;;;;   ;;  ;;    ;;;      ;;; ;;;;;      
+;    ;; ;;   ;;   ;  ;;   ;  ;;              ;;  ; ;;; ;;;  ;;  ;;   ;;  ;    ;;  ; ;;        
+;    ;; ;;   ;;      ;;      ;;             ;;     ;;   ;;  ;;  ;;  ;;   ;;  ;;     ;;        
+;   ;;   ;;   ;;;;    ;;;;   ;;             ;;     ;;   ;;  ;;  ;;  ;;;;;;;  ;;     ;;        
+;   ;;;;;;;      ;;      ;;  ;;             ;;     ;;   ;;  ;;  ;;  ;;       ;;     ;;        
+;   ;;   ;;  ;   ;;  ;   ;;  ;;    ;;        ;;  ; ;;; ;;;  ;;  ;;   ;;   ;   ;;  ; ;;    ;;  
+;  ;;     ;;  ;;;;    ;;;;   ;;;;  ;;         ;;;   ;;;;;   ;;  ;;    ;;;;     ;;;  ;;;;  ;;  
+;                                                                                             
+;                                                                                             
+;                                                                                             
+; A collection of assignment descriptions that together describe the graded items in the course
+; Implement as a plain list of assignment structures
+
+; asst-collect-read:  none -> asst-collect
+; Create an assignment collection from the contents of the assignments file.
+(define asst-collect-read
+  (lambda ()
+    (local
+      ((define size (string->number (read-line assignment-port 'any))))
+       ; Read number of assignments from the first line of the assignments file
+      (build-list size (lambda (n) (assignment-read))))))
+
+; asst-collect-print:  asst-collect -> nothing (side effect--printing)
+; Print each assignment in the collection
+(define asst-collect-print
+  (lambda (A)
+    (for-each assignment-print A)))
+
+; asst-collect-size: asst-collect -> number
+; Return the number of assignments in the collection
+(define asst-collect-size
+  (lambda (A)
+    (length A)))
+
+;                                                           
+;                                ;;                         
+;    ;;;;;   ;;                  ;;                    ;;   
+;   ;;   ;   ;;                  ;;                    ;;   
+;   ;;      ;;;;;  ;;   ;;   ;;;;;;    ;;;    ;;;;;;  ;;;;; 
+;   ;;;;     ;;    ;;   ;;  ;;; ;;;   ;;  ;   ;;;  ;;  ;;   
+;    ;;;;;   ;;    ;;   ;;  ;;   ;;  ;;   ;;  ;;   ;;  ;;   
+;       ;;;  ;;    ;;   ;;  ;;   ;;  ;;;;;;;  ;;   ;;  ;;   
+;        ;;  ;;    ;;   ;;  ;;   ;;  ;;       ;;   ;;  ;;   
+;   ;    ;;  ;;    ;;  ;;;  ;;; ;;;   ;;   ;  ;;   ;;  ;;   
+;   ;;;;;;   ;;;;   ;;;;;;   ;;;;;;    ;;;;   ;;   ;;  ;;;; 
+;                                                           
+;                                                           
+;                                                           
+; Students, each represented by a name, an ID number, and a vector of scores (which should be
+; the same size as the collection of assignments, one score for this student on each assignment)
+(define-struct student (name ID scores))
+; name is a string, ID is a number, and scores is a vector of scores (one for each assignment)
+
+; student-read: number -> student
+; Read values from student file and create a student structure, using the number of assignments
+(define student-read
+  (lambda (number-of-assts)
+    (local
+      ((define n (read-line student-port 'any)) ; name is on first line
+       (define i (read-line student-port 'any)) ; next line is student ID
+       (define av (build-vector number-of-assts (lambda (i) (read student-port))))
+       ; Create the scores vector by reading the right number of scores from the line
+       (define skip (read-line student-port 'any))) ; Like hitting RETURN, to position at start of next line
+      (make-student n i av))))
+
+; student-print: student -> nothing (side effect--printing)
+; Print out the student's information, formatted nicely.
+(define student-print
+  (lambda (s)
+    (begin
+      (display "Name:   ") (display (student-name s)) (newline)
+      (display "ID:     ") (display (student-ID s)) (newline)
+      (display "Scores: ") (print-score-vector (student-scores s)) (newline) (newline))))
+
+; print-score-vector: vector-of-scores -> nothing (side effect--printing)
+; Print each score in the vector.
+(define print-score-vector
+  (lambda (v)
+    (local
+      ((define size (vector-length v))
+       (define psv-aux
+         (lambda (v i max)
+           (cond
+             ((= i max) (display " ")) 
+             (else 
+              (begin
+                (display (vector-ref v i))
+                (display " ")
+                (psv-aux v (add1 i) max)))))))
+      (psv-aux v 0 size))))
+
+
+;                                                                                            
+;                                                          ;;  ;;                            
+;    ;;;;;   ;;             ;;                             ;;  ;;                  ;;        
+;   ;;   ;   ;;             ;;                             ;;  ;;                  ;;        
+;   ;;      ;;;;;  ;;;;;;  ;;;;;             ;;;   ;;;;;   ;;  ;;    ;;;      ;;; ;;;;;      
+;   ;;;;     ;;    ;;;  ;;  ;;              ;;  ; ;;; ;;;  ;;  ;;   ;;  ;    ;;  ; ;;        
+;    ;;;;;   ;;    ;;   ;;  ;;             ;;     ;;   ;;  ;;  ;;  ;;   ;;  ;;     ;;        
+;       ;;;  ;;    ;;   ;;  ;;             ;;     ;;   ;;  ;;  ;;  ;;;;;;;  ;;     ;;        
+;        ;;  ;;    ;;   ;;  ;;             ;;     ;;   ;;  ;;  ;;  ;;       ;;     ;;        
+;   ;    ;;  ;;    ;;   ;;  ;;    ;;        ;;  ; ;;; ;;;  ;;  ;;   ;;   ;   ;;  ; ;;    ;;  
+;   ;;;;;;   ;;;;  ;;   ;;  ;;;;  ;;         ;;;   ;;;;;   ;;  ;;    ;;;;     ;;;  ;;;;  ;;  
+;                                                                                            
+;                                                                                            
+;                                                                                            
+; A collection of students
+; Implement as a plain list of student structures
+
+; stnt-collect-read: number -> stnt-collect
+; Create a student collection from the contents of the students file (using the number of assignments)
+(define stnt-collect-read
+  (lambda (number-of-assts)
+    (local
+      ((define size (string->number (read-line student-port 'any))))
+       ; Read number of students from the first line of the students file
+      (build-list size (lambda (n) (student-read number-of-assts))))))
+
+
+
+; stnt-collect-sort:  stnt-collect symbol -> nothing (side effect--printing)
+; Print the students in the collection, sorted according to the symbol ('score or 'name)
+(define stnt-collect-sort
+  (lambda (S field)
+    S))
+; The sorting is left for you.  Use quicksort and a lambda expression determined by field
+
+; stnt-collect-print:  stnt-collect -> nothing (side effect--printing)
+; Print all the students in the collection.
+(define stnt-collect-print
+  (lambda (S)
+    (for-each student-print S)))
+
+; stnt-collect-filter:  stnt-collect  (student -> boolean)  ->  stnt-collect
+; Return a collection of all students (if any) in input collection that satisfy the predicate
+(define stnt-collect-filter
+  (lambda (S test?)
+    S))
+; The filtering is left for you.
+
+; stnt-collect-score-histogram: stnt-collect -> nothing (side effect--printing)
+; Produce a histogram of the students by overall score
+(define stnt-collect-score-histogram
+  (lambda (S)
+    (begin (display "Here will be a histogram by score")(newline))))
+
+; stnt-collect-asst-histogram: stnt-collect number -> nothing (side effect--printing)
+; Produce a histogram of scores on a particular assignment (designated by the number)
+(define stnt-collect-asst-histogram
+  (lambda (S n)
+    (begin (display "Here will be a histogram for assignment number ")
+           (display (number->string n))
+           (newline))))
+
+;                                                         
+;                   ;;  ;;  ;;        ;;                  
+;   ;;    ;;  ;;    ;;  ;;  ;;  ;;    ;;                  
+;   ;;    ;;  ;;        ;;      ;;                        
+;   ;;    ;; ;;;;;  ;;  ;;  ;; ;;;;;  ;;    ;;;     ;;;;  
+;   ;;    ;;  ;;    ;;  ;;  ;;  ;;    ;;   ;;  ;   ;;   ; 
+;   ;;    ;;  ;;    ;;  ;;  ;;  ;;    ;;  ;;   ;;  ;;     
+;   ;;    ;;  ;;    ;;  ;;  ;;  ;;    ;;  ;;;;;;;   ;;;;  
+;   ;;    ;;  ;;    ;;  ;;  ;;  ;;    ;;  ;;           ;; 
+;   ;;    ;;  ;;    ;;  ;;  ;;  ;;    ;;   ;;   ;  ;   ;; 
+;    ;;;;;;   ;;;;  ;;  ;;  ;;  ;;;;  ;;    ;;;;    ;;;;  
+;                                                         
+;                                                         
+;                                                         
+
+;; get-it:  string -> expression (plus printing side-effect)
+;; Prompt user to enter data using string; return what user enters.
+;; Note:  This returns one Scheme expression (list, string, symbol, number);
+;; multiple expressions in the user's input will be saved up, causing problems.
+(define get-it
+  (lambda (what-to-get)
+    (begin
+      (display "Please enter the ")
+      (display what-to-get)
+      (display ":  ")
+      (read))))
+
+
+(gradebook) ; No parameters.  In Advanced Student language, we don't need the 'x placeholder
+
+;Here are the steps I took to write this skeleton program.  
+;
+;
+;1.  Put comments at the top saying what this program is, what it was
+;written for, and (most importantly) what environment it needs (Advanced
+;Student language, advanced-file-io.ss teachpack).  I used the comments
+;at the top of the restaurants program as a guide.
+;
+;2a.  Created a gradebook function that just returns 1 for now
+;2b.  Called the gradebook function at the bottom of the file.
+;
+;3.  Inserted large letters (Insert menu) for "Main program" and
+;"Utilities".  I know this will get long, and the large letters will help
+;me navigate around using the program contour.  Also, it's just fun to make
+;these.
+;
+;4.  Created large letters for each of the four classes of data:  Assignment,
+;Assignments Collection, Student, Student Collection.  Into these four
+;sections of the program, I copied the description from the writeup, both
+;for reference and for documentation.
+;
+;5.  Defined the structures for assignments and students (since the
+;description is right there).
+;
+;6.  Defined functions to display an assignment and a student nicely.
+;Created a couple of students and assignments and printed them to test.
+;This ends part (a).
+;
+;7.  Part (b) talks about the program reading assignments.  I could write
+;individual functions now to do that, but first I'll set up the user
+;interface (menu handler and command handler), based on the restaurants
+;program with file handling.
+;
+;8.  First copy the restaurants function.  Since this program tells you the
+;file name and doesn't say anything about starting with a blank slate, we
+;can remove a lot from the restaurants version.
+;8a.  Above the main program, we need to define the ports for the
+;assignment and student files (as shown in the assignment).
+;8b.  Create the actual Assignments.txt and Students.txt files for testing.
+;8c.  Copy the handle-commands and get-menu-response functions from the
+;restaurants program.
+;8d.  In get-menu-response, I looked ahead and added the commands from part
+;(d).
+;8e.  In handle-commands, made a cond clause for each command.
+;8f.  Filled in the right-hand side of those cond clauses, with calls to
+;functions (mostly not yet defined).  Included some of the restaurants
+;functions for getting names from the user.
+;8g.  Went back through handle-commands and, for each function listed there,
+;either imported its definition from the restaurants program or wrote a new
+;function stub for it in the appropriate place.
+;
+;9.  Wrote the function asst-collect-read, to create an assignment
+;collection from the contents of the Assignments.txt file.
+;
+;10.  Wrote the function stnt-collect-read, to create a student collection
+;from the contents of the Students.txt file.  What's tricky here is that we
+;need to know how many assignments there are, which isn't stored in the
+;student collection.  Solved this with an asst-collect-size function that's
+;called in the main program; its value is passed to stnt-collect-read.
+;
+;
+;Hint for getting started on part (c) (and reward for reading through this):
+;You're going to add two more fields:  a vector of scaled scores and a single
+;number for the overall weighted score.

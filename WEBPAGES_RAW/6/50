@@ -1,0 +1,335 @@
+$/WebDAV Requirements/CollectionSpec.doc
+
+*****************  Version 13  *****************
+User: Jslein          Date:  6/14/99  Time: 12:37p
+Checked in $/WebDAV Requirements
+Comment:
+1. Lots of minor edits
+2. Revised definitions:
+Removed "or an infinite number" from the definition of "Mapping".  (A definition
+seemed like the wrong place to go into a discussion about binding loops.)
+Removed definitions of  "strong reference" and "weak reference" 
+Defined "Association".  
+Revised definitions of "Binding", "Collection", and "Internal Member URI".
+Collections contain bindings, not internal member URIs.  Internal member URIs
+are derived objects, which come into existence when bindings are created and go
+out of existence when bindings are deleted.
+Edits throughout to make sure our usage is consistent with the definitions.
+3. Simplified diagrams by removing "state" and removing objects not referenced
+in the accompanying text.
+4. Removed everything related to DAV:refintegrity and the Ref-Integrity header,
+as well as general discussions of referential integrity.  The assumptions are
+now that the integrity of bindings is guaranteed, and that the integrity of
+redirect references is not guaranteed.  Clients don't get any control or
+information about referential integrity.
+5. Changed Ref-Target to Destination in contexts related to BIND.  Changed
+definition of Ref-Target to remove references to its use in BIND requests.
+6. Edits throughout to make sure there are no duplicate normative statements.
+7. Rewrote the paragraph describing the relationship between our definition of
+DELETE and the one in HTTP.  
+8. Added example to 4.2.10 MOVE and Bindings
+9. Edits throughout 4.2 so that semantics are described abstractly, independent
+of any example.  Then examples are presented as needed.
+10. Revised discussion of LOCK and bindings to make it clear that the URL
+mapping used in the LOCK request is protected.
+11. Moved some stuff from 4.1 Overview to the beginning of 4.2 Bindings and 4.3
+Redirect References.  All that's left in 4.1 is stuff on the benefits and
+limitations of bindings and redirect references.  So general information about
+the semantics of bindings (independent of any particular method) now is at the
+top of 4.2.  General information about the semantics of redirect references
+(independent of any particular method) is now at the top of 4.3.
+12. Moved backpointers to the end of 4.2 Bindings, since it will only apply to
+bindings.  Revised to reflect that change.  Changed the property name from
+DAV:references to DAV:bindings.  Revised the definition of DAV:bindings, added a
+new XML element DAV:segment.
+13. Passthrough: T is allowed on DELETE and MOVE requests for redirect
+references.
+14. Revised security considerations. 
+15. Added 425 (Unordered Collection) status code
+16. Added Failed ORDERPATCH example (5.5.4)
+17. Added to 4.2.1 BIND: server MAY allow BIND to content negotiating resources
+or to resources that dynamically generate content.
+18. Added to general binding semantics:
+� There's no difference between a binding created with BIND and any other
+binding.
+� Bindings are members of collections, and are not unique to advanced
+collections.
+� The identity of a binding (and hence its existence) is determined by the path
+segment (in its collection) and the resource that it associates.
+� Integrity of bindings MUST be guaranteed.
+� Support for cross-server bindings is OPTIONAL.
+19. Revised definition of the BIND method.
+20. Server MUST fail BIND request if it can't guarantee integrity of the
+resulting binding.
+21. Added All-Bindings header for use with DELETE.
+22. Servers MUST NOT reclaim system resources associated with a resource while
+any bindings to that resource remain.
+23. COPY with Depth: 0 on a collection MUST NOT duplicate the bindings contained
+by the collection.
+24. Combined the sections on "Other HTTP Operations on Redirect References" and
+"Other WebDAV Operations on Redirect References" into a single section and
+removed duplicate information.
+25. Revised 4.3.10 "Redirect References to Collections" to give strictly
+syntactic instructions for how to handle Request-URIs with embedded URIs of
+redirect references.
+26. Renamed DAV:reference to be DAV:redirectref so it will make more sense to
+add a DAV:directref later if desired. 
+27. Fixed some mistakes in 11 Capability Discovery.
+28. Removed section on dependencies on other standards.
+
+*****************  Version 12  *****************
+User: Jslein          Date:  5/15/99  Time:  5:06p
+Checked in $/WebDAV Requirements
+Comment:
+  Jim Whitehead's revisions:
+1. Revised Abstract
+2. Revised Terminology:  Added mapping and path segment, revised binding,
+collection, and member binding
+3. Revised Introduction
+4. Moved Scope discussion and rationale to appendix
+5. Revised Shared Resources Overview
+6. Thorough rewrite of 4.2 Bindings
+7. Stylistics changes to Redirect References
+
+*****************  Version 11  *****************
+User: Jslein          Date:  4/18/99  Time:  3:25p
+Checked in $/WebDAV Requirements
+Comment:
+  Terminology: Kept a definition of "reference," but revised it.  New
+definition of binding, modified definition of redirect reference, deleted
+definition of direct reference.
+
+Introduction: Replace "references" with "shared resources".
+Introduction: To support shared resources, a server must provide both bindings
+and redirect references.
+
+Replaced discussion of direct references with a discussion of bindings in 4.2
+overview.
+
+Delete everything related to direct references.  Ref-Type and DAV:reftype go
+away, as do the direct and redirect XML elements. New Resource-Type header for
+use with 302 responses to differentiate from plain HTTP redirects.
+4.1: Add rationale for not defining direct references.
+New sections 4.3 BIND method and 4.4 Semantics of bindings.
+4.5 MKREF overwrites by default.
+4.7 COPY for individual redirect references responds with 302, for references
+encountered while copying a collection copies the reference.
+4.9 New example of LOCK on a collection with Passthrough: T showing failure and
+explaining what to do next.
+No-Passthrough changed to Passthrough with values "T" and "F" throughout.
+5.5.1 ORDERPATCH processing must be atomic
+
+Claimed response code 506 for Loop Detected.
+
+10 MUST support both bindings and redirect references in order to advertise
+class "sharing" in responses to OPTIONS
+Deleted Appendix 2 table summarizing direct / redirect semantics
+
+*****************  Version 10  *****************
+User: Jslein          Date:  4/05/99  Time: 10:29a
+Checked in $/WebDAV Requirements
+Comment:
+  Regenerated Table of Contents
+
+*****************  Version 9  *****************
+User: Jslein          Date:  4/05/99  Time: 10:26a
+Checked in $/WebDAV Requirements
+Comment:
+  Substantive Changes:
+Changed 4.3 to allow an entity body in MKREF requests.
+Changes to REQUIRE a Ref-Integrity header in MKREF requests, to define only the
+value do-not-enforce, to require servers to fail any MKREF request with a value
+of Ref-Integrity that it doesn't understand.
+Changes to allow server-maintained orderings.
+Added to OPTIONS: how to get the list of supported ref integrity policies, and
+how to get the list of supported server-maintained orderings.  Added new XML
+elements to support this: DAV:options, DAV:refintegrityoptions,
+DAV:orderingoptions, DAV:do-not-enforce.
+Did not make Jim Whitehead's requested changes related to Depth = 1 in Section
+4.4, because it already states that Depth=1 is possible, and there is no
+question of following references to collections into their target collections if
+Depth=1 (Depth=infinity is the only relevant case).
+Changed Example 4.4.1 so that there are no cross-server direct references.
+Changed so that Ref-Type and Ref-Target are not returned with responses, except
+for GET and HEAD with No-Passthrough, with 404 response to indicate that it's
+the target that is not found, and Ref-Type with 302 responses.  Similarly for
+DAV:reftype and DAV:reftarget in Multi-Status responses.
+New section 4.16 on resolving relative URIs.  Moved explanations from 6.1
+Ref-Target and 7.1 DAV:reftarget into the new section.
+Changed the value of the Ordered header from Coded-url to absoluteURI.  Don't
+see why it would need to be coded.
+Changed value of Position header from Coded-url to Generic-Coded-url to allow
+relative urls to be used.
+Changed definition of Ref-Integrity to have DAV:do-not-enforce as the value
+Changed definition of refintegrity: replaced ANY with #PCDATA
+Changed definition of reftype to allow #PCDATA extension values
+
+Editorial Changes:
+Changes throughout to insure that normative language on any topic is located in
+only one place, per Jim Whitehead's request of  3/15/99.
+Removed Section 5.5.4 and put it in the rationale document.
+Removed Alan Babich from authors.
+Added to acknowledgements.
+Fixed Jim Davis's address.
+Editorial changes throughout per Jim Whitehead's notes of 3/15/99.
+
+*****************  Version 8  *****************
+User: Jslein          Date:  2/19/99  Time: 11:56a
+Checked in $/WebDAV Requirements
+Comment:
+  Revised for Internet Draft 03
+
+Changed DAV:response to allow a prop element anywhere.  Location, reftarget, and
+reftype will be inside prop when they are returned in Multi-Status responses.
+Changed location from an element to a property to support this.
+Moved summary of headers in responses to an appendix
+Added appendix summarizing behavior of methods on each type of reference
+Added rationale to DELETE / MOVE
+Split COPY into a separate section with semantics as in 2/9 meeting
+Changed GET / HEAD for redirect references to behave like all the other HTTP
+methods.  Additional headers only get returned if No-Passthrough is present.
+The location property MUST be an absolute URI.  The reftarget property and the
+Ref-Target header MAY be relative URIs.  Added discussion of how to identify the
+base URI.
+Revised LOCK section: For redirect references, lock the reference; for direct
+references, lock the target.  With ratonale.
+Added COPY and LOCK examples.
+Revised rules for when Ref-Target is required in responses, including the
+rationale in the summary section.  (Sections 6.1 and 20.2)
+
+*****************  Version 7  *****************
+User: Jslein          Date:  2/12/99  Time:  3:59p
+Checked in $/WebDAV Requirements
+Comment:
+  Regenerated TOC
+
+*****************  Version 6  *****************
+User: Jslein          Date:  2/12/99  Time:  3:56p
+Checked in $/WebDAV Requirements
+Comment:
+  Revision 02.5 based on design team meetings.
+
+Fixed status section to comply with the new Internet-Draft guidelines
+Fixed Section 10:
+     Removed "DAV:" prefix from compliance class tokens
+     Added explanation of what types of resources can belong to which compliance
+classes
+Added Tyson Chihaya  to list of authors
+Updated Security Concerns based on meeting of 2/9:
+     Added 12.1 Privacy Considerations
+     Expanded 12.4 References May Reveal Private Locations to talk about the
+risks associated with DAV:reftarget, the Ref-Target header, and
+DAV:references.  And the use of access control to mitigate these risks.
+Deleted 2.6 Modifications of Ordering (not a serious risk)
+Added 4.15 URIs and References, on how to parse a URI that contains segments
+(other than the last) that identify references.
+Added examples to 4.5 Listing Referential Members of a Collection
+
+*****************  Version 5  *****************
+User: Jslein          Date:  1/29/99  Time:  1:08p
+Checked in $/WebDAV Requirements
+Comment:
+  Revised for 02.4, based on design team conference call of 1/26/99.
+Dangling References -- made Depth header explicit in operations on collections.
+Ref-Integrity header has "do-not-enforce", "enforce", and extension values.
+Server is required to fail if it doesn't understand the value of this header.
+Changed values of DAV:refintegrity property to weak | ANY
+Added section on Notational Conventions (copied from WebDAV).
+Headers in Responses: 
+Removed normative language from this section and added pointers to normative
+stuff.
+Changed to table style for clarity.
+Generally rewrote to make exceptions clearer.
+Added section on Chains of Direct References
+Changed status code sections to reference HTTP, and only talk about extensions
+and special circumstances
+Changed author list
+DID NOT MAKE CHANGES RELATED TO LOCKING.
+
+*****************  Version 4  *****************
+User: Jslein          Date:  1/21/99  Time:  5:31p
+Checked in $/WebDAV Requirements
+Comment:
+  Version 02.3 based on design team call of 1/19/99:
+Deleted all ***** comments.
+Ref-Integrity header has only one defined value (DAV:do-not-enforce), and
+extensions are allowed.
+DAV:refintegrity property has only one defined value (DAV:weak), and extension
+values are allowed.
+Added paragraph on No-Passthrough and dangling references.
+PROPFIND on a dangling reference gets 404.
+PROPPATCH on a dangling references gets 404.
+PROPFIND on a collection that contains a dangling references gets a 207 with a
+404 for the dangling reference.
+Ref-Target, Ref-Type, and Ref-Integrity cannot be used with MOVE or COPY.
+New section on LOCK incorporating our decisions about its behavior for direct
+references, for redirect references, for collections that contain direct
+references, and for collections that contain redirect references -- with
+rationale.
+
+*****************  Version 3  *****************
+User: Jslein          Date:  1/18/99  Time: 10:16a
+Checked in $/WebDAV Requirements
+Comment:
+  Revised based on design team call of 1/14/99:
+Added location element to multistatus response syntax.
+Let MKCOL and MKREF be redirected rather than having them fail.
+Allow replacing a reference with an ordinary resource using PUT.
+Let No-Passthrough be used with PROPFIND on a collection with Depth=infinity,
+and describe semantics.
+Change the definition of referential resource to say that it has no body, but
+does 
+have properties.
+Change the values of Ref-Integrity to DAV:do-not-enforce and DAV:server-default
+Change the values of the DAV:refintegrity property to DAV:weak and DAV:strong.
+Change the definition of "weak reference" to  "server does not enforce
+referential 
+integrity".
+Change the definition of "strong reference" to "server enforces referential 
+integrity".
+Revise section 3.8 to make it more clear and concise.
+
+*****************  Version 2  *****************
+User: Jslein          Date:  1/07/99  Time:  3:18p
+Checked in $/WebDAV Requirements
+Comment:
+  Intermediate revision 2.1 (not going to Internet Drafts) after IETF
+Orlando.
+1. Changed the definitions of direct / redirect in Section 1 Terminology and in
+the Overview discussion in Section 3.2.  Less emphasis on whether ref or target
+gets affected, more on whether client action is needed for resolution.
+2. Align terminology with WebDAV spec:  collections contain URIs, not resources.
+3. Remove Hide-Target.
+4. Replace the Re-Direct header with the No-Passthrough header, which can be
+applied both to direct and redirect references.
+5.  Make all methods, both WebDAV and HTTP, respond with 302 for redirect
+references.  (This raises new issues about Multistatus responses to PROPFIND and
+other requests on collections that contain redirect references.)
+6. Change to say that MKREF fails if a resource already exists at the
+request-URI.
+7. Remove Resource-Type.
+8. Use the DAV header rather than a new DAV-Collections header with OPTIONS.
+
+*****************  Version 1  *****************
+User: Jslein          Date: 11/07/98  Time: 10:31a
+Created CollectionSpec.doc
+Comment:
+  Revised for Internet Draft 02 for Orlando IETF 12/98
+Still assumes collection members are *resources*, not URIs
+Assumes references are resources, and their targets are resources
+New direct / redirect terminology
+Added support for direct references
+Added optional backpointers
+Added Hide-Target header
+Replaced Pass-Through header with Ref-Type header
+Added Re-Direct header
+Changed the values of the Ordered header and the DAV:orderingtype property, 
+and recommend not following a URI value
+Changed ORDERPATCH to allow multiple changes in a single request
+Changed mechanism for capability discovery to follow the way versioning and DASL
+are doing it
+Added security considerations
+Sorted out what referencing headers are required on responses
+Revised status codes
+Added DTD
+

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC
+ "-//W3C//DTD XHTML 1.1//EN"
+ "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<link rel="stylesheet" href="../../course.css" type="text/css" />
+
+<title>ICS 33 Summer 2013, Project #2: Eight Line Poem, Experiment with Bumpkin</title>
+</head>
+
+<body>
+
+<div class="navbar">
+
+<p>
+ICS 33 Summer 2013 |
+<a href="../../index.html">News</a> |
+<a href="../../CourseReference.html">Course Reference</a> |
+<a href="../../Schedule.html">Schedule</a> |
+<a href="../../ProjectGuide">Project Guide</a> |
+<a href="../../CodeExamples">Code Examples</a> |
+<a href="http://www.ics.uci.edu/~thornton/">About Alex</a>
+</p>
+
+<hr />
+
+</div>
+
+<div class="header">
+
+<p>ICS 33 Summer 2013<br />
+   Project #2: <i>Eight Line Poem</i><br />
+   Experiment with Bumpkin</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Program</p>
+
+<p>In the text area below, enter a Bumpkin program that you'd like to execute.  Click <b>RUN</b> to execute the program and you'll see its output.  Click <b>TRACE</b> instead if you'd like to see the program's output include line-by-line tracing (i.e., every line that executes will show you its line number and its text).</p>
+
+<textarea id="bumpkinProgram" cols="80" rows="15"></textarea>
+
+<p>
+  <button id="bumpkinRunButton" onclick="runBumpkinProgram()">Run</button>
+  <button id="bumpkinTraceButton" onclick="traceBumpkinProgram()">Trace</button>
+  <img id="bumpkinProgressIndicator" src="progress.gif" alt="Running..." style="display: none;" />
+</p>
+
+</div>
+
+<div id="bumpkinOutputDiv" class="section">
+
+<hr />
+
+<p class="title">Output</p>
+
+<p>Here is the output of your program.</p>
+
+<textarea id="bumpkinOutput" cols="80" rows="15" readonly></textarea>
+
+<p>
+  <button id="bumpkinClearButton" onclick="clearBumpkinOutput()">Clear</button>
+</p>
+
+<script src="bumpkin-min.js"></script>
+
+<script type="text/javascript">
+	function runBumpkinProgram()
+	{
+		runBumpkinProgramWithOptionalTracing(false);
+	}
+	
+	function traceBumpkinProgram()
+	{
+		runBumpkinProgramWithOptionalTracing(true);
+	}
+
+	function runBumpkinProgramWithOptionalTracing(showTrace)
+	{
+		if (typeof bumpkinRun === 'undefined')
+		{
+			alert("bumpkin-min.js missing or corrupt");
+			return;
+		}
+		
+		toggleButtonAvailability(false);
+		toggleProgressIndicator(true);
+		toggleOutputSection(true);
+
+		bumpkinOutput.value = "";
+
+		setTimeout(
+			function()
+			{
+				bumpkinRun(
+					bumpkinProgram.value, showTrace,
+					function(output)
+					{
+						bumpkinOutput.value += output + "\n";
+					},
+					function()
+					{
+						toggleButtonAvailability(true);
+						toggleProgressIndicator(false);
+					})
+			},
+			500);
+	}
+
+	function clearBumpkinOutput()
+	{
+		bumpkinOutput.value = "";
+		toggleOutputSection(false);
+	}
+	
+	function toggleButtonAvailability(enable)
+	{
+		bumpkinRunButton.disabled = !enable;
+		bumpkinTraceButton.disabled = !enable;
+	}
+	
+	function toggleProgressIndicator(show)
+	{
+		if (show)
+		{
+			bumpkinProgressIndicator.style.display = "inline";
+		}
+		else
+		{
+			bumpkinProgressIndicator.style.display = "none";
+		}
+	}
+
+	function toggleOutputSection(show)
+	{
+		if (show)
+		{
+			bumpkinOutputDiv.style.display = "block";
+		}
+		else
+		{
+			bumpkinOutputDiv.style.display = "none";
+		}
+	}
+
+	toggleOutputSection(false);
+</script>
+
+</div>
+
+<div class="history">
+
+<hr />
+
+<ul class="nomarker">
+  <li>Originally written by Alex Thornton, Summer 2013</li>
+</ul>
+
+</div>
+
+</body>
+</html>

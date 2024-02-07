@@ -1,0 +1,258 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "DTD/xhtml1-transitional.dtd">
+<html lang="en">
+<head>
+
+<title>Notes on Modelnet</title>
+
+<!-- BEGIN META TAG INFO -->
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="author" content="Mayur Deshpande">
+<link rel="index" href="http://www.ics.uci.edu/~mayur/index.html">
+<link rel="stylesheet" type="text/css" href="css/fonts.css" media="screen">
+<link rel="stylesheet" type="text/css" href="css/print.css" media="print">
+<link rel="shortcut icon" type="image/x-icon" href="./images/favicon.ico">
+<link rel="stylesheet" type="text/css" href="css/3col.css" title="style">
+<style type="text/css" media="all"></style>
+
+<!-- END META TAG INFO -->
+</head>
+
+
+<body>
+
+<div id="banner">
+<h4>
+Some answers on Modelnet &nbsp;
+</h4>
+</div>
+
+
+<div id="leftcontent">
+<h1>
+<a href="index.html"> Home </a>
+</h1>
+<h1>
+<a href="Research.html"> Research </a>
+</h1>
+<h1>
+<a href="Software.html"> Software </a>
+</h1>
+<h1>
+<a href="Publications.html"> Publications </a>
+</h1>
+<h1>
+<a href="Industry.html"> Industry </a>
+</h1>
+<h1>
+<a href="Mayur_Resume.pdf"> Resume </a>
+</h1>
+<h1>
+<a href="http://flashback.calit2.uci.edu"> Flashback! </a>
+</h1>
+</div>
+
+
+<div id="centercontent">
+<h2>:: Introduction</h2>
+<p>
+This writeup is intended more as a reminder to myself of what I learnt when setting up Modelnet.
+I had never worked with a emulator such as this before, so I had many questions going into it.
+This document is written form the point of view of what questions I would have like to have had
+answered without doing too much RTFM :-) For the definitive page on Modelnet, please visit the
+<a href="http://issg.cs.duke.edu/modelnet.html">Modelnet home page</a>.
+<p>
+
+<h2>:: What is Modelnet? </h2>
+<p>
+Modelnet is software that lets you get a feel (or numbers)
+for what would happen if you deployed your next killer-app distributed application (like say, BitTorrent)
+over the Internet. What this means is that you can deploy hundreds of instances of the application over
+nodes that behave as if they were distributed all over the world. Modelnet will then emulate,
+actual packet delays/losses/throughput of packets flowing between the different instances of the app.
+This is quite invaluable if you are testing Peer-to-Peer applications and want to get some
+hard numbers.
+<p>
+
+<h2>:: So, how does it work? </h2>
+<p>
+OK. Here is the whole works.
+<br>
+<p align="center">.<img border="1" src="modelnet-succint.png" width="400" height="300"><p>
+
+Looks a bit complicated but the system can be easily broken down and explained in parts. There are two
+different types of physical nodes (read PCs) that Modelnet uses: (1) Emulator nodes (that run FreeBSD)
+and (2) nodes that run the application processes (Linux nodes). The Emulator node emulates what happens
+to packets as they traverse the Internet. Virtual nodes are run on the Linux machines.
+
+The concept of a virtual node is a bit `abstract' and is achieved through clever use of
+(a)IP-aliasing, (b) Route-setup and a (c) Custom library that intercepts IP packets. We'll look into
+each in some more detail and then tie them together. But, first, here is how to run an application
+on a particular virtual node: "SRCIP=10.0.x.x LD_PRELOAD=/usr/lib/libipaddr.so [application] [application_params]".
+Once we get through the details, it'll be more obvious why this command is so.
+<br>
+</p>
+
+<h3>IP-Aliasing </h3>
+<p>
+When you install Modelnet on a machine, it sets up
+<a href="http://www.faqs.org/docs/Linux-mini/IP-Alias.html">IP-aliases</a> corresponding to the number
+of virtual nodes that the physical host will emulate. All the ip-addresses are from the "10.0.x.x" domain.
+For example, if a physical host will emulate 2 virtual nodes, expect to see something like
+the following in your /sbin/ifonfig output: "eth:0:0 inet addr:10.0.0.1", "eth:0:1 inet addr:10.0.0.2" (assuming
+your NIC card is setup as eth0).
+</p>
+
+<h3>Route Setup</h3>
+<p>
+Modelnet also sets up the routing table in each physical host so that all packets (in the 10.0.x.x domain)
+are routed to the  emulator node. This is important so that packets from two virtual nodes that are on the
+same physical machine still flow through the emulator and not the loopback interface. Read the
+<a href="http://issg.cs.duke.edu/modelnet/modelnet.html"> Modelnet documentation </a> for more details
+on this. If you have the patience, work out the exact route for two virtual nodes on the same physical node,
+using the route information on a host; it is quite fascinating. These two references
+<a href="http://www.comptechdoc.org/os/linux/usersguide/linux_ugrouting.html"> (1) </a> and
+<a href="http://www.eventhelix.com/RealtimeMantra/Networking/ip_routing.htm"> (2) </a> on subnetting
+and routing might be of aid.
+</p>
+
+<h3>Custom Library</h3>
+<p>
+Modelnet also installs a custom library on the physical host (libipaddr.so). When the command line is invoked
+appropriately, all IP packets are handled by this library. The way to specify the library is to prefix
+the following in the command line: "LD_PRELOAD=/usr/lib/libipaddr.so" (Btw, the library may get installed in a
+different place on your system, say /lib/libipaddr.so, figure that out first). In the prefix of the command line,
+we also add "SRCIP=10.0.x.x" (substitute with the actual virtual node IP-address). This is so that the custom
+library can write the appropriate host-ip address in each packet (for example, if SRCIP is specified as 10.0.0.1,
+then all outgoing packets will have src-ip as 10.0.0.1).
+</p>
+
+<h3>WTF is LD_PRELOAD?</h3>
+<p>
+LD_PRELOAD is a way of achieving
+<a href="http://developers.sun.com/solaris/articles/lib_interposers.html"> "library interpositioning"</a>, a
+cool system hack used for achieving, among other things, debugging and performance analysis.
+Basically, any system call can be intercepted and custom code can  be run in that call. For example, one
+can write a custom library that prints 'hello world' whenever a packet is sent out; annoying but possible.
+</p>
+
+<h3>Putting it together</h3>
+<p>
+To run an executable on a particular virtual node, we therefore prefix the following before the executable name:
+"SRCIP=10.0.x.x LD_PRELOAD=/usr/lib/libipaddr.so". This tell the custom library to rewrite the IP packets with
+the SRCIP ip address. The packet is then sent out as normal to the destination. If the destination is another
+virtual node, then the packet is sent to the emulator (default gateway for all 10.0.x.x packets). The routes in
+the emulator are so set up, that the packet is then routed to the physical host that has the destination
+virtual-ip. If an application is listening to packets on the remote virtual node, it gets the packets. Further,
+if the remote app want to send back a reply, it reverses the src and destination ip addresses. The reverse path
+is then followed and the local virtual node get the packet. Inside the emulator appropriate delays and traffic
+shaping is done.
+<a href="http://www.netperf.org/netperf/NetperfPage.html"> Netperf</a>  is a neat tool that you can use to test
+this out. As the Modelnet tutorial warns you, don't use ping to test connectivity between two virtual nodes. Ping
+uses raw sockets and these packets are not intercepted by the Modelnet custom library.
+</p>
+<br>
+
+<h2>::What applications can I run on top of Modelenet?</h2>
+<p>
+Modelnet provides a script called vnrunhost that runs a application/executable on a particular virtual node. For some
+reason, I found that this raised many questions (before I looked into the script).  Could the application
+be a shell script?, How many paramaters could I pass to the application?, etc. Turns out, that vnrunhost
+is a simple wrapper that maps virtual node ids to virtual ips and then calls the usual "SRCIP= .. LD_PRELOAD=...".
+So, the short answer is that almost any application can use Modelnet (unless it plays around with Raw sockets or
+specifically binds to a particular local ip-address). Moreover, the presence of Modelnet underneath is totally
+transparent to the application. You can even run `ls' on Modelnet (not that it would be of any
+particular significance).
+</p>
+
+
+<h2>:: So, how does the emulator emulate the Internet? </h2>
+<p>
+First, a tool such as
+<a href="http://topology.eecs.umich.edu/inet/">Inet</a> is used to generate topology of the routers in the
+Internet. Inet cam also spit out `router coordinates' i.e. it places each router in a XY plane and prints
+the cartesian corordinates for each router. Modelnet directly interprets these coordinates, assiging longer
+latencies (in milliseconds) between farther routers. Assigning bandwidth is a different beast. The easiset
+solution is to specify a lower bandwith mark and an upper bandwidth mark. Modelnet will then assign, at random,
+a bandiwth between these two marks to each end node. Is is assumed that the router backbone can handle all the
+end nodes' bandwidths (clearly a simplification but still a reasonable assumption for most experiments). Once
+Modelnet generates the route and model files, one can also "hand-code" different bandwidths for each node.
+Lastly, Modelnet allows one to specify packet loss rates on each link. Again, a high and low mark can be set and
+Modelnet will randomly assign packet loss rates within this range to each link.
+</p>
+
+
+<h2>:: Troubleshooting</h2>
+<p>
+As mentioned, Netperf is a very handy tool to figure out if the bandwidth and latency constraints between
+two nodes are being emulated correctly. Occasionally, some strange problems crop up. Here are some of the
+stranger ones. Might be of use if you see something familiar.
+</p>
+
+<h3>SRCIP not SRC_IP</h3>
+<p>
+For some reason, I had switched to writing SRC_IP instead of SRCIP in the prefix on the command line (guess
+I was instinctively following my coding guidelines :).
+Netperf, applications, everything, stopped working suddenly. Took me a while to see the typo and drove
+me insane in the meantime.
+</p>
+
+<h3>IPv6</h3>
+<p>
+I like to customize my Linux kernels and build them from source. In a particular kernel build, I had enabled
+IPv6. For some reason, this interacts very strangely with Modelnet. So, if you are building your own Linux
+Kernel, disable IPv6.  And don't even ask how I figured this out!
+</p>
+
+
+<h2>:: Parting thoughts </h2>
+<p>
+As I said before, I had not used a wide area network emulator before. Installing Modelnet and using it
+showed me how some cool hacks have made such a thing possible, and this is without even going into
+the complexity of the emulator code. It is almost magical when you actually run apps on top of it and
+see the whole thing in action. Its like seeing a storm in a bottle or the Internet on a bunch of
+local-area machines. Years of research (on modelling the Internet topology and such) have made this
+emulator possible. If you have any questions feel free to shoot me an email. I'll reply
+if I have any answer(s) and maybe add it to this page as well.
+</p>
+
+
+</div>
+
+<div id="rightcontent">
+<h2> Links</h2>
+<p>
+<a href="rapid.html">Rapid</a>
+<br>
+<a href="http://issg.cs.duke.edu/modelnet.html">Modelnet</a>
+<br>
+<a href="http://topology.eecs.umich.edu/inet/">Inet</a>
+<br>
+<a href="http://www.faqs.org/docs/Linux-mini/IP-Alias.html">IP-Aliasing</a>
+<br>
+<a href="http://www.netperf.org/netperf/NetperfPage.html">  Netperf </a>
+</p>
+
+</div>
+
+
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-556186-1";
+urchinTracker();
+</script>
+
+
+
+<!-- START INCLUDED FOOTER -->
+<center>
+<br>
+<br>
+<br>
+<span class="G9G"><a href="http://validator.w3.org/check?uri=referer" title="W3C HTML Validation" target="_blank">HTML</a> &#8226; <a href="http://jigsaw.w3.org/css-validator/check/referer/" title="W3C CSS Validation" target="_blank">CSS</a> &#8226; <a href="http://bobby.watchfire.com/" title="U.S. Section 508 Accessibility" target="_blank">508</a></span>
+
+<br>
+<!-- END INCLUDED FOOTER -->
+</body>
+</html>
+</center>

@@ -1,0 +1,430 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+  <title>More Java</title>
+</head>
+
+<body BGCOLOR="white">
+
+<center>
+<h1>More Java</h1>
+<p>
+<h2>Introduction to Computer Science I-III
+<br>
+ICS-21/-22/-23<br>
+</h2>
+<p>
+</center>
+
+
+<!-- Introduction -->
+
+<a name="Introduction"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Introduction</b></td>
+<td width ="80%">
+  In this short lecture, we will clarify some points about the meaning of
+    <b>final</b> in variable declarations, introduce two operators used in
+    <b>conditional expressions</b> and discuss <b>short-circuit</b> evaluation
+    in logical operators
+  All these features allow us to write more compact and understandable code,
+    once we understand these language features.
+</td>
+</tbody>
+</table>
+
+
+<!-- Final -->
+
+<a name="Final"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>More on final</b></td>
+<td width ="80%">
+  In the real world, a constant is a named value that never changes. 
+  Examples of constants are &pi; (pi), e, the speed of light, the mass of a
+    proton (we think?) etc.
+  In programs, a constant is a variable whose value never changes within its
+    scope (i.e., during the time the variable is declared).
+  This is a slightly more liberal definition.
+  So, any real-world constant is a program constant, but a program constant
+    doesn't have to be a real-world constant.
+  <p>
+  For example, to compute a mortgage, a program uses the current interest rate.
+  This value is not a real-world constant, because its value changes daily.
+  But, once the program starts computing the mortgage payments, the current
+    interest rate is a constant in that program.
+  <p>
+  We have seen that we can declare local variables as constants, by using the
+     <b>final</b> access modifier (recall that <b>final</b> restricts how we
+     can access the variable).
+  When a variable is declared <b>final</b> it must be intialized, its value
+    can be examined in subsequent expressions, but its value can never be
+    changed by a state-change operator.
+  We will use the terms <b>constant</b> and <b>final variable</b> 
+    interchangably.
+  If we write code that tries to change a constant, the Java compiler detects
+    and reports a syntax constraint error.
+  In fact, we can use this rule to get some interesting information from the
+    compiler: every statement where we change the state of a variable.
+  We do so by changing it from a variable to a constant, and then let the 
+    compiler locate all the "errors" where we try to change its state.
+  <p>
+  When we write programs, we should declare constants instead of using "magic"
+     literals.
+  The names of the constants will help us remember what the constant means
+    (without having to see its values: what is <b>6.022141E23</b> or
+    <b>2.99792458E8</b>?).
+  Using constants instead of variables makes our programs less prone to error:
+    if we use a variable, we might accidentally change what value it stores
+    -this is impossible with constants.
+  <p>
+  Using constants also makes it easier to change our programs: in the upcoming
+    Rocket program we can write <b>.01</b> in lots of places, but if we
+     needed to change that value to <b>.001</b> (for a more accurate
+     simulation), we might have to search our code carefully to make the
+     correct changes (there might be other <b>.01</b>s in our program not 
+    refering to the time increment).
+  If instead we declared <b>final double dT = .01;</b> (here <b>dT</b>
+    stands for delta/change-in time) in our program, and then used the
+    constant <b>dT</b> throughout our code, to change this value
+    requires editing just this one line of code, and then recompiling the
+    program.
+  <p>
+  Although use of <b>final</b> in the example below may be a bit confusing, it
+     is perfectly legal.
+  <pre><b>  int count = 0;
+  int sum   = 0;
+  for (;;) {
+    final int score = Prompt.forInt("Enter score (-1 to terminate)");
+    if (score == -1)
+      break;
+    count++;
+    sum += score;
+  }
+  System.out.println("Average = " + sum/count);</b></pre>
+  In this example, <b>score</b> is declared <b>final</b> and indeed, its value
+    (once initialized) never changes in its scope: the block in which
+    <b>score</b> is declared.
+  When the block finishes, <b>score</b> becomes undeclared; then the <b>for</b>
+    loop re-executes the block, redeclaring and reinitializing the <b>score</b>
+    constant all over again.
+  So, our use of <b>score</b> meets all the technical requirements for a 
+    constant.
+  Some programmers would pronounce this code excellent; others would say that
+    indicating <b>final</b> is not worth it.
+  What do you think?
+  <p>
+  Most constants specify an initializer in their declaration; but surprsingly,
+    this is not necessary.
+  If the initializer is omitted, it is called a <b>blank final</b> variable.
+  The Java compiler is smart enought to ensure
+    <ul>
+      <li>a blank final variable is eventually assigned an initial value
+      <li>a blank final variable is not used until after it is assigned a value
+      <li>a blank final variable it is never reassigned another one value.
+    </ul>
+  So, it is OK to write code like<pre><b>  final double d;     //blank final
+  ...code...          //cannot refer to the constant d
+  if (whatever)       //value is assigned to constant d in one if branch
+    d = ...
+  else
+    d = ...
+  ...more code...     //care refer to but not change the constant d</b></pre>
+  Any further attempt to store a value into <b>d</b> will be detected and
+    reported as an error by the Java compiler.
+  When we learn how to write instance variables in classes, we will see more
+    reasonable uses of blank final.
+  <!---
+  <p>
+  Should be in object discussion: see problem too.
+  Finally, recall that when we declare a constant for a reference type, we must
+    be a bit careful of its meaning.
+  A reference variable stores a reference (as its state) which refers to an
+     object (which stores its own state).
+  So, using <b>final</b> with a reference variable DOES mean that once we store
+    a reference into that variable, it always refers to the same object.
+  It DOES NOT mean that the state of the object remains unchanged: we can still
+    call mutator/command methods on a final variable, changing not its 
+    state (WHICH object it refers to) but the state IN the object it refers to.
+   So, if we declare <b>final DiceEnsemble d = new DiceEnsemble(2,6);</b> we
+     CAN write <b>d.roll();</b>, but we CANNOT write
+     <b>d = new DiceEnsemble(1,6);</b>
+   Again, the difference between what is stored in a variable (a reference)
+     and what is stored in the object it refers to (its state) is crucial to
+     understanding this distinction.
+  --->
+</tbody>
+</table>
+
+
+<!-- Conditional Operators -->
+
+<a name="ConditionalOperators"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Conditional Operators ? and :</b></td>
+<td width ="80%">
+  There are two operators that work together in Java, helping us to condense
+    our code by allowing us to write short expressions instead of longer
+    statements.
+  These two operators, <b>?</b> and <b>:</b> constitute what is called a
+    <b>conditional expression</b>.
+  Please constrast this with <b>if</b> statements, which are sometimes 
+    called <b>conditional statements</b>: the distinction between
+    <b>expression</b> and <b>statement</b> is important.
+  The EBNF rule for a conditional expression is
+  <p>
+&nbsp &nbsp <i>conditional-expression</i> <= <i>expression</i> ? <i>expression</i> : <i>expression</i>
+  <p>
+  As a syntax constraint, the first <i>expression</i> must return a 
+    <b>boolean</b> result, and the second two <i>expression</i>s
+    must return a result of the same type (it can be any type, but they must
+    match).
+  <p>
+  We will write conditional expressions using the following form (almost
+    always putting them in parentheses, which makes reading them easier)
+  <b><pre>  (test ? expression<sub>T</sub> : expression<sub>F</sub>)</pre></b>
+  Together, <b>?</b> and <b>:</b> are called <b>ternary</b> operators (not
+    unary or binary: they have three operands); they are called <b>distfix</b>
+    because the operators are <b>dis</b>tributed around their operands
+    (not prefix, infix, or postfix).
+  <p>
+  Semantically, Java first evaluates <b>test</b>, if it is <b>true</b> the
+    result of the conditional expression is the result of evaluating
+    <b>expression<sub>T</sub></b>; if it is <b>false</b> the result of the
+    conditional expression is the result of evaluating
+    <b>expression<sub>F</sub></b>.
+  So, only two of the three expressions are ever evaluated.
+  Because each conditional expression must have a unique result type, and
+    because its value can be computed by either <b>expression<sub>T</sub></b>
+    or <b>expression<sub>F</sub></b>, the Java compiler has a syntax constraint
+    that requires these expressions to have the same type. 
+  <p>
+  Let's look at three concrete examples of conditional expressions and the
+    <b>if</b> statements that they condense.
+  One can often simplify short <b>if</b> statements with even shorter
+    conditional expressions, but large <b>if</b> statements often cannot
+    be simplified.
+  <b><pre>  if (n > 0)         x = (n>0 ? 0 : 1);
+    x = 0;
+  else
+    x = 1;
+
+
+  if (pennies == 1)
+    System.out.println("1 penny");
+  else
+    System.out.println(pennies + " pennies");
+
+  System.out.println(pennies + (pennies==1 ? " penny" : " pennies"));
+
+
+  if (n%2 == 0)
+    System.out.println(n + " is even");
+  else
+    System.out.println(n + " isn't even");
+
+  System.out.println(n + (n%2==0 ? " is" : " isn't") + " even");</pre></b>
+  Upon reading this code, many students think that the <b>if</b> statements are
+    simpler; but that is because they are more familiar with <b>if</b>
+    statements, and less familiar with conditional expressions.
+  Most experience programmers think that the conditional expressions are
+    simpler.
+  Of course, which form you ultimately use is a matter of taste.
+  But it is important that you understand conditional expressions, and can
+    switch back and forth between them and simple <b>if</b> statements,
+    when it is possible.
+</td>
+</tbody>
+</table>
+
+
+<!-- Short Circuit Evaluation -->
+
+<a name="ShortCircuit"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Short-Circuit Evaluation</b></td>
+<td width ="80%">
+  We have learned that binary infix operators evaluate both their operands 
+   first, and then compute their resulting value.
+  Actually, this ordering is correct for all but the <b>&&</b> and <b>||</b>
+     logical operators.
+  Instead, these operators use <b>short-circuit</b> evaluation: they always
+    evaluate their left operand first; if they can compute their resulting 
+   value from this operand alone, they do so without evaluating their right
+   operand; if they cannot determine the resulting value from the left operand
+    alone, then they evaluate their right operand and compute the resulting
+    value
+  <p>
+  Note that if the left operand of <b>&&</b> evaluates to <b>false</b>, the
+    result must be <b>false</b>: <b>false && false</b> as well as
+    <b>false && true</b> evaluate to <b>false</b>, so the value of the right
+    operand is irrelevant.
+  Note that if the left operand of <b>||</b> evaluates to <b>true</b>, the
+    result must be <b>true</b>: <b>true || false</b> as well as
+    <b>true || true</b> evaluate to <b>true</b>, so again the value of the
+    right operand is irrelevant.
+  <p>
+  To see how we can use this short-circuit property when programming, assume
+    that a program declares <b>int totalParts = 0, badParts = 0;</b> and
+    increments the appropriate variables when a part is tested.
+  Next, assume that if the ratio of bad parts to total parts is ever over 5%
+   (or <b>.05</b>) we want to recognize this problem and display a message.
+  Because we have short-circuit evaluation, we can simply write<b><pre>
+  if ( totalParts != 0 && (double)badParts/(double)totalParts > .05)
+    System.out.println("Too many bad parts");</pre></b>
+  Notice that if <b>totalParts</b> is zero, then the left operand of <b>&&</b>
+    is <b>false</b>, so Java doesn't bother to evaluate the right operand.
+  Without short-circuit evaluation, Java would evaluate the right operand too,
+    causing an exception to be thrown because of division by zero.
+  Also, if we had written the second conjunct first, Java would do the division
+    BEFORE comparing <b>totalParts</b> to zero, which could also throw an
+    exception.
+  So, the operands to the <b>&&</b> and <b>||</b> operators are not symmetric
+    because short-circuit evaluation is used.
+  <p>
+  In a programming language without short-circuit evaluation, we would have to
+    write the following, more complicated code, to achieve safety from division
+    by zero.
+ <b><pre>  if (totalParts != 0)
+    if ((double)badParts/(double)totalParts > .05)
+      System.out.println("Too many bad parts");</pre></b>
+  which requires two, nested <b>if</b> statements, instead of one.
+  <p>
+  As a final example, suppose that we are writing a game-playing program, and
+    the user must terminate the bet-play loop if his/her purse is 0 or if
+    he/she elects to quit (if the former is true, the user shouldn't even be
+     prompted about electively quitting; he/she must quit because he/she has
+     no more money).
+  With short-circuit evaluation, we can write one <b>if</b> statement that
+    captures all these semantics
+  <b><pre>  if (purse == 0 || Prompt.forBoolean("Quit?"))
+    break;</pre></b>
+  Because of short-circuit evaluation, if purse is zero, the <b>if</b>'s test
+    will evaluate to <b>true</b> before prompting the user; only if purse is
+    not zero will the user be prompted about quitting.
+  <p>
+  Again, in a programming language without short-circuit evaluation, we could
+    safely write the following, more complicated code
+  <b><pre>  if (purse == 0)
+    break;
+  if (Prompt.forBoolean("Quit?"))
+    break;</pre></b>
+  which requires two, sequential <b>if</b> statements, instead of one.
+  <p>
+  Finally, short-circuit evaluation actually works in conditional expressions
+     too.
+  For example, if we write the conditional expresson <b>(true ? 1 : 1/0)</b>
+    Java's result is <b>1</b>; because the expression evaluates to <b>true</b>
+    Java evaluates only the expression <b>1</b> and not the expression
+    <b>1/0</b>.
+  If Java fully evaluated all expressions first, it would throw an exception.
+  Recall the semantics of the conditional expression:
+  Java first evaluates the <b>test</b>, if it is <b>true</b> the result of the
+    conditional expression is the result of evaluating
+    <b>expression<sub>T</sub></b>; if it is <b>false</b> the result of the
+     conditional expression is the result of evaluating
+     <b>expression<sub>F</sub></b>.
+  So, it uses <b>test</b> to determine which other expression to evaluate, and
+    only evaluates that one other expression.
+  It always evaluates two of the three expressions.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Problem Set -->
+
+<a name="ProblemSet"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Problem Set</b></td>
+<td width ="80%">
+  To ensure that you understand all the material in this lecture, please solve
+    the the announced problems after you read the lecture.
+  <p>
+  If you get stumped on any problem, go back and read the relevant part of the
+     lecture.
+  If you still have questions, please get help from the Instructor, a CA, or any other student.
+
+  <ol> 
+     <li>Assume that we declared <b>final int maxClassSize = 50;</b> which
+           of the following statements would cause the Java compiler to detect
+           and report an error. Also assume <b>int x;</b>
+         <ul>
+           <li><b>maxClassSize++;</b>
+           <li><b>System.out.println(maxClassSize);</b>
+           <li><b>maxClassSize = 50;</b>
+           <li><b>maxClassSize += 10;</b>
+           <li><b>x = maxClassSize + 2;</b>
+         </ul>
+     <p>
+     
+     <li>Assume that we declared <b>final StringTokenizer st = new StringTokenizer("A man, a plan, a canal: Panama");</b> which
+           of the following statements would cause the Java compiler to detect
+           and report an error. Also assume <b>int x;</b>
+         <ul>
+           <li><b>String s = st.nextToken();</b>
+           <li><b>x = st.countTokens();</b>
+           <li><b>st = new StringTokenizer("Another string");</b>
+         </ul>
+     <p>
+     
+
+     <li>Examine the two code fragments below.
+         For each, say whether it is legal and why (or why not).
+         Rewrite the <b>if</b> statement using a conditional expression.
+<pre><b>
+  int x = Prompt.forInt("Enter x");
+  if (x != 0)
+    final int y = 0;
+  else
+    final int y = 1;
+  System.out.println(y);
+
+  int x = Prompt.forInt("Enter x");
+  final int y;
+  if (x != 0)
+    y = 0;
+  else
+    y = 1;
+  System.out.println(y);</pre></b>
+<p>
+     
+     <li>Assume that we declare <b>int x;</b> what is wrong with the following
+           conditional expression:
+          <b>System.out.println(x==0 ? 0 : "non-zero");</b>
+     <p>
+     
+     <li>Translate the following <b>if</b> statement into an equivalent
+           conditional expression (see above).
+         <b><pre>  if (x>y)
+    max = x;
+  else
+    max = y;</pre></b>
+     <p>
+
+     <li>Assume that we declare <b>int minute;</b> and assign it a value
+           between <b>0</b> and <b>59</b>.
+         Write a conditional expression whose values is always a two digit
+           <b>String</b> representing a <b>minute</b>: e.g.,
+           if <b>x</b> stores <b>5</b> its result is <b>"05"</b>;
+           if <b>x</b> stores <b>25</b> its result is <b>"25"</b>.
+</ol>
+</td>
+</tbody>
+</table>
+
+
+</body>
+</html>

@@ -1,0 +1,33 @@
+source("bayesD_cocktail.r")
+
+## setting up information matrices for a logistic regression model
+n=30
+m=2
+X=matrix(nrow=n, ncol=m)   
+X[,1]=1
+X[,2]=3*(1:n)/n-1
+      
+A=array(dim=c(25, n, m, m));   
+for(i in 1:5)
+  for(j in 1:5){
+    theta=c(i-3, j-3)
+    eta=X%*%theta
+    for(k in 1:n)   
+      A[(i-1)*5+j, k, ,]=exp(eta[k])/(1+exp(eta[k]))^2 * X[k,]%*% t(X[k,]);
+  }
+prior=rep(1/25, 25); 
+ 
+print("Bayesian D-optimal design for logistic regression");
+print("model: Pr(y=1) = 1-Pr(y=0) = 1/(1+exp(-b1-b2*x))");
+print("design variable: -1<=x<=2 discretized");
+print("prior on b: uniform on {b1, b2 = -2, -1, 0, 1, 2}"); 
+
+## use cocktail algorithm (alg=1)
+w=bayesD(A, prior, maxiter=10000, small=1e-4, alpha=0, alg=1)
+
+print("output:");
+print("optimal support points x(i)");
+print(X[w>0, 2]);
+print("optimal weights w(i)");
+print(w[w>0]);
+

@@ -1,0 +1,49 @@
+import java.util.Random;
+
+public class EventGenerator 
+{
+    int avgInterArrivalTime = 20;
+    int avgLoadTime = 10;
+    int avgRideTime = 10;
+    
+    Random prg;
+    long seed = 9999;
+    
+    // set the random seed so that results are the same each time
+    // around. this is useful for debuggin
+    public EventGenerator()
+    {
+	prg = new Random();
+	prg.setSeed( seed );
+    }
+    
+    // sets the average inter-arrival time and average load time and average
+    // ride time for a customer
+    public void setParameters( int a, int l, int r )
+	throws IllegalTimeValueException
+    {
+	if ( a <= 0 || l <= 0 || r <= 0 )
+	    throw new IllegalTimeValueException();
+	avgInterArrivalTime = a;
+	avgLoadTime = l;
+	avgRideTime = r;
+    }
+
+    // given the current time 
+    // (which is the arrival time of the last customer),
+    // this returns a new arrival event
+    public Even getNextArrivalEvent( int currentTime )
+    {
+	double interArrival, load, ride;
+	
+	interArrival = - ( Math.log( 1 - prg.nextDouble() ) ) * avgInterArrivalTime;
+	load = - ( Math.log( 1 - prg.nextDouble() ) ) * avgLoadTime;
+	ride = - ( Math.log( 1 - prg.nextDouble() ) ) * avgRideTime;
+	
+	// this part is changed [3/08/06]: //****corrected on March 11
+        int arrivalTime = (int) interArrival + currentTime;
+	Rider newRider = new Rider( arrivalTime, (int)load, (int)ride );
+	Event newEvent = new Event( newRider, arrivalTime, Event.arrivalEvent);
+	return( newEvent );
+    }
+}

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ChemDB Web Interface Index</title>
+    <meta charset="utf-8">
+    <!-- Include JQuery for tabs and UI plugins -->     
+    <script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery-ui-1.8.16.custom.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.colorbox-min.js"></script>
+    <script type="text/javascript" src="/js/jquery.ui.selectmenu.js"></script>
+    <script type="text/javascript" src="/js/chemdb.js"></script>
+    <!-- Include styling -->
+    <link rel="stylesheet" type="text/css" href="/css/chemdb.css" />
+    <link rel="stylesheet" type="text/css" href="/css/colorbox.css" />
+    <link rel="stylesheet" type="text/css" href="/css/smoothness/jquery-ui-1.8.16.custom.css" />
+    <link rel="stylesheet" type="text/css" href="/css/jquery.ui.selectmenu.css" />
+    
+    <script type="text/javascript">
+    $(document).ready(function(){
+        // Initialize buttons, and selects
+        $(".button").button();
+        $("#upload-file-link").button({
+            icons: {
+                primary: "ui-icon-newwin",
+                secondary: "ui-icon-folder-open"
+            }
+        });        
+        $("#uploadFiles").button({
+            icons: {
+                secondary: "ui-icon-transfer-e-w",
+                //secondary: "ui-icon-document"
+            }
+        });
+        $(".select").selectmenu({style:"dropdown"});
+        
+        // Bind source info link
+        $("#source-info-link").click(function(){
+        	var msg = "<p>Choose the file whose contents you want to convert.</p><p>Alternatively, you can just copy/paste the file contents directly into the text area.</p>";
+        	$("#dialog").html(msg);
+            $("#dialog").dialog({
+                modal: true,
+                zIndex: 9999,
+                buttons: {
+                    Ok: function() {
+                        $( this ).dialog( "close" );
+                    }
+                }                
+            });
+        });
+        
+        // Bind colorbox to upload link
+        $("#upload-file-link").colorbox({inline:true});        
+        
+        // Bind function to form submission event
+        $("#BabelWeb").submit(function(){
+            // Load molecule images into results div
+            var url = $(this).attr("action");
+            var params = $(this).serialize();
+            $.post(url, params, function(data){             
+                $("#results").html($(data).find("#results").contents());
+                
+                $("#Smi2DepictWeb").button({
+                    icons: {
+                        primary: "ui-icon-newwin"
+                    }
+                });
+            });
+            $(".hide").show();
+            return false;
+        });
+        
+        // Submit smiles to Smi2Depict and get images
+        $("#Smi2DepictWeb").live("click",function(){                    
+        	var url = $("#products").attr("action");            
+            var params = $("#products").serialize();
+            var jqxhr = $.post(url, params, function(data){
+                $("#img-results").html($(data).find("#molecule-images").contents());
+                $("#img-results").find("img").addClass("shadow");                               
+                $("#Smi2DepictWeb").colorbox({inline:true, open:true, width:"900px", height:"500px"});
+            })
+            .error(function() {
+                var msg = "Sorry, this feature is only available when the <b>Output Format</b> is SMILES.";
+                $("#dialog").html(msg);
+                $("#dialog").dialog({
+                    modal: true,
+                    buttons: {
+                        Ok: function() {
+                            $( this ).dialog( "close" );
+                        }
+                    }
+                }); 
+            });
+            return false;
+        });
+    });
+    </script>
+</head>
+
+<body>
+<div id="background">           
+    <div id="content">
+        <div id="header">
+            <div id="chemdb-logo"></div>
+            <span>Babel: Molecule Format Converter</span>
+            <div id="top-nav">                
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Tools</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/BabelWeb.py">Babel</a></li>
+                        <li><a href="/cgibin/Mass2Structure.py">Mass2Structure</a></li>                        
+                        <li class="odd"><a href="/cgibin/tools/MolInfoWeb.py">MolInfo</a></li>
+                        <li><a href="/cgibin/MSFragment.py">MSFragment</a></li>
+                        <li class="odd"><a href="/cgibin/PatternCountScreenWeb.py">Pattern Count Screen</a></li>
+                        <li><a href="/cgibin/PatternMatchCounterWeb.py">Pattern Match Counter</a></li>
+                        <li class="odd"><a href="/cgibin/Smi2DepictWeb.py">Smi2Depict</a></li>
+                        <li><a href="/cgibin/reaction/ReactionProcessorWeb.py">Reaction Processor</a></li>
+                        <li class="odd"><a href="/cgibin/tools/AquaSolWeb.py">AquaSol</a></li>
+                    </ul>
+                </div>                                                                          
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Applications</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/ChemicalIndexWeb.py">Chemical Search</a></li>
+                        <li><a href="http://cosmos.igb.uci.edu/">COSMOS</a></li>
+                        <li class="odd"><a href="/cgibin/tutorial/ReactionTutorialSetupWeb.py">Reaction Explorer</a></li>
+                        <li><a href="http://reactions.igb.uci.edu/">Reaction Predictor</a></li>                        
+                        <li class="odd"><a href="/cgibin/reaction/VirtualSpaceWeb.py">Virtual Chemical Space</a></li>
+                    </ul>
+                </div>
+            </div>   
+            <div id="crumbs"><!-- <a class="breadcrumb" href="../index.htm" target="_top">ChemDB</a>
+ --><a href="/">Home</a> <img class="crumb-arrow" src='/images/arrow.png' /> <a class="breadcrumb" href="#">Babel</a></div>
+        </div>
+        
+        <div id="loadingDiv"><img src="/images/loading.gif" /></div>
+        
+        <div class="ui-widget-header">Input Molecule Data</div>
+        
+        <div class="hidden">
+            <div id="img-results"></div>
+            <div id="dialog"></div>
+            <div id="upload-file">
+                <form name="upload-form" action="BabelWeb.py" enctype="multipart/form-data" method=post>
+                <div class="ui-widget-header">Browse and Upload</div>
+                <div class="module">
+                    <div class="module-sub-header">
+                        <span><a id="source-info-link" href="#">Source File</a></span>
+                        <input type="file" name="sourceMolsFile">
+                    </div>
+                    <input type="hidden" name="uploadFiles" value="Upload">
+                    <button class="float-right margin-top clear" type="submit" id="uploadFiles" name="uploadFiles">Upload</button>
+                </div>
+                </form>
+            </div>
+        </div>
+        
+        <form id="BabelWeb" name="BabelWeb" action="BabelWeb.py" enctype="multipart/form-data" method=post>
+            <div class="module">
+                <div class="half-column margin-top float-left">
+                    <span class="module-sub-header">Input Format</span>                    
+                    <select name="sourceFormatSelect" class="select">
+                        <option value="1">SMI - SMILES, Absolute</option>
+<option value="10">CAN - Canonical SMILES</option>
+<option value="7">ISM - Isomeric SMILES</option>
+<option value="9" selected>SDF - MDL SD File</option>
+<option value="2">MDL - MDL Mol File</option>
+<option value="4">MOL2 - Tripos Sybyl mol2 file</option>
+<option value="8">MOL2H - Sybyl mol2 with explicit hydrogens</option>
+<option value="3">PDB - Protein Databank PDB file</option>
+<option value="5">BIN - Old Style OEBinary</option>
+<option value="11">MF  - Molecular Formula (Hill order)</option>
+<option value="12">XYZ - XMol XYZ format</option>
+<option value="13">FASTA - FASTA protein sequence</option>
+<option value="14">MOPAC - MOPAC file format(s)</option>
+<option value="15">OEB - New Style OpenEye OEBinary</option>
+
+                    </select>                                       
+                </div>                                                                 
+                
+                <div class="half-column margin-top float-right" style="text-align: right;">
+                    <span class="module-sub-header">Output Format</span>                   
+                    <select name="targetFormatSelect" class="select">
+                        <option value="1">SMI - SMILES, Absolute</option>
+<option value="10" selected>CAN - Canonical SMILES</option>
+<option value="7">ISM - Isomeric SMILES</option>
+<option value="9">SDF - MDL SD File</option>
+<option value="2">MDL - MDL Mol File</option>
+<option value="4">MOL2 - Tripos Sybyl mol2 file</option>
+<option value="8">MOL2H - Sybyl mol2 with explicit hydrogens</option>
+<option value="3">PDB - Protein Databank PDB file</option>
+<option value="5">BIN - Old Style OEBinary</option>
+<option value="11">MF  - Molecular Formula (Hill order)</option>
+<option value="12">XYZ - XMol XYZ format</option>
+<option value="13">FASTA - FASTA protein sequence</option>
+<option value="14">MOPAC - MOPAC file format(s)</option>
+<option value="15">OEB - New Style OpenEye OEBinary</option>
+
+                    </select>                                       
+                </div>                           
+                                
+                <div class="margin-top float-left" style="width:100%;">                                        
+                    <a id="upload-file-link" class="float-right" href="#upload-file">Upload File</a>
+                    <div class="margin-top">
+                        <span class="module-sub-header">Input Text</span> <span>(2400 molecule maximum)</span>
+                    </div>
+                    <textarea rows=10 style="width:100%" class="margin-top" name="sourceMols" wrap=off>
+
+  Accord  0910031635
+
+ 20 21  0  0  0  0  0  0  0  0  1 V2000
+    5.7658    6.2924    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    7.9418    6.6253    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    6.5012    6.6707    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    5.7264    5.4570    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    7.2185    6.2348    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0
+    8.6440    6.1713    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0
+    7.9691    7.4334    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    5.0000    5.0636    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    6.4286    5.0000    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0
+    9.3795    6.5617    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   10.8595    7.2972    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   11.5586    7.5999    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0
+    5.0666    6.7433    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    9.4218    7.3729    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   10.0756    6.1017    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   10.8141    6.4800    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   10.1604    7.7361    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    6.5466    7.4909    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    5.1029    7.5696    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    5.8475    7.9509    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+  2  5  1  0  0  0  0
+  3  1  2  0  0  0  0
+  4  1  1  0  0  0  0
+  5  3  1  0  0  0  0
+  6  2  1  0  0  0  0
+  7  2  2  0  0  0  0
+  8  4  2  0  0  0  0
+  9  4  1  0  0  0  0
+ 10  6  1  0  0  0  0
+ 11 16  1  0  0  0  0
+ 12 11  1  0  0  0  0
+ 13  1  1  0  0  0  0
+ 14 10  2  0  0  0  0
+ 15 10  1  0  0  0  0
+ 16 15  2  0  0  0  0
+ 17 14  1  0  0  0  0
+ 18  3  1  0  0  0  0
+ 19 13  2  0  0  0  0
+ 20 19  1  0  0  0  0
+ 20 18  2  0  0  0  0
+ 17 11  2  0  0  0  0
+M  END
+>   <ID> (CGX-0000468)
+CGX-0000468
+
+$$$$
+</textarea>
+                </div>
+                
+                <div class="margin-top">
+                    <span class="module-sub-header">Options</span>                
+                    <input type=checkbox name="neutralizeCharges" value="checked" > <a href="javascript:alert('If checked, any formally charged atoms in the input will be neutralized by adding / removing protons if possible.')">Neutralize Charges</a>
+                    <input type=checkbox name="outputOnly"> <a href="javascript:alert('If checked, will return only the output text, which should then be directly downloadable as a molecule file.')">Output Only</a>
+                </div>
+                                
+                <input type="hidden" name="BabelWeb" value="Convert Format">
+                <button class="convert-button float-right margin-top" type="submit" name="BabelWeb">Convert Format</button>               
+            </div>
+        </form>
+        
+        <div id="results" class="hide">
+        <div class="ui-widget-header">Output Molecule Data</div>
+        <form id="products" name="Products" action="Smi2DepictWeb.py" target="_blank" method=post>
+            <div class="module">
+                <div class="module-sub-header">Output Text</div>
+                <textarea rows=10 style="width:100%" name="smiles" wrap=off></textarea>
+                <input value="View Structures in New Window" type="hidden" name="Smi2DepictWeb">
+                <a id="Smi2DepictWeb" class="button float-right margin-top" href="#img-results">View Structures</a>                        
+            </div>
+        </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

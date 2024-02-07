@@ -1,0 +1,32 @@
+// Test of closest pair algorithms
+// David Eppstein, UC Irvine, 19 Apr 1997
+//
+// Nearest neighbor closest pair algorithm
+// Augments BruteForce by adding an array of each point's nearest neighbor
+// and another array of the distance to that neighbor.
+// Finding closest pair becomes linear time: scan the array.
+// Insertion also takes a single array scan.
+// But deletion involves one scan for each point for which the deleted
+// point was the neighbor, and may be quadratic.
+//
+// Total space: 20n bytes. (Could be reduced to 4n at some cost in update time.)
+// Time per insertion or single distance update: O(Dn)
+// Time per deletion or point update: O(Dn) expected, O(Dn^2) worst case
+// Time per closest pair: O(n)
+
+#include "BruteForce.h"
+
+class NeighborCP : public BruteForceCP {
+ 	point * neighbors;
+ 	double * nbr_dist;
+ 	void FindNeighbor(point);
+
+ public:
+ 	~NeighborCP() { delete neighbors; delete nbr_dist; }
+ 	NeighborCP(long np, long mp, Distance & d);
+ 	void operator += (point);
+ 	void operator -= (point);
+ 	double operator () (point & a, point & b);
+ 	void UpdatePoint(point);
+ 	void UpdateDistance(point,point);
+};

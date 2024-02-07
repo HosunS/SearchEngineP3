@@ -1,0 +1,199 @@
+Minutes 3/30/99
+
+Attending: Judy Slein, Geoff Clemm, Tyson Chihaya, Jim Whitehead, Chuck Fay
+
+ACTION ITEMS
+
+All: Write up pros and cons of making direct references be URL bindings rather than 
+resources, circulate to design team.  This week.
+
+Jim Whitehead: Draft definition of reference.
+
+SHOULD REFERENCES BE RESOURCES?
+
+Jim W: Redirects should be treated as real resources because clients can see them and 
+operate on them.
+
+Geoff:  Lessons from his pass through spec:  Jim W�s suggestion that redirects should 
+still be independent resources is right.  So only direct refs get hidden.
+  
+Questions about ordering: If the collection is locked, do you have to be the lockholder to 
+change the ordering?  Is modification date affected only by changes to the body, not by 
+change to ordering?  What is the body of a collection?  Geoff thinks any change to 
+membership or ordering should change modification date.  What is locked when Depth= 
+0? What counts as the state of a collection?  If GET redirects to index, is that one of the 
+things that gets locked?
+
+What is a collection?  We have to understand that to make decisions about COPY with 
+Depth=0 or LOCK with Depth=infinity.
+  
+All the problems about LOCK have parallels in versioning.
+
+These problems led to search for general principle that would lead to the right answer.
+  
+Hard questions: what really gets locked, what really gets copied, etc.
+
+What is the advantage of letting references be a resource? They can have properties. 
+Reuse of semantics, e.g., DELETE.
+
+Geoff: But you have to redefine all the standard methods if it�s a resource.  Jim: But No-
+Passthrough gets you that.
+
+Are there use cases to support making references be resources?  
+
+Let a direct reference just be a URI that refers to a resource.  The reference can bind to 
+resource and maintain that binding under change.  We are saying that sharing can only 
+happen in the context of a collection, which is fairly natural.  We are really just providing 
+a binding sharing operation.  It guarantees to bind to the same resource as another URL 
+binds to.  We are providing protocol access to the URL binding operation.
+
+LOCK affects a particular binding and a resource.  Clients could still remove other 
+bindings and introduce new binding while the lock is in force.
+
+User-defined bindings as opposed to system-defined ones.
+
+Some servers do case folding.  How to model that.  Maybe best to be silent on this.
+
+This strategy helps with the forest of references: you do introduce a forest of bindings.  
+This seems completely natural if the reference is just a URL binding, instead of seeming 
+puzzling.
+
+A direct reference creates a binding.
+
+Is there any difference between a reference and a server-created URL binding?  No.
+
+You can say UNLINK to any URL, whether created by client or by server.  Strong / weak 
+applies to both kinds of bindings (server-created or client-created).
+
+If direct references are bindings, does this force us to address strong references / 
+referential integrity now? Jim W thinks yes.
+
+We would be adding state (referential integrity) to the binding - Jim W doesn�t like that.
+
+How does relative binding work?  More cleanup needed in base spec? Members are 
+always just a path segment. 
+
+The ordering is embodied in the internalmembers property.
+
+It turns out that Jim and Geoff had in mind different semantics for direct references.  Jim 
+was thinking of something like hard links, Geoff was thinking of something like soft 
+links.  
+
+Jim thinks that you pass in a destination URL with the create request, the server 
+dereferences the destination URL to an identifier of the resource (not accessible to the 
+client, but it�s the true name of the resource), and creates a relationship between the new 
+URL and that identifier.  So it�s really a new binding that gets created. 
+
+Geoff meant it to be "whatever is at this URL, link to it" (the current MKREF semantics).
+Why do you need relative references?  In case you get moved.  For example, you want 
+../index always to get your parent�s index.
+
+Make it clear whether it�s hard links or soft links you support.  Geoff wants the same 
+semantics as we�ve had, but just that there�s no independent resource.
+
+Jim W may not support this - he thought Geoff wanted hard links, which is not the case.
+
+Jim W: If a reference is an independent resource, you could just lock the single resource. 
+ 
+If the reference is a mapping is held in a property of a collection, all mappings get locked 
+in order to affect one.
+
+Geoff: An observation about implementation -- some servers will have to lock the whole 
+collection anyway.  (Unix).  For symbolic links you can�t lock just one, you have to lock 
+the whole directory - Jim doesn�t believe this.
+
+Jim W: LOCKs will need some separate server-maintained table in any case.
+
+Chuck: The DMA object model has a separate entity for the reference (it�s a relationship 
+object).  It is separate from the collection and separate from the target.  DMA did that 
+because they expected there to be valuable edge data. 
+ 
+DMA distinguishes between direct and referential membership.  Direct is 1-to-many 
+(only one parent container). Referential is many-to-many - so now there needs to be a 
+place for the edge data.  It�s not metadata about the collection and it�s not metadata about 
+the target, but about the reference.  When it was added to the collection and by whom, for 
+example.  
+
+Ordering is modeled how in DMA?  Ordering is optional, and it�s possible both for a 
+collection�s members to be ordered and for an object�s parents to be ordered. Only one 
+ordering per collection. The ordering property is on the relationship, but not exposed.  
+When you put a new member into a collection, you say "put it before or after this other 
+member relationship".
+
+The member relationships do have external names (UUIDs + locating information).
+
+The relationship object has 2 well-known properties: they are object valued, one is set to 
+the container object, the other is the object you are putting into the container.  
+UUIDs solve MOVE etc problems.
+
+The one true name - is that like a UUID?  URL -> id -> state (filename).  Some 
+problems might be solved if we had names and made them accessible through protocol.  
+Document Management and Configuration Management use names guaranteed not to 
+change for life of resource.
+
+IETF community won�t let you use URN to locate something.  URL-to-URL binding is 
+the only one they could make sense of.
+
+All: Write up Pros and Cons of making direct references into URL bindings.  This week.
+
+REVIEW OF YG-1 - YG-6
+
+Issue YG-1: Definition of collection: Keep as is.
+
+Issue YG-2: Definition of reference - Geoff: if redirect references are resource and direct 
+references are not, then maybe they are so different that we can�t consider them to be 
+specializations of the same kind of thing.  Let�s revisit this after we�ve decided whether 
+direct references are resources. 
+
+Issue YG-3: Extension header for multiple locations -- Geoff:  Off-server references a a 
+problem.  You couldn�t get all of them because there could be references from lots of 
+different servers.  You couldn�t be sure that all of them have been maintained, so some of 
+them might be broken. Chuck: You get back the URI used to create the ref.  A single URI 
+is the simplest and most reliable. Jim W: This may really be an extensiblity issue, but we 
+are using Location from HTTP, so let�s just accept it as it is. Closed: only the HTTP 
+Location header will be used.
+
+Issue YG-4: Values of Ref-Integrity. Closed: Accept Yaron�s proposal.
+
+Issue YG-5: Jim W: highly structured property values may not be searchable by DASL, 
+so at least keep reftarget separate so that we are sure it can be searched.  Judy: Do you 
+mean we have to make any properties that we want to be searchable into string-valued 
+properties?  Jim W: No.  Geoff is happy with separate properties. Geoff: Values of 
+resourcetype should determine different method behaviors.  If method behaviors for 
+property values are the same, the property doesn�t belong in resourcetype. Jim W: The 
+names ref* may be some indication that we�re dealing with different types of references.  
+By Goeff�s test, reftype and refintegrity might belong in resourcetype.  Eventually servers 
+may have to branch on refintegrity to determine behavior. Jim W: inclined to keep all 
+three properties separate.  Closed: reftype, refintegrity, and reftarget will stay separate 
+properties.
+
+YG-6: Allow a body to be included in MKREF requests for extensiblity.  On the one 
+hand, this looks like a harmless proposal; on the other, it muddies the distinction between 
+references and other resources.  Geoff - don�t say anything.  Jim W: Use same language 
+as MKCOL.  Closed:  The spec will use language similar to that in MKCOL to allow a 
+body without defining it.
+
+Definition of reference: The current definition says that references have no content.  The 
+word "content" has been problematic.  What we mean is the chunk of data that would 
+come back as entity body for GET.
+
+Body means what�s in a message, content means what is on the resource. Jim W doesn�t 
+like content because a CGI script is not content, but rather produces content.  Still, we 
+want to include it in what we are talking about.  What is the word for the characteristic of 
+the resource?  The HTTP spec lets you do content negotiation, so that a resource�s state 
+includes several distinct entity bodies.  Computational processes complicate things 
+further.  What is the persistent state of the resource?  Whatever you change that produces 
+a change in the entity body for GET.  So we are trying to say that references have no state 
+that would produce a GET entity body.  References do have persistent state that is 
+properties.  Is the target part of a reference�s persistent state?  Data that you get back on 
+GET.  Metadata is properties.  In 2518, entity headers and properties count as properties.
+  
+Check on the definitions of message body vs. entity body. 
+
+We need a mental model of the resource, so we need to talk about the nature of the 
+resource, not just about what goes over the wire.  Geoff thinks not.  Jim W:  HTTP took 
+that way out and caused lots of difficulty for WebDAV.
+
+Jim W will draft a definition of reference.
+
+

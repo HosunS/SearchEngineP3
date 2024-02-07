@@ -1,0 +1,207 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>32.2 Configuring OEInterface</title>
+<META NAME="description" CONTENT="32.2 Configuring OEInterface">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node255.html">
+<LINK REL="previous" HREF="node253.html">
+<LINK REL="up" HREF="node252.html">
+<LINK REL="next" HREF="node255.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node253.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node252.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node255.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node253.html">32.1 Compiling a text</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node252.html">32. OpenEye Command Line</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node255.html">32.3 Parsing the Command</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION0035200000000000000000">
+32.2 Configuring OEInterface</A>
+</H1>
+
+<P>
+Configuring an OEInterface is the process of telling the name, type
+and other details of all the command line parameters the program is
+going to use.  It does not include the process of parsing the command
+line to set the parameter values however.
+
+<P>
+When initially constructed the OEInterface object does not know about
+any command line parameters.  This is demonstrated using the following
+program.
+
+<P>
+<i>Chapter 32 - Example 2: cpp file</i>
+<dl><dd><pre class="verbatim">#include "oeplatform.h"
+#include "oesystem.h"
+
+using namespace OEPlatform;
+using namespace OESystem;
+
+int main(int, char**)
+{
+  OEInterface itf;
+  OEWriteSettings(itf,oeout,true);
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch32-2.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+The function OEWriteSettings lists the current settings of all the
+parameters the OEInterface class knows about.  Since it was just
+constructed the OEInterface class doesn't know about any parameters
+and when the output of the program when run looks like this
+
+<P>
+<i>Chapter 32 - Example 2: output</i>
+<dl><dd><pre class="verbatim">&gt; ch32-2
+#Interface settings
+&gt;
+</pre></dl>
+
+<P>
+indicating the OEInterface doesn't know anything about any parameters yet.
+
+<P>
+The OEInterface class can be configured either by explicitly calling the
+various member functions of the class (detailed in the API documentation),
+or by using the OEConfigure free function.  Taking our previous example
+we can add an OEConfigure call as follows
+
+<P>
+<i>Chapter 32 - Example 3: cpp file</i>
+<dl><dd><pre class="verbatim">#include "oeplatform.h"
+#include "oesystem.h"
+
+//Defines static const unsigned char* array InterfaceData
+#include "ch32-3.itf"
+
+using namespace OEPlatform;
+using namespace OESystem;
+
+int main(int , char** )
+{
+  OEInterface itf;
+  OEConfigure(itf,InterfaceData);
+  OEWriteSettings(itf,oeout,true);
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch32-3.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+The OEConfigure function is passed the itf object, and a pointer to a text
+file compiled into the program at compile time using the method described
+in the first section of this chapter.  For this example the text file is
+
+<P>
+<i>Chapter 32 - Example 3: txt file</i>
+<dl><dd><pre class="verbatim">!PARAMETER -x
+  !TYPE float
+!END
+
+!PARAMETER -y
+  !TYPE float
+!END
+
+!PARAMETER -op
+  !TYPE string
+!END
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch32-3.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+and given the output of the program is
+
+<P>
+<i>Chapter 32 - Example 3: output</i>
+<dl><dd><pre class="verbatim">&gt; ch32-3
+#Interface settings
+#-op (Not set, no default)
+#-x (Not set, no default)
+#-y (Not set, no default)
+&gt;
+</pre></dl>
+
+<P>
+The example program now lists the three parameters that were configured by
+the OEConfigure function, using the txt file listed above.  (Rules for the
+format of this file are listed in the API documentation of OEConfigure).
+Note that because all we have done is configure the OEInterface these
+parameters have no value set, even though the parameters are now known to
+the OEInterface class.
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node253.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node252.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node255.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node253.html">32.1 Compiling a text</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node252.html">32. OpenEye Command Line</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node255.html">32.3 Parsing the Command</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

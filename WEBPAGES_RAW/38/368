@@ -1,0 +1,106 @@
+CS 261, Spring 2013, Homework 7, Due Thursday, May 30
+
+
+1. The standard deviation of a collection of n data values x_i may be
+calculated by the formula
+
+          n sum(x_i^2) - (sum x_i)^2
+s = sqrt( -------------------------- ).
+                  n (n-1)
+
+(a) Give an example that shows that the standard deviation is not
+decomposable.
+
+    There are many examples. Perhaps the simplest is to choose n=2
+    and to have two data values that are not the same as each other.
+    Then the value of s for the whole set is a nonzero number
+    but for each subset of just one element it is either undefined
+    (because of the division by zero) or zero (if you define
+    s to be zero when the top and bottom of the fraction in its
+    definition are both themselves zero), neither of which helps
+    to find the value of the whole formula.
+
+    By the way, there are many different variations in the definition of the
+    standard deviation or variance, depending on whether you include the
+    square root operation or not and on whether you divide by n or n-1.
+    The details of the definitions don't make a difference for this problem.
+
+(b) Describe a decomposable range querying problem such that the
+standard deviation of the data values within a query range can be
+computed in constant time from the answer to your query.
+(We went through a similar example for the average in the lecture.)
+
+    Return the triple (n, sum x_i, sum x_i^2).
+    If a set S is decomposed into two disjoint subsets A and B,
+    the value for S is the vector sum of the values for A and B,
+    so this is decomposable. And once this triple is known,
+    the value of s can be computed using the formula above.
+
+
+2. In class we saw how to compute the average of any contiguous subarray
+of a one-dimensional matrix by looking up two sums of prefixes of the
+matrix. Suppose that we have a two-dimensional matrix A (such as the
+pixels in a grayscale image), and we store another matrix B of the same
+dimensions, such that the value in B[i,j] is the sum of all entries
+A[x,y] with 0 <= x <= i and 0 <= y <= j. Give a formula that uses the
+values in B to compute the average of any rectangular subarray of A in
+constant time.
+
+    Suppose we want to compute the average of the subarray
+    l <= x <= r and b <= y <= t.
+    The sum of the elements in this subarray is
+    B[r,t] - B[l-1,t] - B[r,t-1] + B[l-1,t-1]:
+    each element in the subarray is included in the B[r,t] term,
+    the elements with smaller x-coordinates (but with y-coordinates
+    in the same range as the subarray) are included in both
+    that term and the B[l-1,t] term, which cancel,
+    the elements with smaller y-coordinates are similarly cancelled
+    by the combination of the B[r,t] and B[r,t-1] terms,
+    and the elements whose x and y coordinates are both smaller
+    are included in all four terms, twice positively and twice
+    negatively, so they also cancel.
+
+    Once we know the sum, the average is sum/((t-b+1)(r-l+1)).
+
+
+3. Recall that in the dynamic prefix sum problem, we are maintaining an
+array of data values, subject to operations that update a single cell in
+the array or that query the sum of a prefix of the array. There is a
+solution that takes time O(log n) per operation and there is a lower
+bound showing that the problem cannot be solved more quickly than O(log
+n) per operation (in the cell probe model measuring the amount of
+communication between main memory and CPU needed to solve the problem)
+
+Now suppose that we are given a sequence of n operations in a batch,
+rather than individual operations one at a time. Does the lower bound
+imply that solving this batched problem requires Omega(n log n) time, in
+the same cell probe model? Why or why not?
+
+    So the question is about, if you're given in advance the
+    whole sequence of updates to be performed, whether there's some
+    smarter way of doing them in a different order so that you get
+    the identical sequence of results more quickly. I don't know of
+    any algorithm that solves this faster than O(n log n),
+    and I don't know of a lower bound that proves that no fast
+    algorithm is possible. However, what the question actually asked
+    was whether the lower bound given in class applies to this
+    version of the problem. The answer is no.
+
+    The adversary used in the lower bound almost gives you a batch
+    of the updates it's going to do: you know in advance exactly which
+    positions it's going to query and update, and what order it
+    will query and update them. However, it does not tell you in
+    advance what values will be stored in the updates, so it's
+    not completely batched, and the lower bound does not apply.
+
+    Another way of explaining why the lower bound doesn't apply is
+    to look at what it's assuming about how the data structure
+    operations are solved. It assumes that each query is answered
+    by looking at memory that has only been modified by previous
+    update and query operations, and what is counted in the lower bound
+    is the number of times these memory lookups access memory
+    that was modified in specific subsets of previous operations.
+    But in the batched model, it is possible that some of the queries
+    are answered by looking at memory that has been modified while
+    processing other operations out of order, something that
+    does not fit the assumptions of the lower bound.

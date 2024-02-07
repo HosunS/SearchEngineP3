@@ -1,0 +1,113 @@
+
+###########################################################
+# Part One: Forward, Backward, and Stepwise Regression
+###########################################################
+
+# Let's load the data from the current homework
+
+StateSAT <- read.delim("/var/folders/4r/ch295sgj68g78rd9qy6lbxyh0000gn/T//Rtmp4zA2PQ/data2ce87ad51b1")
+# you need to use IMPORT DATASET > FROM WEB URL.. to acquire the StateSAT dataset
+View(StateSAT)
+
+# In order to carry out the stepwise regression in any direction we need to give R upper and lower bounds on the models it can test
+small <- lm(SAT ~ 1, data = StateSAT)
+large <- lm(SAT ~ Takers + Income + Years + Public + Expend + Rank, data = StateSAT)
+
+mse.large <- summary(large)$sigma^2 # we'll use the mse for the full model as the scaling parameter in R. This will give us the correct Mallow's Cp.
+
+# Forwards selection procedure
+forward.1 <- step( small, direction = "forward", scope = list( upper = large, lower = small ), scale = mse.large)   # Fits the model by minimizing Mallows Cp
+forward.2 <- step( small, direction = "forward", scope = list( upper = large, lower = small ))                      # Fits the model by minimizing (generalized) AIC
+
+# Backwards selection procedure
+backward.1 <- step( large, direction = "backward", scope = list( upper = large, lower = small), scale = mse.large)  # Fits the model by minimizing Mallows Cp
+backward.2 <- step( large, direction = "backward", scope = list( upper = large, lower = small))                     # Fits the model by minimizing (generalized) AIC
+
+# Stepwise
+step.model.1 <- step( large, direction = "both", scope = list( upper = large, lower = small))                       # Fits the model by minimizing (generalized) AIC, but starts at the largest model
+step.model.2 <- step( small, direction = "both", scope = list( upper = large, lower = small), scale = mse.large)    # Fits the model by minimizing Mallows Cp, but starts at the smallest model
+
+# Note: if you fit the model using Mallows Cp, R will call it AIC.
+
+
+###########################################################
+# Part Two: Case Diagnostics
+###########################################################
+
+# In this class we have four ways of categorizing unusual points:
+# (1) Leverage = odd combination of explanatory variables.
+# (2) Standardized residuals = odd response variable.
+# (3) Studentized residuals = odd response variable.
+# (4) Cook's distance = odd combination of explanatory and response variable.
+
+# Load some data to build a model and calculate the diagnostics above
+Cereal <- read.delim("~/Documents/Class Work/Teaching/UC Irvine - STAT 110 (Fall 2015)/Stat2Data2012TXT/Cereal.txt")
+View(Cereal)
+
+# Let's build a simple model so we can easily recognize points
+model.fit <- lm(Calories ~ Sugar + Fiber, data = Cereal)
+
+# How to find our case diagnostic tools:
+# Leverage
+hatvalues(model.fit)
+# Standardized Residuals
+rstandard(model.fit)
+# Studentized Residuals
+rstudent(model.fit)
+# Cook's distance
+cooks.distance(model.fit)
+
+# We can add the case diagnostics to our data set:
+Cereal <- cbind( Cereal, hat = hatvalues(model.fit), rstandard = rstandard(model.fit), rstudent = rstudent(model.fit), cooks = cooks.distance(model.fit))
+View(Cereal)
+
+# But it is hard to use the View to flag the unusual cases.  So let's make a way to do that:
+
+# To identify the points of moderately high leverage
+n <- dim(Cereal)[1]
+k <- length(coefficients(model.fit))
+h <- which( hatvalues(model.fit) > 2*k/n )
+
+# To identify the points of moderately high standardized residuals
+rstd <- which( abs( rstandard(model.fit) ) >= 2)
+
+# To identify the points of moderately high studentized residuals
+rstu <- which( abs( rstudent( model.fit) ) >= 2 )
+
+# To identify the points of moderately high Cook's distance
+cd <- which( cooks.distance(model.fit) >= 0.5 )
+
+# Now we need to combine the points in to one set
+set <- union ( union( h, rstd ), union( rstu, cd ) )
+set <- sort(set)
+
+# Now we can look at just the flagged cases
+View( Cereal[set,] )
+
+
+###########################################################
+# Part Three: Plotting to determine the unusual points
+###########################################################
+
+# To plot the leverage vs. standardized residuals
+plot(x = hatvalues(model.fit), y = rstandard(model.fit), xlab = "Leverage", ylab = "Standardize Residuals", main = "Unusual Observations in Cereal")
+
+# This plot works, but it lacks some helpfulness
+# Let's use the plot() function on the model itself
+
+plot(model.fit)
+# The first plot shows the fitted values vs. (raw) residuals. The red line is the smooth fitted (smoother) line
+# This graph can be used to diagnose if you have constant variance like we did in the past.
+
+# The second plot is the QQ plot (aka probability plot). We can use this plot to diagnose the normality
+# assumption of the error terms
+
+# The third plot is the scale-location plot. The red line is the smoother line. It is similar to the first
+# plot. There should not be a discenable pattern in the plot.
+
+# The fourth plot is Residuals vs. Leverage with Cook's distance displayed
+# In this plot we can see which points R thinks are unusual. The leverage of each point is plotted on the x-axis
+# while the standardized residuals are plotted on the y-axis. The dashed lines indicate the regions with unusual
+# Cook's distance. The labeled points are the ones R deems "unusual"
+
+

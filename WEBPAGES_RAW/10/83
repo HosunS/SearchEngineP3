@@ -1,0 +1,185 @@
+// inverst a 4-by-4 matrix
+int invmatfun(double (*M)[4], double (*I)[4])
+{
+	int i, k, l;
+	for(k=0; k<4; k++) {
+		for(i=0; i<4; i++) I[k][i]=0.0;
+		I[k][k]=1.0;
+	}
+
+	for(k=0; k<4; k++) {
+		double factor=M[k][k];
+		for(i=0; i<4; i++) {M[k][i] /= factor; I[k][i]/=factor;}
+		for(l=0; l<4; l++) {
+			if(k==l) continue;
+			double coefficient = M[l][k];
+			for(i=0; i<4; i++) {
+				M[l][i] -= coefficient*M[k][i];
+				I[l][i] -= coefficient*I[k][i];
+			}
+		}
+	}
+	return 0;
+}
+
+//the Wald test when both SNPs have a rare homozygote
+int wald22(double *n0, double *n1, double *chi)
+//chi[0] is wald4, chi[1] is wald1
+{
+	double logdiff1, mat1, logOR1_0, logOR1_1, mat1_0, mat1_1;
+	int i=1, j=1;
+	logOR1_0 = log(n0[i*3+j]*n0[0*3+0]/n0[0*3+j]/n0[i*3+0]);
+	logOR1_1 = log(n1[i*3+j]*n1[0*3+0]/n1[0*3+j]/n1[i*3+0]);
+	mat1_0 = 1.0/n0[i*3+j] + 1.0/n0[0*3+0] + 1.0/n0[0*3+j] + 1.0/n0[i*3+0];
+	mat1_1 = 1.0/n1[i*3+j] + 1.0/n1[0*3+0] + 1.0/n1[0*3+j] + 1.0/n1[i*3+0];
+
+	//0 vs 1
+	logdiff1=logOR1_0 - logOR1_1;
+	mat1=mat1_0 + mat1_1;
+	chi[0]=logdiff1*logdiff1/mat1/2;
+	chi[1]=chi[0];
+}
+
+//the Wald test when SNP1 has a rare homozygote
+int wald23(double *n0, double *n1, double *chi)
+//chi[0] is wald4, chi[1] is wald1
+{
+	double logdiff2[2], mat2[2][2], logOR2_0[2], logOR2_1[2], mat2_0[2][2], mat2_1[2][2], num, den;
+	double gg_mod[4]={1,2,2,4};
+	int i, j;
+	i=1, j=1;
+	logOR2_0[0] = log(n0[i*3+j]*n0[0*3+0]/n0[0*3+j]/n0[i*3+0]);
+	logOR2_1[0] = log(n1[i*3+j]*n1[0*3+0]/n1[0*3+j]/n1[i*3+0]);
+	mat2_0[0][0] = 1.0/n0[i*3+j] + 1.0/n0[0*3+0] + 1.0/n0[0*3+j] + 1.0/n0[i*3+0];
+	mat2_1[0][0] = 1.0/n1[i*3+j] + 1.0/n1[0*3+0] + 1.0/n1[0*3+j] + 1.0/n1[i*3+0];
+
+	i=1;j=2;
+	logOR2_0[1] = log(n0[i*3+j]*n0[0*3+0]/n0[0*3+j]/n0[i*3+0]);
+	logOR2_1[1] = log(n1[i*3+j]*n1[0*3+0]/n1[0*3+j]/n1[i*3+0]);
+	mat2_0[1][1] = 1.0/n0[i*3+j] + 1.0/n0[0*3+0] + 1.0/n0[0*3+j] + 1.0/n0[i*3+0];
+	mat2_1[1][1] = 1.0/n1[i*3+j] + 1.0/n1[0*3+0] + 1.0/n1[0*3+j] + 1.0/n1[i*3+0];
+
+	mat2_0[0][1] = 1.0/n0[0*3+0] + 1.0/n0[0*3+1];
+	mat2_1[0][1] = 1.0/n1[0*3+0] + 1.0/n1[0*3+1];
+
+	//0 vs 1
+	for(i=0; i<2; i++) {
+		logdiff2[i] = logOR2_0[i] - logOR2_1[i];
+		for(j=i; j<2; j++) mat2[i][j] = mat2_0[i][j] + mat2_1[i][j];}
+
+		mat2[1][0] = mat2[0][1];
+		chi[0] = 1.0/(mat2[0][0]*mat2[1][1]-mat2[0][1]*mat2[1][0])* (mat2[1][1]*logdiff2[0]*logdiff2[0] + mat2[0][0]*logdiff2[1]*logdiff2[1] - 2*mat2[0][1]*logdiff2[0]*logdiff2[1] );
+
+			num = mat2[1][1]*gg_mod[0]*logdiff2[0] + mat2[0][0]*gg_mod[1]*logdiff2[1] - mat2[0][1]*gg_mod[0]*logdiff2[1] - mat2[0][1]*gg_mod[1]*logdiff2[0];
+			num = num*num;
+			den = 1.0/(mat2[0][0]*mat2[1][1]-mat2[0][1]*mat2[1][0]) *(mat2[1][1]*gg_mod[0]*gg_mod[0] + mat2[0][0]*gg_mod[1]*gg_mod[1] - 2*mat2[0][1]*gg_mod[0]*gg_mod[1] );
+			chi[1] = num/den;
+}
+
+//the Wald test when SNP2 has a rare homozygote
+int wald32(double *n0, double *n1, double *chi)
+//chi[0] is wald4, chi[1] is wald1
+{
+	double logdiff2[2], mat2[2][2], logOR2_0[2], logOR2_1[2], mat2_0[2][2], mat2_1[2][2], num, den;
+	double gg_mod[4]={1,2,2,4};
+	int i, j;
+	i=1, j=1;
+	logOR2_0[0] = log(n0[i*3+j]*n0[0*3+0]/n0[0*3+j]/n0[i*3+0]);
+	logOR2_1[0] = log(n1[i*3+j]*n1[0*3+0]/n1[0*3+j]/n1[i*3+0]);
+	mat2_0[0][0] = 1.0/n0[i*3+j] + 1.0/n0[0*3+0] + 1.0/n0[0*3+j] + 1.0/n0[i*3+0];
+	mat2_1[0][0] = 1.0/n1[i*3+j] + 1.0/n1[0*3+0] + 1.0/n1[0*3+j] + 1.0/n1[i*3+0];
+
+	i=2;j=1;
+	logOR2_0[1] = log(n0[i*3+j]*n0[0*3+0]/n0[0*3+j]/n0[i*3+0]);
+	logOR2_1[1] = log(n1[i*3+j]*n1[0*3+0]/n1[0*3+j]/n1[i*3+0]);
+	mat2_0[1][1] = 1.0/n0[i*3+j] + 1.0/n0[0*3+0] + 1.0/n0[0*3+j] + 1.0/n0[i*3+0];
+	mat2_1[1][1] = 1.0/n1[i*3+j] + 1.0/n1[0*3+0] + 1.0/n1[0*3+j] + 1.0/n1[i*3+0];
+
+	mat2_0[0][1] = 1.0/n0[0*3+0] + 1.0/n0[0*3+1];
+	mat2_1[0][1] = 1.0/n1[0*3+0] + 1.0/n1[0*3+1];
+
+	//0 vs 1
+	for(i=0; i<2; i++) {
+		logdiff2[i] = logOR2_0[i] - logOR2_1[i];
+		for(j=i; j<2; j++) mat2[i][j] = mat2_0[i][j] + mat2_1[i][j];}
+
+		mat2[1][0] = mat2[0][1];
+		chi[0] = 1.0/(mat2[0][0]*mat2[1][1]-mat2[0][1]*mat2[1][0])* (mat2[1][1]*logdiff2[0]*logdiff2[0] + mat2[0][0]*logdiff2[1]*logdiff2[1] - 2*mat2[0][1]*logdiff2[0]*logdiff2[1] );
+
+			num = mat2[1][1]*gg_mod[0]*logdiff2[0] + mat2[0][0]*gg_mod[1]*logdiff2[1] - mat2[0][1]*gg_mod[0]*logdiff2[1] - mat2[0][1]*gg_mod[1]*logdiff2[0];
+			num = num*num;
+			den = 1.0/(mat2[0][0]*mat2[1][1]-mat2[0][1]*mat2[1][0]) *(mat2[1][1]*gg_mod[0]*gg_mod[0] + mat2[0][0]*gg_mod[1]*gg_mod[1] - 2*mat2[0][1]*gg_mod[0]*gg_mod[1] );
+			chi[1] = num/den;
+}
+
+//the wald test based on the 3-by-3-by-2 table
+int wald33(double *n0, double *n1, double *chi)
+{
+	double logdiff4[4], mat4[4][4], logOR4_0[4], logOR4_1[4], mat4_0[4][4], mat4_1[4][4], invmat4[4][4], num, den;
+	double gg_mod[4]={1,2,2,4};
+	int i, j;
+			i=1; j=1; 
+			logOR4_0[0] = log(n0[i*3+j]*n0[0*3+0]/n0[0*3+j]/n0[i*3+0]);
+			logOR4_1[0] = log(n1[i*3+j]*n1[0*3+0]/n1[0*3+j]/n1[i*3+0]);
+			mat4_0[0][0] = 1.0/n0[i*3+j] + 1.0/n0[0*3+0] + 1.0/n0[0*3+j] + 1.0/n0[i*3+0];
+			mat4_1[0][0] = 1.0/n1[i*3+j] + 1.0/n1[0*3+0] + 1.0/n1[0*3+j] + 1.0/n1[i*3+0];
+
+			i=1; j=2; 
+			logOR4_0[1] = log(n0[i*3+j]*n0[0*3+0]/n0[0*3+j]/n0[i*3+0]);
+			logOR4_1[1] = log(n1[i*3+j]*n1[0*3+0]/n1[0*3+j]/n1[i*3+0]);
+			mat4_0[1][1] = 1.0/n0[i*3+j] + 1.0/n0[0*3+0] + 1.0/n0[0*3+j] + 1.0/n0[i*3+0];
+			mat4_1[1][1] = 1.0/n1[i*3+j] + 1.0/n1[0*3+0] + 1.0/n1[0*3+j] + 1.0/n1[i*3+0];
+
+			i=2; j=1; 
+			logOR4_0[2] = log(n0[i*3+j]*n0[0*3+0]/n0[0*3+j]/n0[i*3+0]);
+			logOR4_1[2] = log(n1[i*3+j]*n1[0*3+0]/n1[0*3+j]/n1[i*3+0]);
+			mat4_0[2][2] = 1.0/n0[i*3+j] + 1.0/n0[0*3+0] + 1.0/n0[0*3+j] + 1.0/n0[i*3+0];
+			mat4_1[2][2] = 1.0/n1[i*3+j] + 1.0/n1[0*3+0] + 1.0/n1[0*3+j] + 1.0/n1[i*3+0];
+
+
+
+			i=2; j=2; 
+			logOR4_0[3] = log(n0[i*3+j]*n0[0*3+0]/n0[0*3+j]/n0[i*3+0]);
+			logOR4_1[3] = log(n1[i*3+j]*n1[0*3+0]/n1[0*3+j]/n1[i*3+0]);
+			mat4_0[3][3] = 1.0/n0[i*3+j] + 1.0/n0[0*3+0] + 1.0/n0[0*3+j] + 1.0/n0[i*3+0];
+			mat4_1[3][3] = 1.0/n1[i*3+j] + 1.0/n1[0*3+0] + 1.0/n1[0*3+j] + 1.0/n1[i*3+0];
+
+			mat4_0[0][1] = 1.0/n0[0*3+0] + 1.0/n0[1*3+0];
+			mat4_1[0][1] = 1.0/n1[0*3+0] + 1.0/n1[1*3+0];
+
+			mat4_0[0][2] = 1.0/n0[0*3+0] + 1.0/n0[0*3+1];
+			mat4_1[0][2] = 1.0/n1[0*3+0] + 1.0/n1[0*3+1]; 
+
+			mat4_0[0][3] = 1.0/n0[0*3+0];
+			mat4_1[0][3] = 1.0/n1[0*3+0]; 
+			
+			mat4_0[1][2] = mat4_0[0][3]; 
+			mat4_1[1][2] = mat4_1[0][3]; 
+
+			mat4_0[1][3] = 1.0/n0[0*3+0] + 1.0/n0[0*3+2];
+			mat4_1[1][3] = 1.0/n1[0*3+0] + 1.0/n1[0*3+2]; 
+
+			mat4_0[2][3] = 1.0/n0[0*3+0] + 1.0/n0[2*3+0];
+			mat4_1[2][3] = 1.0/n1[0*3+0] + 1.0/n1[2*3+0]; 
+
+			for(i=0; i<4; i++) {
+				logdiff4[i] = logOR4_0[i] - logOR4_1[i];
+				for(j=i; j<4; j++) mat4[i][j] = mat4_0[i][j] + mat4_1[i][j];}
+			for(i=1; i<4; i++)	for(j=0; j<i; j++) mat4[i][j] = mat4[j][i];
+
+			invmatfun(mat4, invmat4);	
+			chi[0] = 0.0;
+			for(i=0; i<4; i++) 
+				for(j=0; j<4; j++) 
+					chi[0] += invmat4[i][j]*logdiff4[i]*logdiff4[j];	
+
+			num=0; den=0;
+			for(i=0; i<4; i++)
+				for(j=0; j<4; j++)
+				{
+					num += gg_mod[i]*logdiff4[j]*invmat4[i][j];
+					den += gg_mod[i]*gg_mod[j]*invmat4[i][j];
+				}
+			chi[1] = num*num/den;			
+
+}

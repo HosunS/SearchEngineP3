@@ -1,0 +1,164 @@
+// ExceptionsDemo.java
+//
+// ICS 22 / CSE 22 Fall 2010
+// Code Examples
+//
+// Below is a short program that handles files, as an illustration of the
+// use of exceptions.  The program repeatedly asks the user to specify a
+// filename, which is assumed to be the name of a text file.  For each
+// filename specified, the program prints the number of lines in the file
+// (if the file can be opened successfully) or an error message (if the
+// file cannot).  Exceptions are used to handle the case where a file
+// cannot be opened.
+//
+// When you deal with files, exceptions are something you have to consider.
+// Files are external to your program; they're out of your program's control.
+// If your program tries to open a file, any of a number of things can go
+// wrong that have nothing to do with whether your program is correct.  For
+// example:
+//
+//   * The file may not be there.
+//   * The file may be there, but be locked by another program so that it
+//     can't be opened by yours.
+//   * The file may be on a disk drive that's not accessible (say, the
+//     drive has crashed, or the drive is on another machine that's been
+//     turned off).
+//
+// In circumstances such as these, when Java methods fails to be able to
+// do what they've been asked, they "throw" exceptions.  An exception is
+// an object that represnts an occurrence of a particular kind of error
+// condition; in other words, it represents a method failing to be able to
+// do its job for some reason.  Exceptions are objects, which means that
+// they're an object of some class; the exception's class indicates what
+// kind of problem caused the failure.
+//
+// For example, when you create a FileReader object in Java, one of the
+// things you're doing is asking it to open a file.  If it can't, the
+// FileReader constructor lets you know by throwing an exception instead of
+// creating and returning a FileReader object.
+//
+// An exception is thrown to indicate a failure.  Elsewhere in the program,
+// the exception can be "caught" by code that is able to handle the problem
+// in some sensible way.  An example of this is in the program below.
+
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Scanner;
+
+
+public class ExceptionsDemo
+{
+	public static void main(String[] args)
+	{
+		ExceptionsDemo demo = new ExceptionsDemo();
+		demo.go();
+	}
+
+
+	// go() implements the program's user interface, which repeatedly
+	// asks the user to specify a filename, or to press Enter to quit.
+	// For each filename specified, the program prints either the number
+	// of lines in the file or an error message (if the file could not
+	// be opened).
+	//
+	// Note that the lesson in this method is not that the right way to
+	// handle all exceptions is to print a message to System.out.  That
+	// was the right approach here because (a) this program uses the
+	// console to communicate with its user, and (b) the filename came
+	// from the user, so the user needs to be notified and is expected
+	// to solve the problem by supplying a better filename next time.
+	// In other circumstances, exceptions would be handled differently.
+	// In general, there's no one correct way to handle them; it
+	// depends entirely on the program's requirements.
+	public void go()
+	{
+		Scanner s = new Scanner(System.in);
+
+		String filename;
+		
+		do
+		{
+			System.out.print("Enter a filename (or press Enter to quit): ");
+
+			filename = s.nextLine();
+			
+			if (filename.length() > 0)
+			{
+				// Notice here that we print output in both the "try" block
+				// and the "catch" block.  The reason we print a line of output
+				// in the "try" block is so that it will only print if the
+				// call to countLinesInFile() succeeds.  We print a line of
+				// output in the "catch" block because the "catch" block
+				// indicates that something has gone wrong, so, in this case,
+				// we want to inform the user.
+				
+				try
+				{
+					int count = countLinesInFile(filename);
+
+					System.out.println("The file " + filename
+						+ " contains " + count + " lines");
+				}
+				catch (IOException e)
+				{
+					System.out.println("The file " + filename
+						+ " could not be opened");
+				}
+			}
+		}
+		while (filename.length() > 0);
+	}
+
+
+	// countLinesInFile() returns the number of lines in a file.  If the
+	// file cannot be opened, an IOException is thrown instead.
+	//
+	// Since this method's job is to return an integer -- the number of
+	// lines in the file -- there's no good way for the method to specify
+	// that it failed.  (We could use an otherwise invalid value, like -1,
+	// but then we're relying on the caller to check for that condition.
+	// Better to throw an exception, because the compiler will force the
+	// caller to either catch it or have a "throws" clause, and the code
+	// for handling the error condition can be separate from the code
+	// that handles the "normal" case where things have worked fine.)
+	//
+	// Notice that there is no try/catch block in this method.  That's
+	// because this method can't possibly know how to fix the problem.
+	// If its caller provided it with a screwy filename (the name of a
+	// file that couldn't be opened), then it's the caller who should be
+	// told "Sorry, I couldn't do the job you asked me to do.  Maybe you
+	// should consider trying again with a different filename."  Throwing
+	// an exception is this method's way of saying that.
+	//
+	// But the FileReader constructor can throw an IOException (because
+	// its signature, if you look it up in the Java API documentation)
+	// says "throws IOException."  (Technically, it says something else;
+	// it says "throws FileNotFoundException."  A FileNotFoundException
+	// is a kind of IOException.)  Since we're calling the FileReader
+	// constructor in this method, the Java compiler will not be happy
+	// unless we demonstrate, in this method, that we understand that
+	// the FileReader constructor may fail.  But try/catch is the wrong
+	// way to do that, in this case, since this method can't know the
+	// right way to handle the exception.  So, instead, we have this
+	// method also say "throws IOException."  In other words, we're
+	// saying "If the FileReader constructor fails, this whole method
+	// has failed."
+	public int countLinesInFile(String filename)
+	throws IOException
+	{
+		int count = 0;
+		
+		FileReader fr = new FileReader(filename);
+		Scanner s = new Scanner(fr);
+		
+		while (s.hasNextLine())
+		{
+			s.nextLine();
+			count++;
+		}
+		
+		s.close();
+		
+		return count;
+	}
+}

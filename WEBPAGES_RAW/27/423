@@ -1,0 +1,682 @@
+<html>
+<head>
+<title>  Event Handing </title>
+</head>
+
+<h1> Event Handling </h1>
+<h2>The problem: connecting user events to code execution.</h2>
+<P> User events: mouse click, mouse down, mouse up, mouse drag, mouse
+within a component (focus), key pressed, particular key pressed, etc.
+<p> Solution 1: have controls listen to all events, check whether
+ they should respond, and then respond. Roughly this was the
+ JDK 1.0 model.
+<p> Solution 2: Tell controls what events they can respond to
+and have them direct messages to appropriate actions (methods within
+object) . This is the "delegation" model of JDK 1.1 and is more efficient.
+<p> Model: <br>
+     user action --> source object (control) ----> target object (listener)
+<p> What we need to do is:
+ <ol>
+  <li> identify (turn on) controls that will respond to events
+  <li> For these controls, connect them to appropriate listeners. 
+      This is called registration. Note multiple actions can take place
+   for each event, and these are not synchronized. Also any object
+   can be a listener if it implements the appropriate interface.
+ </ol>
+<p> So what do we need to do?
+   <ol>
+   <li> To the control c, execute  c.addSomeListener(some obj).
+ <p> This makes c respond to the event by sending a message to the object.
+  <li> Make obj an event listener, i.e. by
+      <ol>
+       <li> declaring that it implement the appropriate Listener Interface
+       <li> defining the methods of the Interface.
+      </ol>
+</ol>
+</ul>
+<h3>Abstract Example: Making object c of  Foo  respond to Button b; </h3>
+
+<pre>
+      Foo c = new Foo();
+      Button b = new Button("clear");
+      b.addActionListener(c);       //.. buttons generate action events
+     ...
+      // ActionListener has only 1 method, actionPerformed
+     ..
+      class Foo implements ActionListener
+
+   {
+    ...
+        public void  actionPerformed()
+     {
+        whatever foo should do when button is pressed
+     }
+    ...
+   }
+</pre>
+
+<h3> Four Designs </h3>
+
+<br> This program allows the user to draw lines, clear the screen, and
+ change colors. 
+<pre>
+import java.applet.*;
+import java.awt.*;
+import java.awt.event.*;
+
+// Design 1:  Everyone talks to applet and gets messages from applet.
+//   Applet acts as god class.  This is usually the simpliest design.
+
+
+class MyCanvas extends Canvas
+{
+  Color linecolor= Color.black;  
+
+  public void paint(Graphics g)  
+  {
+      Dimension d = getSize();
+      g.drawRect(2,2,d.width-4,d.height-4);
+  }
+
+  public void clear()
+ {
+   Graphics g = getGraphics();
+   Dimension d = getSize();
+   Color c = getBackground();
+   g.setColor(c);
+   g.fillRect(0,0,d.width,d.height);
+   repaint();
+   //.. repaint() schedules update(). update() (typically) calls paint().
+ }
+
+  public void changeColor()
+ {
+   Color[] colors ={Color.red,Color.black,Color.blue,Color.magenta};
+   linecolor = colors[random(colors.length)]; 
+ }
+ 
+ public int random(int i)
+  {
+     return (int) Math.floor(Math.random()*i);
+  }
+
+  public void drawLine(Point p, Point q)
+  {
+   Graphics g = getGraphics();
+   g.setColor(linecolor);
+   g.drawLine(p.x,p.y,q.x,q.y);
+   g.drawOval(q.x,q.y,2,2);
+  }
+ public void drawOval(Point p)
+  {
+    Graphics g = getGraphics();
+    g.drawOval(p.x,p.y,2,2);
+  }
+
+}
+
+public class MouseTest extends Applet
+  implements ActionListener, MouseListener
+{
+  Panel top;
+  Button clear;
+  Button change;
+  MyCanvas mycanvas;
+  Point begin,end;
+
+  public void init()
+ {
+   top = new Panel();
+   clear = new Button("Clear");
+   clear.addActionListener(this);
+   change = new Button("Change Color");
+   change.addActionListener(this);
+   top.add(new Label("Mouse click to draw lines"));
+   top.add(clear);
+   top.add(change);
+   setLayout(new BorderLayout());
+   add(top,"North");
+   mycanvas = new MyCanvas();
+   mycanvas.addMouseListener(this);
+   add(mycanvas,"Center");
+ }
+
+  public void actionPerformed(ActionEvent actevt)
+ {
+   Object arg = actevt.getSource();
+   if (arg == clear ) mycanvas.clear();
+    else if (arg == change) mycanvas.changeColor();
+ }
+
+   public void mousePressed(MouseEvent me)
+ {
+    begin = me.getPoint();
+    mycanvas.drawOval(begin);
+ }
+    public void mouseReleased(MouseEvent me )
+  {
+     end = me.getPoint();
+     mycanvas.drawLine(begin,end);
+   }
+
+   public void mouseClicked(MouseEvent me)
+  {}
+
+   public void mouseEntered(MouseEvent me)
+  {}
+
+  public void mouseExited(MouseEvent me)
+ {}
+}
+</pre>
+
+In the next design we group related activities more finely.
+The code is longer, but may allow easier changes.
+Code is simpliest when its structure reflects
+the organization of the computation. 
+
+<pre>
+import java.applet.*;
+import java.awt.*;
+import java.awt.event.*;
+
+
+class MyCanvas extends Canvas
+{
+  Color linecolor= Color.black;  
+
+
+  public void paint(Graphics g)  // why doesn't this work?
+  {
+      Dimension d = getSize();
+      g.drawRect(2,2,d.width-4,d.height-4);
+  }
+
+
+  public void clear()
+ {
+   Graphics g = getGraphics();
+   Dimension d = getSize();
+   Color c = getBackground();
+   g.setColor(c);
+   g.fillRect(0,0,d.width,d.height);
+   repaint();
+ }
+
+  public void changeColor()
+ {
+   Color[] colors ={Color.red,Color.black,Color.blue,Color.magenta};
+   linecolor = colors[random(colors.length)]; 
+ }
+ 
+ public int random(int i)
+  {
+     return (int) Math.floor(Math.random()*i);
+  }
+
+  public void drawLine(Point p, Point q)
+  {
+   Graphics g = getGraphics();
+   g.setColor(linecolor);
+   g.drawLine(p.x,p.y,q.x,q.y);
+   g.drawOval(q.x,q.y,2,2);
+  }
+ public void drawOval(Point p)
+  {
+    Graphics g = getGraphics();
+    g.drawOval(p.x,p.y,2,2);
+  }
+
+}
+
+class ClearButton extends Button
+{
+   ClearButton(MouseTest mt)
+  {
+    super("Clear");
+    addActionListener(mt);
+  }
+
+}
+class ChangeButton extends Button
+{
+   ChangeButton(MouseTest mt)
+  {
+   super("Change Color");
+   addActionListener(mt);
+  }
+}
+
+
+
+public class MouseTest extends Applet
+  implements ActionListener, MouseListener
+{
+  Panel top;
+  ClearButton clear;
+  ChangeButton change;
+  MyCanvas mycanvas;
+  Point begin,end;
+
+  public void init()
+ {
+   top = new Panel();
+   clear = new ClearButton(this);
+   change = new ChangeButton(this);
+   top.add(new Label("Mouse click to draw lines"));
+   top.add(clear);
+   top.add(change);
+   setLayout(new BorderLayout());
+   add(top,"North");
+   mycanvas = new MyCanvas();
+   mycanvas.addMouseListener(this);
+   add(mycanvas,"Center");
+}
+
+  public void actionPerformed(ActionEvent actevt)
+ {
+   Object arg = actevt.getSource();
+   if (arg == clear ) mycanvas.clear();
+    else if (arg == change) mycanvas.changeColor();
+ }
+
+   public void mousePressed(MouseEvent me)
+ {
+    begin = me.getPoint();
+    mycanvas.drawOval(begin);
+ }
+    public void mouseReleased(MouseEvent me )
+  {
+     end = me.getPoint();
+     mycanvas.drawLine(begin,end);
+   }
+
+   public void mouseClicked(MouseEvent me)
+  {}
+
+   public void mouseEntered(MouseEvent me)
+  {}
+
+  public void mouseExited(MouseEvent me)
+ {}
+}
+
+</pre>
+
+In this design we examine the interactions between the events.
+<pre>
+import java.applet.*;
+import java.awt.*;
+import java.awt.event.*;
+
+/* Design 2: here we analyze the objects and see where message are going
+ The  Listener for the message must be able to see the object generating
+ the message. 
+Message Diagram:
+                 clearbutton --> canvas  
+                  changebutton --> canvas
+                  canvas -->(mouse clicks) -->canvas
+So the buttons will still need to be mediated by the applet, while
+the canvas can talk to itself.
+*/		  
+
+
+class MyCanvas extends Canvas
+     implements  MouseListener
+{
+  Color linecolor= Color.black;  //ugh
+  Point begin,end;
+
+
+
+  public void paint(Graphics g)  
+  {
+      Dimension d = getSize();
+      g.drawRect(2,2,d.width-4,d.height-4);
+  }
+
+
+  public void clear()
+ {
+   Graphics g = getGraphics();
+   Dimension d = getSize();
+   Color c = getBackground();
+   g.setColor(c);
+   g.fillRect(0,0,d.width,d.height);
+   repaint();
+ }
+
+  public void changeColor()
+ {
+   Color[] colors =
+            {Color.red,Color.black,Color.blue,Color.magenta,Color.green};
+   linecolor = colors[random(colors.length)]; 
+ }
+ 
+ public int random(int i)
+  {
+     return (int) Math.floor(Math.random()*i);
+  }
+
+  public void drawLine(Point p, Point q)
+  {
+   Graphics g = getGraphics();
+   g.setColor(linecolor);
+   g.drawLine(p.x,p.y,q.x,q.y);
+   g.drawOval(q.x,q.y,2,2);
+  }
+
+ public void drawOval(Point p)
+  {
+    Graphics g = getGraphics();
+    g.drawOval(p.x,p.y,2,2);
+  }
+   public void mousePressed(MouseEvent me)
+ {
+    begin = me.getPoint();
+    drawOval(begin);
+ }
+    public void mouseReleased(MouseEvent me )
+  {
+     end = me.getPoint();
+    drawLine(begin,end);
+   }
+
+   public void mouseClicked(MouseEvent me)
+  {}
+
+   public void mouseEntered(MouseEvent me)
+  {}
+
+  public void mouseExited(MouseEvent me)
+ {}
+
+}
+
+
+public class MouseTest extends Applet
+  implements ActionListener
+{
+  Panel top;
+  Button clear;
+  Button change;
+  MyCanvas mycanvas;
+
+
+  public void init()
+ {
+   mycanvas = new MyCanvas();  
+   top = new Panel();
+   clear = new Button("Clear");
+   clear.addActionListener(this);
+   change = new Button("Change Color");
+   change.addActionListener(this);
+   top.add(new Label("Mouse click to draw lines"));
+   top.add(clear);
+   top.add(change);
+   setLayout(new BorderLayout());
+   add(top,"North");
+   mycanvas.addMouseListener(mycanvas);
+   add(mycanvas,"Center");
+ }
+
+  public void actionPerformed(ActionEvent actevt)
+ {
+   Object arg = actevt.getSource();
+   if (arg == clear) mycanvas.clear();
+    else if (arg == change) mycanvas.changeColor();
+ }
+}
+
+
+
+</pre>
+<h3> Example redone with Inner Classes </h3>
+ Inner classes are a recent addition to Java.
+<br> Each inner class is local to the class but has access to all
+   the members of the class.
+<br> Inner classes seem to violate the principle of information hiding.
+<br> Inner classes are not the same as nested classes in C++.
+
+<pre>
+import java.applet.*;
+import java.awt.*;
+import java.awt.event.*;
+
+// Version using inner classes. Arguable bad style.
+
+public class MouseTest extends Applet
+ 
+{
+  Panel top;
+  Button clear;
+  Button change;
+  MyCanvas mycanvas;
+
+  public void init()
+ {
+   mycanvas = new MyCanvas();  
+   top = new Panel();
+   clear = new Button("clear");
+   clear.addActionListener(mycanvas);
+   change = new Button("Change Color");
+   change.addActionListener(mycanvas);
+   top.add(new Label("Mouse click to draw lines"));
+   top.add(clear);
+   top.add(change);
+   setLayout(new BorderLayout());
+   add(top,"North");
+   mycanvas.addMouseListener(mycanvas);
+   add(mycanvas,"Center");
+ }
+
+
+class MyCanvas extends Canvas
+     implements  MouseListener, ActionListener //.. note: inner class
+{
+  Color linecolor= Color.black; 
+  Point begin,end;
+
+
+  public void paint(Graphics g)
+  {
+      Dimension d = getSize();
+      g.drawRect(2,2,d.width-4,d.height-4);
+  }
+
+
+  public void clear()
+ {
+   Graphics g = getGraphics();
+   Dimension d = getSize();
+   Color c = getBackground();
+   g.setColor(c);
+   g.fillRect(0,0,d.width,d.height);
+   repaint();
+ }
+
+  public void changeColor()
+ {
+   Color[] colors =
+            {Color.red,Color.black,Color.blue,Color.magenta,Color.green};
+   linecolor = colors[random(colors.length)]; 
+ }
+ 
+ public int random(int i)
+  {
+     return (int) Math.floor(Math.random()*i);
+  }
+
+  public void drawLine(Point p, Point q)
+  {
+   Graphics g = getGraphics();
+   g.setColor(linecolor);
+   g.drawLine(p.x,p.y,q.x,q.y);
+   g.drawOval(q.x,q.y,2,2);
+  }
+
+ public void drawOval(Point p)
+  {
+    Graphics g = getGraphics();
+    g.drawOval(p.x,p.y,2,2);
+  }
+   public void mousePressed(MouseEvent me)
+ {
+    begin = me.getPoint();
+    drawOval(begin);
+ }
+    public void mouseReleased(MouseEvent me )
+  {
+     end = me.getPoint();
+    drawLine(begin,end);
+   }
+
+   public void mouseClicked(MouseEvent me)
+  {}
+
+   public void mouseEntered(MouseEvent me)
+  {}
+
+  public void mouseExited(MouseEvent me)
+ {}
+
+  public void actionPerformed(ActionEvent actevt)
+ {
+   Object arg = actevt.getSource();
+   if (arg == clear) clear();
+    else if (arg == change) changeColor();
+ }
+}
+}
+
+</pre>
+
+<h3> Event processing, in review </h3>
+
+ <ul>
+  <li> Event sources (controls) are objects that respond to user actions
+  Examples are buttons, scrollbars etc.
+  <li> An event source sends a message to an event listener.
+  <li> Any object can be an event listener, if it implements the
+   appropriate interface.
+  <li> Several objects may respond to the same event,
+   but there is no stipulation about  which will respond first.
+  <li> Currently there are 11 types of event listeners.
+  <li> Event sources registers its event listeners, via
+   the method add...Listener(..), e.g. addActionListener(this).
+ </ul>
+<h3> Recipe for making object2 responds to events in object1 </h3>
+  <ul>
+   <li> add to object1 (source)  add...Listener(object2).
+      The ... corresponds to the type of event object1 can respond to.
+   <li> make object2 a Listener, i.e. say
+      <ul>
+         <li> implements ...Listener
+         <li> add the methods designated by ...Listener
+         <li> Or, extend an Adapter for the Listener
+      </ul>
+    <li> Some of these complications occur because Java does
+   not support full multiple inheritance.
+  </ul>
+
+<h3> Controls, Listeners, and interface method </h3> 
+
+<table border>
+<tr>
+ <td> <b> Control</b> </td>
+ <td> <b>Registers Interest </b>  </td>
+ <td> <b> Receives Event </b></td>
+</tr>
+<hr>
+<tr>
+ <td>  Button </td>
+ <td rowspan=4> addActionListener(..) </td>
+ <td rowspan=4> actionPerformed </td>
+</tr>
+<tr> <td> List </td> </tr>
+<tr> <td> MenuItem </td> </tr>
+<tr> <td> TextField </td> </tr>
+<tr> 
+ <td> Checkbox </td>
+ <td rowspan=4> addItemListener </td>
+ <td rowspan=4> itemStateChanged </td>
+</tr>
+<tr>  <td> Choice </td> </tr>
+<tr>   <td> List </td> </tr>
+<tr> <td> CheckBoxMenuItem </td> </tr>
+<tr>
+  <td rowspan=7> Dialog Frame </td> 
+  <td rowspan=7> addWindowListener </td>
+  <td> windowClosing </td>
+</tr>
+<tr> <td> windowOpening </td> </tr>
+<tr> <td> windowIconified </td> </tr>
+<tr> <td> windowDeiconified </td> </tr>
+<tr> <td> windowClosed </td> </tr>
+<tr> <td> windowActivated </td> </tr>
+<tr> <td> windowDeactivated </td> </tr>
+<tr>
+  <td rowspan=4> Dialog Frame </td> 
+  <td rowspan=4> addComponentListener </td>
+  <td>componentMoved </td>
+</tr>
+<tr><td> componentHidden </td></tr>
+<tr><td> componentResized </td></tr>
+<tr><td> componentShown </td></tr>
+<tr>
+  <td> ScrollBar </td> 
+  <td > addAdjustmentListener </td>
+  <td> adjustmentValueChanged </td>
+</tr>
+<tr>
+  <td> Canvas </td> 
+  <td rowspan=5 > addMouseListener </td>
+  <td> mousePressed</td>
+</tr>
+<tr><td> Dialog </td> <td> mouseReleased </td> </tr>
+<tr><td> Frame </td> <td> mouseEntered </td> </tr>
+<tr><td> Panel </td> <td> mouseExited </td> </tr>
+<tr><td> Window </td> <td> mouseClicked </td> </tr>
+
+<tr>
+  <td> Canvas </td> 
+  <td rowspan=5 > addMouseMotionListener </td>
+  <td> mouseDragged</td>
+</tr>
+<tr> <td> Dialog </td> <td rowspan=4> mouseMoved</td></tr>
+<tr> <td> Frame </td></tr>
+<tr> <td> Panel </td></tr>
+<tr> <td> Window </td></tr>
+
+<tr>
+  <td rowspan=3> Component </td> 
+  <td  rowspan=3> addKeyListener </td>
+  <td> keyPressed</td>
+<tr> <td> keyReleased </td></tr>
+<tr> <td> keyTyped </td></tr>
+</tr>
+<tr>
+  <td rowspan=2> Component </td> 
+  <td rowspan=2 > addFocusListener </td>
+  <td> focusGained</td>
+<tr> <td> focusLost </td></tr>
+</tr>
+<tr>
+  <td> TextComponent </td> 
+  <td > addTextListener </td>
+  <td> textValueChanged</td>
+</tr>
+
+
+
+
+</table>
+
+<h3> Table Use </h3>
+The  first column names the control.
+<br> The second column tells how to awaken control on
+  a particular event and who to send the message to when
+  the event takes place.
+<br> The third column tells what method(s) needs to implemented
+  by the object which is responded to the message.
+<br> Focus is the component that can accept user input.

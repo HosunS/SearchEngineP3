@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+
+
+
+
+
+			
+				
+				
+																
+
+
+
+
+																									
+				
+
+																												
+				
+				
+				
+				
+	    
+		
+		
+			
+		
+	
+	
+																																					
+	
+	
+																													
+    
+		
+		
+	
+	
+		
+	
+	
+																					
+	
+	
+					
+						
+
+	
+
+	
+			
+	
+
+
+
+
+    	    	    	    	
+
+<head>
+<meta charset="UTF-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Information collection and use disclosure." name="description"/>
+
+<link href="//web.communications.uci.edu/assets/2015/img/favicon.ico" rel="icon" type="image/x-icon"/>
+<link href="//web.communications.uci.edu/assets/2015/img/webclip-icon.png" rel="apple-touch-icon"/>
+
+<title>Privacy Policy | UCI</title>
+
+
+<!-- Global CSS -->
+		<link href="//web.communications.uci.edu/assets/2015/css/bootstrap3-uci-cascade.css" rel="stylesheet"/>
+		<link href="https://fonts.googleapis.com/css?family=Lato:400,400italic,700,700italic" rel="stylesheet"/>
+		<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet"/>
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.5/css/weather-icons.min.css" rel="stylesheet"/>
+	
+<!-- Site CSS -->
+
+
+<link href="/css/uci.css" rel="stylesheet"/>
+
+
+<!-- Page CSS -->
+	
+<!-- Global JS -->
+										
+<!-- Site JS -->
+
+
+
+<script async="async" src="/js/google-tag.js"></script>
+<script src="/js/google-analytics.js"></script>
+
+
+<!-- Page JS -->
+	
+</head>
+
+
+			
+				
+				
+																
+
+
+
+
+																									
+				
+
+																												
+				
+				
+				
+				
+																		    
+		
+		
+			
+		
+	
+	
+																																					
+	
+	
+																													
+    
+		
+		
+	
+	
+		
+	
+	
+																					
+	
+	
+					
+						
+
+	
+
+	
+			
+	
+<body>
+<nav aria-label="Skip to" id="skip-to">
+    <div class="container">
+		<div class="row">
+			<div class="col-xs-12">
+				<a class="sr-only sr-only-focusable" href="#content-main">Skip to main content</a>
+			</div>
+		</div>
+	</div>
+</nav>
+
+
+
+<nav aria-label="Primary navigation" class="navbar navbar-inverse" id="nav-primary">
+	
+
+
+    <div class="container-fluid">
+		<div class="navbar-header">
+			<button aria-expanded="false" class="navbar-toggle collapsed" data-target="#nav-primary-items" data-toggle="collapse" type="button">
+				<span class="sr-only">Toggle primary navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+			<a class="navbar-brand" href="https://uci.edu/">UCI <span class="sr-only">homepage</span></a>
+		</div>
+		<div class="collapse navbar-collapse" id="nav-primary-items">
+		
+	<ul class="nav navbar-nav">				
+											<li class="nav-item btn-group link-dropdown clearfix">
+						    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+					
+		
+													
+				<a class="btn" href="/about/index.php"><span>About</span></a>				
+										<button aria-expanded="false" class="btn navbar-btn dropdown-toggle" data-toggle="dropdown" type="button">
+					<span aria-hidden="true" class="glyphicon toggle-icon"></span>
+					<span class="sr-only">Toggle dropdown: <span>About</span></span>
+				</button>
+														<ul class="dropdown-menu">
+							
+									    
+	
+    	
+    		
+	
+	
+    		
+					
+						
+	
+							
+		
+																
+						<li><a href="/about/index.php"><span>About Us</span></a></li>						
+													
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+					
+						
+	
+							
+		
+																
+						<li><a href="/university-facts/index.php"><span>University Facts</span></a></li>						
+													
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://strategicplan.uci.edu"><span>Strategic Plan</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+					
+						
+	
+							
+		
+																
+						<li><a href="/powerofi/index.php"><span>Power of I</span></a></li>						
+													
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://chancellor.uci.edu"><span>Chancellor</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://ucirvinesports.com/anteater/index.html"><span>Peter the Anteater</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+					
+						
+	
+							
+		
+																
+						<li><a href="/diversity/index.php"><span>Diversity Resources</span></a></li>						
+													
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+					
+						
+	
+							
+		
+																
+						<li><a href="/administration/index.php"><span>Administrative Offices</span></a></li>						
+													
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.senate.uci.edu"><span>Academic Senate</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://directory.uci.edu"><span>Directory</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+					
+						
+	
+							
+		
+																
+						<li><a href="/visit/index.php"><span>Visit</span></a></li>						
+													
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+					
+						
+	
+							
+		
+																
+						<li><a href="/about/employment.php"><span>Work at UCI</span></a></li>						
+													
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://give.uci.edu"><span>Support UCI</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.fm.uci.edu/programs/smoke-free/"><span>Smoke-Free Campus</span></a></li>
+																		
+								
+										</ul>
+				</li>
+										<li class="nav-item btn-group link-dropdown clearfix">
+						    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+					
+		
+													
+				<a class="btn" href="/admissions/index.php"><span>Admissions</span></a>				
+										<button aria-expanded="false" class="btn navbar-btn dropdown-toggle" data-toggle="dropdown" type="button">
+					<span aria-hidden="true" class="glyphicon toggle-icon"></span>
+					<span class="sr-only">Toggle dropdown: <span>Admissions</span></span>
+				</button>
+														<ul class="dropdown-menu">
+							
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.admissions.uci.edu/"><span>Undergraduate Admission</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.grad.uci.edu/admissions/"><span>Graduate Admission</span></a></li>
+																		
+								
+											
+								
+								
+									<li class="divider"><hr/></li>
+											
+								
+									
+    	
+    		
+	
+					<li class="dropdown-header"><span>Professional Programs</span></li>
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://merage.uci.edu/"><span>Business</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.law.uci.edu/admission/"><span>Law</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.meded.uci.edu/admissions/"><span>Medicine</span></a></li>
+																		
+								
+											
+								
+								
+									<li class="divider"><hr/></li>
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.admissions.uci.edu/prospective_international/"><span>Undergraduate International Admissions</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.grad.uci.edu/admissions/applying-to-uci/index.html#InformationForInternationalStudents"><span>Graduate International Admissions</span></a></li>
+																		
+								
+											
+								
+								
+									<li class="divider"><hr/></li>
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.ofas.uci.edu/"><span>Financial Aid</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://housing.uci.edu/"><span>Housing</span></a></li>
+																		
+								
+										</ul>
+				</li>
+										<li class="nav-item btn-group link-dropdown clearfix">
+						    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+					
+		
+													
+				<a class="btn" href="/academics/index.php"><span>Academics</span></a>				
+										<button aria-expanded="false" class="btn navbar-btn dropdown-toggle" data-toggle="dropdown" type="button">
+					<span aria-hidden="true" class="glyphicon toggle-icon"></span>
+					<span class="sr-only">Toggle dropdown: <span>Academics</span></span>
+				</button>
+														<ul class="dropdown-menu">
+							
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.arts.uci.edu/"><span>Arts</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.bio.uci.edu/"><span>Biological Sciences</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://merage.uci.edu/"><span>Business</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://education.uci.edu/"><span>Education</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.eng.uci.edu/"><span>Engineering</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.humanities.uci.edu/"><span>Humanities</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://ics.uci.edu/"><span>Information &amp; Computer Sciences</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.editor.uci.edu/catalogue/idp/idp.1.htm"><span>Interdisciplinary Studies</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://law.uci.edu/"><span>Law</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://som.uci.edu/"><span>Medicine</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.nursing.uci.edu/"><span>Nursing Science</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://pharmsci.uci.edu/"><span>Pharmaceutical Sciences</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.physsci.uci.edu/"><span>Physical Sciences</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://publichealth.uci.edu/"><span>Public Health</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://socialecology.uci.edu/"><span>Social Ecology</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.socsci.uci.edu/"><span>Social Sciences</span></a></li>
+																		
+								
+											
+								
+								
+									<li class="divider"><hr/></li>
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.editor.uci.edu/catalogue/"><span>General Catalogue</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.admissions.uci.edu/about/majors_and_minors.html"><span>Majors &amp; Minors</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://websoc.reg.uci.edu/perl/WebSoc/"><span>Schedule of Classes</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.due.uci.edu/uu/"><span>Undergraduate/Undeclared</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.due.uci.edu/"><span>Division of Undergraduate Education</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.grad.uci.edu/"><span>Graduate Division</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://unex.uci.edu/"><span>Division of Continuing Education</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://honors.uci.edu/"><span>Campuswide Honors Program</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://urop.uci.edu/"><span>Undergraduate Research</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://calteach.uci.edu/"><span>UCI CalTeach</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://lib.uci.edu/"><span>Libraries</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.cie.uci.edu/"><span>Study Abroad Center</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://summer.uci.edu/"><span>Summer Session</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.reg.uci.edu/navigation/calendars.html"><span>Academic Calendars</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.senate.uci.edu/"><span>Academic Senate</span></a></li>
+																		
+								
+										</ul>
+				</li>
+										<li class="nav-item btn-group link-dropdown clearfix">
+						    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+					
+		
+													
+				<a class="btn" href="/research/index.php"><span>Research</span></a>				
+										<button aria-expanded="false" class="btn navbar-btn dropdown-toggle" data-toggle="dropdown" type="button">
+					<span aria-hidden="true" class="glyphicon toggle-icon"></span>
+					<span class="sr-only">Toggle dropdown: <span>Research</span></span>
+				</button>
+														<ul class="dropdown-menu">
+							
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.research.uci.edu/"><span>Office of Research</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://faculty.uci.edu/"><span>Faculty Profiles</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.grad.uci.edu/postdoctoral-scholars/"><span>Postdoctoral Scholars</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://innovation.uci.edu/"><span>Applied Innovation</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.ota.uci.edu/"><span>Invention Transfer Group</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://urop.uci.edu/"><span>Undergraduate Research</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.grad.uci.edu/about-us/research/index.html"><span>Graduate Research</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://research.uci.edu/centers-institutes/"><span>Research Centers &amp; Units</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://ucop.edu/research-graduate-studies/"><span>UCOP Office of Research</span></a></li>
+																		
+								
+										</ul>
+				</li>
+										<li class="nav-item btn-group link-dropdown clearfix">
+						    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+					
+		
+													
+				<a class="btn" href="/community/index.php"><span>Community</span></a>				
+										<button aria-expanded="false" class="btn navbar-btn dropdown-toggle" data-toggle="dropdown" type="button">
+					<span aria-hidden="true" class="glyphicon toggle-icon"></span>
+					<span class="sr-only">Toggle dropdown: <span>Community</span></span>
+				</button>
+														<ul class="dropdown-menu">
+							
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.arts.uci.edu/calendar/"><span>Arts</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://ucirvinesports.com/"><span>Athletics</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.cfep.uci.edu/k-12-student-programs"><span>K-12 Programs</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+					
+						
+	
+							
+		
+																
+						<li><a href="/community/camps.php"><span>Youth Camps</span></a></li>						
+													
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://today.uci.edu/"><span>Campus Events Calendar</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://conferencecenter.uci.edu/"><span>Conference &amp; Event Services</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.ucirvinehealth.org/"><span>Hospital</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.ucirvinehealth.org/medical-services/"><span>Medical Services</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://www.ucirvinehealth.org/clinical-trials/"><span>Clinical Trials</span></a></li>
+																		
+								
+										</ul>
+				</li>
+								
+    	
+    		
+	
+									<li class="nav-item btn-group dropdown-only clearfix">
+				<button aria-expanded="false" class="btn navbar-btn dropdown-toggle" data-toggle="dropdown" type="button">
+					<span><span class="sr-only">Toggle dropdown: </span><span aria-hidden="true" class="fa fa-users"></span><span class="sr-only"><span>Find information for...</span></span></span>
+					<span class="toggle-container">
+						<span aria-hidden="true" class="glyphicon toggle-icon"></span>
+					</span>
+				</button>
+									<ul class="dropdown-menu">
+							
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://admissions.uci.edu/"><span>Prospective Students</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://students.uci.edu/"><span>Current Students</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://alumni.uci.edu/"><span>Alumni</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="https://portal.uci.edu/"><span>Faculty &amp; Staff</span></a></li>
+																		
+								
+											
+									    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+												<li><a href="http://parents.uci.edu/"><span>Parents</span></a></li>
+																		
+								
+										</ul>
+				</li>
+		</ul>
+			
+			<div class="navbar-right">
+						    
+		
+    				
+    		
+	
+	
+    		
+		
+	
+			
+								<a class="btn navbar-btn" href="http://give.uci.edu/"><span>Donate<span class="sr-only"> to UCI</span></span></a>
+										
+		
+					<p class="navbar-text visible-lg-block navbar-widget" id="weather-widget">Orange County <span aria-hidden="true" class="wi wi-na"></span> --°</p>
+	
+			</div>
+		</div>
+	</div>
+
+
+</nav>
+
+<header>
+
+
+		
+		
+	
+		
+		
+	
+			<div id="masthead">
+				<div class="container">
+					<div class="row">
+						<div class="col-sm-12 col-md-8" id="wordmark">
+			
+		<a href="/"><img src="/img/uci-wordmark.svg" alt="University of California, Irvine"/></a>	
+								</div>
+				
+						<div class="col-sm-12 col-md-4" id="search">
+							<form action="//web.communications.uci.edu/php/searchgate.php" class="form-inline" method="get">
+											<input name="collection" type="hidden" value="uci_full"/>
+								<label class="sr-only" for="search-text">Search</label>
+								<input class="form-control" id="search-text" name="q" placeholder="Search..." type="text"/>
+								<div class="btn-group">
+									<button class="btn btn-default" name="type" type="submit" value="Web">Web</button>
+									<button class="btn btn-default" name="type" type="submit" value="People">People</button>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+	
+		
+		
+	
+</header>
+
+
+<hr/>
+
+	<nav aria-label="breadcrumbs" id="breadcrumbs">
+    <div class="container">
+		<div class="row">
+			<div class="col-xs-12">
+				<ol class="breadcrumb">
+			
+				
+				
+								
+				
+						
+		
+<li><a href="/">Home</a></li>					
+				
+				
+						
+				
+						
+				<li><span>Privacy</span></li>
+							</ol>
+			</div>
+		</div>
+	</div>
+</nav>
+
+
+	
+<main id="content-main">
+			<div class="container"><div class="row page-heading-row"><div class="col-xs-12">
+			<h1 class="page-heading text-left">Privacy and Legal Notice</h1>
+		</div></div></div>
+	
+	    
+						
+						
+						
+    		
+						
+																									<section aria-labelledby="section-1-heading" class="container" id="section-1">
+											<h2 class="section-heading sr-only" id="section-1-heading"><span>Policy text</span></h2>
+										
+    									<div class="row">
+		
+    							
+								
+						
+							    
+			
+				
+		
+	<div class="widget col-xs-12 col-md-12">
+		<div class="widget-bucket clearfix">
+			
+			<p>University Communications, University of California, Irvine is committed to protecting the privacy and accuracy of your personally identifiable information to the extent possible, subject to provisions of state and federal law. Other than as required by laws that guarantee public access to certain types of information, or in response to subpoenas or other legal instruments that authorize disclosure, personally identifiable information is not disclosed without your consent.</p>
+<h2>Information Collection and Use</h2>
+<p>Categories of personally identifiable information collected by Web pages managed or maintained by University Communications, University of California, Irvine or by other entities affiliated with the University of California, Irvine, may include: your Internet location (Internet domain and IP address), type of browser and operating system used to access our site, date and time our site was visited, pages visited on our site, search terms used on our search engines, along with information you use to fill out forms such as: name, email address, address, birthday, student ID number, social security number, credit card number and ucinetid. This personally identifiable information is used to respond to user inquiries. Article IX, Section 9 of the California Constitution grants authority to the University of California to maintain this information.</p>
+<p>In order to keep you informed of such activities as campus programs, symposia and/or special events, we may use personal information collected from Web pages for the purpose of future communication back to online enrollees. Such e-mail notification will be conducted in conformance with <a href="http://www.ucop.edu/information-technology-services/policies/it-policies-and-guidelines/legislative-and-other-guidance/files/antispam.pdf">University of California and campus policies implementing anti-spam laws</a> (pdf).</p>
+<p>Additionally, the Web server collects, at least temporarily, the following information: Internet Protocol (IP) address of computer being used; Web pages requested; referring Web page; browser used; date and time. This information is collected to monitor your navigation of our Web pages. We may use browser-IP-address information and anonymous-browser history to report information about site accesses and for profiling purposes. This information is generally used to improve Web presentation and utilization. We also may use IP address information for troubleshooting purposes.</p>
+<p>These Web pages may use cookies in order to deliver Web content specific to individual's Web navigation interests or to keep track of online transactions.</p>
+<h2>Disclosure of Collected Information</h2>
+<p>University Communications, University of California, Irvine will not disclose or share, without your consent, personally identifiable information, except for certain explicit circumstances in which disclosure may be required by law. Nor will University Communications, University of California, Irvine, distribute or sell your personally identifiable information to third-party organizations.</p>
+<h2>Updating Personal Information</h2>
+<p>Questions regarding your options to review, modify or delete previously provided personal information should be directed to <a href="mailto:webmaster@uci.edu">webmaster@uci.edu</a>.</p>
+<h2>Policy Changes</h2>
+<p>This privacy policy has been created and approved by University Communications, University of California, Irvine. Any revisions to this privacy policy will be posted at this URL. You may submit inquiries about this policy to <a href="mailto:webmaster@uci.edu">webmaster@uci.edu</a>.</p>
+<h2>Links to Other Sites</h2>
+<p>You may encounter links to Web pages of entities not managed or maintained by University Communications, University of California, Irvine. Those Web pages may have privacy policies that differ from this one. You also may encounter links to Web sites of organizations not directly affiliated with the University of California, Irvine. Please be aware that the University of California, Irvine is not responsible for the information practices of external organizations. We recommend you review the privacy statements of each Web page that collects personal information.</p>
+		</div>
+	</div>
+	
+				
+		</div>
+		
+					</section>
+								
+					
+				
+</main>
+	
+
+
+<footer>
+
+	
+																	
+			
+<div class="container">
+	<div class="row">
+		<div class="col-xs-12 col-md-6"><div class="row">
+
+					
+				
+					<div class="col-xs-12 col-sm-6 col-sm-offset-0 col-md-6 col-md-offset-0">
+																		<ul class="uci-icon-list">
+																		    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																													<li><a href="https://www.facebook.com/UCIrvine"><span aria-hidden="true" class="fa fa-facebook"></span><span>Facebook</span></a></li>
+																											    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																													<li><a href="https://twitter.com/ucirvine"><span aria-hidden="true" class="fa fa-twitter"></span><span>Twitter</span></a></li>
+																											    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																													<li><a href="https://www.youtube.com/user/ucirvine"><span aria-hidden="true" class="fa fa-youtube"></span><span>YouTube</span></a></li>
+																											    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																													<li><a href="http://instagram.com/ucirvine"><span aria-hidden="true" class="fa fa-instagram"></span><span>Instagram</span></a></li>
+																											    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																													<li><a href="https://www.flickr.com/photos/ucirvine"><span aria-hidden="true" class="fa fa-flickr"></span><span>Flickr</span></a></li>
+																										</ul>
+															<ul>
+																		    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																						<li><a href="https://communications.uci.edu/campus-resources/social-media/directory.php"><span>Social Media Directory</span></a></li>
+																										</ul>
+								
+						
+						</div>
+										
+				
+					<div class="col-xs-12 col-sm-6 col-sm-offset-0 col-md-6 col-md-offset-0">
+																		<ul>
+																		    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																						<li><a href="http://mail.google.com/a/uci.edu"><span>UCI Gmail</span></a></li>
+																											    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																						<li><a href="https://webmail.uci.edu/uci/"><span>Webmail</span></a></li>
+																											    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																						<li><a href="http://eee.uci.edu/"><span>EEE</span></a></li>
+																											    
+	
+    	
+    		
+	
+	
+    		
+					
+						
+	
+							
+		
+																													
+								<li><a href="/about/employment.php"><span>Work at UCI</span></a></li>								
+																				    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																						<li><a href="http://www.police.uci.edu/em/emergency-procedures/emergency-preparedness.html"><span>Emergency Preparedness</span></a></li>
+																											    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																						<li><a href="http://disability.uci.edu/"><span>Disability Services</span></a></li>
+																											    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																						<li><a href="http://chancellor.uci.edu/"><span>Office of the Chancellor</span></a></li>
+																										</ul>
+															<ul>
+																		    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																						<li><a href="http://universityofcalifornia.edu/"><span>University of California</span></a></li>
+																										</ul>
+								
+						
+						</div>
+											</div></div>
+			<div class="col-xs-12 col-md-6"><div class="row">
+													
+				
+					<div class="col-xs-12 col-sm-6 col-sm-offset-0 col-md-6 col-md-offset-0">
+																		<ul>
+																		    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																						<li><a href="http://forms.communications.uci.edu/uci-feedback/"><span>Feedback</span></a></li>
+																											    
+	
+    	
+    		
+	
+	
+    		
+					
+						
+	
+							
+		
+																													
+								<li><a href="/privacy/index.php"><span>Privacy Policy</span></a></li>								
+																				    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																						<li><a href="http://communications.uci.edu/for-journalists/"><span>Media Inquiries</span></a></li>
+																											    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																						<li><a href="http://www.accreditation.uci.edu/"><span>Accreditation Information</span></a></li>
+																											    
+	
+    	
+    		
+	
+	
+    		
+		
+	
+			
+		
+																						<li><a href="http://police.uci.edu/clery/index.html"><span>Clery Act</span></a></li>
+																										</ul>
+								
+						
+						</div>
+						
+		
+		
+				<div class="col-xs-12 col-sm-6 col-md-6 pull-right">
+						<address>
+						<span>University of California, Irvine</span>
+						<br/><span>Irvine, CA 92697</span>						<br/><span>949-824-5011</span>											</address>
+						<div class="text-right">
+									
+    			
+    		
+	
+											
+					<img alt="UCI Seal" src="http://web.communications.uci.edu/assets/2015/img/seal.png"/>
+				
+											</div>
+					</div>
+		</div></div>
+	</div>
+
+    <div class="row">
+        <div class="col-xs-12 text-right">
+
+		<a href="//uci.edu/copyright/"><small>&#169;&#160;2017&#160;UC&#160;Regents</small></a>
+        </div>
+    </div>
+</div>
+</footer>
+
+
+
+<!-- Global JS -->
+										
+<script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
+												
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+												
+<script src="//web.communications.uci.edu/assets/2015/js/bootstrap-uci-extensions.js"></script>
+			
+<!-- Site JS -->
+
+
+
+<script src="//web.communications.uci.edu/php/uci-weather/weather.js.php"></script>
+
+
+<!-- Page JS -->
+	</body>
+</html>

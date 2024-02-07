@@ -1,0 +1,621 @@
+		Sorting: O(N Log2 N) Sorts and Lower Bounds
+
+In this lecture we will discuss three O(N Log2 N) sorting algorithms (although
+for quicksort, this bound is the average case, not the worst case). We will
+also  discuss a non-trivial lower bound for sorting (to me, this is especially
+interesting and surprising).
+
+
+HeapSort:
+
+First we discuss HeapSort. As we have seen with Heaps for priority queues, to
+sort N values we can add each value into the Heap (assume the lowest value has
+the highest priority) and then remove the values in order (highest one first:
+use a Max-Heap). The complexity of the "online" algorithm is NxO(Log2 N) +
+NxO(Log2 N) = 2NxO(Log2 N) = O(N Log2 N). The complexity of the "offline"
+algorithm is O(N) + NxO(Log2 N) = O(N+NLog2 N) = O(N Log2 N). So HeapSort takes
+this amount of work even in the best case.
+
+  1) Worst/Best/Average case is O(N Log2 N)
+  2) In-place (all data is stored in the array that is the heap); when we
+       remove values (biggest first) we swap it with the last used location
+       in the array, and then do not consider that location as part of the
+       heap. The result at the end is an array filled in sorted order.
+  3) O(N Log2 N) comparisons; O(N Log2 N) swaps in the worst case
+  4) Unstable (percolating values up and down the tree -across many indexes
+       in the array- produces instability).
+
+
+MergeSort:
+
+Next we will discuss MergeSort. This is a "divide and conquer" sort,
+implemented simply via recursion. We use recursion to divide up the problem
+and merging to do the "actual sorting". The array form of this sort is written
+as
+  template<class T>
+  void merge_sort(T a[], int length) {
+    merge_sort(a, 0, length-1);
+  }
+
+calling an overloaded merge_sort method that specifies the minimum and maximum
+index to use when sorting the (sub)array (in the call from the method above, we
+specify all indexes). This method can be written recursively
+	
+  template<class T>
+  void merge_sort(T a[], int low, int high) {
+    if (low >= high)                  //Base case: 1 value to sort->sorted
+      return;                         //(0 possible only on initial call)
+    else {
+      int mid = (low + high)/2;       //Approximate midpoint*
+      merge_sort(a, low, mid);        //Sort low to mid part of array
+      merge_sort(a, mid+1, high);     //Sort mid+1 to high part of array
+      merge(a, low, mid, mid+1,high); //Merge sorted subparts of array
+    }
+  }
+
+Note that if low and high are adjacent, say 4 and 5, then mid = 4 and the
+recursive calls are mergeSort(a, 4,4) and mergeSort(a, 5,5), which are both
+base cases, requiring no work.
+
+*(low+high)/2 when sorting arrays whose size is near the maximum int can cause
+arithmetic overflow on addition (even though the final result should be between
+low and high). This "error" was in many libraries, but typically did not
+manifiest itself on smaller arrays. A better way to compute the closest value
+to the average without overflow is low/2 + high/2 + 1(if both are odd).
+
+All the "sorting" is done in the merge method: merge_sort just recursively
+computes the positions in each part of the array to merge sort (and stops at
+1 element arrays as the base case, which are by definition sorted).
+
+Suppose that we write an original array of 16 values as follows. We choose
+16 because it is a perfect power of 2, but all other sizes work as well.
+
+ 7   10    3    2    6    13   15   16   12    1    5    9    14    4   11   8 
+
+The first level of recursive calls will split it into 2 arrays of 8 values each
+(see the | character)
+
+ 7   10    3    2    6    13   15   16 | 12    1    5    9    14    4   11   8 
+
+The next level of recursive calls will split it into 4 arrays of 4 values each.
+
+ 7   10    3    2  | 6    13   15   16 | 12    1    5    9  | 14    4   11   8 
+
+The next level of recursive calls will split it into 8 arrays of 2 values each.
+
+ 7   10 |  3    2  | 6    13 | 15   16 | 12    1 |  5    9  | 14    4 | 11   8 
+
+The bottom level of recursive calls will split it into 16 arrays of 1 value
+each.
+
+ 7 | 10 |  3 |  2 |  6 |  13 | 15 | 16 | 12 |  1 |  5 |  9 |  14 |  4 | 11 | 8 
+
+Now each pair of adjacent 1 value sorted arrays is merged into 8 sorted arrays
+of 2 values each.
+
+ 7   10 |  2    3 |  6    13 | 15   16 |  1   12 |  5    9  |  4   14 |  8 | 11
+
+Now each pair of adjacent 2 value sorted arrays is merged into 4 sorted arrays
+of 4 values each.
+
+ 2    3    7   10 |  6    12   15   16 |  1    5    9   12  |  4 |  8   11   14
+
+Now each pair of adjacnet 4 value sorted arrays is merged into 2 sorted arrays
+of 8 values each.
+
+ 2    3    6    7   10    12   15   16 |  1    4    5    8     9   11   12  14
+
+Finally, the remaining pair of 8 value sorted arrays is merged into 1 sorted
+arrays of 16 values.
+
+ 1    2    3    4    5     6    7    8    9   10   11   12    13   14   15  16
+
+Note that recursive calls do O(1) work; there are Log2 N levels for O(Log2 N)
+net work. Merging each level requires O(N) work (justified below), so the
+total amount of work is Log2 N x O(N) or O(N Log2 N).
+
+  1) Worst/Best/Average case is O(N Log2 N)
+  2) Not in-place (requires an equal sized array; see merge below)
+  3) O(N Log2 N) comparisons; O(N Log2 N) movement in the worst case
+  4) Stable: when we merge left and right arrays, equal values are moved
+       first from the left subarray (which were originally to the left of all
+       the equal values on the right subarray, ensuring stability).
+
+Here is pseudo-code for merging
+
+template<class T>
+void merge (T a[],
+            int left_low , int left_high,
+            int right_low, int right_high) {
+
+  Create a temporary array that is the same size as "a"
+    (this extra storage is why the algorithm is not in-place;
+     technically, we need a temporary array storing only
+     right_high - left_low + 1 values)
+  for every temporary array value from left_low to right_high
+    if there are no more "left" values
+      copy to the temporary array the next "right" value
+    else if there are no more "right" values
+      copy to the temporary array the next "left" value 
+    else if the next "left" value <= the next "right" value
+      copy to the temporary array the next "left" value 
+    else
+      copy to the temporary array the next "right" value
+
+  copy the temp array back into "a": into the positions left_low to right_high
+}
+
+The Merge method merges two sorted arrays (both in a) of size about N/2 into
+one sorted  array of size N (temp). The main loop puts a new value in the temp
+array on every iteration, sometimes from the sorted left part of "a" and
+sometimes from the sorted right part of "a". So, the loop iterates N times with
+O(1) work done during each iteration, doing O(N) work
+
+The first two ifs test whether all the values from the left/right have been
+moved, and if so it moves a value from the other one. If there are values in
+both, it compares them and moves the smallest (using the left of "a" when they
+are equal). Finally, all the values are copied back from the temp array into
+"a": another O(N) of work.
+
+This method is easy to do with linked lists as well: although dividing the
+linked list is half takes O(N) time, merging also takes O(N) times as well,
+so the O(N Log2 N) complexity bound still holds for linked lists.
+
+Finally there are iterative (non-recursive) implementations. Such code is more
+complicated but not unreasonable for advanced students to write (recursion is
+"simulated" by iteration and use of an explicit stack). Also, sometimes other
+algorithms are faster for small N (say N <= c). So whenever the base case is an
+array size <= c, we can instead call the other sorting method to to sort the
+subarray, instead of calling merge sort recursively all the way down to
+single-valued subarrays. Unfortunately, this is all technology based and there
+is no easy way to know for a specific machine and compiler what c's value is;
+we would have to test the code to get this value empirically.
+
+
+QuickSort:
+
+Finally, we will discuss QuickSort, which is also a "divide and conquer" sort,
+implemented simply via recursion. We use partitioning to divide up the problem.
+The array form of this sort is written much like merge_sort was, first
+
+  template<class T>
+  void quick_sort(T a[], int length) {
+    quick_sort(a, 0, length-1);
+  }
+
+calling an overloaded quick_sort method that specifies the minimum and maximum
+index to use when sorting the array (here, all of them). This method can be
+written recursively
+	
+  template<class T>
+  void quick_sort(T a[], int low, int high) {
+    if (low >= high)  //Base case: 0 or 1 value to sort->sorted
+      return;         //(0 possible on initial call and recursion)
+    else {
+      int pivot_index = partition(a,low,high);//Partition and return Pivot index
+      quick_sort(a, low, pivot_index-1);      //Sort values to left of pivot
+      quick_sort(a, pivot_index+1, high);     //Sort values to right of pivot
+
+      //Note that after partitioning, all values to the left of the pivot are
+      // < the pivot and all values to the right of the pivot are >= to the
+      // pivot, so if the left/right values are sorted recursively (with the
+      // pivot remaining between them), the entire array is sorted.
+    }
+  }
+
+Here we call partition before the two recursive calls; in merge sort we
+performed the two recursive calls first, followed by merging them together.
+
+The partition method chooses the pivot value, then parititions the array into
+those values < pivot (on the left) and those values >= pivot (on the right),
+finally putting the pivot at an index in between these two. It returns the
+pivot's index (so the recursive calls know which parts of the array need to be
+sorted together).
+
+Similar to MergeSort, all the sorting is done in the pivot method: quick_sort
+calls partition and figures out, based on the pivot_index, where to do the
+recursive calls for more paritioning (and stops at 0 or 1 element arrays, which
+are by definition sorted).
+
+The pseudo-code for partition is
+  Choose the pivot value (see the discussion below) and swap the pivot value
+     with the value in a[high], putting it back where it belongs at the end
+  Start with l = low and r = high;
+  while (l<r) {                    //Are there some values to examine?
+    while (l<r && a[l] <  pivot)   //Find a left value >= the pivot
+      ++l;
+    while (l<r && a[r] >= pivot)   //Find a right value < the pivot
+      --r;
+    if (l<r)			   //If found both, swap them
+      swap(a[l],a[r]);
+    //if not, the while loop will terminate on the next iteration
+  }
+
+  swap(a,l,high);  //swap the pivot back where it belongs a[l] is > pivot
+  return l;        //the position of the pivot
+
+Let's look at an example of how this work. Suppose that we write an original
+array of 16 values as follows.
+
+ 7   10    3    2    6    13   15   12   16    4    5    9    14    1   11   8 
+
+Let's just choose the last value (8) as the pivot.
+
+ 7   10    3    2    6    13   15   12   16    4    5    9    14    1   11   8 
+low                                                                        high
+ l                                                                          r 
+
+It scans l forwards until it indexes a value >= 8; it scans r backwards until
+it indexes value < 8.
+
+ 7   10    3    2    6    13   15   12   16    4    5    9    14    1   11   8 
+low   l                                                             r      high
+
+Now it swaps those values.
+
+ 7    1    3    2    6    13   15   12   16    4    5    9    14   10   11   8 
+low   l                                                             r      high
+
+It scans l forwards until it indexes a value >= 8; it scans r backwards until
+it indexes value < 8.
+
+ 7    1    3    2    6    13   15   12   16    4    5    9    14   10   11   8 
+low                        l                        r                      high
+
+Now it swaps those values.
+
+ 7    1    3    2    6     5   15   12   16    4   13    9    14   10   11   8 
+low                        l                        r                      high
+
+It scans l forwards until it indexes a value >= 8; it scans r backwards until
+it indexes value < 8.
+
+ 7    1    3    2    6     5   15   12   16    4   13    9    14   10   11   8 
+low                             l              r                           high
+
+Now it swaps those values.
+
+ 7    1    3    2    6     5    4   12   16   15   13    9    14   10   11   8 
+low                             l              r                           high
+
+It scans l forwards until it indexes a value >= 8; it scans r backwards until
+it indexes value < 8 -but stops these indexes when they are equal.
+
+ 7    1    3    2    6     5    4   12   16   15   13    9    14   10   11   8 
+low                                  l                                     high
+                                     r
+
+So, now r=l, so it doesn't swap those values. instead is swaps index l with
+index high, putting the pivot after the values smaller than it and at the
+beginning of the values greater than or equal to it.
+
+ 7    1    3    2    6     5    4    8   16   15   13    9    14   10   11  12
+low                                  l                                     high
+                                     r
+
+The partitioned array would look like the following (with the pivot in ||).
+
+ 7    1    3    2    6     5    4  | 8 | 16   15   13    9    14   10   11  12
+
+The partition method returns 7 (the index of the pivot 8 in the array). Again,
+note that values to the left of the pivot are < the value of the pivot and the
+values to the right of the pivot are >= the value of the pivot.
+
+You should understand the details of how the partition method works, by hand
+simulating it on other 16 element arrays.
+
+Here we were lucky, as 8 was the middle value in the array. As with merging,
+partitioning requires a total of O(N) operations to compute all the partitions
+needed for each level. If we continue choosing "middle" values as pivots, there
+would have been a total of Log2 N levels, just like with MergeSort. Leading to
+a best case complexity of O(N Log2 N).
+
+Now we recursively partition the left part (indexes 0 to 6) and right part
+(indexes 8 to 15). In both we again choose the last value as the pivot: 4 for
+the left range, 12 for the right range; in  both these cases the choices
+is fortunate, as these values are near the middle, of each range. After each
+range is partitioned, it looks as follows (with the pivots in ||).
+
+2    1    3  | 4 |   6     5    7  | 8 | 11   10    9  |12 |   14   15   16  13
+
+The result is that we still have arrays of size 3, 3, 3, and 4 to partition. If
+we keep choosing such good pivots, there would be Log N levels, meaning the
+best case complesxity class for QuickSort would be O(N Log2 N): N levels each
+requiring O(N) work.
+
+Starting over again, here is an example of an array that would continually
+supply the the worst partition choice (the biggest value in the array).
+
+1    2    3    4    5     6    7    8    9   10   11   12    13   14   15   16 
+
+This results in the following array after partitioning
+
+1    2    3    4    5     6    7    8    9   10   11   12    13   14   15  |16|
+
+which has taken 16 operations to partition the array but has not changed it.
+Now the recursive calls work on an array of size 15 and of size 0. If we
+continue to choose the worst partition, the next recursive call would take 15
+operations to partition the array but would not changed it. This would continue
+requiring 16 + 15 + 14 + .... + 1 operations, or O(N^2), which is why in the
+worst case this method is O(N^2).
+
+Now let's look at the in-between cases, . If partition always leaves 2 values on
+the right and the remaininng values on the left (or vice-versa), then there
+will be N/2 levels, also yielding O(N^2/2) = O(N^2). Likewise, if partition
+always leaves 3 values on the right and the remaininng values on the left (or
+vice-versa), then there will be N/3 levels, also yielding O(N^2/3( = O(N^2). In
+fact, if partition always leaves M values on the right and the remaininng
+values on the left (or vice-versa), then there will be N/M levels, also
+yielding O(N^2/M) = O(N^2) since M is constant.
+
+If partition always leaves 1/3 values on the right and the remaininng 2/3
+values on the left (or vice-versa), then there will be Log 3/2 N (Log, base 3/2,
+of N) yielding O(NLogN) (but to a base less than 2, so the Log to that base
+will be bigger: if (3/2)^y = 2^z then y > z). Likewise, if partition always
+leaves 1/4 values on the right and the remaininng 3/4 values on the left (or
+vice-versa), then there will be Log 4/3 N (Log, base 4/3, of N) yielding
+O(NLogN) (but to a base less than 2 or 3/2, so the Log to that base will be
+bigger: if (4/3)^x = (3/2)^x = 2^y then x > y > z). In fact, if partition
+always leaves 1/M values on the right and (M-1)/ values on the left
+(or vice-versa) , then there will be Log M/(M-1) N levels, also yielding
+ O(NLogN). How big do the logarithms get.
+
+That is, if the bigger part of the partition array is always 2/3 of the original
+size, solving N(2/3)^x = 1 is equivalent to N = (3/2)^x, or taking
+Log (base 3/2) of each side, x = Log (base 3/2) N
+
+Here is table of values to illustrate.
+
+  Base |  Log Base of 10^6
+-------+-------------------
+  2/1  |       20
+  3/2  |       34
+  4/3  |       48
+  5/4  |       62
+  6/5  |       76
+  7/6  |       90
+  8/7  |      103
+  9/8  |      117
+ 10/9  |      131
+
+So, if the partition divides the arrary in 1/2, it will take 20 divisions to
+get to an array of size 1. If the partition divides the arrary in 1/3 and 2/3,
+it will take 34 divisions to get to an array of size 1....If the partition
+divides the arrary in 1/10 and 9/10, it will take 131 divisions to get to an
+array of size 1.
+
+So, as long as the partition method leaves a certain percentage of values on
+each side of the partition, the algorithm will be O(N Log N).
+
+
+We summarize this information as follows:
+
+  1) Worst is O(N^2), best and average are O(N Log2 N)
+  2) In-place on average case (requires O(Log N) stack space for recursive
+       calls) but not in-place in worst case (requires N stack space for
+       recursive calls).
+  3) O(N^2) comparisons and movement worst case (O(N Log N) and O(N Log N)
+       average)
+  4) Unstable: partition swaps values over large distances in the array
+
+To summarize, QuickSort's work is between O(N Log2 N) and O(N^2). It can be
+much more often O(N Log2 N), and its constant is lower than those for either
+HeapSort or MergeSort. The difference between good and bad behavior is
+cheaply picking a good pivot (discussed further below).
+
+So, cheaply picking a good pivot is important. Sometimes pivots are choosen
+from the start, middle, or end of the array. By choosing the middle, if the
+array is already sorted, the pivot will be good (choosing either end will
+result in O(N^2) time for a sorted array). One can also choose a pivot from a
+random position in the array.  Obviously the best pivot is the median value in
+the array, which will split it in half. But it would take too much work (O(N) to
+find the true median), over and over again in each call to partition. So, we
+can find an approximate median by choosing the pivot as the median of any 3
+values in the array to approximate the actual median (picking the first,
+middle, last values to compare, or picking three values in random indexes).
+
+Of course, we could better approximate the median by looking at even more
+values (say Median of 5), but the time to find such a median is bigger. We
+need a tradeoff between how long it takes to choose a pivot and how good the
+pivot chosen is. It has been found in practice that Median of 3 gives the
+best overall results based on getting close to the median, quickly.
+
+Empirically I found that if we just pick the pivot as the last position in an
+array of random integers, on average the largest remaining array size is 75%
+(3/4). This value makes sense because the possible sizes of the largest arrays
+are 50% (if the median was picked) and 100% (really N-1/N percent) if the
+largest or smallest value is picked. When using the median-of-3 as the pivot,
+on average the largest remaining array size is 66% (2/3). Finally, when using
+the median-of-5 as the pivot, on average the largest remaining array size is
+64% (which is only a few percent better that median-of-3, but more expensive
+to compute). See the table above for Log (base 3/2) of 10^ 6 = 34, which is
+less than 2 times Log (base 2) 10^6, so the average running time will be about
+2 times the best running time, which is O(N Log2 N) if the data is random.
+
+With a good pivot, this algorithm also requires only O(Log N) extra stack
+space to store data for the recursive calls, which we consider in-place. Unlike
+Merge sort, we do all the data movement in the original array.
+
+Finally, to speed up QuickSort, the many small arrays at the bottom of the
+recursion are sorted via a faster sort for small arrays, or even not sorted at
+all (which is certainly fast)! Say that we leave arrays of size 4 or less
+unsorted. After most parts of the array are sorted, we do one call to Insertion
+Sort. This method runs in O(N) if the data is mostly sorted (which it will be,
+after lots of partitioning: values will be within 4 of the final index) and
+doing so is often faster than completly sorting down to arrays of size 1 via
+QuickSort. Depending on your machine/compiler, you might discover an optimal
+minimal size (that is bigger or smaller) for recursively calling QuickSort.
+
+
+Final Words on O(N Log2 N) sorting:
+
+The following analysis is based on my implementation of these sorting methods.
+
+HeapSort is guaranteed to run in O(N Log2 N) and typically runs slowest of the
+O(N Log2 N) sorts; it CAN be done in place, but it is NOT stable.
+
+MergeSort is guaranteed to run in O(N Log2 N) but typically runs slower than
+QuickSort; it CANNOT be done in place (requiring an extra N in space), but it
+IS stable.
+
+QuickSort is NOT guaranteed to run in O(N Log2 N) -running O(N^2) is bad
+cases, but if we choose the partition carefully, it almost always runs in
+O(N Log2 N) and does it faster than MergeSort or HeapSort (with a smaller
+constant). It CAN be done in place (for well chosen pivots), using much less
+than the extra N space needed by MergeSort. Finally, it is NOT stable.
+
+Recently (2011) a programmer named Tim Peters developed a sorting algorithm
+(he named it TimSort) that is based on merge sort and insertion sort. It is
+stable, and at worst runs in O(N Log2 N) but often runs faster, sometimes as
+fast as O(N), when the data is not completely random, but partially sorted
+(which is often the case). It does take up some extra space, but not a lot. To
+get this performance the method is highly engineered/tuned and takes lots of
+code. But since sorting is done so often, TimSort is now the standard sorting
+algorithm in Python (where it was developed) and Java.
+
+There are hundreds of sorting algorithms; The more you know about how your data
+is distributed (if it isn't totally random) the better choice of sorting
+algorithm you can make. Generally, QuickSort (now TimSort) is built into
+libraries with just one sorting method.
+
+
+Lower Bounds for Comparison Sorting Methods:
+
+Certainly we must look at every value in the array when sorting it (if we
+left one out, it might be in the wrong spot). So we have a trivial Omega(N)
+lower bound for sorting algorithms when using comparisons. But we can use the
+idea of a Comparison Tree to compute a much more interesting and useful lower
+bound for sorting using comparisons?
+
+For every comparision-based algorithm that we develop for sorting, we can 
+translate it into a Comparison Tree, by looking at which values in the array
+it compares to which other values in the array. After a series of comparisons,
+we know what swaps to make to sort the array.
+
+Thus, the entire tree specifies how comparisons are made for every possible
+input (which is just a different form of a sorting algorithm). Each internal
+node of the tree specifies a comparison to make; each leaf shows the order of
+all the values derived from the results of the comparisions. Here is a
+Comparison Tree for an algorithm that sorts the three values x1, x2, x3. I took
+this tree from David Eppstein's ICS 163 Notes (so, you might see a similar
+proof again, at a more sophisticated level, when you are more sophisticated).
+                
+                 x1:x2
+                /     \
+             < /       \ >
+              /         \
+          x2:x3        x1:x3
+           / \           / \
+        < /   \>      < /   \ >
+         /     \       /     \
+    x1,x2,x3  x1:x3 x2,x1,x3 x2:x3
+               / \           / \
+            < /   \ >     < /   \ >
+             /     \       /     \
+      x1,x3,x2 x3,x1,x2  x2,x3,x1 x3,x2,x1
+
+At the root we know nothing about the ordering of x1, x2, and x3. At every
+internal node we perform one comparison (different sorting methods do these
+comparisons in different orders; some will perform more than the minimum
+number). After each comparison we know a bit more about the ordering of the
+values. After we accumulate enough information (do enough comparisons on any
+path from the root downward), we know the exact ordering of the values.
+
+So, if for example, we follow from the root and if we find that
+  x1 < x2, then find that x2 < x3; we now know the complete order: x1 < x2 < x3.
+
+Likewise, if we follow from the root and find that
+  x1 < x2, then find that x2 > x3 (we still don't know how x1 and x3 compare
+  from these two) then find that x1 < x3 we now know the complete order:
+  x1 < x3 < x2.
+
+In the worst case for an input, a Comparison Tree must perform one comparison
+for each depth in the tree, and thus in the worst case it performs a number of
+comparisons equal to its height. So, if we know the the height of a comparison
+tree, the complexity class of its algorithm is equal to its height: there is
+some input that requires that many comparisons (although other inputs may
+require fewer comparisions: we are still interested in the worst case).
+
+We can use what we know about tree heights to get an interesting bound, by
+knowing how many leaves must be in any Comparison Tree.
+
+When sorting an N value array, there are N! (N factorial) different
+arrangements of these values. Each arrangement must occur at least once in the
+Comparision Tree; so, in the Comparision Tree there are at least N! leaves.
+
+For example, for 3 values, there are 6 different arrangements of values:
+
+  1) x1 < x2 < x3
+  2) x1 < x3 < x2
+  3) x2 < x1 < x3
+  4) x2 < x3 < x1
+  5) x3 < x1 < x2
+  6) x3 < x2 < x1
+
+all of which occur once in this Comparison Tree.
+
+Note that if there are N different choices for the smallest value, and (N-1)!
+arrangements for the remaining values, yielding N*(N-1)! = N! different
+arrangements.
+
+Based on a Comparison Tree having at least N! leaves, we can prove that the
+height of the Comparison Tree (the number of comparisons performed for the
+worst case input) is Omega(N Log2 N).  Here is a chain of inequalities that
+allow us to prove this fact.
+
+Note first that each Comparison Tree is a binary tree.
+
+1) A Comparison Tree is a binary tree that has at least N! leaves.
+
+2) A binary tree with N! leaves has more nodes than a binary tree with N!
+   nodes - because it must have many internal nodes besides the leaves.
+
+3) The height of a binary tree with N nodes is at least Log2 N.  So a binary
+   tree with N! nodes must have a height at least Log2 N!.
+
+4) N! =  N  * (N-1) * (N-2)* (N-3)*....*(N/2) * (N/2-1) * (N/2-2) *....* 2 * 1
+   N! > N/2 *  N/2  *  N/2 *  N/2 *....* N/2  *     2   *    2    *....* 2 * 2
+
+   Here we replaced the first N/2 terms by N/2 and replace the second N/2 terms
+   by 2. Technically the last replacement is wrong (because 1 < 2) but for large
+   N we can find a second factor of 2 in one of the numbers we are replacing by
+   2 to get the inequality.
+
+   Thus, N! > (N)^(N/2)      
+   Taking Log2 of each side, Log2 N! > N/2 * Log2 N or
+     N/2 * Log2 N  < Log2 N!
+
+   so Log2 N! is bounded frrom below by N/2 * Log2N so it is Omega(N Log N)
+
+So, we have
+  Height of Comparison Tree (with N! leaves)
+    > Heigh of a binary tree  (with N! nodes)
+    > Log2 N!
+    > N/2 * Log2 N
+    which is Omega(N Log N)
+
+  So, for any Comparison Tree that sorts N values, its height must grow at
+  least as fast as N Log N. The Worst Case for sorting is the height of the
+  tree, so the worst case behavior grows as Omega(N Log2 N) comparisons to find
+  the correct ordering  (there is an ordering that requires a number of
+  comparisons at least the height of the tree).
+
+Also note that Log2 N! = Log2 1 + Log2 2 + Log2 3 + ... + Log2 N which can
+be accurately approximated by integrating Log x dx between 1 and N. Stirling's
+approximation for N! is sqrt(2*pi*N)* N^N * e^(-N). As N gets big, e^(-N) gets
+very close to 1, so N! is Omega(sqrt(N) * N^N); when taking Logs base e we have
+Log N! is Omega (Loge sqrt(N) + N Loge N - N) or just Omega(N Loge N), by
+dropping the sqrt and linear terms, which we can do for lower bounds since
+N LogeN < N Log2N + other terms.
+
+Since we know sorting with comparisons is Omega(N Log N) and we have multiple
+algorithms that are O(N Log N) -HeapSort and MergeSort- we have "optimally
+solved" the sorting problem - at least according to its complexity class. Other
+algorithms based on comparisons might have smaller constants (which affect the
+actual speed), but none will be in a smaller complexity class in the worst case.
+
+Next we will examine two sorting algorithms that seem to violate this lower
+bound, but they do so by not using comparisons to sort their values! These are
+strange algorithms, that are useful for certain kinds of data and have 
+interesting upper and lower bounds that we will explore in more detail (and
+see that they don't really violate the lower bound)

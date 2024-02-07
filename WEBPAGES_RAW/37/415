@@ -1,0 +1,1289 @@
+<HTML>
+<HEAD>
+<TITLE>Detailed Minutes of San Mateo Distributed Authoring Meeting (Afternoon)
+</TITLE>
+<META NAME="GENERATOR" CONTENT="Internet Assistant for Microsoft Word 2.0 beta 1">
+<LINK REL="Author" TITLE="Jim Whitehead Home Page" HREF="http://www.ics.uci.edu/~ejw/">
+<META http-equiv="Reply-To" content="ejw@ics.uci.edu">
+</HEAD>
+
+<BODY>
+<H2>Afternoon (1:35 PM)</H2>
+
+<H3>AOLpress and AOLserver - Long</H3>
+
+<P>
+
+Long started by informing everyone that GNNpress and GNNserver
+
+are now known as AOLpress and AOLserver.
+
+<P>
+
+In AOLserver, the current version of resource is stored in the
+
+file system, while the meta-data, indices, etc. are stored in
+
+a database.
+
+<P>
+
+Long noted that people think of their web sites in terms of a
+
+hierarchy, and hence it is disorienting for the server to place
+
+a resource at a location other than the one specified by the user.
+
+<P>
+
+With regard to server-side includes and other dynamic content,
+
+AOL has no strong solution for getting to the actual source. Their
+
+current approach disallows editing a page with dynamic content.
+
+ However, AOLpress users seem to be doing it anyway, although
+
+it is not clear what mechanism they use. His recommendation for
+
+how to get a document's source before server side includes processing
+
+is to use content negotiation when requesting the source, and
+
+asking for MIME type text/x-html-ssi.  Unfortunately, this approach
+
+does not handle the case where the source is not HTML.
+
+<P>
+
+A discussion then ensued about pretty printing (canonicalizing)
+
+the HTML written by an authoring tool.  There were some questions
+
+about how much canonicalizing an authoring tool should attempt.
+
+Long mentioned that AOL used to get grief from customers because
+
+their tool automatically cleans up its HTML output, but they no
+
+longer do, since the tool now additionally pretty-prints the HTML
+
+source.  It appears that users perceive enough extra value in
+
+the pretty-printing of the generated HTML that they are willing
+
+to accept the cleanup.
+
+<P>
+
+Masinter: There are people who are claiming to do HTML authoring
+
+who want their mail client and mail servers to send around marked-up
+
+mail. They are using a kind of HTML that they make human readable
+
+through operations such as centering HTML source text between
+
+&lt;CENTER&gt; tags. 
+
+<P>
+
+Whitehead: Is there an interoperability concern with regard to
+
+pretty printing? 
+
+<P>
+
+Long: Probably not. I would be happy if we just made it so that
+
+everybody's client could do a PUT to everybody's server. That
+
+would be the most basic form of interoperability -- everything
+
+else is icing on the cake. 
+
+<P>
+
+Nielsen: The W3C could put up a playground where everyone could
+
+test out the PUT interoperability of their authoring tools, so
+
+long as we don't get into the test suite business. 
+
+<P>
+
+Long mentioned that the focus of his talk is not interoperability.
+
+He followed Dan Connolly's suggestion to go through your system
+
+and find out where you feel fuzzy and the least likely to be doing
+
+something in the same way as everyone else.<BR>
+
+
+
+<P>
+
+Continuing his presentation, Long described how moving pages brings
+
+up the issue of how to move relative links. Moving image files
+
+is easy, because the IMG tag indicates the image is considered
+
+part of the document, and should be moved. However, moving audio
+
+files is not as easy because they are included via a A HREF tag,
+
+which could refer to a close or distant resource.  The best solution
+
+to this problem is to employ collections and move mini-webs. Unfortunately,
+
+many beginning users do not use the AOLpress mini-web functionality.
+
+Another solutions is to have a usage practice where relative URLs
+
+are employed for references internal to a collection and external
+
+URLs are used for references outside of it.<BR>
+
+
+
+<P>
+
+This led into a discussion on the semantics of
+
+<P>
+
+&quot;/x/y&quot; style relative URLs
+
+<P>
+
+I.e., they're not &quot;../foo&quot; or &quot;http://..&quot;
+
+<BR>
+
+
+
+<P>
+
+Current versioning implementation slide:
+
+<P>
+
+Long reported on a prototype effort to add versioning capability
+
+to the AOLserver.  In this prototype, reads employ a &quot;Content-Version&quot;
+
+header to retrieve a stated version of a resource. Writes provide
+
+a &quot;Derived-From&quot; header so the server knows how to check-in
+
+the version of the resource. The server prevents dirty writes.
+
+ This implementation solves the &quot;CREATE&quot; problem (i.e.,
+
+it does not need a separate CREATE method for the initial creation
+
+of a resource, because specifying a null Derived-From header directs
+
+the server to perform a resource creation).  Since this prototype
+
+was completed, the header syntax has changed for HTTP 1.1. An
+
+incomplete report on this is available at URL:
+
+<P>
+
+<A HREF="http://staff.navisoft.com/users/d/dave/w3cwd/wd-version-960128.htm" ><B>http://staff.navisoft.com/users/d/dave/w3cwd/wd-version-960128.htm</B></A>
+
+<P>
+
+As an aside, Long mentioned that users really wanted to know if
+
+they were going to overwrite a document.  This was accommodated
+
+by providing a dialog box with &quot;OK&quot; and &quot;Cancel&quot;
+
+options whenever a document was about to be overwritten.  This
+
+required performing a HEAD operation on the resource before a
+
+PUT could take place.
+
+<P>
+
+At this point there was a discussion of entity tags (Etags, an
+
+opaque string which identifies a snapshot), and their potential
+
+use in versioning.  Long believes entity tags are sufficient to
+
+avoid lost updates. Masinter recommended as an action item the
+
+review of entity tags to see if they are adequate for versioning.
+
+ Nielsen stated that use of entity tags may have some interaction
+
+with caching that would be undesirable.
+
+<P>
+
+Long continued his presentation by describing locking within AOLserver
+
+and AOLpress. The AOLserver implements LOCK and UNLOCK methods.
+
+ If a resource is currently locked, a &quot;Locked-By&quot; header
+
+is returned stating who currently has the lock.  During an unlock,
+
+if you have write permission on a resource, you can unlock it.
+
+ If you do not have write permissions, a message is displayed
+
+stating that the resource is currently locked, and by who. An
+
+OPTIONS method is used to detect server support for locking.<BR>
+
+
+
+<P>
+
+Access Control slide:
+
+<UL>
+
+<LI>users/groups (multiple membership)
+
+<LI>METHOD URL (specific/inherited)
+
+<LI>machine address (netmask)
+
+</UL>
+
+
+
+<P>
+
+
+
+<P>
+
+It is possible to (allow, deny) a (user, group, netmask) for a
+
+particular URL.
+
+<P>
+
+There is a forms based user interface for access control functionality.
+
+There was a discussion of the value of this approach.  The main
+
+benefit is that clients do not need to understand the content
+
+of the forms, they just merely need to be able to put them up.
+
+<BR>
+
+
+
+<P>
+
+Versions slide:
+
+<P>
+
+Resource revisions are time stamped and saved.  Revisions are
+
+accessed through a prefixed URL, with a time stamp in it.  Relative
+
+links and images are resolved as of that revision's time stamp.
+
+<BR>
+
+
+
+<P>
+
+PUT vs. POST slide:
+
+<P>
+
+Long expressed his position that PUT is a much better method for
+
+writing content than POST. PUT simplifies access control.  PUT
+
+simplifies infrastructure such as caching proxies, gateways, etc.,
+
+since it is ambiguous whether an arbitrary POST is transmitting
+
+an order for a pizza or writing a resource.  There are also general-use
+
+servers which are starting to support the PUT method.<BR>
+
+
+
+<P>
+
+Namespace methods slide:
+
+<UL>
+
+<LI>DELETE (This is now supported in HTTP 1.1.)
+
+<LI>MKDIR (In AOLpress they wanted to support a &quot;Save As...&quot;
+
+dialog box, which includes a new directory option, since people
+
+think of their web space as a file system.)
+
+<LI>BROWSE (A method which looks at the contents of a directory.)
+
+</UL>
+
+
+
+<P>
+
+
+
+<P>
+
+An example of the result of a BROWSE method is the return of an
+
+application/x-navidir MIME type.<BR>
+
+
+
+<P>
+
+application/x-navidir
+
+<P>
+
+{MIME type} {name}
+
+<P>
+
+...
+
+<P>
+
+Dave then displayed a slide on the issue of whether we should
+
+standardize Server API's.  As rationale for why this might be
+
+desirable, Long mentioned that if, as an author, you need to do
+
+something to the server for your pages, it would be nice to use
+
+an existing API rather than talking to the site administrator
+
+for every change. ISAPI was mentioned as a possibility.<BR>
+
+
+
+<P>
+
+Variants slide:
+
+<UL>
+
+<LI>each variant has its own name (there is a need to standardize
+
+the naming scheme)
+
+<LI>does this apply to versioning as well?
+
+<LI>Assigning variants to resources similar to access control
+
+</UL>
+
+
+
+<P>
+
+
+
+<P>
+
+PICS support slide:
+
+<UL>
+
+<LI>data-driven support for metadata systems
+
+</UL>
+
+
+
+<P>
+
+Should raters provide well-known URLs to forms-driven interfaces
+
+for generators that produce rating-specific encodings?<BR>
+
+
+
+<P>
+
+Nielsen mentioned that the W3C has a tool where you can plug-in
+
+a PICS rating system, and it pops up the correct buttons, sliders,
+
+etc., and allows you to set the rating for a page.<BR>
+
+
+
+<P>
+
+Miscellany slide:
+
+<UL>
+
+<LI>cross-server searching (WAIS, MARC, ...)
+
+<LI>cross-vendor auto-linking? (Search the web, automatically
+
+create links, or give choices of what you might want to link to).
+
+<LI>better support for link checking.
+
+</UL>
+
+
+
+<P>
+
+
+
+<P>
+
+A question was raised about redirecting URLs, and how to tell
+
+if a resource has been permanently moved or only temporarily moved.
+
+<P>
+
+Brown: It would be useful to specify what is the guaranteed URL.
+
+<P>
+
+Masinter: You can register your URLs with the OCLC Persistent
+
+URL Service at URL:
+
+<P>
+
+<A HREF="http://www.purl.org/" ><B>http://www.purl.org/</B></A>
+
+<P>
+
+Nielsen: You can abstract the Web space from the file space by
+
+having the server remap the resources that it owns. 
+
+<H3>FrontPage - Schulert<BR>
+
+</H3>
+
+
+
+<P>
+
+Release 1.1 was shipped this Spring, and release 2.0 will be shipped
+
+sometime this Fall.  Vermeer was bought in January by Microsoft.
+
+<P>
+
+FrontPage was a client-server web authoring tool from the beginning.
+
+ Ideally, FrontPage wants to be server independent -- they do
+
+not want to be in the server business, and would prefer to use
+
+HTTP as the base upon which they build FrontPage.
+
+<P>
+
+When they first started development of FrontPage, using the POST
+
+method was their only choice, since it was widely available on
+
+existing servers.  They implemented an RPC-like mechanism on top
+
+of POST.  There are somewhere between 20 and 30 entry points into
+
+FrontPage using this RPC-like mechanism. FrontPage has three server
+
+extensions executables, one for each of the three levels of access
+
+control available.
+
+<P>
+
+During design, FrontPage was aimed more towards the mainstream
+
+user, rather than the power user.  The design was approached as
+
+a standard client-server development, where functionality was
+
+placed on whichever side of the wire it most made sense.
+
+<P>
+
+The FrontPage server extensions include much functionality, such
+
+as the ability to return a link map for the site, enhanced semantics
+
+for some operations, and the ability to set access control from
+
+the client.  It does not include all features of SSA client control.
+
+There are capabilities for link repair, such as being able to
+
+inform FrontPage that a given URL has changed, and having FrontPage
+
+fix it in all of the pages on the server.  There is a bulk upload
+
+(multi-resource at a time) capability.
+
+<P>
+
+FrontPage features webbots, which are objects that can be dropped
+
+into HTML and which are active when a page is uploaded to the
+
+server.  An example webbot is the &quot;day last changed&quot;
+
+bot, which automatically inserts the date the web page was last
+
+changed into the source HTML for the page.  Other webbots include
+
+a &quot;substitution&quot; bot, which can, for example, replace
+
+a company name in all web pages on a server, and a &quot;table
+
+of contents&quot; bot. 
+
+<P>
+
+Schulert stated that the FrontPage group would like to get out
+
+of the business of maintaining the CGI scripts and server extensions.
+
+<P>
+
+Whitehead: How tightly are the webbots tied to using POST? 
+
+<P>
+
+Schulert: We just need a way of invoking the webbot behavior.
+
+
+
+<P>
+
+Masinter: If you want to get out of maintaining those three CGIs,
+
+could you make FrontPage work with PUT? 
+
+<P>
+
+Schulert: We can see a path out of it, using server-side Java
+
+or Visual Basic. 
+
+<P>
+
+Schulert stated that you can post a web up to a server using FTP.
+
+You can post just changes that way, too. This solves the problem
+
+of directly editing the server when you don't want to make direct
+
+changes and a versioning system is not available.  Hence we could
+
+use PUT in a very basic way, like using FTP, to have an interoperable
+
+write capability with other servers.
+
+<P>
+
+FrontPage currently has a bundled search engine, but Schulert
+
+does not view FrontPage as being in that business either -- the
+
+search engine is just enough to provide basic functionality. 
+
+Ideally, Schulert would like version control, and search engines
+
+to be pluggable on the server.
+
+<P>
+
+In FrontPage 1.1, there is conflict detection and collision prevention,
+
+but no resolution help. 
+
+<P>
+
+There was some discussion surrounding the problems of what you
+
+author is not what you are getting -- there can be things that
+
+the author knows that the server doesn't get. For example, if
+
+I delete a slide from a presentation, or a message in a discussion,
+
+the adjacent next and previous links are munged, and the server
+
+may know nothing about remedying that. Schulert sees there being
+
+an HTTP-level problem, in the long term, in this change of abstraction
+
+and also having conflicting server-side extensions. How do people's
+
+extensions cooperate with each other without knowing about each
+
+other? 
+
+<P>
+
+Schulert stated that there is a core set of functionalities beyond
+
+PUT. 
+
+<P>
+
+Suggestions:
+
+<UL>
+
+<LI>PUT is a great first start
+
+<UL>
+
+<LI>Can post a web to a server using FTP using FrontPage 1.1
+
+</UL>
+
+
+
+<LI>PUT isn't good enough.  Neither is GET.
+
+<LI>PUT would be the equivalent of their FTP posting capability.
+
+<UL>
+
+<LI>FrontPage 1.1 allows operation in a mode where FrontPage does
+
+not control access control.
+
+</UL>
+
+
+
+</UL>
+
+
+
+<P>
+
+
+
+<H3>Goal of Working Group - Whitehead</H3>
+
+
+
+<P>
+
+Whitehead next led a discussion about the goals and membership
+
+of the working group.
+
+<P>
+
+Whitehead displayed a slide which stated that the goal of the
+
+working group should be to make distributed authoring as pervasive
+
+as browsing is today. 
+
+<P>
+
+Brown: I don't know about pervasive. 
+
+<P>
+
+Long:  I keep getting E-mail from customers who are using Netscape
+
+and notice a typo or spelling mistake and want to fix it. That's
+
+the world we want to address. 
+
+<P>
+
+Masinter: We could be modest and not change the world, and simply
+
+have interoperability among our tools. 
+
+<P>
+
+Fein: But we want to have interoperability for things we would
+
+like to do, not just what we are trying to do. 
+
+<P>
+
+Masinter:  Yes, we should look about two years ahead. 
+
+<P>
+
+Nielsen: We should have something at level 0 very quickly -- I
+
+can't see farther than six months out. 
+
+<P>
+
+Whitehead then recommended that the group adopt as its goal/objective/aspiration:
+
+to ensure that distributed web content authoring tools are broadly
+
+interoperable. 
+
+<P>
+
+Masinter: We should change ensure to enable, so it would read:
+
+enable distributed web content authoring tools to be<I> broadly
+
+interoperable</I> .
+
+<P>
+
+Seiwald: We ought to keep that goal in mind, as a mission statement.
+
+<BR>
+
+
+
+<P>
+
+There was a suggestion to add a statement about standardizing
+
+features that exist today. 
+
+<P>
+
+Nielsen asked that interoperability be limited to the HTTP framework.
+
+
+
+<P>
+
+There was a discussion about what was meant by interoperability,
+
+and what level of interoperability should be strived for by the
+
+working group.  From this discussion, it was clear that there
+
+are different kinds and scopes of interoperability, and that working
+
+towards broad interoperability was a reasonable statement of the
+
+group's goal.
+
+<P>
+
+The working group adopted as its goal: 
+
+<P>
+
+<I>Enable distributed web content authoring tools to be broadly
+
+interoperable</I><B>.</B>
+
+<H3>Sponsorship of Working Group by World Wide Web Consortium
+
+</H3>
+
+
+
+<P>
+
+Whitehead next led a discussion about whether this working group
+
+should seek sponsorship by the W3C. Nielsen mentioned that the
+
+W3C has a web page on the process used to create a W3C working
+
+group, at URL:
+
+<P>
+
+<A HREF="http://www.w3.org/pub/WWW/Consortium/Process/WorkingGroup.html" ><B>http://www.w3.org/pub/WWW/Consortium/Process/WorkingGroup.html</B></A>
+
+<P>
+
+Nielsen mentioned that being a W3C working group implies that
+
+you have to honor the W3C agreements, including the meeting procedures,
+
+and it has to work on a focused output. 
+
+<P>
+
+Seiwald: What is the difference between being 14 random people
+
+or being affiliated with the Internet Engineering Task Force (IETF)?
+
+<P>
+
+Masinter: If you are a working group, there are legal safeguards.
+
+For the IETF you have to have a chair, an editor, and a proposal
+
+and a draft. They don't require an initial meeting, and you are
+
+subject to the approval of the IETF Steering Committee for being
+
+appropriate to the IETF. 
+
+<P>
+
+Nielsen: Becoming a W3C working group makes sense because it is
+
+within the domain of the area of interest of W3C. 
+
+<P>
+
+Seiwald: Does the result go into the IETF? 
+
+<P>
+
+Masinter: You can, if you need to make an Internet standard. There
+
+must be an open public review at the IETF, so that is another
+
+gate. This effort shouldn't be uncoordinated from the HTTP Working
+
+Group, however, it is not just HTTP that is of concern here.
+
+<P>
+
+Whitehead favors W3C sponsorship since it is the natural focus
+
+on Web-related issues. Hopes to not have quite the formality of
+
+IETF. 
+
+<P>
+
+Fein: What does this obligate us to on behalf of our employers?
+
+What other conditions are there? 
+
+<P>
+
+Masinter: If you work for a company that is a member of W3C, then
+
+your company has already aligned with the W3C agreements. 
+
+<P>
+
+Hamilton: I just want to know what the ground rules are, rather
+
+than finding out retroactively. 
+
+<P>
+
+Whitehead stated that he will investigate the intellectual property
+
+rights issues of non-W3C members participating in a W3C working
+
+group.
+
+<H3>Meeting Goals, Criteria for Completion - Whitehead </H3>
+
+
+
+<P>
+
+Whitehead next put up a slide listing desirable meeting goals,
+
+and started a discussion on what would constitute criteria for
+
+completion of the working group's activity.
+
+<P>
+
+Masinter mentioned that he likes the idea of a having a demonstration
+
+of interoperability. For example, multiple authoring tools working
+
+against multiple servers and one document being edited by multiple
+
+authoring tools. It would be desirable that there be round-trip
+
+preservation of content features.  For this demonstration of interoperability,
+
+the authoring tools should of the same level of quality that people
+
+already have. 
+
+<P>
+
+Whitehead and Burns agreed that this is certainly ambitious, and
+
+it doesn't require versioning, or other advanced capabilities.
+
+<P>
+
+Burns: Having this demo actually run seems like a proper exit
+
+condition 
+
+<P>
+
+Masinter: The IETF condition for advancing to a draft standard
+
+is that there be multiple interoperable implementations 
+
+<P>
+
+Whitehead mentioned that a second demo is that N authoring tools
+
+do simultaneous editing of the same resource on one server, which
+
+would test lost update capabilities, collision handling, etc.
+
+<P>
+
+Brown: It appears there are several cases: 
+
+<OL>
+
+<LI>A single client used against multiple servers.
+
+<LI>Multiple clients used against a single server.
+
+<LI>Multiple clients used against multiple servers.
+
+</OL>
+
+
+
+<P>
+
+Whitehead: We will need to refine these cases to make them more
+
+concrete.
+
+<P>
+
+Long: The deliverables are specifications by which each of these
+
+demonstrations can claim conformance.
+
+<P>
+
+Whitehead: Let's look at key interoperability issues before we
+
+specify deliverables.
+
+<H3>Key Interoperability Issues (Nielsen's List) </H3>
+
+
+
+<P>
+
+Nielsen wrote a list of what he considered to be the key interoperability
+
+issues on the whiteboard in the conference room.  He openly admitted
+
+that there was significant bias in his choice of issues.
+
+<UL>
+
+<LI>Semantic Links 
+
+<LI>Make sure that PUT, DELETE work 
+
+<LI>What you &quot;GET&quot; Is not what you author - GET for
+
+edit versus GET for browse? 
+
+<LI>Ability to Edit Dynamic Contents 
+
+<LI>Content-Version, Derived-From, ETAG 
+
+<LI>Security (digest, content-MD5, SHTTP) 
+
+<LI>Access Control Management 
+
+<LI>Link Management on Server 
+
+<LI>When to Publish (Publish header) 
+
+<LI>Do we need transactions 
+
+<LI>Advanced Editing (Multiple users, roles, views) 
+
+<LI>Adding revision and change information into HTML 
+
+</UL>
+
+
+
+<P>
+
+The HTML item was added during group discussion.  These interoperability
+
+issues then became the focus of discussion.
+
+<P>
+
+Schulert proposed that the GET-PUT working bullet is the following
+
+example: A user is browsing at a web page and sees a misspelling
+
+and wants, with simple steps, to edit the page and put the corrected
+
+page back out on the web. 
+
+<P>
+
+Nielsen offered a scenario where there are a set of interrelated
+
+resources, and putting them back to a server atomically is desired.
+
+
+
+<P>
+
+Masinter: There are tasks below those - let someone author a new
+
+page, let someone do site maintenance. 
+
+<P>
+
+Masinter then recommended that we go around the room and see what
+
+work people are willing to do as part of the working group.
+
+<P>
+
+Whitehead stated that he will write meeting notes for this meeting,
+
+but is not taking ownership of individual technical issues due
+
+to the number of issues, the amount of work required to coordinate
+
+the group, and his desire to concentrate on versioning issues.
+
+<P>
+
+Masinter is willing to help coordinate the activity of the working
+
+group, and contribute as an active member of the mailing list.
+
+He does not want to edit anything new. 
+
+<P>
+
+Seiwald: I have more interest in the HTTP part than the HTML stuff
+
+and would be interested in writing up proposed HTTP changes. Willing
+
+to author proposals as needed. 
+
+<P>
+
+Fein: There is more interest in HTML issues than HTTP issues in
+
+my case. I'm not as interested in protocols or back ends as I
+
+am in document content itself. I could take the Word requirements
+
+for HTML and write them down. 
+
+<P>
+
+Masinter requested that Ron sort them out as content versus protocol
+
+etc. A good distinction between what is expected behavior for
+
+understanding, for not understanding, and for sort-of understanding
+
+a tag would be helpful.
+
+<P>
+
+Nielsen: That goes for all existing distributed authoring tools.
+
+
+
+<P>
+
+Dawson and Nielsen: Fein, Schulert, and Long all have lists of
+
+what they want to do in authoring tools - Word, FrontPage, and
+
+AOL. They could take on a task to sort out requirements. 
+
+<P>
+
+Hamilton: I propose that Fein, Schulert, and Long (Word, FrontPage,
+
+AOL) use Fein's model (employed on his slides) for listing functional
+
+requirements and features and possible solutions. 
+
+<P>
+
+Long and Burns are going to work on assembling something that
+
+is wordsmithed on functional requirements and scenarios. The tasks
+
+/ scenarios that provide the cover for the features list. 
+
+<P>
+
+Nielsen mentioned that he has three scenarios at three different
+
+levels in his slides. 
+
+<P>
+
+Dawson volunteered to edit the scenarios document. 
+
+<P>
+
+Seiwald invited everyone to submit two scenarios, not including
+
+the three we have. 
+
+<P>
+
+Masinter: The task scenario document could be long. There is nothing
+
+wrong with that. We should also invite people to contribute. There
+
+may be substantial contributions from others who are not here.
+
+
+
+<P>
+
+Nielsen: I think coming up with a requirements document is nice.
+
+However, there are some things that need to be fixed and we could
+
+also start working now on the technical issues.
+
+<P>
+
+Masinter: We don't have to wait for the scenario document to be
+
+complete to start work on the technical issues.  However, we will
+
+need the scenarios document to tell other people why we are doing
+
+this and how we will know when we are done.
+
+<P>
+
+Looked at Get for Edit versus Get for Browse. It's important to
+
+lay out what the alternatives are so you can say you discarded
+
+them. 
+
+<P>
+
+Nielsen gave his suggestions for scenarios which should belong
+
+in the scenarios document:
+
+<OL>
+
+<LI>One person changing a misspelling in a document they found
+
+while browsing.
+
+<LI>Checking-in a group of resources which are related.
+
+<LI>Deleting an object from a web.
+
+<LI>Two people editing changes to the same resource.
+
+</OL>
+
+
+
+<H3>Specified Deliverables</H3>
+
+<P>
+The group came to agreement that the following set of activities
+and deliverables should be produced by the working group:
+</P>
+
+<OL>
+
+<LI>Task-oriented list of scenarios which interoperable distributed
+authoring tools will be able to perform.
+
+<UL>
+
+<LI>Keith Dawson, editor.
+
+<LI>Input of other distributed authoring vendors, notably Netscape,
+
+will be solicited.
+
+<LI>Put a call on the discussion list request input for this activity.
+
+<LI>Nielsen will give us his list of requirements.
+
+</UL>
+
+<LI>Collate lists of &quot;key functionality&quot; among AOLpress/AOLserver,
+FrontPage, Word, as well as other distributed authoring tools,
+such as Netscape
+
+<UL>
+
+<LI>Dave Long, editor 
+
+</UL>
+
+</OL>
+
+
+<P>
+Looking at early September for next meeting, for at least the
+groups working on the deliverables above. </P>
+
+<P>
+*** Meeting Adjourned ***
+</P>
+
+<HR>
+<ADDRESS>
+<A HREF="http://www.uci.edu/">
+University of California, Irvine</A><BR>
+<A HREF="http://www.ics.uci.edu/~ejw/">
+Jim Whitehead &lt;ejw@ics.uci.edu&gt;</A><BR>
+<A HREF="http://www.ics.uci.edu/">
+Department of Information and Computer Science</A><BR>
+247 ICS2 #3425<BR>
+<A HREF="http://www.irvineco.com/">
+Irvine</A>, CA  92697-3425<BR>
+</ADDRESS>
+<P>
+Last modified: 23 Jul 1996
+</P>
+</BODY>
+</HTML>
+

@@ -1,0 +1,235 @@
+WebDAV Advanced Collections Minutes September 21, 1999
+
+ATTENDING: Judy Slein, Jason Crawford, Jim Whitehead, Geoff Clemm, Chuck Fay
+
+ACTION ITEMS
+
+Geoff or Jason: Write up a discussion of protection for the mailing list
+
+Jim: Put the issue of overlapping source / destination trees in COPY operations
+on the RFC 2518 issues list.
+
+LOGISTICS
+
+Plan for WebDAV meeting at IETF: We might try to avoid spending time on a presentation at
+the meeting by notifying the mailing list that specs must be read in advance, and that if
+people don't do that we will spend the first hour of the meeting reading and marking up
+specs.
+
+Schedule of spec revisions: Next draft to team 10/8, submit to internet-drafts 10/15
+
+It would help people for planning whether / when to attend IETF to know whether there will
+be informal breakout sessions and which days.
+We'll have a half-day breakout session on advanced collections, preferably on the same day
+as WebDAV.  This will depend partly on when Delta-V gets scheduled.  But in any case we'll
+try to keep all official and unofficial WebDAV and Delta-V meetings on Wednesday and
+Thursday. (Jim Whitehead requested Wednesday or Thursday for the official WebDAV meeting,
+and requested that WebDAV and Delta-V get times near each other, but hasn't heard back.) 
+
+ISSUE 21: COPY INTO THE SAME TREE
+
+This issue isn't really advanced collections.  It's about RFC 2518.  There is a need to 
+clarify semantics for cases where there is overlap between the source tree and the
+destination tree in a COPY operation.  Jim will make sure this issue gets included on
+the RFC 2518 issues list.
+
+Geoff had proposed that we sat COPY is equivalent to copy to a temporary location,
+then MOVE to the destination as a way to make this case work properly.
+
+DELETE SEMANTICS
+
+Agreed: DELETE has unbind semantics.
+
+The unbind semantics is required both for backward compatibility in versioning
+contexts, and for normal Web authoring (John Stracke's scenario).
+
+DO LOCKS MOVE WITH A MOVED RESOURCE?
+
+Agreed: If a locked resource is MOVEd, the lock moves with it.  The lock token has to 
+stay the same during a MOVE; if the server can't preserve the lock token, it must fail 
+the MOVE.
+
+Key use case: If there are multiple bindings to resource R, and a LOCK is performed
+through one URL, and a MOVE on another URL, the resource needs to stay locked.  That's
+why MOVE should preserve the lock.
+
+Another use case: If you MOVE collection A, and there's a resource under it that's 
+locked, that lock should not get lost.  (Yaron thinks it should get lost.)
+
+We agreed earlier that the lock token is not allowed to change during a MOVE.  If
+the server can't preserve the same lock token, it must fail the MOVE.
+
+For any underlying repository that doesn't have DAV semantics for lock/move, there
+will be the problem of how to map DAV semantics to the underlying repository
+semantics.
+
+If a move fails because of a lock, the client can just unlock, move, relock.
+Something might happen during the small interval of time when the resource is
+not locked.
+
+Are we concerned about losing the lock or about protecting the url so that the
+client can continue to use it to refer to the resource? Both.
+
+If the lock follows with a move, that might negatively affect lots of
+servers.  The underlying file system probably doesn't have a lock token, so the
+server has to add that. They have to add a layer between the protocol and their 
+file system.
+
+We shouldn't disrupt the semantics of the protocol to minimize the work of
+the server implementer.  At least not unless we think the vast majority of
+repository / file system implementations will have the same semantics.
+
+We need to try to preserve a clean semantic model.
+
+We agree that when a resource moves, its lock moves with it.  The token has to
+stay the same or the move fails.
+
+DOES A WRITE LOCK PREVENT NON-LOCK-OWNERS FROM MOVING A RESOURCE?
+
+The key use case we all agree on is lost update: read, edit, put back -- the resource's
+state shouldn't have changed in the mean time.
+
+Does lock affect a MOVE? If Joe has lock on A, can Bob move A?  RFC 2518 
+says that a write lock on a resource prevents that resource from being MOVEd by
+anyone other than the lock holder, but our binding semantics would say that a 
+write lock on a resource does not prevent a MOVE.
+(A write lock on the parent collection would prevent a resource from being moved.)
+
+Jim: We've been saying that a binding is only part of the collection's state.  But
+consider a model of containment as 2 tokens, for the 2 ends of the relationship.
+It's part of the state of the collection, and also part of the state of the
+resource.  Then to DELETE, you have to own the lock on both (or you own the lock
+on one and other is not locked, or neither is locked).
+
+Geoff: There are these possibilities --
+1. the containment relation is stored in the collection. 
+2. it is part of the state of the collection member. 
+3. it is part of the state of both.
+4. it is part of the state of neither, but instead it's part of the state of some
+   third resource.
+All of these logical possibilities have different effects on whathas to be 
+locked/unlocked, checked in/out. If we try to be neutral, it will be hard to say 
+anything about effect of locks.  We have to make a choice.
+
+Jim: Preferred it to be in both, but RFC 2518 claims the containment relationship
+is just in the collection.
+
+Geoff: Unix treats it as in collection. 
+
+Chuck: In DMA, there is a separate containment relationship object.  Containment
+is separate from issues of naming.  Each object has its own guid.
+
+In DMA trial use, the binding name (last segment) is associated with the object, 
+the rest of the path you find by going up hierarchy. Every object knows the names 
+of its parents.
+
+Jim: Choose between having the containment relationship in the collection or in both.
+We could say that a regular expression or complete set of its names is part
+of the state of the resource, so that you have to check out the resource in 
+order to rename it.  Or maybe it's an attribute that can be changed without checking 
+out the resource.
+
+The question for versioning is when do you have to check out an object (create
+a new version).  What we say about where the containment relationship resides
+determines this for MOVE.
+
+What locks affect your ability to rename / move an object? 
+Do you need to lock the parent in order to move a resource? No.
+If there is a lock on the parent, do you have to own it in order to move resource? Yes.
+If the parent is unlocked but resource is locked, can someone move the resource? Depends 
+where the state of binding is stored.
+What behavior does a client want to see?
+
+Jim: Wants this: In order to move a resource, if parent is locked you must own
+the lock, and if the resource itself is locked you must also own that lock.
+
+anonymous inverse binding: if I don't own the lock token on a resource, I can't modify 
+either end of the containment relation.
+
+Jim: Doesn't want to protect whole path, just finds it odd that someone other than 
+the lock owner could move the resource.  We can distinguish between a binding and 
+a name of a binding.  The binding is shared, but the name of the binding could belong 
+to the collection. The part of the relationship that is stored in the contained resource
+is the unique id of the containing collection.
+
+Jim really wants move behavior such that if you own the lock on a resource, you 
+are the only one who can move the resource.
+
+Geoff would rather lose that than do confusing and special case semantics.  Keep the
+semantics simple.
+
+Jim: If locking doesn't prevent others from moving the resource, what do I do when
+I want to update the resource I locked but can't find it? 
+ 
+Geoff: Do a PROPFIND on the lock token and comb through the results, or do a DASL
+query on the lock token's value.  Neither of these will work if the resource was
+moved far from its original location (for example, moved off server).
+
+Jim: Clients are not currently very sophisticated.  You can't expect that much of 
+the client.
+
+You can lock the collection if you really care.
+
+This is excessive.
+
+Maybe the client would just let you save the resource as a different file (maybe
+with the original name) if it got moved while you were editing.
+
+Why not make server keep track of moves (as suggested on the mailing list)? 
+Jim: That would be a hack, a special case.
+
+Geoff: The clean position is to say that the lock is on the resource state, and
+if it's gone when want to do a PUT, you find it or create new a new resource at 
+the same URL.
+
+We need to establish and stick to an underlying model.  Otherwise, when we add
+new methods (as in versioning and beyond), there's no model you can appeal to.
+
+Jim: We have to be sensitive to when we will reach limits of how much can push 
+everyone into the same model.
+
+Geoff: In versioning, where you say the containment relationship lives determines
+what needs to be checked out to perform various operations.  If only the collection
+knows the names of its children, that keeps things simple when different people
+are using different names for the same resource.
+
+Versioning use cases argue for having the parent know the names of its children,
+but the children not knowing their own names or the names of their parents.
+
+Can we say that the anonymous part of the relationship is not versioned. and so 
+not part of the state? 
+We don't want lock / checkout to affect different properties.
+
+No agreement.
+
+PROTECTING THE URL
+
+We still can try to do some protection. When you lock a resource, you lock its state
+and protect all bindings that lead to it.  Protecting is different from locking.
+It means that nobody (including the lock owner) can delete this. Protection is cumulative.
+The binding can only be deleted if all protections are gone.
+
+If we only protect the final segment, it's not as important to distinguish between 
+protect and lock.
+
+When you unlock, it unprotects all those segments.
+
+Protection works with versioning, though it would be painful to implement.
+
+Chuck: If we have a guid property, could you use the guid instead of the original 
+request-URI in case the uri doesn't work?  (or use the lock token as the guid)
+
+Geoff: A real guid (urn) doesn't give locatability. They are orthogonal concepts.  You
+need at least repository id, so that the repository can look up in the namespace with 
+the guid.
+
+Chuck: You have host + guid.  The host in effect identifies the repository.
+
+Objection: If you do a PUT to a lock token, and its for a depth lock, what happens?
+
+Suppose we decide to protect the URL:
+If you own the lock, and you move the resource, is the URL you used to designate
+the new location now protected? This seems reasonable.
+
+We need to continue discussion of protecting the URL.  Geoff will write up a
+proposal for discussion on the mailing list.

@@ -1,0 +1,132 @@
+1-d queries with intervals
+    last time:
+	data = points
+	query = interval
+	range = points in interval
+
+    this time:
+	data = intervals
+	query = point
+	range = intervals containing point
+			
+    so e.g. pixel-in-window query can solved by nested interval/pt queries
+
+2 techniques:
+	segment tree
+	interval tree
+
+	solve similar problems (interval range search)
+	have similar sounding names
+	are quite different from each other
+
+
+interval trees
+	given collection of intervals
+
+	pick a point "roughly in the middle" e.g. median of int endpts
+		form root of tree
+		collect all intervals containing that point there
+		sorted two ways:
+			by left endpoint
+			by right endpoint
+
+		recursively form tree for remaining intervals left & right
+
+	=> tree with O(log n) levels
+	O(n) space since each interval stored in a single level
+	O(n log n) setup time or O(n) with sorted interval endpoints
+
+	can organize lists at each node in other ways
+	e.g. sorted by their left or right endpoints
+
+	what is it good for?
+		reduces range problems to O(log n) subproblems
+		in which intervals all overlap
+		increase query time but does not increase space
+
+	list intervals containing given point:
+		binary search down interval tree
+		at each node of search path, sequential scan sorted list
+		total query time O(log n + k)
+
+	overall result:
+	overall space O(n)
+	pt-in-interval range reporting O(log n + k)
+
+	other kinds of range query:
+		use (augmented) binary search tree in place of sorted list
+		binary search to find solution
+		=> total query time O(log^2 n)
+
+	dynamic interval trees:
+		rotation difficult, use BB[alpha] trees
+
+		overall structure:
+		BB[alpha]-tree of segment endpoints
+		each node stores search structure
+			allowing constant-time scan from start
+			(e.g. splay tree; bst with parents)
+
+		insert: add endpoints to tree
+			follow path down tree to store segment
+
+		amortized time O(log n) per update
+
+segment trees
+	form balanced binary tree
+	each node in tree => segment of line (not necessarily input interval)
+	two children => split segment in two
+
+	each input interval gets partitioned into O(log n) segments
+		by binary search for its endpts,
+		taking segments along path between them
+
+	store all the segments from intervals at corresponding tree nodes
+	space O(n log n)
+
+	answers recursive range queries:
+		intervals containing query pt or query interval
+		O(log n) factor more space/preproc
+		O(log n) larger query time
+		[just put together answers within O(log n) tree nodes]
+
+		but have to be careful since will get same interval
+		in different subproblems
+		so e.g. range reporting O(log n) factor applies
+		to dependence on k as well.
+
+	(therefore all other types of queries as well,
+		O(log n) or O(k log n) time O(n log n) space)
+
+	can also sometimes be used for other two ranges
+
+
+solution to 2d pixel-in-window:
+	for all vertical intervals of windows containing pixel y coord
+		find best horiz intervals containing x coord
+
+	outer recursion: segment tree, O(log n) factor time&space
+	inner range reporting: interval tree, O(log n) queries O(n) space
+
+	total:	O(log^2 n) per query
+		O(n log n) space
+		O(n log n) preprocessing time:
+			O(n log n) presort x coordinates
+			O(n log n) build seg tree preserving sorted order
+				of x coordinates in subproblems
+			O(n log n) build interval trees in sorted subprobs,
+				linear in total subprob size
+
+further improvement: "fractional cascading"
+	instead of binary searches in O(log n) different lists,
+		(of endpoints at the O(log n) different levels of IT)
+	"simultaneously" search all lists
+
+	idea: from each lower level,
+		pass up every other pt to next level up
+	total # pts in all levels increases by (1+1/2+1/4+...)=2
+	given position among given level,
+		can find position in next level in O(1) comparisons
+
+	but resulting binary searches are in sets with "extra" pts
+	keep ptrs to corresponding "real" pts

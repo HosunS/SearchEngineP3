@@ -1,0 +1,115 @@
+Homework, due Tuesday 14 Oct: exercise 20.2-5; probs 10-2, 11-2, 20-2
+
+
+Potential function method of amortization [17.3]
+
+    define potential function Phi, Phi>=0, initially zero
+    e.g. for growing vector data structure, Phi = #filled - #unfilled
+
+    define "amortized cost" = actual time + c DeltaPhi
+	(choose c carefully later)
+     insert w/o rebuild: c DeltaPhi = 2c = O(1)
+     rebuild: DeltaPhi = -n, offsets O(n) time for rebuilding
+     so amortized cost always O(1)
+
+    telescopes, so
+    sum(amort) = sum(actual) + Phi_final - Phi_initial >= sum(actual)
+
+
+
+Fibonacci heaps [ch.20]:
+    heap allowing insert, delete-min (not arbitrary delete),
+    decrease-key (not arbitrary change-key), merge
+    
+    all operations O(1) time (amortized for decrease-key)
+    except delete O(log n) (amortized)
+    so Dijkstra time becomes O(m + n log n)
+
+    arbitrary delete and change-key could be handled
+    by lazy deletion, O(log n) amortized each
+
+    structure:
+        forest of rooted non-binary trees
+        heap-ordered (key[parent] <= key[self])
+
+	represented by nodes with:
+		parent
+		child: arbitrary one of the node's children
+		left, right: doubly linked circular list of siblings
+                (left, right pointers of roots give list of all trees)
+		degree (# of children)
+		mark (boolean, true if lost a child since parent last changed)
+	overall structure is represented by pointer to tree w/smallest root
+	also store total number of nodes in the tree
+
+        Phi = # trees + 2*(# marks)
+
+    insert new item:
+        make it into a new singleton tree
+	add it into the circular list of tree roots
+	change pointer to min root if new item is smaller
+
+        O(1) time, Phi += 1
+
+    find min item:
+        obvious
+
+    merge two trees:
+        concatenate their list of tree roots
+	set min root pointer to smaller of two min roots
+
+        O(1) time, total Phi unchanged
+
+    delete min:
+	turn children of min into roots of new trees
+	group roots by their degrees (e.g. bucket sort)
+	while two roots x and y have the same degree, root(x)<root(y):
+            make y into a child of x and update buckets
+
+        time:
+            O(max degree) for grouping by degrees
+            O(1) for each pair of trees combined
+	    Phi -= 1 for each pair of trees combined
+
+            total: O(max degree) amortized
+
+    decrease key:
+        remove the item x from its parent's list of children
+	    and make it into a new tree root
+	do the same for the sequence of marked ancestors of x
+	    until finding an unmarked ancestor, which gets marked
+
+        time:
+            O(1) per ancestor moved to new tree
+	    Delta -= 1 per ancestor (1 new tree, 1 fewer mark)
+	    Delta += 2 for the new marked ancestor
+
+	    total: O(1) amortized
+
+key remaining question: why do degrees stay small? [20.4]
+AND why are they called Fibonacci trees anyway?
+
+lemma 1: number children of any degree k node 1,2,...k in order by
+	when they were added
+then degree(child i) >= i-2
+
+pf: i'th child was added when degrees were equal
+    (so node had at least i-1 children already)
+    then at most one child could be taken away (if child is marked)
+
+lemma 2: node with degree k has >= F_k nodes in subtree
+F_0 = 1, F_1 = 2,  F_i = F_{i-1} + F_{i-2}
+
+pf: children have degrees >= 0, 0, 1, 2, 3, ...
+    so by induction they have at least F_0, F_0, F_1, F_2, ... nodes
+
+    more generally: node itself + sum of first x children's subtrees >= F_x
+    base case: x=0, node itself=1
+    induction: node + x-1 children = F_{x-1} + F_{x-2} = F_x
+
+    lemma follows with x=k
+
+F_k > (1+sqrt(5)/2)^k
+
+can't have more than n nodes in a subtree
+so max degree < log_phi n = O(log n)

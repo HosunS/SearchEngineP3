@@ -1,0 +1,127 @@
+<HTML>
+<HEAD>
+<TITLE>JME Chemical Sketcher / SMILES Generator</TITLE>
+
+<!-- HOW TO USE THIS POPUP
+
+The page which wishes to spawn this popup should have a form with a
+text input field to hold the SMILES string representation of the
+molecule drawn. It should also have a link which onClick will call
+window.open to spawn the popup. The call should look like...
+
+window.open
+(
+    'jmePopup.htm?parentForm=NAME_OF_FORM&smilesField=NAME_OF_TEXT_FIELD',
+    'jmePopup',
+    'resizable=yes,width=400,height=400'
+)
+
+where NAME_OF_FORM and NAME_OF_TEXT_FIELD are replaced by the matching names
+of the form and text field to bind the SMILES string.
+
+EXAMPLE:
+
+    <FORM NAME="chemicalForm">
+        <INPUT TYPE=TEXT NAME="testSmiles" SIZE=12>
+        <A HREF="Draw structure" onClick="popup = window.open('jmePopup.htm?parentForm=debugForm&smilesField=testParam','jmePopup','resizable=yes,width=400,height=400'); popup.focus(); return false;"><IMG SRC="../resource/edit.gif" STYLE="width: 19; height: 17; border: 0" alt="Draw structure"></A>
+    </FORM>
+
+-->
+
+<!-- Helper JavaScript file for getting request parameters -->
+<SCRIPT SRC="../resource/requestParam.js"></SCRIPT>
+
+<SCRIPT>
+// Initialize
+// smilesField is the text input field in the calling page which spawned this
+//  popup, which will contain the string representation of the chemical drawn
+var smilesField = null;
+
+// To find the smilesField, calling page specifies through the URL query string
+//  the name of the form the smilesField is in, and the name of the field itself
+function init()
+{
+    if ( getReqParam('parentForm') != null )
+        smilesField = parent.document.forms[ getReqParam('parentForm') ].elements[ getReqParam('smilesField') ];
+    else
+        smilesField = parent.document.forms[0].elements[ getReqParam('smilesField') ];
+
+    if ( smilesField.length )
+    {   // Array of multiple elements.  Look for a specific index then
+        smilesField = smilesField[ parseInt(getReqParam('fieldIndex')) ];
+    }
+
+    //document.jmeForm.previewField.value = smilesField.value;
+    document.JME.readSmiles(smilesField.value); // JME depends on another server to do the SMILES parsing, so this presently does nothing
+}
+
+/**
+ * Preview the drawn structure's SMILES in the popup's text field
+ */
+function preview(theForm)
+{
+    theForm.previewField.value = document.JME.smiles();
+}
+
+/**
+ * Submit the current structure's SMILES back to the parent window
+ */
+function submitSmiles(theForm)
+{
+    preview(theForm);
+    if (smilesField)
+    {
+        if (smilesField.type == 'textarea')
+        {   // Append to list, instead of replacing whole contents
+            smilesField.value += document.JME.smiles()+"\n"
+        }
+        else
+        {
+            smilesField.value = document.JME.smiles();
+        }
+        parent.$.fn.colorbox.close();
+    }
+    else
+    {
+        alert("No parent field recognized to submit SMILES to.")
+    }
+}
+</SCRIPT>
+
+</HEAD>
+
+<BODY onLoad="init();">
+
+<div align=center>
+
+<FORM NAME="jmeForm">
+
+<table cellspacing=0 cellpadding=0 border=0>
+    <tr>
+        <td align=center>
+            <applet code="JME.class" name="JME" archive="../resource/JME.jar" width=360 height=290>
+            <param name="mol" value="">
+            </applet>
+        </td>
+    </tr>
+    <tr>
+        <td align=center>
+            <input type=button value="Preview" onClick="preview(this.form);">
+            <input type=button value="Submit" onClick="submitSmiles(this.form);">
+        </td>
+    </tr>
+    <tr>
+        <td align=center>
+            <input type=text readonly name="previewField" style="width: 360; text-align: center; border: none;" value=""""><br>
+            <a href="http://www.molinspiration.com/jme/">JME Editor</a> courtesy of Peter Ertl, Novartis<br>
+            
+        </td>
+    </tr>
+</table>
+
+</FORM>
+
+</div>
+
+</BODY>
+</HTML>

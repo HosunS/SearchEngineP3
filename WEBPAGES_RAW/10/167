@@ -1,0 +1,209 @@
+<HTML>
+<HEAD>
+<TITLE>ICS 180, April 24, 1997</TITLE>
+<META name="Owner" value="eppstein">
+<META name="Reply-To" value="eppstein@ics.uci.edu">
+</HEAD><BODY>
+<IMG SRC="icslogo2.gif" WIDTH=472 HEIGHT=72 ALT=""><P>
+<A HREF="index.html">
+<H1>ICS 180A, Spring 1997:<BR>
+Strategy and board game programming</H1></A>
+
+<H2>Lecture notes for April 24, 1997<BR>
+Hashing and Move Ordering</H2>
+
+<P>I didn't really finish describing alpha-beta -- my pseudocode included a 
+mysterious "sort list of moves" step that I didn't explain.  I'll continue 
+to leave that dangling while I talk about hashing; we'll connect it up 
+in a little while.
+
+<P>The idea of hashing is very simple.  Many games allow 
+<I>transpositions</I> of moves, meaning different sequences of moves that 
+end up leading to the same position.  For instance, in chess, the opening 
+moves 1. d4 Nf6 2. c4 and 1. c4 Nf6 2. d4 both give the same position 
+(known as an Indian defense).  White's two pawn moves could be made in 
+either order without changing the result.  As an example of a more complicated 
+transposition, the moves 1. e4 c6 2. d4 d5 3. ed Qxd5 4. Nc3 Qd6 (Caro-Kann 
+defense), 1. e4 d5 2. ed Qxd5 3. Nc3 Qd6 4. d4 c6 (Scandinavian opening), 
+and 1. e4 Nf6 2. e5 Ng8 3. d4 d6 4. ed Qxd6 5. Nc3 c6 (Alekhine defense)
+all lead to the same position, after different numbers of moves.
+
+<P>Because of transpositions, the
+same positions can show up many places in the alpha-beta search tree.  If 
+we store a data structure that remembers what the results of searching each 
+position were, we can look it up rather than searching it again.  But...we 
+don't have enough memory to store all the positions we search.  And, 
+lookups must be very fast to make it save time over just searching.  
+Fortunately, we have one advantage: it's ok if we sometimes don't find the 
+results from a position we already searched, and search the same position 
+again, as long as it doesn't happen too often.
+
+<P>The answer: hash tables.  Make a big array: as large as 
+possible without blowing out your physical memory (you don't want to eat 
+into virtual memory, it will be slow.)
+
+<PRE>
+struct {
+    long checksum;	// or long long might be even better
+    int depth;
+    enum { exact, lower_bound, upper_bound } entry_type;
+    double eval;
+} hashtable[HASH_TABLE_SIZE];
+</PRE>
+
+For each position you search, compute a "hash value" x indexing into the 
+hash table and another "hash value" y for checking whether you've found the 
+right position.
+
+<P>Before searching a position, lookup hashtable[x].
+If hashtable[x].checksum == y, hashtable[x].entry_type == exact,
+and hashtable[x].depth is at least the depth you are currently searching,
+return the eval stored there.
+
+<P>After searching the position, store y, the current depth, and the eval you 
+just computed, into hashtable[x].
+
+<H3>How to compute hash values?</H3>
+
+Zobrist hashing technique (already mentioned before re repetition 
+detection):
+Before playing the game (maybe hardcode this in your source code) make an 
+array Z[square,piecetype] of random numbers.  Hash(board) is then just sum(Z[s,p]) 
+summed over the pieces currently on the board
+combined with any extra information you might have such as castling 
+ability.  Often the sum is replaced by a bitwise exclusive or (uparrow in 
+C) which is a little faster and easier to work with, but arithmetic 
+addition would probably work just as well.
+When you move to a new position, you don't have to recompute the hash from 
+scratch; instead you can update the hash really quickly by subtracting 
+the old piece square value from where the moved piece was and and adding 
+the new value for its new location.  Use this technique (with 
+different random numbers) both for the hash value x and for the checksum y.
+
+<P>Some further tips for using hashing effectively:
+
+<UL>
+<LI>Don't clean out the array after making a move, it only wastes time and 
+some hashed positions might actually still be useful after the move.
+
+<LI>If the same position occurs at different levels in the tree
+(as in the second transposition example we listed above) this can 
+actually give you deeper searches than you originally asked for; that's ok.
+
+<LI>Don't hash the positions very near the leaves of the search tree, there 
+are too many of them (they'll take away hash table space from more 
+valuable positions) and you're not saving much time by avoiding searching 
+them.
+</UL>
+
+<H3>How does hashing interact with alpha-beta?</H3>
+
+<P>A large fraction of chess program bugs are related to hashing.
+Partly, because it interacts in confusing ways with alpha-beta search.
+But, you can't avoid dealing with the issue, because you need both hashing 
+and alpha-beta to have an efficient searcher.
+
+Recall that, when we call alphabeta(depth,alpha,beta) on a position, one of 
+three things can happen: a fail high, in which we know the eval is at least 
+beta but not exactly what it is; a fail low, in which we know the eval is 
+at most alpha but not exactly what it is; and an exact result, 
+alpha&nbsp;&lt;&nbsp;eva&nbsp;&lt;&nbsp;beta.  We can only store an exact 
+result in the hash table if we know the exact result.  But a fail high or 
+fail low result could still help us prune later.  So, along with exact 
+evals, store two other kinds of eval in hash table: a lower bound stating 
+that the eval is at least beta, and an upper bound stating that the eval is 
+at most alpha.  We use the entry_type field of the hash table entry to 
+specify what kind of eval is being stored.  If the hash lookup comes back 
+with one of these, we need to see whether it's useful enough to prune 
+immediately without searching the node.  If so, we return it, and otherwise 
+search the node again.
+
+Here's some pseudocode for alpha-beta search with hashing.
+We maintain the hashtable index x and checksum y in global variables,
+that are updated as part of the process of making and unmaking moves.
+
+<PRE>
+double alphabeta(int depth, double alpha, double beta)
+{
+    if (depth &lt;= 0 || game is over) return evaluation();
+    if (hashtable[x].checksum == y && hashtable[x].depth &gt;= depth)
+        switch (hashtable[x].entry_type) {
+            case exact: return hashtable[x].eval;
+            case lower_bound:
+                if (hashtable[x].eval &gt;= beta)
+                    return (hashtable[x].eval);
+                else break;
+            case upper_bound:
+                if (hashtable[x].eval &lt;= alpha)
+                    return (hashtable[x].eval);
+                else break;
+        }
+
+    int eval_is_exact = 0;
+    generate and sort list of moves available in the position
+    for (each move m) {
+        make move m;
+        double val = -alphabeta(depth - 1, -beta, -alpha);
+        unmake move m;
+        if (val &gt;= beta) {
+            hashtable[x].checksum = y;
+            hashtable[x].depth = depth;
+            hashtable[x].entry_type = lower_bound;
+            hashtable[x].eval = val;
+            return val;
+        }
+        if (val &gt; alpha) {
+            alpha = val;
+            eval_is_exact = 1;
+        }
+    }
+
+    hashtable[x].checksum = y;
+    hashtable[x].depth = depth;
+    if (eval_is_exact) hashtable[x].entry_type = exact;
+    else hashtable[x].entry_type = upper_bound;
+    hashtable[x].eval = alpha;
+    return alpha;
+}
+</PRE>
+
+<H3>Alpha-beta and move ordering</H3>
+
+<P>I said we'd return to alpha-beta; here it is. We did an optimistic 
+analysis last time of alpha-beta, showing that it can double your search 
+depth if it prunes whenever it can.  The condition that "it prunes whenever 
+it can" can be expressed more simply: good moves are searched before bad 
+ones.  The moves don't have to be completely sorted, but the best one should be 
+first or at least one of the best should be one of the first.  What happens 
+if not?  Then we don't do any pruning and we don't search very deeply.
+
+<P>If we classify nodes into type A (all children get searched) and type B 
+(we prune after finding a good child) then move ordering is important in 
+both cases: in type B, you want to start with a child that will let 
+you prune the rest.  In type A, you want to choose a first child that is 
+good enough to let all the other children be type B.
+
+<P>Of course, finding good moves is hard: it's the whole reason we're doing 
+the search in the first place.  But we have some clues: (1) we may have 
+hashtable entries from previous iterations of iterated deepening that give 
+approximations to search values (same positions searched less deeply). (2) 
+we may have some game-specific information, e.g. in chess captures are 
+often good moves, try them first.  (3) the killer heuristic: if move m was 
+best in a sibling, and is valid here too, try it.
+
+<P>So, before searching children, add a step: sort them by expected quality.
+Then do the search in the sorted order.
+(Sometimes you can modify the move generator to output moves in 
+roughly-sorted order e.g. captures first, and save doing an explicit sort.)
+
+<P>One additional trick: if you think you're going to prune, you don't need 
+to sort everything, you just need to output the first few items in sorted 
+order.  So you may want to use a sort that you can take items one by one 
+from and stop early, e.g.  selection sort or heapsort.
+
+<P><HR>
+<A HREF="/~eppstein/">David Eppstein,
+<A HREF="/">Dept. Information & Computer Science</A>,
+<A HREF="http://www.uci.edu/">UC Irvine</A>,
+<!--#flastmod file="970424.html" -->.
+</BODY></HTML>

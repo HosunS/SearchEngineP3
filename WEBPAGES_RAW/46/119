@@ -1,0 +1,1191 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<!-- Page automatically generated from latex_to_html converter. -->
+<!-- by cc_extract_html, $Revision: 3.19 $ -->
+<!-- LaTeX source file: './Nef_3/main.tex' -->
+<html> <head>  
+<title>3D Nef Polyhedron</title>
+</head>  
+<link href="../latex_to_html.css" rel="STYLESHEET">
+<body bgcolor="white">
+<!-- ------------------------------------------------------------------- -->
+
+
+<!-- Top Navigation ---------------------------------------------------- -->
+<div class="NavTop">
+<hr>
+  <strong>Navigation:</strong>
+<a href="Chapter_main.html">Up</a>, 
+  <a href="../contents.html">Table of Contents</A>,
+  <a href="../biblio.html">Bibliography</a>,
+  <a href="../manual_index.html">Index</a>,
+  <a href="../title.html">Title Page</a>
+<hr><!-- End of Top Navigation ----------------------------------------- -->
+</div>
+
+<a name="Chapter_15"></a>
+  
+<h1>Chapter 15<BR>3D Nef Polyhedron</h1>
+
+<A NAME="chapterNef_3"></A>
+
+<EM>Peter Hachenberger  and Lutz Kettner</EM><BR>
+
+
+<P>
+
+<a name="Section_1"></a>
+        
+<h2>15.1&nbsp;&nbsp;&nbsp;Introduction</h2>
+<P>
+
+<CENTER>
+        <img src="fig/nef_non_manifold3a.gif">
+    </CENTER>
+<P>
+
+In solid modeling, two major representation schemes are used:
+<I>constructive solid geometry</I> (CSG) and <I>boundary
+  representations</I> (B-rep). Both have inherent strengths and
+weaknesses, see [<A HREF="../biblio.html#Biblio_cgal:h-gsmi-89">Hof89c</A>] for a discussion.
+<P>
+
+In CSG a solid is represented as a set-theoretic boolean combination
+of primitive solid objects, such as blocks, prisms, cylinders, or
+toruses.  The boolean operations are not evaluated, instead, objects
+are represented implicitly with a tree structure; leaves represent
+primitive objects and interior nodes represent boolean operations or
+rigid motions, e.g., translation and rotation. Algorithms on such a
+CSG-tree first evaluate properties on the primitive objects and
+propagate the results using the tree structure.
+<P>
+
+A B-rep describes the incidence structure and the geometric properties
+of all lower-dimensional features of the boundary of a solid. Surfaces
+are oriented to decide between the interior and exterior of a solid.
+<P>
+
+The class of representable objects in a CSG is usually limited by the
+choice of the primitive solids. A B-rep is usually limited by the
+choice for the geometry of the supporting curves for edges and the
+supporting surfaces for surface patches, and, in addition, the
+connectivity structure that is allowed. In particular, a B-rep is not
+always closed under boolean set operations.  As an example, the class
+of orientable 2-manifold objects is a popular and well understood
+class of surfaces commonly used for B-reps. They can be represented
+and manipulated efficiently, the data structures are compact in
+storage size, and many algorithms are simple. On the other side, this
+object class is not closed under boolean set operations, as many
+examples can illustrate, such as the Figure shown above that can be
+generated using boolean set operations on cubes. The vertices bounding
+the tunnel, or the edge connecting the ``roof'' with the cube are
+non-manifold situations.
+<P>
+
+In our implementation of Nef polyhedra in 3D, we offer a B-rep data
+structure that is closed under boolean operations and with all their
+generality. Starting from halfspaces (and also directly from oriented
+2-manifolds), we can work with set union, set <A HREF="../Kernel_23_ref/Function_intersection.html#Cross_link_anchor_221">intersection</A>, set
+difference, set complement, interior, exterior, boundary, closure, and
+regularization operations (see Section&nbsp;<A HREF="Chapter_main.html#sectoinRegularized"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A> 
+for an explaination of regularized
+set operations). In essence, we can evaluate a CSG-tree with
+halfspaces as primitives and convert it into a B-rep representation.
+<P>
+
+In fact, we work with two data structures; one that represents the
+local neighborhoods of vertices, which is in itself already a complete
+description, and a data structure that connects these neighborhoods up
+to a global data structure with edges, facets, and volumes. We offer a
+rich interface to investigate these data structures, their different
+elements and their connectivity. We provide affine (rigid)
+transformations and a point location query operation. We have a custom
+file format for storing and reading Nef polyhedra from files. We offer
+a simple OpenGL-based visualizer for debugging and illustrations.
+<P>
+
+<a name="Section_2"></a>
+        
+<h2>15.2&nbsp;&nbsp;&nbsp;Definition</h2>
+<P>
+
+The theory of Nef polyhedra has been developed for arbitrary
+dimensions. The class <I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A></I> implements a
+boundary representation for the 3-dimensional case.
+<P>
+
+<B>Definition:</B>&nbsp;&nbsp;A <I>Nef-polyhedron</I> in dimension <MATH><I>d</I></MATH> is a point set <MATH><I>P  <IMG BORDER=0 WIDTH=11 HEIGHT=25 ALIGN=MIDDLE SRC="cc_subseteq.gif">  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>d</SUP></I></MATH> generated from a finite number of open halfspaces by set
+    complement and set <A HREF="../Kernel_23_ref/Function_intersection.html#Cross_link_anchor_221">intersection</A> operations.
+<P>
+
+Set union, difference and symmetric difference can be reduced to
+<A HREF="../Kernel_23_ref/Function_intersection.html#Cross_link_anchor_221">intersection</A> and complement. Set complement changes between open
+and closed halfspaces, thus the topological operations <I>boundary</I>,
+<I>interior</I>, <I>exterior</I>, <I>closure</I> and <I>regularization</I> are also in the modeling space of Nef polyhedra.
+<P>
+
+A face of a Nef polyhedron is defined as an equivalence class of
+<I>local pyramids</I> that are a characterization of the local space
+around a point.
+<P>
+
+<B>Definition:</B>&nbsp;&nbsp;A point set <MATH><I>K  <IMG BORDER=0 WIDTH=11 HEIGHT=25 ALIGN=MIDDLE SRC="cc_subseteq.gif">  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>d</SUP></I></MATH> is called a <I>cone with apex <MATH><I>0</I></MATH></I>,
+    if <MATH><I>K =  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>+</SUP> K</I></MATH> (i.e., <MATH><I> <IMG BORDER=0 WIDTH=9 HEIGHT=13 ALIGN=BOTTOM SRC="cc_forall.gif"> p  <IMG BORDER=0 WIDTH=9 HEIGHT=21 ALIGN=MIDDLE SRC="cc_in.gif"> K,  <IMG BORDER=0 WIDTH=9 HEIGHT=13 ALIGN=BOTTOM SRC="cc_forall.gif"> <IMG BORDER=0 WIDTH=7 HEIGHT=13 ALIGN=BOTTOM SRC="cc_lambda.gif">&gt; 0: <IMG BORDER=0 WIDTH=7 HEIGHT=13 ALIGN=BOTTOM SRC="cc_lambda.gif">p
+     <IMG BORDER=0 WIDTH=9 HEIGHT=21 ALIGN=MIDDLE SRC="cc_in.gif"> K</I></MATH>) and it is called a <I>cone with apex <MATH><I>x</I></MATH></I>, <MATH><I>x  <IMG BORDER=0 WIDTH=9 HEIGHT=21 ALIGN=MIDDLE SRC="cc_in.gif">  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>d</SUP></I></MATH>,
+    if <MATH><I>K = x +  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>+</SUP> (K - x)</I></MATH>. A cone <MATH><I>K</I></MATH> is called a <I>pyramid</I>
+    if <MATH><I>K</I></MATH> is a polyhedron.
+<P>
+
+Now let <MATH><I>P  <IMG BORDER=0 WIDTH=9 HEIGHT=21 ALIGN=MIDDLE SRC="cc_in.gif">  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>d</SUP></I></MATH> be a polyhedron and <MATH><I>x  <IMG BORDER=0 WIDTH=9 HEIGHT=21 ALIGN=MIDDLE SRC="cc_in.gif">  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>d</SUP></I></MATH>. There is a 
+    neighborhood <MATH><I>U<SUB>0</SUB>(x)</I></MATH> of <MATH><I>x</I></MATH> such that the pyramid <MATH><I>Q := x +  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>+</SUP> 
+    ((P  <IMG BORDER=0 WIDTH=9 HEIGHT=11 ALIGN=BOTTOM SRC="cc_cap.gif"> U(x)) - x)</I></MATH> is the same for all neighborhoods <MATH><I>U(x)  <IMG BORDER=0 WIDTH=11 HEIGHT=25 ALIGN=MIDDLE SRC="cc_subseteq.gif"> U<SUB>0</SUB>(x)</I></MATH>. <MATH><I>Q</I></MATH> is called the <I>local pyramid</I> of <MATH><I>P</I></MATH> in <MATH><I>x</I></MATH> and
+    denoted <MATH><I>Pyr<SUB>P</SUB>(x)</I></MATH>.
+<P>
+
+<B>Definition:</B>&nbsp;&nbsp;Let <MATH><I>P  <IMG BORDER=0 WIDTH=9 HEIGHT=21 ALIGN=MIDDLE SRC="cc_in.gif">  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>d</SUP></I></MATH> be a polyhedron and <MATH><I>x, y  <IMG BORDER=0 WIDTH=9 HEIGHT=21 ALIGN=MIDDLE SRC="cc_in.gif">  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>d</SUP></I></MATH> be two points.
+    We define an equivalence relation <MATH><I>x  <IMG BORDER=0 WIDTH=11 HEIGHT=5 ALIGN=BOTTOM SRC="cc_sim.gif"> y</I></MATH> iff
+    <MATH><I>Pyr<SUB>P</SUB>(x) = Pyr<SUB>P</SUB>(y)</I></MATH>. The equivalence classes of <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=5 ALIGN=BOTTOM SRC="cc_sim.gif"> </I></MATH> 
+    are the <I>faces</I> of <MATH><I>P</I></MATH>. The dimension of a face <MATH><I>s</I></MATH> is the  
+    dimension of its affine hull, <MATH><I></I></MATH>dim<MATH><I>s := </I></MATH>dim<MATH><I>affs</I></MATH>.
+<P>
+
+In other words, a <I>face</I> <MATH><I>s</I></MATH> of <MATH><I>P</I></MATH> is a maximal non-empty subset
+of <MATH><I> <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>d</SUP></I></MATH> such that all of its points have the same local pyramid <MATH><I>Q</I></MATH>
+denoted <MATH><I>Pyr<SUB>P</SUB>(s)</I></MATH>.  This definition of a face partitions <MATH><I> <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>d</SUP></I></MATH> into
+faces of different dimension. A face <MATH><I>s</I></MATH> is either a subset of <MATH><I>P</I></MATH>, or
+disjoint from <MATH><I>P</I></MATH>.  We use this later in our data structure and store
+a selection mark in each face indicating its set membership.
+<P>
+
+Faces do not have to be connected. There are only two full-dimensional
+faces possible, one whose local pyramid is the space <MATH><I> <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>d</SUP></I></MATH> itself and
+the other with the empty set as a local pyramid.
+All lower-dimensional faces form the <I>boundary</I> of
+the polyhedron. As usual, we call zero-dimensional faces <I>vertices</I> and one-dimensional faces <I>edges</I>. In the case of
+polyhedra in space we call two-dimensional faces <I>facets</I> and
+the full-dimensional faces <I>volumes</I>. Faces are <I>relative
+open</I> sets, e.g., an edge does not contain its end-vertices.
+<P>
+
+We illustrate the definitions with an example in the plane.
+    Given the closed halfspaces
+    <P ALIGN=CENTER>
+<MATH><I>
+<TABLE><TR><TD ALIGN=LEFT VALIGN=TOP NOWRAP>
+h<SUB>1</SUB>: y  <IMG BORDER=0 WIDTH=11 HEIGHT=25 ALIGN=MIDDLE SRC="cc_geq.gif"> 0,      
+        </TD><TD ALIGN=LEFT VALIGN=TOP NOWRAP>
+h<SUB>2</SUB>: x - y  <IMG BORDER=0 WIDTH=11 HEIGHT=25 ALIGN=MIDDLE SRC="cc_geq.gif"> 0,   
+        </TD><TD ALIGN=LEFT VALIGN=TOP NOWRAP>
+h<SUB>3</SUB>: x + y  <IMG BORDER=0 WIDTH=11 HEIGHT=25 ALIGN=MIDDLE SRC="cc_leq.gif"> 3,   
+        </TD><TD ALIGN=LEFT VALIGN=TOP NOWRAP>
+h<SUB>4</SUB>: x - y  <IMG BORDER=0 WIDTH=11 HEIGHT=25 ALIGN=MIDDLE SRC="cc_geq.gif"> 1,   
+        </TD><TD ALIGN=LEFT VALIGN=TOP NOWRAP>
+h<SUB>5</SUB>: x + y  <IMG BORDER=0 WIDTH=11 HEIGHT=25 ALIGN=MIDDLE SRC="cc_leq.gif"> 2, 
+      
+</TD></TR></TABLE>
+
+    </I></MATH>
+<P>
+
+we define our polyhedron <MATH><I>P := ( h<SUB>1</SUB>  <IMG BORDER=0 WIDTH=9 HEIGHT=11 ALIGN=BOTTOM SRC="cc_cap.gif"> h<SUB>2</SUB>  <IMG BORDER=0 WIDTH=9 HEIGHT=11 ALIGN=BOTTOM SRC="cc_cap.gif"> h<SUB>3</SUB>) - ( h<SUB>4</SUB>  <IMG BORDER=0 WIDTH=9 HEIGHT=11 ALIGN=BOTTOM SRC="cc_cap.gif"> h<SUB>5</SUB>)</I></MATH>.
+<P>
+
+<CENTER>
+        <img src="fig/nef_example.gif" alt="Steps in making a cube.">
+<P>
+
+</CENTER>
+<P>
+
+<CENTER>
+        <img src="fig/nef_pyramids.gif" alt="Steps in making a cube.">
+<P>
+
+</CENTER>
+<P>
+
+The left figure illustrates the polyhedron with
+its partially closed and partially open boundary, i.e., vertex 
+<MATH><I>v<SUB>4</SUB>, v<SUB>5</SUB>, v<SUB>6</SUB></I></MATH>, and edges <MATH><I>e<SUB>4</SUB></I></MATH> and <MATH><I>e<SUB>5</SUB></I></MATH> are not part of <MATH><I>P</I></MATH>.
+The local pyramids for the faces are <MATH><I>Pyr<SUB>P</SUB>(f<SUB>1</SUB>) =  <IMG BORDER=0 WIDTH=6 HEIGHT=28 ALIGN=MIDDLE SRC="cc_emptyset.gif"> </I></MATH>
+and <MATH><I>Pyr<SUB>P</SUB>(f<SUB>2</SUB>) =  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>2</SUP></I></MATH>. Examples for the local pyramids of edges
+are the closed halfspace <MATH><I>h<SUB>2</SUB></I></MATH> for the edge <MATH><I>e<SUB>1</SUB></I></MATH>, <MATH><I>Pyr<SUB>P</SUB>(e<SUB>1</SUB>) = h<SUB>2</SUB></I></MATH>,
+and the open halfspace that is the complement of <MATH><I>h<SUB>4</SUB></I></MATH> for the 
+edge <MATH><I>e<SUB>5</SUB></I></MATH>, <MATH><I>Pyr<SUB>P</SUB>(e<SUB>5</SUB>) =
+{(x,y) | x - y &lt; 1}</I></MATH>. The edge <MATH><I>e<SUB>3</SUB></I></MATH> consists actually of two
+disconnected parts, both with the same local pyramid <MATH><I>Pyr<SUB>P</SUB>(e<SUB>3</SUB>) = h<SUB>1</SUB></I></MATH>.
+In our data structure, we will represent the two connected
+components of the edge <MATH><I>e<SUB>3</SUB></I></MATH> separately.
+The figure on the right  
+lists all local pyramids for this example.
+<P>
+
+The local pyramids of each vertex are represented by
+conceptually intersecting the local neighborhood with a small
+<MATH><I><IMG BORDER=0 WIDTH=5 HEIGHT=8 ALIGN=BOTTOM SRC="cc_varepsilon.gif"></I></MATH>-sphere. This <A HREF="../Kernel_23_ref/Function_intersection.html#Cross_link_anchor_221">intersection</A> forms a planar map on the
+sphere (see next two figures), which together with the set-selection
+mark for each item (i.e. vertices, edges, loops and faces)
+forms a two-dimensional Nef polyhedron embedded in
+the sphere. We add the set-selection mark for the vertex and call the
+resulting structure the <I>sphere map</I> of the vertex.  
+We use the prefix <MATH><I>s</I></MATH> to distinguish the elements of the sphere map
+from the three-dimensional elements. See Chapter <A HREF="../Nef_S2/Chapter_main.html#chapterNef_S2"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A> 
+for further details.
+<P>
+
+<CENTER>
+        <img src="fig/sphere_map.png" alt="Steps in making a cube.">
+<P>
+
+</CENTER>
+<P>
+
+Having sphere maps for all vertices of our polyhedron is a sufficient
+but not easily accessible representation of the polyhedron. We enrich
+the data structure with more explicit representations of all the faces
+and incidences between them.
+<P>
+
+<CENTER>
+        <img src="fig/snc.gif" alt="Steps in making a cube.">
+<P>
+
+</CENTER>
+<P>
+
+We depart slightly from the
+definition of faces in a Nef polyhedron; we represent the connected
+components of a face individually and do not implement additional
+bookkeeping to recover the original faces (e.g., all edges on a common
+supporting line with the same local pyramid) as this is not needed in
+our algorithms.  We discuss features in the increasing order of 
+dimension.
+<P>
+
+<DL>
+    <DT><B>edges:</B><DD> 
+        We store two oppositely oriented edges for each edge
+        and have a pointer from one oriented edge to its <A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A> edge.
+        Such an oriented edge can be identified with an <I>svertex</I>
+        in a sphere map; it remains to link one <I>svertex</I> with
+        the corresponding <A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A> <I>svertex</I> in the other sphere map.
+    <DT><B>edge uses:</B><DD>
+        An edge can have many incident facets (non-manifold situation).
+        We introduce two oppositely oriented edge-uses for each incident
+        facet; one for each <A HREF="../Kernel_23_ref/Function_orientation.html#Cross_link_anchor_247">orientation</A> of the facet. An edge-use points 
+        to its corresponding oriented edge and to its oriented facet.   
+        We can identify an edge-use with an oriented <I>sedge</I> in the 
+        sphere map, or, in the special case also with an
+        <I>sloop</I>. Without mentioning it explicitly in the
+        remainder, all references to <I>sedge</I> can also refer to
+        <I>sloop</I>.
+    <DT><B>facets:</B><DD>
+        We store oriented facets as boundary cycles of oriented 
+        edge-uses. We have a distinguished outer boundary cycle and 
+        several (or maybe none) inner boundary cycles representing holes
+        in the facet. <A HREF="../Nef_2_ref/Class_Nef_polyhedron_2#Enum_Boundary">Boundary</A> cycles are linked in one direction. We can 
+        access the other traversal direction when we switch to the oppositely
+        oriented facet, i.e., by using the <A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A> edge-use.
+    <DT><B>shells:</B><DD>
+        The <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A> boundary decomposes into different connected
+        components, the <I>shells</I>. A shell consists of a connected set
+        of facets, edges, and vertices incident to this <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A>. Facets 
+        around an edge form a radial order that is captured in the
+        radial order of <I>sedges</I> around an <I>svertex</I> in the
+        sphere map. Using this information, we can trace a shell from
+        one entry element with a graph search. We offer this graph
+        traversal (to the user) in a visitor design pattern.
+    <DT><B>volumes:</B><DD>
+        A <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A> is defined by a set of shells, one outer shell containing
+        the <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A> and several (or maybe none) inner shells separating voids
+        which are excluded from the <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A>.
+</DL>
+<P>
+
+For each face we store a label, e.g., a set-selection mark, which
+indicates whether the face is part of the solid or if it is
+excluded. We call the resulting data structure <I>Selective Nef
+Complex</I>, <I>SNC</I> for short&nbsp;[<A HREF="../biblio.html#Biblio_cgal:ghhkm-bosnc-03">GHH<MATH><I><SUP>+</SUP></I></MATH>03</A>]. However, in
+C<SMALL>GAL</SMALL> we identify the names and call the <I>SNC</I> data structure
+<I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A></I>.
+<P>
+
+<a name="Section_3"></a>
+        
+<h2>15.3&nbsp;&nbsp;&nbsp;Infimaximal Box</h2>
+
+<A NAME="sectionNef_3InfiBox"></A>
+<P>
+
+We call a Nef polyhedron <I>bounded</I> if its boundary is bounded,
+i.e., finite, and <I>unbounded</I> otherwise. Note that unbounded
+point sets can have a bounded boundary, for example, the complement of
+a cube has an unbounded outer <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A>, but its boundary remains bounded.
+<P>
+
+Using a boundary representation, it is convenient (conceptually and in
+our implementation) to consider bounded Nef polyhedra only.  Bounded
+Nef polyhedra are also closed under boolean set operations. However, one
+needs to start with bounded primitives; the conceptually nice
+halfspaces cannot be used. Instead, we offer a construction from oriented
+2-manifolds represented in a  <I>CGAL::Polyhedron</I>, see
+Section&nbsp;<A HREF="Chapter_main.html#subsectionNef_3Polyhedron"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A> below.
+<P>
+
+In order to handle unbounded Nef polyhedra conceptually in the same
+way as we handle bounded Nef polyhedra, we intersect them with a
+bounding cubical <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A> of size <MATH><I>[-R,R]<SUP>3</SUP></I></MATH>, where <MATH><I>R</I></MATH> is a symbolical
+unspecified value, which is finite but larger than all coordinate
+values that may occur in the bounded part of the polyhedron. As a
+result, each Nef polyhedron becomes bounded.  We call the boundary of
+the bounding <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A> the <I>infimaximal
+  box</I>&nbsp;[<A HREF="../biblio.html#Biblio_cgal:sm-iftml-00">SM00</A>].
+<P>
+
+We clip lines and rays at the infimaximal box. The <A HREF="../Kernel_23_ref/Function_intersection.html#Cross_link_anchor_221">intersection</A> points
+with the infimaximal box are called <I>non-standard points</I>, which
+are points whose coordinates are <MATH><I>-R</I></MATH> or <MATH><I>R</I></MATH> in at least one
+dimension, and linear functions <MATH><I>f(R)</I></MATH> for the other dimensions. Such
+extended points (and developed from there also extended segments etc)
+are provided in C<SMALL>GAL</SMALL> with extended
+kernels - <I><A HREF="../Nef_2_ref/Class_Extended_cartesian.html#Cross_link_anchor_720">CGAL::Extended_cartesian</A></I> and
+<I><A HREF="../Nef_2_ref/Class_Extended_homogeneous.html#Cross_link_anchor_722">CGAL::Extended_homogeneous</A></I>.  They are regular C<SMALL>GAL</SMALL> kernels
+with a polynomial type as coordinate number type.
+<P>
+
+As long as an extended kernel is used, the full functionality provided
+by the <I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A></I> class is available. If a kernel that 
+does not use polynomials to represent coordinates is used, it is not 
+possible to create or load unbounded Nef
+polyhedra, but all other operations work as expected. We provided both
+possibilities, since the restriction to bounded Nef polyhedra improves
+considerably space requirements (plain number type instead of
+polynomial), and runtime performance.
+<P>
+
+<a name="Section_4"></a>
+        
+<h2>15.4&nbsp;&nbsp;&nbsp;Regularized Set Operations</h2>
+
+<A NAME="sectoinRegularized"></A>
+<P>
+
+Since manifolds are not closed under boolean operations, Requicha
+proposes to use <I>regularized set operations</I>&nbsp;[<A HREF="../biblio.html#Biblio_cgal:km-st-76">KM76</A>, <A HREF="../biblio.html#Biblio_cgal:r-rrstm-80">Req80</A>].  A set is <I>regular</I>, if it equals the closure
+of its interior. A regularized set operation is defined as the 
+standard set operation followed by a regularization of the result.
+Regularized sets are closed under regularized set operations.
+<P>
+
+Regularized set operations are important since they simplify the class
+of solids to exclude lower dimensional features and the boundary
+belongs to the point set. These properties are considered to reflect
+the nature of physical solids more closely.
+<P>
+
+Regularized polyhedral sets are a subclass of Nef polyhedra. We provide the
+<I>regularization</I> operation as a shortcut for the consecutive execution
+of the <I>interior</I> and the <I>closure</I> operations.
+<P>
+
+<a name="Section_5"></a>
+        
+<h2>15.5&nbsp;&nbsp;&nbsp;Example Programs</h2>
+<P>
+
+The following example gives a first impression of how to instantiate
+and use <I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A></I>. We use the <I><A HREF="../Kernel_23_ref/Class_Cartesian.html#Cross_link_anchor_5">CGAL::Cartesian</A></I>
+kernel.  All <A HREF="../Kernel_23_ref/Class_Cartesian.html#Cross_link_anchor_6">Cartesian</A> and homogeneous kernels of C<SMALL>GAL</SMALL> are suitable
+if the number type parameter follows the usual requirements of being a
+model of the <I>CGAL::<A HREF="../Kernel_23_ref/Concept_FieldNumberType.html#Cross_link_anchor_2">FieldNumberType</A></I> concept for the <A HREF="../Kernel_23_ref/Class_Cartesian.html#Cross_link_anchor_6">Cartesian</A>
+kernels, or the <I>CGAL::<A HREF="../Kernel_23_ref/Concept_RingNumberType.html#Cross_link_anchor_3">RingNumberType</A></I> concept for the homogeneous
+kernels, respectively. Note however, that in the current state, the
+Nef polyhedron works only with C<SMALL>GAL</SMALL> kernels. The implementation
+makes use of C<SMALL>GAL</SMALL> specific functions in kernel objects, and does not
+yet offer a designed interface to a clean kernel concept that could be
+offered by an external kernel as well.
+<P>
+
+The example creates two Nef polyhedra - <I>N0</I> is the empty set,
+while <I>N1</I> represents the full space, i.e., the set of all points
+in the 3-dimensional space. The assertion assures that the empty set
+is the complement of the full space.
+<P>
+
+<pre class="ExampleCode">// file: examples/Nef_3/simple.C
+
+#include &lt;CGAL/<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1364">Gmpz</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_18">Homogeneous</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>.h&gt;
+
+typedef <A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_17">CGAL::Homogeneous</A>&lt;<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1363">CGAL::Gmpz</A>&gt;  <A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A>&lt;<A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>&gt; Nef_polyhedron;
+
+int main() {
+  Nef_polyhedron N0(Nef_polyhedron::<A HREF="../Nef_2_ref/Class_Nef_polyhedron_2#Enum_Content">EMPTY</A>);
+  Nef_polyhedron N1(Nef_polyhedron::<A HREF="../Nef_2_ref/Class_Nef_polyhedron_2#Enum_Content">COMPLETE</A>);
+
+  CGAL_assertion (N0 == N1.complement());
+  return 0;
+}
+</pre>
+<P>
+
+<h3>15.5.1&nbsp;&nbsp;&nbsp;Construction and Comparison</h3>
+<P>
+
+This example shows the various constructors. We can create the empty
+set, which is also the default constructor, and the full space, i.e.
+all points of <MATH><I> <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>3</SUP></I></MATH> belong to the polyhedron. We can create a
+halfspace defined by a plane bounding it. It is only available if an
+extended kernel is used. The halfspace constructor has a second
+parameter that specifies whether the defining plane belongs to the
+point set (<I>Nef_polyhedron::<A HREF="../Nef_2_ref/Class_Nef_polyhedron_2#Enum_Boundary">INCLUDED</A></I>) or not
+(<I>Nef_polyhedron::<A HREF="../Nef_2_ref/Class_Nef_polyhedron_2#Enum_Boundary">EXCLUDED</A></I>). The default value is
+<I>Nef_polyhedron::<A HREF="../Nef_2_ref/Class_Nef_polyhedron_2#Enum_Boundary">INCLUDED</A></I>. Additionally, we can create a
+<I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A></I> from a <I><A HREF="../Polyhedron_ref/Class_Polyhedron_3.html#Cross_link_anchor_854">Polyhedron_3</A></I>, see the Section
+<A HREF="Chapter_main.html#subsectionNef_3Polyhedron"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A> below.
+<P>
+
+We can compute the point sets of two Nef polyhedra for equality and
+proper subset relationships. We offer the usual comparison operators
+<I>==</I>, <I>!=</I>, <I>&lt;=</I>, <I>&gt;=</I>, <I>&lt;</I> and <I>&gt;</I>.
+<P>
+
+Nef polyhedra have the important feature that a representation that is
+called the <I>reduced W&uuml;rzburg structure</I> is unique, i.e., two
+point sets of Nef polyhedra are equal if and only if the
+representations are equal. The proof for the reduced W&uuml;rzburg
+structure carries over to our representation and the comparison
+operators are therefore trivial to implement.
+<P>
+
+<pre class="ExampleCode">// file: examples/Nef_3/construction.C
+
+#include &lt;CGAL/<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1364">Gmpz</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_2_ref/Class_Extended_homogeneous.html#Cross_link_anchor_723">Extended_homogeneous</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>.h&gt;
+
+typedef <A HREF="../Nef_2_ref/Class_Extended_homogeneous.html#Cross_link_anchor_722">CGAL::Extended_homogeneous</A>&lt;<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1363">CGAL::Gmpz</A>&gt;  <A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A>&lt;<A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>&gt;  Nef_polyhedron;
+typedef Nef_polyhedron::<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>  <A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>;
+
+int main() {
+  Nef_polyhedron N0;
+  Nef_polyhedron N1(Nef_polyhedron::<A HREF="../Nef_2_ref/Class_Nef_polyhedron_2#Enum_Content">EMPTY</A>);
+  Nef_polyhedron N2(Nef_polyhedron::<A HREF="../Nef_2_ref/Class_Nef_polyhedron_2#Enum_Content">COMPLETE</A>);
+  Nef_polyhedron N3(<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>( 1, 2, 5,-1));
+  Nef_polyhedron N4(<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>( 1, 2, 5,-1), Nef_polyhedron::<A HREF="../Nef_2_ref/Class_Nef_polyhedron_2#Enum_Boundary">INCLUDED</A>);
+  Nef_polyhedron N5(<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>( 1, 2, 5,-1), Nef_polyhedron::<A HREF="../Nef_2_ref/Class_Nef_polyhedron_2#Enum_Boundary">EXCLUDED</A>);
+
+  CGAL_assertion(N0 == N1);
+  CGAL_assertion(N3 == N4);
+  CGAL_assertion(N0 != N2);
+  CGAL_assertion(N3 != N5);
+  
+  CGAL_assertion(N4 &gt;= N5);
+  CGAL_assertion(N5 &lt;= N4);
+  CGAL_assertion(N4 &gt; N5);
+  CGAL_assertion(N5 &lt; N4);
+
+  N5 = N5.closure();
+  CGAL_assertion(N4 &gt;= N5);
+  CGAL_assertion(N4 &lt;= N5);
+
+  return 0;
+}
+</pre>
+<P>
+
+<h3>15.5.2&nbsp;&nbsp;&nbsp;Point Set Operations</h3>
+<P>
+
+As explained in the introduction, Nef polyhedra are closed under all
+boolean set operations. The class <I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A></I> provides
+functions and operators for the most common ones: complement
+(<I>operator!</I>), union (<I>operator+</I>), difference
+(<I>operator-</I>), <A HREF="../Kernel_23_ref/Function_intersection.html#Cross_link_anchor_221">intersection</A> (<I>operator*</I>) and symmetric
+difference (<I>operator^</I>). Additionally, the operators <I>*=</I>,
+<I>-=</I>, <I>*=</I> and <I>^=</I> are defined.
+<P>
+
+<I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A></I> also provides the topological operations
+<I>interior()</I>, <I>closure()</I> and <I>boundary()</I>. With
+<I>interior()</I> one deselects all boundary items, with
+<I>boundary()</I> one deselects all volumes, and with <I>closure()</I>
+one selects all boundary items.
+<P>
+
+<pre class="ExampleCode">// file: examples/Nef_3/point_set_operations.C
+
+#include &lt;CGAL/<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1364">Gmpz</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_2_ref/Class_Extended_homogeneous.html#Cross_link_anchor_723">Extended_homogeneous</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>.h&gt;
+
+typedef <A HREF="../Nef_2_ref/Class_Extended_homogeneous.html#Cross_link_anchor_722">CGAL::Extended_homogeneous</A>&lt;<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1363">CGAL::Gmpz</A>&gt;  <A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A>&lt;<A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>&gt;  Nef_polyhedron;
+typedef Nef_polyhedron::<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>  <A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>;
+
+int main() {
+
+  Nef_polyhedron N1(<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>( 1, 0, 0,-1));
+  Nef_polyhedron N2(<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>(-1, 0, 0,-1));
+  Nef_polyhedron N3(<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>( 0, 1, 0,-1));
+  Nef_polyhedron N4(<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>( 0,-1, 0,-1));
+  Nef_polyhedron N5(<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>( 0, 0, 1,-1));
+  Nef_polyhedron N6(<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>( 0, 0,-1,-1));
+
+  Nef_polyhedron I1(!N1 + !N2);  // open slice in yz-plane
+  Nef_polyhedron I2(N3 - !N4);   // closed slice in xz-plane
+  Nef_polyhedron I3(N5 ^ N6);    // open slice in yz-plane
+  Nef_polyhedron Cube1(I2 * !I1);
+  Cube1 *= !I3;
+  Nef_polyhedron Cube2 = N1 * N2 * N3 * N4 * N5 * N6;
+
+  CGAL_assertion(Cube1 == Cube2);  // both are closed cube
+  CGAL_assertion(Cube1 == Cube1.closure());
+  CGAL_assertion(Cube1 == Cube1.regularization());
+  CGAL_assertion((N1 - N1.boundary()) == N1.interior()); 
+  CGAL_assertion(I1.closure() == I1.complement().interior().complement());
+  CGAL_assertion(I1.regularization() == I1.interior().closure());
+  return 0;
+}
+</pre>
+<P>
+
+<h3>15.5.3&nbsp;&nbsp;&nbsp;Transformation</h3>
+<P>
+
+Using the <I>std::transform</I> function, a Nef polyhedron can be translated, 
+rotated and scaled. The usage is shown in the following example:
+<P>
+
+<pre class="ExampleCode">// examples/Nef_3/transformation.C
+
+#include &lt;CGAL/<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1364">Gmpz</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_2_ref/Class_Extended_homogeneous.html#Cross_link_anchor_723">Extended_homogeneous</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>.h&gt;
+#include &lt;CGAL/IO/Nef_polyhedron_iostream_3.h&gt;
+
+typedef <A HREF="../Nef_2_ref/Class_Extended_homogeneous.html#Cross_link_anchor_722">CGAL::Extended_homogeneous</A>&lt;<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1363">CGAL::Gmpz</A>&gt;  <A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A>&lt;<A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>&gt;  Nef_polyhedron;
+typedef Nef_polyhedron::<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>  <A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>;
+typedef Nef_polyhedron::<A HREF="../Kernel_23_ref/Class_Vector_3.html#Cross_link_anchor_86">Vector_3</A>  <A HREF="../Kernel_23_ref/Class_Vector_3.html#Cross_link_anchor_86">Vector_3</A>;
+typedef Nef_polyhedron::<A HREF="../Kernel_23_ref/Class_Aff_transformation_3.html#Cross_link_anchor_64">Aff_transformation_3</A>  <A HREF="../Kernel_23_ref/Class_Aff_transformation_3.html#Cross_link_anchor_64">Aff_transformation_3</A>;
+
+int main() {
+
+  Nef_polyhedron N(<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>(0,1,0,0));
+  <A HREF="../Kernel_23_ref/Class_Aff_transformation_3.html#Cross_link_anchor_64">Aff_transformation_3</A> transl(CGAL::TRANSLATION, <A HREF="../Kernel_23_ref/Class_Vector_3.html#Cross_link_anchor_86">Vector_3</A>(5, 7, 9));
+  <A HREF="../Kernel_23_ref/Class_Aff_transformation_3.html#Cross_link_anchor_64">Aff_transformation_3</A> rotx90(1,0,0,
+			      0,0,-1,
+			      0,1,0,
+			      1); 
+  <A HREF="../Kernel_23_ref/Class_Aff_transformation_3.html#Cross_link_anchor_64">Aff_transformation_3</A> scale(3,0,0,
+			     0,3,0,
+			     0,0,3,
+			     2);
+
+  N.transform(transl);
+  CGAL_assertion(N == Nef_polyhedron(<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>(0,1,0,-7)));
+  N.transform(rotx90);
+  CGAL_assertion(N == Nef_polyhedron(<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>(0,0,1,-7)));
+  N.transform(scale);
+  CGAL_assertion(N == Nef_polyhedron(<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>(0,0,2,-21)));
+
+  return 0;
+}
+</pre>
+<P>
+
+<h3>15.5.4&nbsp;&nbsp;&nbsp;The Interface between <I>Polyhedron_3</I> and 
+    <I>Nef_polyhedron_3</I></h3>
+
+<A NAME="subsectionNef_3Polyhedron"></A>
+<P>
+
+<I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A></I> provides an interface for the conversion between
+polyhedral surfaces represented with the <I><A HREF="../Polyhedron_ref/Class_Polyhedron_3.html#Cross_link_anchor_853">CGAL::Polyhedron_3</A></I> class
+and <I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A></I>.  <I><A HREF="../Polyhedron_ref/Class_Polyhedron_3.html#Cross_link_anchor_854">Polyhedron_3</A></I> represents orientable
+2-manifold objects with boundaries. However, we exclude surfaces with
+boundaries from the conversion to <I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A></I> since they
+have no properly defined <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A>.
+<P>
+
+Both conversion directions can only be performed if the boundary of
+the point set is an oriented closed 2-manifold.
+<I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A></I> provides the function <I>is_simple()</I> and
+<I><A HREF="../Polyhedron_ref/Class_Polyhedron_3.html#Cross_link_anchor_854">Polyhedron_3</A></I> provides the function <I>is_closed()</I> to test for
+this property. The usage is illustrated by the example program below.
+<P>
+
+The conversion gives us the possibility to use several file formats.
+<I><A HREF="../Polyhedron_ref/Class_Polyhedron_3.html#Cross_link_anchor_854">Polyhedron_3</A></I> can read the (<TT>.off</TT>) file format and can write
+the (<TT>.off</TT>), OpenInventor (<TT>.iv</TT>), VRML 1.0 and 2.0 (<TT>.wrl</TT>) and Wavefront Advanced Visualizer object format (<TT>.obj</TT>),
+see Section&nbsp;<A HREF="../Polyhedron/Chapter_main.html#sectionPolyIO"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>.
+<P>
+
+<pre class="ExampleCode">// file: examples/Nef_3/interface_polyhedron.C
+
+#include &lt;CGAL/<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1364">Gmpz</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_18">Homogeneous</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Polyhedron_ref/Class_Polyhedron_3.html#Cross_link_anchor_854">Polyhedron_3</A>.h&gt;
+#include &lt;CGAL/IO/Polyhedron_iostream.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>.h&gt;
+#include &lt;CGAL/IO/Nef_polyhedron_iostream_3.h&gt;
+#include &lt;iostream&gt;
+
+typedef <A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_17">CGAL::Homogeneous</A>&lt;<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1363">CGAL::Gmpz</A>&gt;  <A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>;
+typedef <A HREF="../Polyhedron_ref/Class_Polyhedron_3.html#Cross_link_anchor_853">CGAL::Polyhedron_3</A>&lt;<A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>&gt;  Polyhedron;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A>&lt;<A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>&gt; Nef_polyhedron;
+typedef Nef_polyhedron::<A HREF="../Kernel_23_ref/Class_Vector_3.html#Cross_link_anchor_86">Vector_3</A>  <A HREF="../Kernel_23_ref/Class_Vector_3.html#Cross_link_anchor_86">Vector_3</A>;
+typedef Nef_polyhedron::<A HREF="../Kernel_23_ref/Class_Aff_transformation_3.html#Cross_link_anchor_64">Aff_transformation_3</A>  <A HREF="../Kernel_23_ref/Class_Aff_transformation_3.html#Cross_link_anchor_64">Aff_transformation_3</A>;
+
+int main() {
+  Polyhedron P;
+  std::cin &gt;&gt; P;
+  if(P.is_closed()) {
+    Nef_polyhedron N1(P);
+    Nef_polyhedron N2(N1);
+    <A HREF="../Kernel_23_ref/Class_Aff_transformation_3.html#Cross_link_anchor_64">Aff_transformation_3</A> aff(CGAL::TRANSLATION, <A HREF="../Kernel_23_ref/Class_Vector_3.html#Cross_link_anchor_86">Vector_3</A>(2,2,0,1));
+    N2.transform(aff);
+    N1 += N2;
+    
+    if(N1.is_simple()) {
+      N1.convert_to_Polyhedron(P);
+      std::cout &lt;&lt; P;
+    }
+    else
+      std::cerr &lt;&lt; &quot;N1 is not a 2-manifold.&quot; &lt;&lt; std::endl;
+  }
+}
+</pre>
+<P>
+
+<h3>15.5.5&nbsp;&nbsp;&nbsp;Using an Extended Kernel</h3>
+<P>
+
+The provided extended kernels are used the same way as any other
+C<SMALL>GAL</SMALL> kernel.  The essential difference is, that coordinates are not
+represented by the number type that was used to parameterize the
+kernel type, but by a <I>Nef_polynomial</I> parametrized by that number
+type.
+<P>
+
+The example iterates all vertices of a given Nef polyhedron and decides whether
+it is an standard vertex or a vertex on the infimaximal box. Furthermore, it 
+tests whether any of the vertices is at <MATH><I>(R,R,R)</I></MATH>. Recall that <MATH><I>R</I></MATH> was
+the symbolical value, large but finite, for the size of the infimaximal box.
+<P>
+
+<pre class="ExampleCode">// file: examples/Nef_3/extended_kernel.C
+
+#include &lt;CGAL/<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1364">Gmpz</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_2_ref/Class_Extended_homogeneous.html#Cross_link_anchor_723">Extended_homogeneous</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>.h&gt;
+#include &lt;CGAL/IO/Nef_polyhedron_iostream_3.h&gt;
+
+typedef <A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1363">CGAL::Gmpz</A>  NT;
+typedef <A HREF="../Nef_2_ref/Class_Extended_homogeneous.html#Cross_link_anchor_722">CGAL::Extended_homogeneous</A>&lt;NT&gt;  <A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A>&lt;<A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>&gt;  Nef_polyhedron;
+typedef Nef_polyhedron::RT  RT;
+typedef Nef_polyhedron::<A HREF="../Kernel_23_ref/Class_Point_3.html#Cross_link_anchor_74">Point_3</A>  <A HREF="../Kernel_23_ref/Class_Point_3.html#Cross_link_anchor_74">Point_3</A>;
+typedef Nef_polyhedron::<A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>  <A HREF="../Kernel_23_ref/Class_Plane_3.html#Cross_link_anchor_72">Plane_3</A>;
+typedef Nef_polyhedron::Vertex_const_iterator  Vertex_const_iterator;
+
+int main() {
+
+  Nef_polyhedron N;
+  std::cin &gt;&gt; N;
+  
+  Vertex_const_iterator v;
+  for(v = N.vertices_begin(); v != N.vertices_end(); ++v) {
+    <A HREF="../Kernel_23_ref/Class_Point_3.html#Cross_link_anchor_74">Point_3</A> p(v-&gt;point());
+    if(p.hx().degree() &gt; 0 || p.hy().degree() &gt; 0 || p.hz().degree() &gt; 0)
+      std::cout &lt;&lt; &quot;extended vertex at &quot; &lt;&lt; p &lt;&lt; std::endl;
+    else
+      std::cout &lt;&lt; &quot;standard vertex at &quot; &lt;&lt; p &lt;&lt; std::endl;
+
+    if(p == <A HREF="../Kernel_23_ref/Class_Point_3.html#Cross_link_anchor_74">Point_3</A>(RT(0,1), RT(0,1), RT(0,1)))
+       std::cout &lt;&lt; &quot;  found vertex (right,back,top) of the infimaximal box&quot;
+                 &lt;&lt; std::endl;
+  }
+
+  return 0;
+}
+</pre>
+<P>
+
+<a name="Section_6"></a>
+        
+<h2>15.6&nbsp;&nbsp;&nbsp;File I/O</h2>
+
+<A NAME="sectionNef_3IO"></A>
+<P>
+
+<I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A></I> provides an input and an output operator for a
+proprietary file format. It includes the complete incidence structure,
+the geometric data, and the marks of each item.  The output depends on
+the output operators of the geometric primitives provided by the
+traits class, and on the output operators of the used number type.
+Therefore, it is necessary to use the same kernel and the same number
+type for input and output operations.
+<P>
+
+We recommend to use the C<SMALL>GAL</SMALL> kernels <I><A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_18">Homogeneous</A></I>,
+<I><A HREF="../Kernel_23_ref/Class_Simple_homogeneous.html#Cross_link_anchor_32">Simple_homogeneous</A></I>, or <I><A HREF="../Nef_2_ref/Class_Extended_homogeneous.html#Cross_link_anchor_723">Extended_homogeneous</A></I>. We provide
+compatibility between the input and output of these kernels.
+Especially, it is possible to write a bounded Nef polyhedron using the
+<I><A HREF="../Nef_2_ref/Class_Extended_homogeneous.html#Cross_link_anchor_723">Extended_homogeneous</A></I> kernel and to read it afterwards using one
+of the two others.
+<P>
+
+Using C<SMALL>GAL</SMALL> stream modifiers the following output formats can be chosen: 
+<A HREF="../IOstream_ref/Enum_Mode#Enum_Mode">ASCII</A>(<I><A HREF="../IOstream_ref/Function_set_ascii_mode.html#Cross_link_anchor_1744">set_ascii_mode</A></I>), binary(<I><A HREF="../IOstream_ref/Function_set_binary_mode.html#Cross_link_anchor_1746">set_binary_mode</A></I>) or 
+pretty(<I><A HREF="../IOstream_ref/Function_set_pretty_mode.html#Cross_link_anchor_1750">set_pretty_mode</A></I>). The mandatory format is the <A HREF="../IOstream_ref/Enum_Mode#Enum_Mode">ASCII</A> format.
+<P>
+
+<pre class="ExampleCode">// file: examples/Nef_3/nefIO.C
+
+#include &lt;CGAL/<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1364">Gmpz</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_18">Homogeneous</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_2_ref/Class_Extended_homogeneous.html#Cross_link_anchor_723">Extended_homogeneous</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>.h&gt;
+#include &lt;CGAL/IO/Nef_polyhedron_iostream_3.h&gt;
+#include &lt;fstream&gt;
+
+typedef <A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1363">CGAL::Gmpz</A>  NT;
+typedef <A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_17">CGAL::Homogeneous</A>&lt;NT&gt;  SK;
+typedef <A HREF="../Nef_2_ref/Class_Extended_homogeneous.html#Cross_link_anchor_722">CGAL::Extended_homogeneous</A>&lt;NT&gt;  EK;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A>&lt;SK&gt;  Nef_polyhedron_S;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A>&lt;EK&gt;  Nef_polyhedron_E;
+
+int main() {
+  Nef_polyhedron_E E;
+  Nef_polyhedron_S S;
+
+  std::cin &gt;&gt; E;
+
+  if(E.is_bounded()) {
+    std::ofstream out(&quot;temp.nef3&quot;);
+    out &lt;&lt; E;
+    std::ifstream in(&quot;temp.nef3&quot;);
+    in &gt;&gt; S;
+  }
+}
+</pre>
+<P>
+
+<a name="Section_7"></a>
+        
+<h2>15.7&nbsp;&nbsp;&nbsp;Further Example Programs</h2>
+<P>
+
+<h3>15.7.1&nbsp;&nbsp;&nbsp;Exploring a Sphere Map</h3>
+<P>
+
+A sphere map is explored by using the function <I>get_sphere_map</I>, which 
+returns the sphere map of the specified vertex as a <I><A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A></I>.
+<I><A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A></I> provides the functionality necessary for the
+exploration.
+Note, that one has to use
+the type <I><A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A></I> as specified in <I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A></I> as 
+is shown in the following example.
+<P>
+
+<pre class="ExampleCode">// file: examples/Nef_3/exploration_SM.C
+
+#include &lt;CGAL/<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1364">Gmpz</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_18">Homogeneous</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>.h&gt;
+#include &lt;CGAL/IO/Nef_polyhedron_iostream_3.h&gt;
+
+typedef <A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_17">CGAL::Homogeneous</A>&lt;<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1363">CGAL::Gmpz</A>&gt; <A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A>&lt;<A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>&gt; <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>::Vertex_const_iterator Vertex_const_iterator;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>::<A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A> <A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A>;
+typedef <A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A>::SVertex_const_handle SVertex_const_handle;
+typedef <A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A>::SHalfedge_const_handle SHalfedge_const_handle;
+typedef <A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A>::SHalfloop_const_handle SHalfloop_const_handle;
+typedef <A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A>::SFace_const_iterator SFace_const_iterator;
+typedef <A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A>::SFace_cycle_const_iterator 
+                           SFace_cycle_const_iterator;
+
+int main() {
+  <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A> N;
+  std::cin &gt;&gt; N;
+
+  Vertex_const_iterator v = N.vertices_begin();
+  <A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A> S(N.get_sphere_map(v));
+
+  int i=0;
+  SFace_const_iterator sf;
+  for(sf = S.sfaces_begin(); sf != S.sfaces_end(); sf++) {
+    SFace_cycle_const_iterator it;
+    std::cout &lt;&lt; &quot;the sface cycles of sface &quot; &lt;&lt; i++ &lt;&lt; &quot; start with an\n&quot;;
+    for(it = sf-&gt;sface_cycles_begin(); it != sf-&gt;sface_cycles_end(); it++) {
+      if (it.is_svertex())
+        std::cout &lt;&lt; &quot;  svertex at position &quot; 
+                  &lt;&lt; SVertex_const_handle(it)-&gt;point() &lt;&lt; std::endl;
+      else if (it.is_shalfedge()) 
+        std::cout &lt;&lt; &quot;  shalfedge from &quot; 
+                  &lt;&lt; SHalfedge_const_handle(it)-&gt;source()-&gt;point() &lt;&lt; &quot; to &quot; 
+                  &lt;&lt; SHalfedge_const_handle(it)-&gt;target()-&gt;point() &lt;&lt; std::endl;
+      else if (it.is_shalfloop())
+        std::cout &lt;&lt; &quot;  shalfloop lying in the plane &quot; 
+                  &lt;&lt; SHalfloop_const_handle(it)-&gt;circle() &lt;&lt; std::endl;
+      // other cases can not occur.
+    }
+  }
+  return 0;
+}
+</pre>
+<P>
+
+<h3>15.7.2&nbsp;&nbsp;&nbsp;Exploring Shells</h3>
+<P>
+
+A <I>shell</I> of a Nef polyhedron is the connected part of the
+surface incident to a certain <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A>.  Each halffacet, sface and
+shalfedge belongs to a single shell. The figure below illustrates the
+notion of a shell.  It shows a Nef polyhedron with two volumes and
+three shells.
+<P>
+
+<CENTER>
+        <img src="fig/shells.gif" alt="Steps in making a cube.">
+<P>
+
+</CENTER>
+<P>
+
+The first <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A> is the outer <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A> and the second <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A> is the
+interior of the cube. The first shell is the whole surface of the left
+object. The second shell is the outer surface of the right object, and
+the third shell is the inner surface of the right object.
+<P>
+
+In detail, the first shell consists of two halffacets, eight halfedges
+and four vertices. The second shell consists of the eight vertices of
+the cube plus the two endpoints of the antenna, all halffacets
+oriented outwards, and all halfedges. The third shell consists of the
+same eight vertices of the cube, plus the endpoint of the antenna
+that is in contact with the cube, all halffacets
+oriented inwards, and all halfedges (the same as for the second shell).
+<P>
+
+<CENTER>
+        <img src="fig/closeup.gif" alt="Steps in making a cube.">
+<P>
+
+</CENTER>
+<P>
+
+We discuss how sfaces, shalfedges, and sloops belong to the shells
+with a closeup view of the situation at the antenna foot. As you can
+see, there are three items on the sphere map - a shalfloop for each
+halffacet which intersects the sphere, and an svertex where the
+antenna intersects the sphere. The upper shalfloop lies on the 
+halffacet which is oriented outwards and is therefore also 
+oriented outwards. This shalfloop and the svertex belong to the
+second shell.
+The other shalfloop lies on the inwards oriented halffacet and is 
+oriented inwards, too. This shalfloop belongs to the third shell.
+<P>
+
+<I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A></I> offers a visitor interface to explore a shell
+following the well-known visitor pattern&nbsp;[<A HREF="../biblio.html#Biblio_cgal:ghjv-dpero-95">GHJV95</A>].
+The interface is illustrated by the following example.
+<P>
+
+<pre class="ExampleCode">// file: examples/Nef_3/shell_exploration.C
+
+#include &lt;CGAL/<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1364">Gmpz</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_18">Homogeneous</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>.h&gt;
+#include &lt;CGAL/IO/Nef_polyhedron_iostream_3.h&gt;
+
+typedef <A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_17">CGAL::Homogeneous</A>&lt;<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1363">CGAL::Gmpz</A>&gt; <A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A>&lt;<A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>&gt; Nef_polyhedron;
+typedef Nef_polyhedron::Vertex_const_handle Vertex_const_handle;
+typedef Nef_polyhedron::Halfedge_const_handle Halfedge_const_handle;
+typedef Nef_polyhedron::Halffacet_const_handle Halffacet_const_handle;
+typedef Nef_polyhedron::SHalfedge_const_handle SHalfedge_const_handle;
+typedef Nef_polyhedron::SHalfloop_const_handle SHalfloop_const_handle;
+typedef Nef_polyhedron::SFace_const_handle SFace_const_handle;
+typedef Nef_polyhedron::Volume_const_iterator Volume_const_iterator;
+typedef Nef_polyhedron::Shell_entry_const_iterator Shell_entry_const_iterator;
+typedef <A HREF="../Kernel_23_ref/Concept_Kernel--Point_3.html#Cross_link_anchor_460">Kernel::Point_3</A> <A HREF="../Kernel_23_ref/Class_Point_3.html#Cross_link_anchor_74">Point_3</A>;
+
+class Shell_explorer {
+  bool first;
+  const Nef_polyhedron&amp; N;
+  Vertex_const_handle v_min;
+
+public:
+  Shell_explorer(const Nef_polyhedron&amp; N_) 
+    : first(true), N(N_) {}
+  
+  void visit(Vertex_const_handle v) {
+    if(first || <A HREF="../Kernel_23_ref/Function_lexicographically_xyz_smaller.html#Cross_link_anchor_224">CGAL::lexicographically_xyz_smaller</A>(v-&gt;point(),v_min-&gt;point())) {
+      v_min = v;
+      first=false;
+    } 
+  }
+  
+  void visit(Halfedge_const_handle e) {}
+  void visit(Halffacet_const_handle f) {}
+  void visit(SHalfedge_const_handle se) {}
+  void visit(SHalfloop_const_handle sl) {}
+  void visit(SFace_const_handle sf) {}
+  
+  Vertex_const_handle&amp; minimal_vertex() { return v_min; }
+  void reset_minimal_vertex() { first = true; }
+};    
+
+int main() {
+  Nef_polyhedron N;
+  std::cin &gt;&gt; N;
+
+  int ic = 0;
+  Volume_const_iterator c;
+  Shell_explorer SE(N);
+  CGAL_forall_volumes(c,N) {
+    std::cout &lt;&lt; &quot;Volume &quot; &lt;&lt; ic++ &lt;&lt; std::endl;
+    int is = 0;
+    Shell_entry_const_iterator it;
+    CGAL_forall_shells_of(it,c) {
+      SE.reset_minimal_vertex();
+      N.visit_shell_objects(SFace_const_handle(it),SE);
+      <A HREF="../Kernel_23_ref/Class_Point_3.html#Cross_link_anchor_74">Point_3</A> p(SE.minimal_vertex()-&gt;point());
+      std::cout &lt;&lt; &quot;  minimal vertex of shell &quot; &lt;&lt; is++ 
+                &lt;&lt; &quot; is at &quot; &lt;&lt; p &lt;&lt; std::endl;
+    }
+  } 
+}
+</pre>
+<P>
+
+The function <I>visit_shell_objects(SFace_const_handle sf, Visitor&amp;   V)</I> explores a shell starting at the <I>sf</I>. The second argument
+expects any class providing the (possibly empty) functions
+<I>visit(Vertex_const_handle)</I>, <I>visit(Halfedge_const_handle)</I>
+(remember that Halfedge is the same type as SVertex),
+<I>visit(Halffacet_const_handle)</I>,
+<I>visit(SHalfedge_const_handle)</I>,
+<I>visit(SHalfloop_const_handle)</I> and
+<I>visit(SFace_const_handle)</I>.  The <I>visit_shell_objects</I>
+function will call <I>visit</I> for each item belonging to the shell
+once. There are no further requirements on that class.
+<P>
+
+In the example, the class <I>Shell_explorer</I> is passed as second argument
+to <I>visit_shell_objects</I>. Its task is to find the lexicographically
+smallest vertex of a shell. Its internal state consists of three variables. 
+The first one is a reference to the explored Nef polyhedron. This reference
+is often necessary to retrieve information from the Nef polyhedron. The
+second variable <I>v_min</I> stores the smallest vertex found so far, and
+the third variable <I>first</I> is initialized to <I>false</I> to signal that no
+vertex has been visited so far. After the first vertex has been visited 
+<I>first</I> is changed to <I>true</I>.
+<P>
+
+<I>Shell_explorer</I> provides further member functions. After the
+exploration of a shell the <I>minimal_vertex</I> function retrieves the
+smallest vertex. The <I>reset_minimal_vertex</I> function allows one to
+use the same instance of <I>Shell_explorer</I> on multiple shells. In
+this case, the <I>reset_minimal_vertex</I> function has to be called
+between the exploration of two shells.
+<P>
+
+The example program uses the <I>Shell_explorer</I> for each shell of
+the given Nef polyhedron once and reports the smallest vertex of each
+shell to the standard output.
+<P>
+
+<h3>15.7.3&nbsp;&nbsp;&nbsp;Point Location</h3>
+<P>
+
+The <I>locate(<A HREF="../Kernel_23_ref/Class_Point_3.html#Cross_link_anchor_74">Point_3</A> p)</I> function locates the point <I>p</I> in the
+Nef polyhedron and returns the item the point belongs to. The
+<I>locate</I> function returns an instance of <I>Object_handle</I>,
+which is a polymorphic handle type representing any handle type, no
+matter if it is mutable or const.  For further usage of the result,
+the <I>Object_handle</I> has to be casted to the concrete handle type.
+The <I><A HREF="../Kernel_23_ref/Function_assign.html#Cross_link_anchor_89">CGAL::assign</A></I> function performs such a cast. It returns a
+boolean that reports the success or the failure of of the cast.
+Looking at the possible return values of the <I>locate</I> function,
+the <I>Object_handle</I> can represent a <I>Vertex_const_handle</I>, a
+<I>Halfedge_const_handle</I>, a <I>Halffacet_handle</I>, or a
+<I>Volume_const_handle</I>. One of the four casts will succeed.
+<P>
+
+<pre class="ExampleCode">// file: examples/Nef_3/point_location.C
+
+#include &lt;CGAL/<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1364">Gmpz</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_18">Homogeneous</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>.h&gt;
+#include &lt;CGAL/IO/Nef_polyhedron_iostream_3.h&gt;
+
+typedef <A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_17">CGAL::Homogeneous</A>&lt;<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1363">CGAL::Gmpz</A>&gt; <A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A>&lt;<A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>&gt; <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>::Vertex_const_handle Vertex_const_handle;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>::Halfedge_const_handle Halfedge_const_handle;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>::Halffacet_const_handle Halffacet_const_handle;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>::Volume_const_handle Volume_const_handle;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>::Object_handle Object_handle;
+typedef <A HREF="../Kernel_23_ref/Concept_Kernel--Point_3.html#Cross_link_anchor_460">Kernel::Point_3</A> <A HREF="../Kernel_23_ref/Class_Point_3.html#Cross_link_anchor_74">Point_3</A>;
+
+int main() {
+  <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A> N;
+  std::cin &gt;&gt; N;
+
+  Vertex_const_handle v;
+  Halfedge_const_handle e;
+  Halffacet_const_handle f;
+  Volume_const_handle c;
+  Object_handle o = N.locate(<A HREF="../Kernel_23_ref/Class_Point_3.html#Cross_link_anchor_74">Point_3</A>(0,0,0));
+  if(<A HREF="../Kernel_23_ref/Function_assign.html#Cross_link_anchor_89">CGAL::assign</A>(v,o))
+    std::cout &lt;&lt; &quot;Locating vertex&quot; &lt;&lt; std::endl;
+  else if(<A HREF="../Kernel_23_ref/Function_assign.html#Cross_link_anchor_89">CGAL::assign</A>(e,o))
+    std::cout &lt;&lt; &quot;Locating edge&quot; &lt;&lt; std::endl;
+  else if(<A HREF="../Kernel_23_ref/Function_assign.html#Cross_link_anchor_89">CGAL::assign</A>(f,o))
+    std::cout &lt;&lt; &quot;Locating facet&quot; &lt;&lt; std::endl;
+  else if(<A HREF="../Kernel_23_ref/Function_assign.html#Cross_link_anchor_89">CGAL::assign</A>(c,o))
+    std::cout &lt;&lt; &quot;Locating <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A>&quot; &lt;&lt; std::endl;
+  //other cases can not occur
+
+  return 0;
+}
+</pre>
+<P>
+
+<a name="Section_8"></a>
+        
+<h2>15.8&nbsp;&nbsp;&nbsp;Visualiation</h2>
+<P>
+
+With the <I>Qt_widget_OpenGL</I> class an interface to OpenGL
+visualization via Qt is offered. The class knows how to handle
+mouse movements and clicks and how to move and scale the 
+3D object displayed in the widget. <I>Qt_widget_OpenGL</I> is
+a basis for writing Qt widgets displaying 3D objects. 
+A user can derive a new class from <I>Qt_widget_OpenGL</I> 
+which implements the drawing method and configures the context menus.
+<P>
+
+<h3>15.8.1&nbsp;&nbsp;&nbsp;Visualizing a 3D Nef polyhedron</h3>
+<P>
+
+<I><A HREF="../Nef_3_ref/Class_Qt_widget_Nef_3.html#Cross_link_anchor_767">Qt_widget_Nef_3</A></I> implements the drawing methods for displaying 
+instances of
+<I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A></I>. The following example shows how to set up 
+an QApplication with a main widget of type <I><A HREF="../Nef_3_ref/Class_Qt_widget_Nef_3.html#Cross_link_anchor_767">Qt_widget_Nef_3</A></I> and
+how to start the viewer.
+<P>
+
+<CENTER>
+       <img src="./fig/visualization_SNC.png" alt="Steps in making a cube.">
+<P>
+
+</CENTER>
+<P>
+
+<pre class="ExampleCode">// file: examples/Nef_3/visualization_SNC.C
+
+#ifndef CGAL_USE_QT
+#include &lt;iostream&gt;
+int main(int, char*){
+  std::cout &lt;&lt; &quot;Sorry, this demo needs QT...&quot; &lt;&lt; std::endl; return 0;}
+#else
+#include &lt;CGAL/<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1364">Gmpz</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_18">Homogeneous</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>.h&gt;
+#include &lt;CGAL/IO/Nef_polyhedron_iostream_3.h&gt;
+#include &lt;CGAL/IO/<A HREF="../Nef_3_ref/Class_Qt_widget_Nef_3.html#Cross_link_anchor_767">Qt_widget_Nef_3</A>.h&gt;
+#include &lt;qapplication.h&gt;
+
+typedef <A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_17">CGAL::Homogeneous</A>&lt;<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1363">CGAL::Gmpz</A>&gt; <A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A>&lt;<A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>&gt; <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>;
+
+int main(int argc, char* argv[]) {
+  <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A> N;
+  std::cin &gt;&gt; N;
+
+  QApplication a(argc, argv);
+  <A HREF="../Nef_3_ref/Class_Qt_widget_Nef_3.html#Cross_link_anchor_766">CGAL::Qt_widget_Nef_3</A>&lt;<A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>&gt;* w = 
+    new <A HREF="../Nef_3_ref/Class_Qt_widget_Nef_3.html#Cross_link_anchor_766">CGAL::Qt_widget_Nef_3</A>&lt;<A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>&gt;(N);
+  a.setMainWidget(w);
+  w-&gt;show();
+  return a.exec();
+}
+#endif
+</pre>
+<P>
+
+<h3>15.8.2&nbsp;&nbsp;&nbsp;Visualizing a Sphere Map</h3>
+<P>
+
+<I><A HREF="../Nef_S2_ref/Class_Qt_widget_Nef_S2.html#Cross_link_anchor_745">Qt_widget_Nef_S2</A></I> is a widget implemented on the basis of 
+<I>Qt_widget_OpenGL</I>. It can be used to visualize the sphere map 
+of a vertex in a <I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A></I> using the interface between
+<I><A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A></I> and <I><A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A></I>.
+<P>
+
+<pre class="ExampleCode">// file: examples/Nef_3/visualization_SM.C
+
+#ifndef CGAL_USE_QT
+#include &lt;iostream&gt;
+int main(int, char*){
+  std::cout &lt;&lt; &quot;Sorry, this demo needs QT...&quot; &lt;&lt; std::endl; return 0;}
+#else
+#include &lt;CGAL/<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1364">Gmpz</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_18">Homogeneous</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>.h&gt;
+#include &lt;CGAL/IO/Nef_polyhedron_iostream_3.h&gt;
+#include &lt;CGAL/IO/<A HREF="../Nef_S2_ref/Class_Qt_widget_Nef_S2.html#Cross_link_anchor_745">Qt_widget_Nef_S2</A>.h&gt;
+#include &lt;qapplication.h&gt;
+
+typedef <A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_17">CGAL::Homogeneous</A>&lt;<A HREF="../NumberTypeSupport_ref/Class_Gmpz.html#Cross_link_anchor_1363">CGAL::Gmpz</A>&gt; <A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_746">CGAL::Nef_polyhedron_3</A>&lt;<A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>&gt; <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>::Vertex_const_iterator Vertex_const_iterator;
+typedef <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A>::<A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A> <A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A>;
+
+int main(int argc, char* argv[]) {
+  <A HREF="../Nef_3_ref/Class_Nef_polyhedron_3.html#Cross_link_anchor_747">Nef_polyhedron_3</A> N;
+  std::cin &gt;&gt; N;
+  Vertex_const_iterator v = N.vertices_begin();
+  <A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A> S(N.get_sphere_map(v));
+
+  QApplication a(argc, argv);
+  <A HREF="../Nef_S2_ref/Class_Qt_widget_Nef_S2.html#Cross_link_anchor_744">CGAL::Qt_widget_Nef_S2</A>&lt;<A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A>&gt;* w = 
+    new <A HREF="../Nef_S2_ref/Class_Qt_widget_Nef_S2.html#Cross_link_anchor_744">CGAL::Qt_widget_Nef_S2</A>&lt;<A HREF="../Nef_S2_ref/Class_Nef_polyhedron_S2.html#Cross_link_anchor_727">Nef_polyhedron_S2</A>&gt;(S);
+  a.setMainWidget(w);
+  w-&gt;show();
+  return a.exec();
+}
+#endif
+</pre>
+<P>
+
+<div class="NavNext"><hr> Next chapter: <a href="../Nef_3_ref/Chapter_intro.html">3D Nef Polyhedron</a> 
+
+
+    
+<div class="NavBottom">
+<hr><!-- Bottom Navigation --------------------------------------------- -->
+  <strong>Navigation:</strong>
+<!Up_chapter_link_15!>
+  <a href="../contents.html">Table of Contents</A>,
+  <a href="../biblio.html">Bibliography</a>,
+  <a href="../manual_index.html">Index</a>,
+  <a href="../title.html">Title Page</a>
+<!-- End of Bottom Navigation ------------------------------------------ -->
+
+
+<hr><!-- --------------------------------------------------------------- -->
+<div class="NavAddress">
+
+The <A HREF=http://www.cgal.org>CGAL Project</A> .
+
+Tue, December 21, 2004 .
+<hr></div>
+</body>  </html>  

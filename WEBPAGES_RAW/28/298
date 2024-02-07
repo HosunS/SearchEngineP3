@@ -1,0 +1,102 @@
+<html><head><title>Proof-of-Concept Prototype</title>
+</head>
+<body bgcolor="#FFFFFF" text="#000000">
+<HR><TABLE WIDTH=100%><TR ALIGN=CENTER><TD><A HREF="toolkit.html">Toolkit Integration Technique</A></TD><TD><A HREF="index.html#toc">Table of Contents</A></TD><TD><A HREF="benefits.html">Benefits</A></TD></TR><TR ALIGN=CENTER><TD>(Previous)</TD><TD></TD><TD>(Next)</TD></TR></TABLE><HR>
+<H2>3. Proof-of-concept prototype</H2>
+<P>
+An initial implementation of the TI technique is currently under construction. The results represent a proof-of-concept of a majority of the ideas presented here. The current prototype does not yet implement the abstract toolkit and hypermedia interfaces discussed in <A HREF="toolkit.html#sec2.3">Section&nbsp;2.3</A>. The extended widgets are implemented directly using the interfaces of the target user-interface toolkit and OHS. The reason for this choice was due to externally induced time constraints. As the prototype evolves into a full-fledged integration, the abstract interfaces will be developed and employed.
+</P>
+<P>
+The target user-interface toolkit for the prototype is the Abstract Windowing Toolkit (AWT) implemented in the Java programming language. The Java AWT was chosen for three reasons. First, Java is an object-oriented language with an emphasis on portability. Since implementations of the Java virtual machine exist for a variety of platforms, extending the Java AWT to be hypermedia-aware would benefit a large audience of developers and users. Second, as discussed previously, the object-oriented features of Java such as inheritance and polymorphism ease the construction of the extended widgets. Third, Java is currently being positioned as a development language for Internet-aware applets. Since applets execute in Web browsers, they appear in a context in which hypermedia principles are familiar to end-users. Applets constructed with the hypermedia-aware version of the Java AWT are thus suitable to introduce users with the notion of pervasive environment-wide hypermedia links. The target hypermedia system for the prototype is the Chimera OHS [<A HREF="references.html#ref1">1</A>]. Chimera is a client-server based system providing a flexible set of hypermedia concepts and operations which meet the requirements outlined in <A HREF="toolkit.html#sec2.2">Section&nbsp;2.2</A>.
+</P>
+<P>
+The prototype currently implements several common services and has integrated one widget. The prototype was constructed rapidly over a period of two weeks in three distinct stages. The first stage developed a Chimera application program interface (API) in Java. This API was developed in one week by an experienced Chimera developer and represents the interface to the hypermedia system provided by the hypermedia infrastructure. The API provides access to all of Chimera's hypermedia concepts, and their associated operations, in addition to providing a mechanism to receive events from the Chimera server such as link traversal notifications. The second stage consisted of developing a common service in the hypermedia infrastructure to initialize and monitor the connection to the Chimera server. If the connection to the Chimera server is unexpectedly lost, the connection service provides a dialog box to the user allowing them to reestablish a connection. The third stage integrated a button widget and constructed additional common services. These two developmental tasks were performed iteratively with the integrated button driving the demand for common services such as error handling and link traversal management.
+</P>
+<P>
+The difference between the interfaces of the original button widget and the integrated widget occurs only in the constructors of the widgets.
+</P>
+<P>
+The original constructor<A HREF="footnotes.html#footnote2"><SUP>2</SUP></A> is:
+</P>
+<PRE>public Button(String label);
+</PRE>
+<P>
+The constructor for the integrated widget is:
+</P>
+<PRE>public HButton(	String label,
+		String viewerName,
+		String objectName);
+</PRE>
+<P>
+As discussed in <A HREF="toolkit.html#sec2.2">Section&nbsp;2.2</A>, the difference is caused by the context information required by the underlying OHS. In Chimera, the required information is the name of an object and the name of the viewer which displays the object. The HButton<A HREF="footnotes.html#footnote3"><SUP>3</SUP></A> class registers itself as a component with a single anchor using the following code in its constructor:
+</P>
+<PRE>// Register viewer.
+theViewer = new viewer();
+theViewer.register(this.viewerName);
+// Register object.
+theObject = new object();
+theObject.register(this.objectName);
+// Register view (i.e. component).
+theView = new view();
+theView.register(theViewer, theObject);
+// Register anchor.
+theAnchor = new anchor();
+theAnchor.register(theView);
+</PRE>
+<P>
+The integrated button provides access to two hypermedia services: link creation and link traversal. The former allows the button's anchor to be included in links while the latter allows these links to be traversed. In addition, the button can receive link traversal events. When a link traversal event is received, the following code is executed:
+</P>
+<PRE>public synchronized void handleEvent( chimeraEvent theEvent ) {
+	switch (theEvent.event) {
+		case chimeraEvent.linkTraversal:
+			doBlink();
+			Event e = new Event(
+				this,
+				Event.ACTION_EVENT,
+				getLabel());
+			postEvent(e);
+			...
+}
+</PRE>
+<P>
+This code blinks the button (using a simple reverse-video technique not shown) and invokes the button's associated action (by generating an event for the button to handle). The handleEvent routine is called by the hypermedia infrastructure when an event is received from the Chimera server for a particular widget.
+</P>
+<P>
+The extended button makes use of a common service provided by the hypermedia infrastructure for the initiation of link traversals. As a result the code for a link traversal is short and simple and can be reused in a similar fashion by all subsequent extended widgets. It is shown below:
+</P>
+<PRE>HConnection.traverse( theAnchor );</PRE>
+<P>
+In other words, the extended widget need only pass the source anchor for the traversal and the common service takes care of the rest. The code for the traverse routine is shown below:
+</P>
+<PRE>public synchronized void traverse( Anchor a ) {<BR>
+	int number;<BR>
+	number = link.howManyLinks( a );
+	if (number > 1) {
+		HTraversalDialog htd =
+		new HTraversalDialog( a );
+		return;
+	} else {
+		link[] links = link.getLinks( a );
+		link theLink = links[0];
+		number = theLink.howManyAnchors();
+		if (number > 2) {
+			HTraversalDialog htd =
+			new HTraversalDialog( a );
+			return;
+		}
+	}
+	HConnection.theAPI.traverseFrom( a );
+}
+</PRE>
+<P>
+This code executes a simple algorithm. If the link traversal has a single destination, the traversal is activated. Otherwise a link traversal dialog is displayed (see <A HREF="#fig3">Figure&nbsp;3</A>) allowing the user to specify the desired destinations before activating the traversal. Since all hypermedia-enabled widgets will make use of this service, link traversal behavior is consistent across widgets and across applications constructed with the integrated toolkit. In addition, the behavior is easily modified and maintained, since it is isolated in one place in the hypermedia infrastructure layer. Additional benefits of the TI technique are discussed in the next section.
+</P>
+<TABLE BORDER="1">
+<TR ALIGN=CENTER><TD><A NAME="fig3"><IMG SRC="anderson3.gif"></A></TD></TR>
+<TR>
+<TD><STRONG>Figure 3. The link traversal dialog provided by the hypermedia infrastructure. This dialog lists the destinations for the current link traversal. Destinations consist of a viewer name, object name, and anchor identifier. The dialog allows users to select the desired destinations and traverse to them. Since all link traversals use this dialog, consistent behavior is achieved.
+</TR>
+</TABLE>
+<HR><TABLE WIDTH=100%><TR ALIGN=CENTER><TD><A HREF="toolkit.html">Toolkit Integration Technique</A></TD><TD><A HREF="index.html#toc">Table of Contents</A></TD><TD><A HREF="benefits.html">Benefits</A></TD></TR><TR ALIGN=CENTER><TD>(Previous)</TD><TD></TD><TD>(Next)</TD></TR></TABLE>
+<hr>
+</body></html>

@@ -1,0 +1,298 @@
+Here is a trace of the Maps needed to run Dijkstra's Extended Shortest Paths
+algorithm. You need to look at the equivalent graph to follow the logic below.
+The result is answer_map, from which we can find the shortest path cost (and
+the nodes on this route) from the given node (here "BWI"). Note that we show
+the info_map and answer_map as sorted to make them easier to read; of course
+thre is no special ordering in these maps. We will NOT show the info_pq, but
+instead just "notice" which cost is minimal and remove it when required.
+
+See the algorithm described in the accompanying lecture.
+
+info_map     	     	   	 	answer_map
+  "BOS" --> ["BOS", +inf, "?"]		  empty
+  "BWI" --> ["BWI", +inf, "?"]
+  "DFW" --> ["DFW", +inf, "?"]
+  "JFK" --> ["JFK", +inf, "?"]
+  "LAX" --> ["LAX", +inf, "?"]
+  "MIA" --> ["MIA", +inf, "?"]
+  "ORD" --> ["ORD", +inf, "?"]
+  "PVD" --> ["PVD", +inf, "?"]
+  "SFO" --> ["SFO", +inf, "?"]
+
+Choose "BWI" as" the start node; update info_map "BWI" --> ["BWK", 0, "?"]
+
+info_map     	     	   	 	answer_map
+  "BOS" --> ["BOS", +inf, "?"]		  empty
+  "BWI" --> ["BWI",    0, "?"]
+  "DFW" --> ["DFW", +inf, "?"]
+  "JFK" --> ["JFK", +inf, "?"]
+  "LAX" --> ["LAX", +inf, "?"]
+  "MIA" --> ["MIA", +inf, "?"]
+  "ORD" --> ["ORD", +inf, "?"]
+  "PVD" --> ["PVD", +inf, "?"]
+  "SFO" --> ["SFO", +inf, "?"]
+
+------------------------------------------------------------------------------
+
+Find the minimum cost in info_pq: "BWI". Move it to answer_map.
+
+info_map     	     	   	 	answer_map
+  "BOS" --> ["BOS", +inf, "?"]		  "BWI" --> ["BWI",    0, "?"]
+  "DFW" --> ["DFW", +inf, "?"]
+  "JFK" --> ["JFK", +inf, "?"]
+  "LAX" --> ["LAX", +inf, "?"]
+  "MIA" --> ["MIA", +inf, "?"]
+  "ORD" --> ["ORD", +inf, "?"]
+  "PVD" --> ["PVD", +inf, "?"]
+  "SFO" --> ["SFO", +inf, "?"]
+
+Its destination nodes are "JFK", "MIA", "ORD"; none are in answer_map, so all
+  will be processed.
+Retrieve the distance to each in info_map (smallest distance so far) and
+  compute distance to "BWI" in answer_map (0) + distance (in Graph) to each.
+If the sum is smaller (they all are), update info_map (with distance and
+  new predecessor) and enqueue them into the info_pq.
+
+info_map     	     	   	 	answer_map
+  "BOS" --> ["BOS", +inf, "?"  ]	  "BWI" --> ["BWI",    0, "?"]
+  "DFW" --> ["DFW", +inf, "?"  ]
+  "JFK" --> ["JFK",  184, "BWI"]
+  "LAX" --> ["LAX", +inf, "?"  ]
+  "MIA" --> ["MIA",  946, "BWI"]
+  "ORD" --> ["ORD",  621, "BWI"]
+  "PVD" --> ["PVD", +inf, "?"  ]
+  "SFO" --> ["SFO", +inf, "?"  ]
+
+------------------------------------------------------------------------------
+
+Find the minimum cost in info_pq: "JFK". Move it to answer_map.
+
+info_map     	     	   	 	answer_map
+  "BOS" --> ["BOS", +inf, "?"  ]	  "BWI" --> ["BWI",    0, "?"  ]
+  "DFW" --> ["DFW", +inf, "?"  ]	  "JFK" --> ["JFK",  184, "BWI"]
+  "LAX" --> ["LAX", +inf, "?"  ]
+  "MIA" --> ["MIA",  946, "BWI"]
+  "ORD" --> ["ORD",  621, "BWI"]
+  "PVD" --> ["PVD", +inf, "?"  ]
+  "SFO" --> ["SFO", +inf, "?"  ]
+
+Its destination nodes are "BOS", "BWI", "DFW", "ORD", "PVD"; "BWI" is in the
+  answer map (so it will not be processed).
+Retrieve distance to each in info_map (smallest distance so far) and
+  compute distance to "JFK" in answer__map (184) + distance (in Graph) to each.
+If the sum is smaller (they all are but "ORD"), update info_map (with distance
+  and new predecessor) and enqueue them into the info_pq.
+
+info_map     	     	   	 	answer_map
+  "BOS" --> ["BOS",  371, "JFK"]	  "BWI" --> ["BWI",    0, "?"  ]
+  "DFW" --> ["DFW", 1575, "JFK"]	  "JFK" --> ["JFK",  184, "BWI"]
+  "LAX" --> ["LAX", +inf, "?"  ]
+  "MIA" --> ["MIA",  946, "BWI"]
+  "ORD" --> ["ORD",  621, "BWI"]
+  "PVD" --> ["PVD",  328, "JFK"]
+  "SFO" --> ["SFO", +inf, "?"  ]
+
+------------------------------------------------------------------------------
+
+Find the minimum cost in info_pq: "PVD". Move it to answer_map.
+
+info_map     	     	   	 	answer_map
+  "BOS" --> ["BOS",  371, "JFK"]	  "BWI" --> ["BWI",    0, "?"  ]
+  "DFW" --> ["DFW", 1575, "JFK"]	  "JFK" --> ["JFK",  184, "BWI"]
+  "LAX" --> ["LAX", +inf, "?"  ]	  "PVD" --> ["PVD",  328, "JFK"]
+  "MIA" --> ["MIA",  946, "BWI"]
+  "ORD" --> ["ORD",  621, "BWI"]
+  "SFO" --> ["SFO", +inf, "?"  ]
+
+Its destination nodes are "ORD", "JFK"; "JFK" is in the answer map (so it will
+  not be processed).
+Retrieve distance to each in info_map (smallest distance so far) and
+  compute distance to "PVD" in answer_map (328) + distance (in Graph) to each.
+If the sum is smaller (none are) update info_map (with distance and new
+  predecessor) and enqueue them into the info_pq.
+
+info_map     	     	   	 	answer_map
+  "BOS" --> ["BOS",  371, "JFK"]	  "BWI" --> ["BWI",    0, "?"  ]
+  "DFW" --> ["DFW", 1575, "JFK"]	  "JFK" --> ["JFK",  184, "BWI"]
+  "LAX" --> ["LAX", +inf, "?"  ]	  "PVD" --> ["PVD",  328, "JFK"]
+  "MIA" --> ["MIA",  946, "BWI"]
+  "ORD" --> ["ORD",  621, "BWI"]
+  "SFO" --> ["SFO", +inf, "?"  ]
+
+------------------------------------------------------------------------------
+
+Find the minimum cost in info_pq: "BOS". Move it to answer_map.
+
+info_map     	     	   	 	answer_map
+  "DFW" --> ["DFW", 1575, "JFK"]	  "BOS" --> ["BOS",  371, "JFK"]
+  "LAX" --> ["LAX", +inf, "?"  ]	  "BWI" --> ["BWI",    0, "?"  ]
+  "MIA" --> ["MIA",  946, "BWI"]	  "JFK" --> ["JFK",  184, "BWI"]
+  "ORD" --> ["ORD",  621, "BWI"]	  "PVD" --> ["PVD",  328, "JFK"]
+  "SFO" --> ["SFO", +inf, "?"  ]
+
+Its destination nodes are "JFK", "MIA", "ORD", "SFO"; "JFK" is in the answer
+  map (so it will not be processed).
+Retrieve distance to each in info_map (smallest distance so far) and
+  compute distance to "BOS" in info_map (371) + distance (in Graph) to each.
+If the sum is smaller (only "SFO" is) update info_map (with distance and new
+  predecessor) and enqueue them into the info_pq.
+
+info_map     	     	   	 	answer_map
+  "DFW" --> ["DFW", 1575, "JFK"]	  "BOS" --> ["BOS",  371, "JFK"]
+  "LAX" --> ["LAX", +inf, "?"  ]	  "BWI" --> ["BWI",    0, "?"  ]
+  "MIA" --> ["MIA",  946, "BWI"]	  "JFK" --> ["JFK",  184, "BWI"]
+  "ORD" --> ["ORD",  621, "BWI"]	  "PVD" --> ["PVD",  328, "JFK"]
+  "SFO" --> ["SFO", 3075, "BOS"]
+
+------------------------------------------------------------------------------
+
+Find the minimum cost in info_pq: "ORD". Move it to answer_map.
+
+info_map     	     	   	 	answer_map
+  "DFW" --> ["DFW", 1575, "JFK"]	  "BOS" --> ["BOS",  371, "JFK"]
+  "LAX" --> ["LAX", +inf, "?"  ]	  "BWI" --> ["BWI",    0, "?"  ]
+  "MIA" --> ["MIA",  946, "BWI"]	  "JFK" --> ["JFK",  184, "BWI"]
+  "SFO" --> ["SFO", 3075, "BOS"]	  "ORD" --> ["ORD",  621, "BWI"]
+  	    	    	  		  "PVD" --> ["PVD",  328, "JFK"]
+
+Its destination nodes are "BOS", "BWI", "DFW", "JFK", "PVD", "SFO";
+  "BOS", "BWI", "JFK", and "PVD" are in the answer map (so they will not be
+   processed).
+Retrieve distance to each in info_map (smallest distance so far) and
+  compute distance to "ORD" in info_map (621) + distance (in Graph) to each.
+If the sum is smaller (only "DFW", "SFO" are) update info_map (with distance
+  and new predecessor) and enqueue them into the info_pq.
+
+info_map     	     	   	 	answer_map
+  "DFW" --> ["DFW", 1423, "ORD"]	  "BOS" --> ["BOS",  371, "JFK"]
+  "LAX" --> ["LAX", +inf, "?"  ]	  "BWI" --> ["BWI",    0, "?"  ]
+  "MIA" --> ["MIA",  946, "BWI"]	  "JFK" --> ["JFK",  184, "BWI"]
+  "SFO" --> ["SFO", 2467, "ORD"]	  "ORD" --> ["ORD",  621, "BWI"]
+  	    	    	  		  "PVD" --> ["PVD",  328, "JFK"]
+
+------------------------------------------------------------------------------
+
+Find the minimum cost in info_pq: "MIA". Move it to answer_map.
+
+info_map     	     	   	 	answer_map
+  "DFW" --> ["DFW", 1423, "ORD"]	  "BOS" --> ["BOS",  371, "JFK"]
+  "LAX" --> ["LAX", +inf, "?"  ]	  "BWI" --> ["BWI",    0, "?"  ]
+  "SFO" --> ["SFO", 2467, "ORD"]	  "JFK" --> ["JFK",  184, "BWI"]
+  	    	    	  		  "MIA" --> ["MIA",  946, "BWI"]  
+  	    	    	  		  "ORD" --> ["ORD",  621, "BWI"]
+  	    	    	  		  "PVD" --> ["PVD",  328, "JFK"]
+
+
+Its destination nodes are "BOS", "BWI", "DFW", "JFK", "LAX"; "BOS", "BWI", and
+  "JFK" are in the answer map (so they will not be processed).
+Retrieve distance to each in info_map (smallest distance so far) and
+  compute distance to "MIA" in info_map (946) + distance (in Graph) to each.
+If the sum is smaller (only "LAX" is) update info_map (with distance and new
+  predecessor) and enqueue them into the info_pq.
+
+info_map     	     	   	 	answer_map
+  "DFW" --> ["DFW", 1423, "ORD"]	  "BOS" --> ["BOS",  371, "JFK"]
+  "LAX" --> ["LAX", 3288, "MIA"]	  "BWI" --> ["BWI",    0, "?"  ]
+  "SFO" --> ["SFO", 2467, "ORD"]	  "JFK" --> ["JFK",  184, "BWI"]
+  	    	    	  		  "MIA" --> ["MIA",  946, "BWI"]  
+  	    	    	  		  "ORD" --> ["ORD",  621, "BWI"]
+  	    	    	  		  "PVD" --> ["PVD",  328, "JFK"]
+
+------------------------------------------------------------------------------
+
+Find the minimum cost in info_pq: "DFW". Move it to answer_map.
+
+info_map     	     	   	 	answer_map
+  "LAX" --> ["LAX", 3288, "MIA"]	  "BOS" --> ["BOS",  371, "JFK"]
+  "SFO" --> ["SFO", 2467, "ORD"]	  "BWI" --> ["BWI",    0, "?"  ]
+  	    	    	  		  "DFW" --> ["DFW", 1423, "ORD"]
+					  "JFK" --> ["JFK",  184, "BWI"]
+  	    	    	  		  "MIA" --> ["MIA",  946, "BWI"]  
+  	    	    	  		  "ORD" --> ["ORD",  621, "BWI"]
+  	    	    	  		  "PVD" --> ["PVD",  328, "JFK"]
+
+Its destination nodes are "JFK", "LAX", "MIA", "ORD", "SFO";  "JFK", "MIA", and
+  "ORD" are in the answer map (so they will not be processed).
+Retrieve distance to each in info_map (smallest distance so far) and
+  compute distance to "DFW" in info_map (1423) + distance (in Graph) to each.
+If the sum is smaller (only "LAX" is) update info_map (with distance and new
+  predecessor) and enqueue them into the info_pq.
+
+info_map     	     	   	 	answer_map
+  "LAX" --> ["LAX", 2658, "DFW"]	  "BOS" --> ["BOS",  371, "JFK"]
+  "SFO" --> ["SFO", 2467, "ORD"]	  "BWI" --> ["BWI",    0, "?"  ]
+  	    	    	  		  "DFW" --> ["DFW", 1423, "ORD"]
+					  "JFK" --> ["JFK",  184, "BWI"]
+  	    	    	  		  "MIA" --> ["MIA",  946, "BWI"]  
+  	    	    	  		  "ORD" --> ["ORD",  621, "BWI"]
+  	    	    	  		  "PVD" --> ["PVD",  328, "JFK"]
+
+------------------------------------------------------------------------------
+
+Find the minimum cost in info_pq: "DFW". It is already in the answer_map so
+skip it. Recall from the algorithm that many nodes will appear multiple times
+in the priority queue.
+
+------------------------------------------------------------------------------
+
+Find the  minimum cost in info_map: "SFO". Move it to answer_map.
+
+info_map     	     	   	 	answer_map
+  "LAX" --> ["LAX", 2658, "DFW"]	  "BOS" --> ["BOS",  371, "JFK"]
+					  "BWI" --> ["BWI",    0, "?"  ]
+  	    	    	  		  "DFW" --> ["DFW", 1423, "ORD"]
+					  "JFK" --> ["JFK",  184, "BWI"]
+  	    	    	  		  "MIA" --> ["MIA",  946, "BWI"]  
+  	    	    	  		  "ORD" --> ["ORD",  621, "BWI"]
+  	    	    	  		  "PVD" --> ["PVD",  328, "JFK"]
+					  "SFO" --> ["SFO", 2467, "ORD"]
+
+Its destination nodes are "BOS", "DFW", "LAX", "ORD"; "BOS", "DFW", and "ORD"
+  are in the answer map (so they will not be processed).
+Retrieve distance to each in info_map (smallest distance so far) and
+  compute distance to "SFO" in info_map (2467) + distance (in Graph) to each.
+If the sum is smaller (none are) update info_map (with distance and new
+  predecessor) and enqueue them into the info_pq.
+
+info_map     	     	   	 	answer_map
+  "LAX" --> ["LAX", 2658, "DFW"]	  "BOS" --> ["BOS",  371, "JFK"]
+					  "BWI" --> ["BWI",    0, "?"  ]
+  	    	    	  		  "DFW" --> ["DFW", 1423, "ORD"]
+					  "JFK" --> ["JFK",  184, "BWI"]
+  	    	    	  		  "MIA" --> ["MIA",  946, "BWI"]  
+  	    	    	  		  "ORD" --> ["ORD",  621, "BWI"]
+  	    	    	  		  "PVD" --> ["PVD",  328, "JFK"]
+					  "SFO" --> ["SFO", 2467, "ORD"]
+
+------------------------------------------------------------------------------
+
+Find the  minimum cost in info_map: "LAX". Move it to answer_map.
+
+info_map     	     	   	 	answer_map
+					  "BOS" --> ["BOS",  371, "JFK"]
+					  "BWI" --> ["BWI",    0, "?"  ]
+  	    	    	  		  "DFW" --> ["DFW", 1423, "ORD"]
+					  "JFK" --> ["JFK",  184, "BWI"]
+					  "LAX" --> ["LAX", 2658, "DFW"]
+  	    	    	  		  "MIA" --> ["MIA",  946, "BWI"]  
+  	    	    	  		  "ORD" --> ["ORD",  621, "BWI"]
+  	    	    	  		  "PVD" --> ["PVD",  328, "JFK"]
+					  "SFO" --> ["SFO", 2467, "ORD"]
+
+Its destination nodes are "DFW", "MIA", "SFO"; all are in the answer_map (so
+  they will not be processed).
+
+------------------------------------------------------------------------------
+
+The info_map is empty so the algorithm stops.
+
+------------------------------------------------------------------------------
+
+Say we want to know the shortest path from "BWI" to "LAX".
+We push "LAX" on a stack and look up predecessor "DFW".
+We push "DFW" on a stack and look up predecessor "ORD".
+We push "ORD" on a stack and look up predecessor "BWI".
+We push "BWI" on a stack and look up predecessor "?"; so we stop.
+
+Now we pop off all the values in the stack and add them to a queue that shows
+the shortest, route: queue[BWI,ORD,DFW,LAX].

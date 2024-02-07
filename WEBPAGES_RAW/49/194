@@ -1,0 +1,57 @@
+///FIle.h
+/*------------------------------------------------------------------------------
+ 
+  Written by Dong Le for Professor Richard Lathrop.
+  Contact: Dong Le (dle@kofax.com)
+
+  The function FileOpenRead() is a modified version from the original code
+  given in ICS23 taught by Professor D. Kay (1997)
+
+-------------------------------------------------------------------------------*/
+
+
+
+#ifndef FILE_H
+#define FILE_H
+
+
+#include <iostream.h>
+#include <fstream.h>
+
+const char margin[] = "   ";
+//---------------------------- function prototype -----------------------------------
+char skipBlank(ifstream &inFile);
+int FileOpenRead( ifstream &inFile, char Prompt[], char Name[] );
+
+//----------------------------- function body ---------------------------------------
+//Skip blanks, tabs and newlines.
+char skipBlank(ifstream &inFile)
+{
+    for( char C=inFile.peek(); C==' ' || C=='\t' || C=='\n'; C=inFile.peek() )
+    	inFile.ignore();
+	return C;
+}
+
+//Open a specific file for read.
+int FileOpenRead( ifstream &inFile, char Prompt[], char Name[] )
+{
+    while( Name[0] != 'q' && Name[0] != 'Q' )		//While not quit with '/'
+    {
+        cout << endl << margin << Prompt;			//Print the prompt for the user
+		cin >> Name;								//Prompt for the filename
+		if (Name[0] != 'q' && Name[0] != 'Q')		//If not quit.
+		{
+			inFile.open( Name, ios::nocreate );		//Open the file of that name.
+			if ( inFile.is_open() )					//If success, returns 1
+	   			return 1;
+			else
+				cout << margin << "Sorry! File not found. Please try again.\n";
+			inFile.clear();							//Clears stream flag for retry.
+		}
+    }
+    cout << endl;
+    return 0;							//If for some reason, the function failed
+}
+//----------------------------------------------------------------------------------
+
+#endif;

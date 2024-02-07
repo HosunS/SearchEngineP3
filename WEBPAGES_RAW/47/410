@@ -1,0 +1,321 @@
+// m2html - convert mail/news/babyl files to HTML format
+// David Eppstein, UC Irvine, 12 Apr 1996
+
+#include "lineb.h"
+#include <iostream.h>
+#include <string.h>
+
+// Page break is automatic paragraph break
+// include ^_ as EOP as well for recognizing Babyl files
+
+inline int pagebreak(char v)
+{
+    return (v == '\014' || v == '\037');
+}
+
+// Read char into variable, returning nz if end of line or end of page.
+
+inline int eolgetc(char & v, istream & i)
+{
+    i.get(v);
+    return (!i.eof() && (v == '\n' || pagebreak(v)));
+}
+
+// Add a char to the save buffer.
+
+inline void reset(line_buffer & lb) { lb.set_buffer(0); }
+void add(line_buffer & lb, char c)  { lb.replace(lb.textlen(), &c, 1, 0); }
+
+// Complain about inappropriate args
+
+extern "C" void exit(int);
+
+const char * progname = "m2html";
+
+void usage()
+{
+    cerr << "usage: " << progname << " < mailfile > htmlfile\n";
+    exit (1);
+}
+
+// shared variables between process() and main()
+
+static enum { filestart, msgheader, msgtext } filestate = filestart;
+static line_buffer para;
+
+// process a line of text
+// input = pointer to start of line
+// output = pointer to start of next line
+//
+// does untabification, < > conversion, @ and URL HREFification
+
+static void outword(const char * w, const char * s)
+{
+    while (w != s) {
+	if (*w == '<') cout << "&lt;";
+	else if (*w == '>') cout << "&gt;";
+	else if (*w == '&') cout << "&amp;";
+	else cout << *w;
+	w++;
+    }
+}
+
+static const char * processline(const char * s)
+{
+    int inword = 1;		// for HREF
+    
+    const char * w = s;		// word start for HREF
+    while (*s != '\0' && *s != '\n') {
+	switch(*s) {
+	 case '<': case '>': case ',': case ' ':
+	 case '(': case ')': case '[': case ']':
+	 case '\t': case '"': case '\'':
+	 case ';': // no colon tho because of http: etc
+	    outword(w,s+1);	// punctuation, output
+	    w = s+1;		// including punc char itself
+	    inword = 1;
+	    break;
+
+	 case '@':
+	    if (inword && w != s &&
+		((w - para.text()) < 12
+		 || strncmp(w-12,"In article <",12) != 0)) {
+		// email address?
+		while ((*++s >= 'a' && *s <= 'z') ||
+		       (*s >= 'A' && *s <= 'Z') ||
+		       (*s >= '0' && *s <= '9') ||
+		       (*s == '.' || *s == '-'))
+		    ;		// find end of hostname
+
+		while (*(s-1) == '.') s--; // back over period
+		cout << "<A HREF=\"mailto:";
+		outword(w,s);
+		cout << "\">";
+		outword(w,s);
+		cout << "</A>";
+		w = s;
+		s--;		// make up for extra s++ below
+		break;
+	    }
+	    // atsign after nonword, treat as default nonword char
+	    inword = 0;
+	    break;
+
+	 case '$':
+	    // this character shows up in many msg-ids and few real email addrs
+	    inword = 0;
+	    break;
+
+	 case ':':		// maybe URL?
+	    if (inword && (strncmp(w,"mailto:",7) == 0 ||
+			   strncmp(s,"://",3) == 0))
+	    {
+		while (*++s != '<' && *s != '>' && *s != ' '
+		       && *s != '(' && *s != ')' && *s != '\t'
+		       && *s != ','
+		       && *s != '\n' && *s != '\0')
+		    ;		// find end of URL by looking for break char
+		while (*(s-1) == '.') s--; // back over period
+		cout << "<A HREF=\"";
+		outword(w,s);
+		cout << "\">";
+		outword(w,s);
+		cout << "</A>";
+		w = s;
+		s--;		// make up for extra s++ below
+		break;
+	    }
+	    // colon after nonword, treat as default nonword char
+	    inword = 0;
+	    break;
+
+	 default:		// any other character
+	    break;
+	}
+	s++;
+    }
+    outword(w,s);		// flush final word
+    cout << "\n";
+    if (*s == '\n') s++;
+    return s;
+}
+
+// check if a header line should be output
+// if yes, output it and return nonzero
+
+static int testhead(const char * s, const char * t)
+{
+    int l = strlen(t);
+    if (strncmp(s,t,l) != 0) return 0; // not that header, give up
+    cout << "<B>" << t << "</B>";
+    cout << "                "+l; // pad to 16th col so tabs line up 
+
+    s += l;			// skip past header
+    while (*s == ' ' || *s == '\t') s++; // skip past whitespace
+    processline(s);		  // output header contents
+    return 1;
+}
+
+// process a paragraph known to be message header
+
+static void processheader()
+{
+    const char * s = para.text();
+    int cont = 0;
+    while (*s != '\0') {
+	switch(*s) {
+	 case ' ': case '\t':
+	    if (cont) testhead(s,"");
+	    break;
+
+	 case 'D':
+	    cont = testhead(s,"Date:");
+	    break;
+
+	 case 'F':
+	    cont = testhead(s,"From:");
+	    break;
+
+	 case 'K':
+	    cont = testhead(s,"Keywords:");
+	    break;
+
+	 case 'N':
+	    cont = testhead(s,"Newsgroups:");
+	    break;
+
+	 case 'O':
+	    cont = testhead(s,"Organization:");
+
+	 case 'R':
+	    cont = (   testhead(s,"Reply-to:")
+		    || testhead(s,"Reply-To:") );
+
+	 case 'S':
+	    cont = (testhead(s,"Subject:")
+		    || testhead(s,"Summary:"));
+	    break;
+
+	 case 'T':
+	    cont = testhead(s,"To:");
+	    break;
+
+	 default:
+	    cont = 0;
+	}
+	while (*++s != '\n' && *s != '\0') ; // find eol
+	if (*s == '\n') s++;		     // and skip to next line
+    }
+}
+
+// process a paragraph known to be message text
+
+static void processtext()
+{
+    const char * s = para.text();
+    while (*s != '\0') s = processline(s);
+}
+
+// process a paragraph of text
+
+static void process()
+{
+    if (para.textlen() == 0) return; // nothing to process
+
+    // check trailing newline
+    if (para.text()[para.textlen() - 1] != '\n')
+	add(para,'\n');
+
+    // handle Babyl format junk
+    // ignore file header, saved full headers, start of abbrev headers
+    if (strncmp(para.text(), "1,,\n", 4) == 0) {
+        // DE 9 Jun 1999: VM doesn't leave blank line before *** EOOH ***
+	// so look for it in here rather than immediately returning
+	int i;
+	const char * s = para.text();
+	for (i = 0; i < para.textlen() - 14; i++)
+	    if (strncmp(para.text()+i,"\n*** EOOH ***\n", 14) == 0) break;
+        if (i < para.textlen()) para.replace(0, 0, 0, i+14);
+	else return;
+    }
+    if (strncmp(para.text(), "BABYL OPTIONS:", 14) == 0) return;
+	// DE 1 Aug 1996: remove newline from string
+	//    since emacs 19 adds " -*- rmail -*-" on same line
+    if (strncmp(para.text(), "*** EOOH ***\n", 13) == 0)
+	para.replace(0, 0, 0, 13); // Babyl real hdrs
+
+    // test if header by searching for "From: " line
+    int is_header = 0;
+    char * s = (char *) para.text();
+    while (*s != '\0') {
+	if (strncmp(s, "From:", 5) == 0) {
+	    is_header = 1;
+	    break;
+	}
+	while (*s != '\n' && *s != '\0') s++;
+	if (*s == '\n') s++;
+    }
+
+    // output glue from old state
+    switch (filestate) {
+     case filestart:
+	if (!is_header) cerr << "Warning: file does not begin w/headers\n";
+	cout << "<HR><PRE>\n";
+	break;
+
+     case msgheader:
+	if (is_header) cerr << "Warning: two headers in a row\n";
+	cout << "</PRE><HR><PRE>\n";
+	break;
+
+     case msgtext:
+	if (is_header) cout << "</PRE><HR><PRE>\n";
+	else cout << "\n";
+	break;
+
+     default:
+	cerr << "Error: bad state in process glue\n";
+    }
+
+    // set new state and handle para
+    if (is_header) {
+	filestate = msgheader;
+	processheader();
+    } else {
+	filestate = msgtext;
+	processtext();
+    }
+}
+
+// The main program.
+main (int argc, char ** argv)
+{
+    if (argc > 1) usage();
+    int was_eol = 1;
+    int have_nonspace = 0;
+    for (;;) {		// looping over chars in file
+	char inchar;
+	if (eolgetc(inchar, cin)) { // end of line?
+	    if (was_eol || pagebreak(inchar) || !have_nonspace) {
+		// found paragraph break
+		if (have_nonspace) process(); // output old paragraph
+		reset(para);    // and start new one
+		have_nonspace = 0;
+	    }
+	    else {
+		was_eol = 1;	// one newline, remember the next
+		add(para,'\n'); // but assume internal to para for now
+	    }
+	    continue;		// back to top of loop
+	}
+	if (cin.eof()) {
+	    // maybe eolgetc() above hit eof?
+	    if (have_nonspace) process(); // process final paragraph
+	    cout << "</PRE>\n";	// finish output
+	    break;		// break out of loop
+	}
+	was_eol = 0;		// if we got here, have non-line-break char
+	if (inchar != ' ' && inchar != '\t') have_nonspace = 1;  
+	add(para, inchar);	// add it to buffer
+    }				// end loop over chars in line
+}

@@ -1,0 +1,1005 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<!-- Page automatically generated from latex_to_html converter. -->
+<!-- by cc_extract_html, $Revision: 3.19 $ -->
+<!-- LaTeX source file: './Triangulation_3/main.tex' -->
+<html> <head>  
+<title>3D Triangulations</title>
+</head>  
+<link href="../latex_to_html.css" rel="STYLESHEET">
+<body bgcolor="white">
+<!-- ------------------------------------------------------------------- -->
+
+
+<!-- Top Navigation ---------------------------------------------------- -->
+<div class="NavTop">
+<hr>
+  <strong>Navigation:</strong>
+<a href="Chapter_main.html">Up</a>, 
+  <a href="../contents.html">Table of Contents</A>,
+  <a href="../biblio.html">Bibliography</a>,
+  <a href="../manual_index.html">Index</a>,
+  <a href="../title.html">Title Page</a>
+<hr><!-- End of Top Navigation ----------------------------------------- -->
+</div>
+
+<a name="Chapter_35"></a>
+  
+<h1>Chapter 35<BR>3D Triangulations</h1>
+
+<A NAME="chapter-Triangulation3"></A>
+<EM>Sylvain Pion  and Monique Teillaud</EM><BR>
+
+
+<P>
+
+<img border=0 src="./sphere.gif" align=center width=30%>
+<img border=0 src="./grid.gif" align=center width=30%>
+<P>
+
+The basic 3D-triangulation class of C<SMALL>GAL</SMALL> is primarily designed to
+represent the triangulations of a set of points <MATH><I>A</I></MATH> in <MATH><I> <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>3</SUP></I></MATH>.  It is
+a partition of the convex hull of <MATH><I>A</I></MATH> into tetrahedra whose vertices
+are the points of <MATH><I>A</I></MATH>.  Together with the unbounded cell having the
+convex hull boundary as its frontier, the triangulation forms a
+partition of <MATH><I> <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>3</SUP></I></MATH>. Its cells (<MATH><I>3</I></MATH>-faces) are such that two cells
+either do not intersect or share a common facet (<MATH><I>2</I></MATH>-face), edge
+(<MATH><I>1</I></MATH>-face) or vertex (<MATH><I>0</I></MATH>-face).
+<P>
+
+<a name="Section_1"></a>
+        
+<h2>35.1&nbsp;&nbsp;&nbsp;Representation</h2>
+
+<A NAME="Triangulation3-sec-intro"></A>
+<P>
+
+In order to deal
+only with tetrahedra, which is convenient for many applications, the
+unbounded cell can be subdivided into tetrahedra by considering that
+each convex hull facet is incident to an <I>infinite cell</I> having as
+fourth vertex an auxiliary vertex called the <I>infinite vertex</I>.  In
+that way, each facet is incident to exactly two cells and special cases
+at the boundary of the convex hull are simple to deal with.
+<P>
+
+The class <I><A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A>&lt;<A HREF="../Triangulation_3_ref/Concept_TriangulationTraits_3.html#Cross_link_anchor_979">TriangulationTraits_3</A>,<A HREF="../TriangulationDS_3_ref/Concept_TriangulationDataStructure_3.html#Cross_link_anchor_1002">TriangulationDataStructure_3</A>&gt;</I> of C<SMALL>GAL</SMALL> implements this
+point of view and therefore considers the triangulation of the set
+of points as a set of finite and infinite tetrahedra.  Notice that the
+infinite vertex has no significant coordinates and that no
+geometric predicate can be applied on it.
+<P>
+
+A triangulation is a collection of vertices and cells that are linked
+together through incidence and adjacency relations. Each cell gives
+access to its four incident vertices and to its four adjacent
+cells. Each vertex gives access to one of its incident cells.
+<P>
+
+The four vertices of a cell are indexed with 0, 1, 2 and 3 in positive
+<A HREF="../Kernel_23_ref/Function_orientation.html#Cross_link_anchor_247">orientation</A>, the positive <A HREF="../Kernel_23_ref/Function_orientation.html#Cross_link_anchor_247">orientation</A> being defined by the <A HREF="../Kernel_23_ref/Function_orientation.html#Cross_link_anchor_247">orientation</A>
+of the underlying Euclidean space <MATH><I> <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>3</SUP></I></MATH> (see
+Figure&nbsp;<A HREF="Chapter_main.html#Triangulation3-fig-orient"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>). The neighbors of a cell are also
+indexed with 0, 1, 2, 3 in such a way that the neighbor indexed by <MATH><I>i</I></MATH>
+is <A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A> to the vertex with the same index.
+<P>
+
+<B>Figure:&nbsp;&nbsp;</B><A HREF="../Kernel_23_ref/Enum_Orientation.html#Cross_link_anchor_114">Orientation</A> of a cell (3-dimensional case).
+<A NAME="Triangulation3-fig-orient"></A>
+
+<CENTER>
+<img border=0 src="./orient.gif" align=center alt="Orientation of a cell 
+(3-dimensional case)">
+</CENTER>
+<P>
+
+As in the underlying combinatorial triangulation (see
+Chapter&nbsp;<A HREF="../TriangulationDS_3/Chapter_main.html#chapter-TDS3"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>), edges (<MATH><I>1</I></MATH>-faces) and facets (<MATH><I>2</I></MATH>-faces)
+are not explicitly 
+represented: a facet is given by a cell and an index (the facet
+<I>i</I> of a cell <I>c</I> is the facet of <I>c</I> that is <A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A> to
+the vertex with index <I>i</I>) and an edge is given by a cell and two
+indices (the edge <I>(i,j)</I> of a cell <I>c</I> is the edge whose
+endpoints are the vertices of <I>c</I> with indices <I>i</I> and
+<I>j</I>). See Figure&nbsp;<A HREF="../TriangulationDS_3/Chapter_main.html#TDS3-fig-repres"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>.
+<P>
+
+<b>Degenerate Dimensions</b>
+
+The class <I><A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A></I> can also deal with
+triangulations whose dimension <MATH><I>d</I></MATH> is less than&nbsp;3. A triangulation of a
+set of points in <MATH><I> <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>d</SUP></I></MATH> covers the whole space <MATH><I> <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>d</SUP></I></MATH> and consists of
+cells having <MATH><I>d+1</I></MATH> vertices: some of them are infinite, they are
+obtained by linking the additional infinite vertex to each facet of
+the convex hull of the points.
+<UL>
+<LI> <I>dimension 2:</I> when a triangulation only contains
+<A HREF="../Kernel_23_ref/Function_coplanar.html#Cross_link_anchor_197">coplanar</A> points (which is the case when there are only three points), 
+it consists of triangular faces.
+<LI> <I>dimension 1:</I> the triangulation contains only <A HREF="../Kernel_23_ref/Function_collinear.html#Cross_link_anchor_167">collinear</A> 
+points (which is the case when there are only two points), it consists
+of edges.
+<LI> <I>dimension 0:</I> the triangulation contains only one
+finite point.
+<LI> <I>dimension -1:</I> this is a convention to handle the case
+when the only vertex of the triangulation is the infinite one.
+</UL>
+<P>
+
+The same cell class is used in all cases: triangular faces in
+2D can be considered as degenerate cells, having only three vertices
+(resp. neighbors) numbered <MATH><I>(0,1,2)</I></MATH>;
+edges in 1D have only two vertices (resp. neighbors) numbered <MATH><I>0</I></MATH> and <MATH><I>1</I></MATH>.
+<P>
+
+The implicit representation of facets (resp. edges) still holds
+for degenerate dimensions (<I>i.e.</I> dimensions <MATH><I>&lt;3</I></MATH>): in
+dimension&nbsp;2, each cell has only one facet of index 3, and 3 edges
+<MATH><I>(0,1)</I></MATH>, <MATH><I>(1,2)</I></MATH> and <MATH><I>(2,0)</I></MATH>; in dimension&nbsp;1, each cell has one edge
+<MATH><I>(0,1)</I></MATH>.
+<P>
+
+<b>Validity</b>
+
+A triangulation of <MATH><I> <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>3</SUP></I></MATH> is said to be <I>locally valid</I> iff
+<P>
+
+<B>(a)-(b)</B> Its underlying combinatorial graph, the triangulation
+data structure, is <I>locally valid</I> 
+(see Section&nbsp;<A HREF="../TriangulationDS_3/Chapter_main.html#TDS3-sec-intro"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A> of Chapter&nbsp;<A HREF="../TriangulationDS_3/Chapter_main.html#chapter-TDS3"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>)<BR>
+
+<B>(c)</B> Any cell has its vertices ordered according to positive
+<A HREF="../Kernel_23_ref/Function_orientation.html#Cross_link_anchor_247">orientation</A>. See Figure&nbsp;<A HREF="Chapter_main.html#Triangulation3-fig-orient"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>.
+<P>
+
+When the triangulation is degenerated into a triangulation of
+dimension&nbsp;2, the  geometric validity reduces to:
+<P>
+
+<B>(c-2D)</B> For any two adjacent triangles <MATH><I>(u,v,w<SUB>1</SUB>)</I></MATH> and <MATH><I>(u,v,w<SUB>2</SUB>)</I></MATH> with
+common edge <MATH><I>(u,v)</I></MATH>, <MATH><I>w<SUB>1</SUB></I></MATH> and <MATH><I>w<SUB>2</SUB></I></MATH> lie on <A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A> sides of <MATH><I>(u,v)</I></MATH>
+in the plane.
+<P>
+
+When all the points are <A HREF="../Kernel_23_ref/Function_collinear.html#Cross_link_anchor_167">collinear</A>, this condition becomes:
+<P>
+
+<B>(c-1D)</B> For any two adjacent edges <MATH><I>(u,v)</I></MATH> and <MATH><I>(v,w)</I></MATH>, <MATH><I>u</I></MATH> and
+<MATH><I>w</I></MATH> lie on <A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A> sides of the common vertex <MATH><I>v</I></MATH> on the line.
+<P>
+
+The <I>is_valid()</I> method provided in <I><A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A></I> checks
+the local validity of a given triangulation. This does not always
+ensure global validity [<A HREF="../biblio.html#Biblio_mnssssu-cgpvg-96">MNS<MATH><I><SUP>+</SUP></I></MATH>96</A>, <A HREF="../biblio.html#Biblio_dlpt-ccpps-98">DLPT98</A>] but it is 
+sufficient for practical cases.
+<P>
+
+<a name="Section_2"></a>
+        
+<h2>35.2&nbsp;&nbsp;&nbsp;Delaunay Triangulation</h2>
+<P>
+
+The class <I><A HREF="../Triangulation_3_ref/Class_Delaunay_triangulation_3.html#Cross_link_anchor_974">Delaunay_triangulation_3</A></I> represents a three-dimensional
+Delaunay triangulation.
+<P>
+
+Delaunay triangulations have the specific <I>empty sphere property</I>,
+that is, the circumscribing sphere of each cell of such a triangulation
+does not contain any other vertex of the triangulation in its interior.
+These triangulations are uniquely defined except in degenerate cases
+where five points are cospherical.  Note however that the C<SMALL>GAL</SMALL> implementation
+computes a unique triangulation even in these cases.
+<P>
+
+This implementation is fully dynamic: it supports both insertions of points
+and vertex removal.
+The user is advised to use the class <I><A HREF="../Triangulation_3_ref/Class_Triangulation_hierarchy_3.html#Cross_link_anchor_976">Triangulation_hierarchy_3</A></I> in
+order to benefit from an increased efficiency for large data sets.
+<P>
+
+<a name="Section_3"></a>
+        
+<h2>35.3&nbsp;&nbsp;&nbsp;Regular Triangulation</h2>
+ 
+<A NAME="Triangulation3-sec-class-Regulartriangulation"></A>
+<P>
+
+The class <I><A HREF="../Triangulation_3_ref/Class_Regular_triangulation_3.html#Cross_link_anchor_978">Regular_triangulation_3</A></I> implements incremental regular
+triangulations, also known as weighted Delaunay triangulations.
+<P>
+
+Let <MATH><I>S<SUP>(w)</SUP></I></MATH> be a set of weighted points in <MATH><I> <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>3</SUP></I></MATH>. Let
+<MATH><I>p<SUP>(w)</SUP>=(p,w<SUB>p</SUB>), p <IMG BORDER=0 WIDTH=9 HEIGHT=21 ALIGN=MIDDLE SRC="cc_in.gif">  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>3</SUP>, w<SUB>p</SUB> <IMG BORDER=0 WIDTH=9 HEIGHT=21 ALIGN=MIDDLE SRC="cc_in.gif">  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> </I></MATH> and 
+<MATH><I>z<SUP>(w)</SUP>=(z,w<SUB>z</SUB>), z <IMG BORDER=0 WIDTH=9 HEIGHT=21 ALIGN=MIDDLE SRC="cc_in.gif">  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>3</SUP>, w<SUB>z</SUB> <IMG BORDER=0 WIDTH=9 HEIGHT=21 ALIGN=MIDDLE SRC="cc_in.gif">  <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> </I></MATH> be two weighted points. 
+A weighted point
+<MATH><I>p<SUP>(w)</SUP>=(p,w<SUB>p</SUB>)</I></MATH> can also be seen as a sphere of center <MATH><I>p</I></MATH> and
+radius <MATH><I>w<SUB>p</SUB></I></MATH>. 
+The <I>power product</I> between <MATH><I>p<SUP>(w)</SUP></I></MATH> and <MATH><I>z<SUP>(w)</SUP></I></MATH> is
+defined as 
+<P ALIGN=CENTER>
+<MATH><I><IMG BORDER=0 WIDTH=12 HEIGHT=12 ALIGN=BOTTOM SRC="cc_Pi.gif">(p<SUP>(w)</SUP>,z<SUP>(w)</SUP>) =  <IMG BORDER=0 WIDTH=6 HEIGHT=29 ALIGN=MIDDLE SRC="cc_parallel.gif"> p-z <IMG BORDER=0 WIDTH=6 HEIGHT=29 ALIGN=MIDDLE SRC="cc_parallel.gif"> <SUP>2</SUP>-w<SUB>p</SUB>-w<SUB>z</SUB></I></MATH>
+<P>
+
+where <MATH><I> <IMG BORDER=0 WIDTH=6 HEIGHT=29 ALIGN=MIDDLE SRC="cc_parallel.gif"> p-z <IMG BORDER=0 WIDTH=6 HEIGHT=29 ALIGN=MIDDLE SRC="cc_parallel.gif"> </I></MATH> is the Euclidean distance between <MATH><I>p</I></MATH> and <MATH><I>z</I></MATH>. 
+ <MATH><I>p<SUP>(w)</SUP></I></MATH> and <MATH><I>z<SUP>(w)</SUP></I></MATH>
+are said to be <I>orthogonal</I> iff <MATH><I><IMG BORDER=0 WIDTH=12 HEIGHT=12 ALIGN=BOTTOM SRC="cc_Pi.gif">(p<SUP>(w)</SUP>,z<SUP>(w)</SUP>)
+= 0</I></MATH> (see Figure&nbsp;<A HREF="Chapter_main.html#Triangulation3-fig-ortho"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>).
+<P>
+
+<B>Figure:&nbsp;&nbsp;</B>Orthogonal weighted points (picture in 2D).
+<A NAME="Triangulation3-fig-ortho"></A>
+
+<CENTER>
+<img border=0 src="./ortho.gif" align=center alt="Orthogonal weighted
+points (picture in 2D)"> 
+</CENTER>
+<P>
+
+Four weighted points have a unique common orthogonal weighted point
+called the <I>power sphere</I>.  The weighted point orthogonal to
+three weighted points in the plane defined by these three points is
+called the <I>power circle</I>. The
+<I>power segment</I> will denote the weighted point orthogonal to
+two weighted points on the line defined by these two points.
+<P>
+
+A sphere <MATH><I>z<SUP>(w)</SUP></I></MATH> is said to be
+<I>regular</I> if <MATH><I> <IMG BORDER=0 WIDTH=9 HEIGHT=13 ALIGN=BOTTOM SRC="cc_forall.gif"> p<SUP>(w)</SUP> <IMG BORDER=0 WIDTH=9 HEIGHT=21 ALIGN=MIDDLE SRC="cc_in.gif"> S<SUP>(w)</SUP>,
+<IMG BORDER=0 WIDTH=12 HEIGHT=12 ALIGN=BOTTOM SRC="cc_Pi.gif">(p<SUP>(w)</SUP>,z<SUP>(w)</SUP>) <IMG BORDER=0 WIDTH=11 HEIGHT=25 ALIGN=MIDDLE SRC="cc_geq.gif"> 0</I></MATH>.
+<P>
+
+A triangulation of <MATH><I>S<SUP>(w)</SUP></I></MATH> is <I>regular</I> if the power spheres
+of all simplices are regular.
+<P>
+
+The regular triangulation of
+<MATH><I>S<SUP>(w)</SUP></I></MATH> is in fact the projection onto <MATH><I> <IMG BORDER=0 WIDTH=13 HEIGHT=12 ALIGN=BOTTOM SRC="cc_mathbb_R.gif"> <SUP>3</SUP></I></MATH> of the convex hull 
+of the four-dimensional points <MATH><I>(p, <IMG BORDER=0 WIDTH=6 HEIGHT=29 ALIGN=MIDDLE SRC="cc_parallel.gif"> p-O <IMG BORDER=0 WIDTH=6 HEIGHT=29 ALIGN=MIDDLE SRC="cc_parallel.gif"> <SUP>2</SUP>-w<SUB>p</SUB>),</I></MATH> for
+<MATH><I>p<SUP>(w)</SUP>=(p,w<SUB>p</SUB>) <IMG BORDER=0 WIDTH=9 HEIGHT=21 ALIGN=MIDDLE SRC="cc_in.gif"> S<SUP>(w)</SUP></I></MATH>. 
+Note that all points of <MATH><I>S<SUP>(w)</SUP></I></MATH> do not
+necessarily appear as vertices of the regular
+triangulation. To know more about regular triangulations, see for
+example [<A HREF="../biblio.html#Biblio_es-itfwr-96">ES96</A>].
+<P>
+
+When all weights are 0, power spheres are nothing more than
+circumscribing spheres, and the regular triangulation is exactly the
+Delaunay triangulation.
+<P>
+
+<a name="Section_4"></a>
+        
+<h2>35.4&nbsp;&nbsp;&nbsp;Triangulation hierarchy</h2>
+<P>
+
+The class <I><A HREF="../Triangulation_3_ref/Class_Triangulation_hierarchy_3.html#Cross_link_anchor_976">Triangulation_hierarchy_3</A></I> implements a
+triangulation augmented with a data structure that allows fast point
+location queries. Thus, it allows fast construction of the
+triangulation. As proved in&nbsp;[<A HREF="../biblio.html#Biblio_cgal:d-dh-02">Dev02</A>], this structure has an
+optimal behavior when it is built for Delaunay triangulations.
+<P>
+
+Note that, since the algorithms that are provided are randomized, the
+running time of constructing a triangulation with a hierarchy may be
+improved when shuffling the data points.
+<P>
+
+<a name="Section_5"></a>
+        
+<h2>35.5&nbsp;&nbsp;&nbsp;Software Design</h2>
+
+<A NAME="Triangulation3-sec-design"></A>
+<P>
+
+The main classes <I><A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A></I>, <I><A HREF="../Triangulation_3_ref/Class_Delaunay_triangulation_3.html#Cross_link_anchor_974">Delaunay_triangulation_3</A></I> and
+<I><A HREF="../Triangulation_3_ref/Class_Regular_triangulation_3.html#Cross_link_anchor_978">Regular_triangulation_3</A></I> are connected to each other by the
+derivation diagram shown in Figure&nbsp;<A HREF="Chapter_main.html#t3_derivation"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>.  This diagram
+also shows two other classes: <I><A HREF="../TriangulationDS_3_ref/Class_Triangulation_utils_3.html#Cross_link_anchor_1014">Triangulation_utils_3</A></I>, which provides
+a set of tools operating on the indices of vertices in cells,
+and <I><A HREF="../Triangulation_3_ref/Class_Triangulation_hierarchy_3.html#Cross_link_anchor_976">Triangulation_hierarchy_3</A></I>, which implements a hierarchy of
+triangulations suitable for speeding up point location.
+<P>
+
+<B>Figure:&nbsp;&nbsp;</B>Derivation diagram of the 3D triangulation classes.
+<A NAME="t3_derivation"></A>
+
+<CENTER>
+<img border=0 src="./derivation.gif" align=center
+ alt="Derivation diagram of the 3D triangulation classes"> 
+</CENTER>
+<P>
+
+The three main classes (<I><A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A></I>, <I><A HREF="../Triangulation_3_ref/Class_Delaunay_triangulation_3.html#Cross_link_anchor_974">Delaunay_triangulation_3</A></I>
+and <I><A HREF="../Triangulation_3_ref/Class_Regular_triangulation_3.html#Cross_link_anchor_978">Regular_triangulation_3</A></I>) provide high-level geometric functionality
+such as location of a point in the triangulation&nbsp;[<A HREF="../biblio.html#Biblio_cgal:dpt-wt-02">DPT02</A>], insertion
+and possibly removal of a point&nbsp;[<A HREF="../biblio.html#Biblio_cgal:dt-pvr3d-03">DT03</A>], and are responsible for the
+geometric validity.  They are built as layers on top of a triangulation data
+structure, which stores their combinatorial structure.  This separation between
+the geometry and the combinatorics is reflected in the software design by the
+fact that these three triangulation classes take two template parameters :
+<P>
+
+<UL>
+<LI> the <B>geometric traits</B> class, which provides the type of points
+to use as well as the elementary operations on them (predicates and
+constructions).  The concepts for these parameters are described in more
+details in Section&nbsp;<A HREF="Chapter_main.html#Triangulation3-sec-Traits"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>.
+<LI> the <B>triangulation data structure</B> class, which stores their
+combinatorial structure, described in Section&nbsp;<A HREF="../TriangulationDS_3/Chapter_main.html#TDS3-sec-design"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A> of
+Chapter&nbsp;<A HREF="../TriangulationDS_3/Chapter_main.html#chapter-TDS3"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>.
+</UL>
+<P>
+
+The class <I><A HREF="../Triangulation_3_ref/Class_Triangulation_hierarchy_3.html#Cross_link_anchor_976">Triangulation_hierarchy_3</A></I> is parameterized by a class, which at
+the moment can only be <I><A HREF="../Triangulation_3_ref/Class_Delaunay_triangulation_3.html#Cross_link_anchor_974">Delaunay_triangulation_3</A></I>.  It fetches its
+geometric traits from this parameter directly.
+<P>
+
+<h3>35.5.1&nbsp;&nbsp;&nbsp;The Geometric Traits Parameter</h3>
+
+<A NAME="Triangulation3-sec-Traits"></A>
+<P>
+
+The first template parameter of the triangulation class
+<I><A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A>&lt;<A HREF="../Triangulation_3_ref/Concept_TriangulationTraits_3.html#Cross_link_anchor_979">TriangulationTraits_3</A>, <A HREF="../TriangulationDS_3_ref/Concept_TriangulationDataStructure_3.html#Cross_link_anchor_1002">TriangulationDataStructure_3</A>&gt;</I>
+is the geometric traits class, described by the concept
+<I><A HREF="../Triangulation_3_ref/Concept_TriangulationTraits_3.html#Cross_link_anchor_979">TriangulationTraits_3</A></I>.  It must define the types of the geometric objects
+(points, segments, triangles and tetrahedra) forming the triangulation together
+with a few geometric predicates on these objects: <A HREF="../Kernel_23_ref/Function_orientation.html#Cross_link_anchor_247">orientation</A> in space,
+<A HREF="../Kernel_23_ref/Function_orientation.html#Cross_link_anchor_247">orientation</A> in case of <A HREF="../Kernel_23_ref/Function_coplanar.html#Cross_link_anchor_197">coplanar</A> points, order of <A HREF="../Kernel_23_ref/Function_collinear.html#Cross_link_anchor_167">collinear</A> points.
+<P>
+
+In addition to the requirements described before, the geometric traits
+class of <I><A HREF="../Triangulation_3_ref/Class_Delaunay_triangulation_3.html#Cross_link_anchor_974">Delaunay_triangulation_3</A></I> must define predicates to test for the
+<I>empty sphere property</I>.  It is described by the concept
+<I><A HREF="../Triangulation_3_ref/Concept_DelaunayTriangulationTraits_3.html#Cross_link_anchor_980">DelaunayTriangulationTraits_3</A></I>, which refines <I><A HREF="../Triangulation_3_ref/Concept_TriangulationTraits_3.html#Cross_link_anchor_979">TriangulationTraits_3</A></I>.
+<P>
+
+The kernels provided by CGAL: <I><A HREF="../Kernel_23_ref/Class_Cartesian.html#Cross_link_anchor_6">Cartesian</A></I>, <I><A HREF="../Kernel_23_ref/Class_Homogeneous.html#Cross_link_anchor_18">Homogeneous</A></I>,
+<I><A HREF="../Kernel_23_ref/Class_Simple_cartesian.html#Cross_link_anchor_30">Simple_cartesian</A></I>, <I><A HREF="../Kernel_23_ref/Class_Simple_homogeneous.html#Cross_link_anchor_32">Simple_homogeneous</A></I> and
+<I><A HREF="../Kernel_23_ref/Class_Filtered_kernel.html#Cross_link_anchor_12">Filtered_kernel</A></I> can all be used as models for the geometric traits
+parameter.
+They supply the user with all the functionalities described for the concepts
+<I><A HREF="../Triangulation_3_ref/Concept_TriangulationTraits_3.html#Cross_link_anchor_979">TriangulationTraits_3</A></I> and
+<I><A HREF="../Triangulation_3_ref/Concept_DelaunayTriangulationTraits_3.html#Cross_link_anchor_980">DelaunayTriangulationTraits_3</A></I>.
+In addition, the predefined kernels
+<I><A HREF="../Kernel_23_ref/Class_Exact_predicates_inexact_constructions_kernel.html#Cross_link_anchor_38">Exact_predicates_inexact_constructions_kernel</A></I> and
+<I><A HREF="../Kernel_23_ref/Class_Exact_predicates_exact_constructions_kernel.html#Cross_link_anchor_34">Exact_predicates_exact_constructions_kernel</A></I>
+can also be used, the later being recommended when the dual construction is
+used.
+<P>
+
+In order to be used as the traits class for <I><A HREF="../Triangulation_3_ref/Class_Regular_triangulation_3.html#Cross_link_anchor_978">Regular_triangulation_3</A></I>,
+a class must provide functions to compute the <I>power tests</I>
+(see Section&nbsp;<A HREF="Chapter_main.html#Triangulation3-sec-class-Regulartriangulation"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>).
+<I><A HREF="../Triangulation_3_ref/Class_Regular_triangulation_euclidean_traits_3.html#Cross_link_anchor_983">Regular_triangulation_euclidean_traits_3</A>&lt;R,Weight&gt;</I> is a traits class 
+ designed to be used by the class
+<I><A HREF="../Triangulation_3_ref/Class_Regular_triangulation_3.html#Cross_link_anchor_978">Regular_triangulation_3</A>&lt;<A HREF="../Triangulation_3_ref/Concept_RegularTriangulationTraits_3.html#Cross_link_anchor_981">RegularTriangulationTraits_3</A>, <A HREF="../TriangulationDS_3_ref/Concept_TriangulationDataStructure_3.html#Cross_link_anchor_1002">TriangulationDataStructure_3</A>&gt;</I>. It provides
+<I><A HREF="../Triangulation_2_ref/Class_Weighted_point.html#Cross_link_anchor_959">Weighted_point</A></I>, a class for weighted points
+needed by the regular triangulation, which derives from the three dimensional
+point class <I>R::<A HREF="../Kernel_23_ref/Class_Point_3.html#Cross_link_anchor_74">Point_3</A></I>.
+It supplies the user with all the functionalities 
+described for the concept <I><A HREF="../Triangulation_3_ref/Concept_RegularTriangulationTraits_3.html#Cross_link_anchor_981">RegularTriangulationTraits_3</A></I>. 
+It can be used as a traits class for
+<I><A HREF="../Triangulation_3_ref/Class_Regular_triangulation_3.html#Cross_link_anchor_978">Regular_triangulation_3</A>&lt;<A HREF="../Triangulation_3_ref/Concept_RegularTriangulationTraits_3.html#Cross_link_anchor_981">RegularTriangulationTraits_3</A>, <A HREF="../TriangulationDS_3_ref/Concept_TriangulationDataStructure_3.html#Cross_link_anchor_1002">TriangulationDataStructure_3</A>&gt;</I>.
+<P>
+
+There is also another model of the traits concept,
+<I><A HREF="../Triangulation_3_ref/Class_Regular_triangulation_filtered_traits_3.html#Cross_link_anchor_985">Regular_triangulation_filtered_traits_3</A>&lt;FK&gt;</I>, which is providing filtered
+predicates (exact and efficient).
+<P>
+
+<h3>35.5.2&nbsp;&nbsp;&nbsp;The Triangulation Data Structure Parameter</h3>
+
+<A NAME="Triangulation3-sec-tds"></A>
+<P>
+
+The second template parameter of the main classes (<I><A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A></I>,
+<I><A HREF="../Triangulation_3_ref/Class_Delaunay_triangulation_3.html#Cross_link_anchor_974">Delaunay_triangulation_3</A></I> and <I><A HREF="../Triangulation_3_ref/Class_Regular_triangulation_3.html#Cross_link_anchor_978">Regular_triangulation_3</A></I>) is a
+triangulation data structure class.  This class can be seen as a container for
+the cells and vertices maintaining incidence and adjacency relations (see
+Chapter&nbsp;<A HREF="../TriangulationDS_3/Chapter_main.html#chapter-TDS3"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>).  A model of this triangulation data structure is
+<I><A HREF="../TriangulationDS_3_ref/Class_Triangulation_data_structure_3.html#Cross_link_anchor_1008">Triangulation_data_structure_3</A></I>,
+and it is described by the <I><A HREF="../TriangulationDS_3_ref/Concept_TriangulationDataStructure_3.html#Cross_link_anchor_1002">TriangulationDataStructure_3</A></I> concept
+.  This model is itself
+parameterized by a vertex base and a cell base classes, which gives the
+possibility to customize the vertices and cells used by the triangulation data
+structure, and hence by the geometric triangulation using it.  Depending on the
+kind of triangulation used, the requirements on the vertex and cell base
+classes vary, and are expressed by various concepts, following the refinement
+diagram shown in Figure&nbsp;<A HREF="Chapter_main.html#T3-concept-hierarchy"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>.
+<P>
+
+<B>Figure:&nbsp;&nbsp;</B>Concepts refinement hierarchy for the vertex and cell base classes
+parameters.
+<A NAME="T3-concept-hierarchy"></A>
+
+<CENTER>
+<img border=0 src="./concept_hierarchy.gif" align=center
+ alt="Concepts refinement hierarchy for the vertex and cell base classes
+parameters.">
+</CENTER>
+<P>
+
+A default value for the triangulation data structure parameter is provided in
+all the triangulation classes, so it need not be specified by the user unless
+he wants to use a different triangulation data structure or a different vertex
+or cell base class.
+<P>
+
+<h3>35.5.3&nbsp;&nbsp;&nbsp;Flexibility of the Design</h3>
+<P>
+
+In order to satisfy as many uses as possible, a design has been selected that
+allows to exchange different parts to meet the users' needs, while still
+re-using a maximum of the provided functionalities.  We have already seen that
+the main triangulation classes are parameterized by a geometric traits class
+and a triangulation data structure (TDS), so that each of them can be
+interchanged with alternate implementations.
+<P>
+
+The most useful flexibility is the ability given to the user to add his own
+data in the vertices and cells by providing his own vertex and cell base
+classes to <I><A HREF="../TriangulationDS_3_ref/Class_Triangulation_data_structure_3.html#Cross_link_anchor_1008">Triangulation_data_structure_3</A></I>.  The
+Figure&nbsp;<A HREF="Chapter_main.html#T3-fig-layers"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A> shows in more detail the flexibility that is
+provided, and the place where the user can insert his own vertex and/or cell
+base classes.
+<P>
+
+<B>Figure:&nbsp;&nbsp;</B>Triangulation software design.
+<A NAME="T3-fig-layers"></A>
+
+<CENTER>
+<img border=0 src="./design.gif" align=center
+ alt="Triangulation software design">
+</CENTER>
+<P>
+
+<h3>35.5.4&nbsp;&nbsp;&nbsp;Backward compatibility</h3>
+
+<A NAME="T3-sec-compat"></A>
+<P>
+
+Starting with C<SMALL>GAL</SMALL> release 3.0, the design of the triangulation data
+structure has been changed in order to give the possibility to store handles
+(an entity akeen to pointers) directly in the vertex and cell base classes.
+Previously, <TT>void*</TT> pointers were stored there instead, and later
+converted internally to handles, but this happened to be too restrictive for
+some uses.
+<P>
+
+The difference is visible to the user when he provides his own vertex or cell
+base class.  Previously, something like the following had to be written:
+<P>
+
+<pre class="ExampleCode">
+...
+template &lt; class GT &gt;
+class My_vertex
+  : public Triangulation_vertex_base&lt;GT&gt;
+{
+  typedef Triangulation_vertex_base&lt;GT&gt;  Vb;
+public:
+  typedef typename Vb::Point             Point;
+
+  My_vertex() {}
+  My_vertex(const Point&amp;p)          : Vb(p) {}
+  My_vertex(const Point&amp;p, void *c) : Vb(p, c) {}
+...
+};
+
+typedef <A HREF="../Kernel_23_ref/Class_Cartesian.html#Cross_link_anchor_6">Cartesian</A>&lt;double&gt;                                               GT;
+typedef <A HREF="../TriangulationDS_3_ref/Class_Triangulation_data_structure_3.html#Cross_link_anchor_1008">Triangulation_data_structure_3</A>&lt;My_vertex&lt;GT&gt;,
+                                       <A HREF="../Triangulation_3_ref/Class_Triangulation_cell_base_3.html#Cross_link_anchor_990">Triangulation_cell_base_3</A>&lt;GT&gt; &gt;  My_TDS;
+typedef <A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A>&lt;GT, My_TDS&gt;                                     Tr;
+...
+</pre>
+<P>
+
+While now, there are three possibilities.  The simplest one is to use the
+class <I><A HREF="../Triangulation_3_ref/Class_Triangulation_vertex_base_with_info_3.html#Cross_link_anchor_996">Triangulation_vertex_base_with_info_3</A></I>, and this approach is
+illustrated in a following subsection&nbsp;<A HREF="Chapter_main.html#Triangulation3-sec-examples-color"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>.
+The most complicated one, and probably useless for almost all cases, is to
+write a vertex base class from scratch, following the documented requirements.
+This is mostly useless because most of the time it is enough to derive from
+the models that C<SMALL>GAL</SMALL> provides, and add the desired features.
+In this case, when the user needs to access some type that depends on the
+triangulation data structure (typically handles), then he should write
+something like:
+<pre class="ExampleCode">
+...
+template &lt; class GT, class Vb = Triangulation_vertex_base&lt;GT&gt; &gt;
+class My_vertex
+  : public Vb
+{
+public:
+  typedef typename Vb::Point           Point;
+  typedef typename Vb::Cell_handle     Cell_handle;
+
+  template &lt; class TDS2 &gt;
+  struct Rebind_TDS {
+    typedef typename Vb::template Rebind_TDS&lt;TDS2&gt;::Other  Vb2;
+    typedef My_vertex&lt;GT, Vb2&gt;                             Other;
+  };
+
+  My_vertex() {}
+  My_vertex(const Point&amp;p)                : Vb(p) {}
+  My_vertex(const Point&amp;p, Cell_handle c) : Vb(p, c) {}
+...
+};
+... // The rest has not changed
+</pre>
+<P>
+
+The changes that need to be made are the following:
+<UL>
+<LI> <I>My_vertex</I> is now parameterized by the vertex base class it
+        derives from.
+<LI> a nested template class <I>Rebind_TDS</I> must be defined.
+<LI> <TT>void*</TT> must be changed to <I>Cell_handle</I>, and you need to
+        extract the <I>Cell_handle</I> type from the vertex base class that
+        <I>My_vertex</I> derives from.
+</UL>
+<P>
+
+The situation is exactly similar for cell base classes.
+Section&nbsp;<A HREF="../TriangulationDS_3/Chapter_main.html#TDS3-sec-design"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A> provides more detailed information.
+<P>
+
+<a name="Section_6"></a>
+        
+<h2>35.6&nbsp;&nbsp;&nbsp;Examples</h2>
+
+<A NAME="Triangulation3-sec-examples"></A>
+
+<h3>35.6.1&nbsp;&nbsp;&nbsp;Basic example</h3>
+
+This example shows the incremental construction of a 3D triangulation, the
+location of a point and how to perform elementary operations on indices in a
+cell. It uses the default parameter of the <I><A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A></I> class.
+<P>
+
+<pre class="ExampleCode">// examples/<A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A>/example_simple.C
+
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Exact_predicates_inexact_constructions_kernel.html#Cross_link_anchor_38">Exact_predicates_inexact_constructions_kernel</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A>.h&gt;
+
+#include &lt;iostream&gt;
+#include &lt;fstream&gt;
+#include &lt;cassert&gt;
+#include &lt;list&gt;
+#include &lt;vector&gt;
+
+struct K : <A HREF="../Kernel_23_ref/Class_Exact_predicates_inexact_constructions_kernel.html#Cross_link_anchor_37">CGAL::Exact_predicates_inexact_constructions_kernel</A> {};
+
+typedef <A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_971">CGAL::Triangulation_3</A>&lt;K&gt;      Triangulation;
+
+typedef Triangulation::Cell_handle    Cell_handle;
+typedef Triangulation::Vertex_handle  Vertex_handle;
+typedef Triangulation::<A HREF="../Planar_map_ref/Class_Planar_map_2#Enum_Locate_type">Locate_type</A>    <A HREF="../Planar_map_ref/Class_Planar_map_2#Enum_Locate_type">Locate_type</A>;
+typedef Triangulation::Point          Point;
+
+int main()
+{
+  // construction from a list of points :
+  std::list&lt;Point&gt; L;
+  L.push_front(Point(0,0,0));
+  L.push_front(Point(1,0,0));
+  L.push_front(Point(0,1,0));
+
+  Triangulation T(L.begin(), L.end());
+
+  int n = T.number_of_vertices();
+
+  // insertion from a vector :
+  std::vector&lt;Point&gt; V(3);
+  V[0] = Point(0,0,1);
+  V[1] = Point(1,1,1);
+  V[2] = Point(2,2,2);
+
+  n = n + T.insert(V.begin(), V.end());
+
+  assert( n == 6 );       // 6 points have been inserted
+  assert( T.is_valid() ); // checking validity of T
+
+  <A HREF="../Planar_map_ref/Class_Planar_map_2#Enum_Locate_type">Locate_type</A> lt;
+  int li, lj;
+  Point p(0,0,0);
+  Cell_handle c = T.locate(p, lt, li, lj);
+  // p is the vertex of c of index li :
+  assert( lt == Triangulation::<A HREF="../Planar_map_ref/Class_Planar_map_2#Enum_Locate_type">VERTEX</A> );
+  assert( c-&gt;vertex(li)-&gt;point() == p );
+
+  Vertex_handle v = c-&gt;vertex( (li+1)&amp;3 );
+  // v is another vertex of c
+  Cell_handle nc = c-&gt;neighbor(li);
+  // nc = neighbor of c <A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A> to the vertex associated with p
+  // nc must have vertex v :
+  int nli;
+  assert( nc-&gt;has_vertex( v, nli ) );
+  // nli is the index of v in nc
+
+  std::ofstream oFileT(&quot;output&quot;,std::ios::out);
+  // writing file output; 
+  oFileT &lt;&lt; T; 
+
+  Triangulation T1;
+  std::ifstream iFileT(&quot;output&quot;,std::ios::in);
+  // reading file output; 
+  iFileT &gt;&gt; T1; 
+  assert( T1.is_valid() );
+  assert( T1.number_of_vertices() == T.number_of_vertices() );
+  assert( T1.number_of_cells() == T.number_of_cells() );
+
+  return 0;
+}
+</pre>
+<P>
+
+<h3>35.6.2&nbsp;&nbsp;&nbsp;Changing the vertex base</h3>
+
+The following two examples show how the user can plug his own vertex base in a
+triangulation.  Changing the cell base is similar.
+<P>
+
+<h4>Adding a color</h4>
+
+<A NAME="Triangulation3-sec-examples-color"></A>
+When the user doesn't need to add a type in a vertex which depends on the
+<I><A HREF="../TriangulationDS_3_ref/Concept_TriangulationDataStructure_3.html#Cross_link_anchor_1002">TriangulationDataStructure_3</A></I> (e.g. a <I>Vertex_handle</I> or
+<I>Cell_handle</I>), then he can use the
+<I><A HREF="../Triangulation_3_ref/Class_Triangulation_vertex_base_with_info_3.html#Cross_link_anchor_996">Triangulation_vertex_base_with_info_3</A></I> class to add his own information
+easily in the vertices.  The example below shows how to add a <I><A HREF="../Colors_and_windows_ref/Class_Color.html#Cross_link_anchor_1753">CGAL::Color</A></I>
+this way.
+<P>
+
+<pre class="ExampleCode">// file: examples/<A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A>/example_color.C
+
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Exact_predicates_inexact_constructions_kernel.html#Cross_link_anchor_38">Exact_predicates_inexact_constructions_kernel</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Triangulation_3_ref/Class_Delaunay_triangulation_3.html#Cross_link_anchor_974">Delaunay_triangulation_3</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Triangulation_3_ref/Class_Triangulation_vertex_base_with_info_3.html#Cross_link_anchor_996">Triangulation_vertex_base_with_info_3</A>.h&gt;
+#include &lt;CGAL/IO/<A HREF="../Colors_and_windows_ref/Class_Color.html#Cross_link_anchor_1754">Color</A>.h&gt;
+
+struct K : <A HREF="../Kernel_23_ref/Class_Exact_predicates_inexact_constructions_kernel.html#Cross_link_anchor_37">CGAL::Exact_predicates_inexact_constructions_kernel</A> {};
+
+typedef <A HREF="../Triangulation_3_ref/Class_Triangulation_vertex_base_with_info_3.html#Cross_link_anchor_995">CGAL::Triangulation_vertex_base_with_info_3</A>&lt;<A HREF="../Colors_and_windows_ref/Class_Color.html#Cross_link_anchor_1753">CGAL::Color</A>, K&gt; Vb;
+typedef <A HREF="../TriangulationDS_3_ref/Class_Triangulation_data_structure_3.html#Cross_link_anchor_1007">CGAL::Triangulation_data_structure_3</A>&lt;Vb&gt;                    Tds;
+typedef <A HREF="../Triangulation_3_ref/Class_Delaunay_triangulation_3.html#Cross_link_anchor_973">CGAL::Delaunay_triangulation_3</A>&lt;K, Tds&gt;                      Delaunay;
+
+typedef Delaunay::Point   Point;
+
+int main()
+{
+  Delaunay T;
+
+  T.insert(Point(0,0,0));
+  T.insert(Point(1,0,0));
+  T.insert(Point(0,1,0));
+  T.insert(Point(0,0,1));
+  T.insert(Point(2,2,2));
+  T.insert(Point(-1,0,1));
+
+  // Set the color of finite vertices of degree 6 to red.
+  Delaunay::Finite_vertices_iterator vit;
+  for (vit = T.finite_vertices_begin(); vit != T.finite_vertices_end(); ++vit)
+      if (T.degree(vit) == 6)
+          vit-&gt;info() = CGAL::RED;
+
+  return 0;
+}
+</pre>
+<P>
+
+<h4>Adding handles</h4>
+
+When the user needs to add a type in a vertex which depends on the
+<I><A HREF="../TriangulationDS_3_ref/Concept_TriangulationDataStructure_3.html#Cross_link_anchor_1002">TriangulationDataStructure_3</A></I> (e.g. a <I>Vertex_handle</I> or
+<I>Cell_handle</I>), then he has to derive his own vertex base class,
+as the following example shows.
+<P>
+
+<pre class="ExampleCode">// file: examples/<A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A>/example_adding_handles.C
+
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Exact_predicates_inexact_constructions_kernel.html#Cross_link_anchor_38">Exact_predicates_inexact_constructions_kernel</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Triangulation_3_ref/Class_Delaunay_triangulation_3.html#Cross_link_anchor_974">Delaunay_triangulation_3</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Triangulation_3_ref/Class_Triangulation_vertex_base_3.html#Cross_link_anchor_994">Triangulation_vertex_base_3</A>.h&gt;
+
+template &lt; class GT, class Vb = <A HREF="../Triangulation_3_ref/Class_Triangulation_vertex_base_3.html#Cross_link_anchor_993">CGAL::Triangulation_vertex_base_3</A>&lt;GT&gt; &gt;
+class My_vertex_base
+  : public Vb
+{
+public:
+  typedef typename Vb::Vertex_handle  Vertex_handle;
+  typedef typename Vb::Cell_handle    Cell_handle;
+  typedef typename Vb::Point          Point;
+
+  template &lt; class TDS2 &gt;
+  struct Rebind_TDS {
+    typedef typename Vb::template Rebind_TDS&lt;TDS2&gt;::Other  Vb2;
+    typedef My_vertex_base&lt;GT, Vb2&gt;                        Other;
+  };
+
+  My_vertex_base() {}
+
+  My_vertex_base(const Point&amp; p)
+    : Vb(p) {}
+
+  My_vertex_base(const Point&amp; p, Cell_handle c)
+    : Vb(p, c) {}
+
+  Vertex_handle   vh;
+  Cell_handle     ch;
+};
+
+
+struct K : <A HREF="../Kernel_23_ref/Class_Exact_predicates_inexact_constructions_kernel.html#Cross_link_anchor_37">CGAL::Exact_predicates_inexact_constructions_kernel</A> {};
+
+typedef <A HREF="../TriangulationDS_3_ref/Class_Triangulation_data_structure_3.html#Cross_link_anchor_1007">CGAL::Triangulation_data_structure_3</A>&lt;My_vertex_base&lt;K&gt; &gt;    Tds;
+typedef <A HREF="../Triangulation_3_ref/Class_Delaunay_triangulation_3.html#Cross_link_anchor_973">CGAL::Delaunay_triangulation_3</A>&lt;K, Tds&gt;                      Delaunay;
+
+typedef Delaunay::Vertex_handle    Vertex_handle;
+typedef Delaunay::Point            Point;
+
+int main()
+{
+  Delaunay T;
+
+  Vertex_handle v0 = T.insert(Point(0,0,0));
+  Vertex_handle v1 = T.insert(Point(1,0,0));
+  Vertex_handle v2 = T.insert(Point(0,1,0));
+  Vertex_handle v3 = T.insert(Point(0,0,1));
+  Vertex_handle v4 = T.insert(Point(2,2,2));
+  Vertex_handle v5 = T.insert(Point(-1,0,1));
+
+  // Now we can link the vertices as we like.
+  v0-&gt;vh = v1;
+  v1-&gt;vh = v2;
+  v2-&gt;vh = v3;
+  v3-&gt;vh = v4;
+  v4-&gt;vh = v5;
+  v5-&gt;vh = v0;
+
+  return 0;
+}
+</pre>
+<P>
+
+<h3>35.6.3&nbsp;&nbsp;&nbsp;Use of the Delaunay hierarchy</h3>
+<P>
+
+<pre class="ExampleCode">// file: examples/<A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A>/example_hierarchy.C
+
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Exact_predicates_inexact_constructions_kernel.html#Cross_link_anchor_38">Exact_predicates_inexact_constructions_kernel</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Triangulation_3_ref/Class_Delaunay_triangulation_3.html#Cross_link_anchor_974">Delaunay_triangulation_3</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Triangulation_3_ref/Class_Triangulation_hierarchy_3.html#Cross_link_anchor_976">Triangulation_hierarchy_3</A>.h&gt;
+
+#include &lt;cassert&gt;
+#include &lt;vector&gt;
+
+struct K : <A HREF="../Kernel_23_ref/Class_Exact_predicates_inexact_constructions_kernel.html#Cross_link_anchor_37">CGAL::Exact_predicates_inexact_constructions_kernel</A> {};
+
+typedef <A HREF="../Triangulation_3_ref/Class_Triangulation_vertex_base_3.html#Cross_link_anchor_993">CGAL::Triangulation_vertex_base_3</A>&lt;K&gt;             Vb;
+typedef <A HREF="../Triangulation_3_ref/Class_Triangulation_hierarchy_vertex_base_3.html#Cross_link_anchor_997">CGAL::Triangulation_hierarchy_vertex_base_3</A>&lt;Vb&gt;  Vbh;
+typedef <A HREF="../TriangulationDS_3_ref/Class_Triangulation_data_structure_3.html#Cross_link_anchor_1007">CGAL::Triangulation_data_structure_3</A>&lt;Vbh&gt;        Tds;
+typedef <A HREF="../Triangulation_3_ref/Class_Delaunay_triangulation_3.html#Cross_link_anchor_973">CGAL::Delaunay_triangulation_3</A>&lt;K,Tds&gt;            Dt;
+typedef <A HREF="../Triangulation_3_ref/Class_Triangulation_hierarchy_3.html#Cross_link_anchor_975">CGAL::Triangulation_hierarchy_3</A>&lt;Dt&gt;              Dh;
+
+typedef Dh::Vertex_iterator Vertex_iterator;
+typedef Dh::Vertex_handle   Vertex_handle;
+typedef Dh::Point           Point;
+
+int main()
+{
+  Dh T;
+
+  // insertion of points on a 3D grid
+  std::vector&lt;Vertex_handle&gt; V;
+  
+  for (int z=0 ; z&lt;5 ; z++)
+    for (int y=0 ; y&lt;5 ; y++)
+      for (int x=0 ; x&lt;5 ; x++) 
+	  V.push_back(T.insert(Point(x,y,z)));
+
+  assert( T.is_valid() );
+  assert( T.number_of_vertices() == 125 );
+  assert( T.dimension() == 3 );
+
+  // removal of the vertices in random order
+  std::random_shuffle(V.begin(), V.end());
+
+  for (int i=0; i&lt;125; ++i)
+    T.remove(V[i]);
+
+  assert( T.is_valid() );
+  assert( T.number_of_vertices() == 0 );
+
+  return 0;
+}
+</pre>
+<P>
+
+<h3>35.6.4&nbsp;&nbsp;&nbsp;Finding the cells in conflict with a point in a Delaunay
+triangulation</h3>
+<P>
+
+<pre class="ExampleCode">// file: examples/<A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A>/example_find_conflicts.C
+
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Exact_predicates_inexact_constructions_kernel.html#Cross_link_anchor_38">Exact_predicates_inexact_constructions_kernel</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Triangulation_3_ref/Class_Delaunay_triangulation_3.html#Cross_link_anchor_974">Delaunay_triangulation_3</A>.h&gt;
+#include &lt;CGAL/point_generators_3.h&gt;
+
+#include &lt;vector&gt;
+#include &lt;cassert&gt;
+
+struct K : <A HREF="../Kernel_23_ref/Class_Exact_predicates_inexact_constructions_kernel.html#Cross_link_anchor_37">CGAL::Exact_predicates_inexact_constructions_kernel</A> {};
+
+typedef <A HREF="../Triangulation_3_ref/Class_Delaunay_triangulation_3.html#Cross_link_anchor_973">CGAL::Delaunay_triangulation_3</A>&lt;K&gt;        Delaunay;
+typedef Delaunay::Point                          Point;
+typedef Delaunay::Cell_handle                    Cell_handle;
+typedef Delaunay::Facet                          Facet;
+
+int main()
+{
+  Delaunay T;
+  <A HREF="../Generator_ref/Class_Random_points_in_sphere_3.html#Cross_link_anchor_1697">CGAL::Random_points_in_sphere_3</A>&lt;Point&gt; rnd;
+
+  // First, make sure the triangulation is 3D.
+  T.insert(Point(0,0,0));
+  T.insert(Point(1,0,0));
+  T.insert(Point(0,1,0));
+  T.insert(Point(0,0,1));
+
+  assert(T.dimension() == 3);
+
+  // Inserts 100 random points if and only if their insertion
+  // in the Delaunay tetrahedralization conflicts with
+  // an even number of cells.
+  for (int i = 0; i != 100; ++i) {
+    Point p = *rnd++;
+
+    // Locate the point
+    Delaunay::<A HREF="../Planar_map_ref/Class_Planar_map_2#Enum_Locate_type">Locate_type</A> lt;
+    int li, lj;
+    Cell_handle c = T.locate(p, lt, li, lj);
+    if (lt == Delaunay::<A HREF="../Planar_map_ref/Class_Planar_map_2#Enum_Locate_type">VERTEX</A>)
+      continue; // Point already exists
+
+    // Get the cells that conflict with p in a vector V,
+    // and a facet on the boundary of this hole in f.
+    std::vector&lt;Cell_handle&gt; V;
+    Facet f;
+
+    T.find_conflicts(p, c,
+                     <A HREF="../STL_Extension_ref/Class_Oneset_iterator.html#Cross_link_anchor_1455">CGAL::Oneset_iterator</A>&lt;Facet&gt;(f), // Get one boundary facet
+                     std::back_inserter(V));          // Conflict cells in V
+
+    if ((V.size() &amp; 1) == 0)  // Even number of conflict cells ?
+      T.insert_in_hole(p, V.begin(), V.end(), f.first, f.second);
+  }
+
+  std::cout &lt;&lt; &quot;Final triangulation has &quot; &lt;&lt; T.number_of_vertices()
+            &lt;&lt; &quot; vertices.&quot; &lt;&lt; std::endl;
+
+  return 0;
+}
+</pre>
+<P>
+
+<h3>35.6.5&nbsp;&nbsp;&nbsp;Regular triangulation</h3>
+
+This example shows the building of a regular triangulation.  In this
+triangulation, points have an associated weight, and some points can
+be hidden and do not result in vertices in the triangulation.
+Another difference is that a specific traits class has to be used
+(at least at the moment).
+<P>
+
+<pre class="ExampleCode">// file: examples/<A HREF="../Triangulation_3_ref/Class_Triangulation_3.html#Cross_link_anchor_972">Triangulation_3</A>/example_regular.C
+
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Exact_predicates_inexact_constructions_kernel.html#Cross_link_anchor_38">Exact_predicates_inexact_constructions_kernel</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Triangulation_3_ref/Class_Regular_triangulation_3.html#Cross_link_anchor_978">Regular_triangulation_3</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Triangulation_3_ref/Class_Regular_triangulation_euclidean_traits_3.html#Cross_link_anchor_983">Regular_triangulation_euclidean_traits_3</A>.h&gt;
+
+#include &lt;cassert&gt;
+#include &lt;vector&gt;
+
+struct K : <A HREF="../Kernel_23_ref/Class_Exact_predicates_inexact_constructions_kernel.html#Cross_link_anchor_37">CGAL::Exact_predicates_inexact_constructions_kernel</A> {};
+
+typedef <A HREF="../Triangulation_3_ref/Class_Regular_triangulation_euclidean_traits_3.html#Cross_link_anchor_982">CGAL::Regular_triangulation_euclidean_traits_3</A>&lt;K&gt;   Traits;
+
+typedef Traits::RT                                          Weight;
+typedef Traits::Bare_point                                  Point;
+typedef Traits::<A HREF="../Triangulation_2_ref/Class_Weighted_point.html#Cross_link_anchor_959">Weighted_point</A>                              <A HREF="../Triangulation_2_ref/Class_Weighted_point.html#Cross_link_anchor_959">Weighted_point</A>;
+
+typedef <A HREF="../Triangulation_3_ref/Class_Regular_triangulation_3.html#Cross_link_anchor_977">CGAL::Regular_triangulation_3</A>&lt;Traits&gt;               Rt;
+
+typedef Rt::Vertex_iterator                                 Vertex_iterator;
+typedef Rt::Vertex_handle                                   Vertex_handle;
+
+int main()
+{
+  Rt T;
+
+  // insertion of points on a 3D grid
+  std::vector&lt;Vertex_handle&gt; V;
+
+  for (int z=0 ; z&lt;5 ; z++)
+    for (int y=0 ; y&lt;5 ; y++)
+      for (int x=0 ; x&lt;5 ; x++) {
+	  Point p(x, y, z);
+          Weight w = (x+y-z*y*x)*2.0; // let's say this is the weight.
+	  <A HREF="../Triangulation_2_ref/Class_Weighted_point.html#Cross_link_anchor_959">Weighted_point</A> wp(p, w);
+	  V.push_back(T.insert(wp));
+      }
+
+  assert( T.is_valid() );
+  assert( T.dimension() == 3 );
+
+  std::cout &lt;&lt; &quot;Number of vertices : &quot; &lt;&lt; T.number_of_vertices() &lt;&lt; std::endl;
+
+  return 0;
+}
+</pre>
+<P>
+
+<a name="Section_7"></a>
+        
+<h2>35.7&nbsp;&nbsp;&nbsp;Design and Implementation History</h2>
+<P>
+
+Monique Teillaud started to work on the 3D triangulation packages in
+1997, following the design of the 2D triangulation packages. The
+notions of degenerate dimensions and infinite vertex were formalized
+[<A HREF="../biblio.html#Biblio_t-tdtc-99">Tei99</A>] and induced changes in the 2D triangulation
+packages. The packages were first released in CGAL 2.1. They contained
+basic functionalities on triangulations, Delaunay triangulations,
+regular triangulations.
+<P>
+
+A first version of removal of a vertex from a Delaunay triangulation
+was released in CGAL 2.2. However, this removal became really robust
+only in CGAL 2.3, after some research that allowed to deal with
+degenerate cases quite easily [<A HREF="../biblio.html#Biblio_cgal:dt-pvr3d-03">DT03</A>]. Andreas Fabri
+implemented this revised version of the removal, and a faster removal
+algorithm for CGAL 3.0.
+<P>
+
+In 2000, Sylvain Pion started working on these packages.  He improved
+the efficiency of triangulations in CGAL 2.3 and 2.4 in several ways
+[<A HREF="../biblio.html#Biblio_cgal:bdpty-tc-02">BDP<MATH><I><SUP>+</SUP></I></MATH>02</A>]: he implemented the Delaunay hierarchy
+[<A HREF="../biblio.html#Biblio_cgal:d-dh-02">Dev02</A>] in 2.3, he improved the memory footprint in 2.4 and
+3.0, he also performed work on arithmetic filters [<A HREF="../biblio.html#Biblio_cgal:dp-eegpd-03">DP03</A>]
+(see Support Library and <A HREF="../Kernel_23_ref/Concept_Kernel.html#Cross_link_anchor_0">Kernel</A>) to improve the speed of
+triangulations.
+<P>
+
+He changed the design in CGAL 3.0, allowing users to add handles in
+his own vertices and cells.
+<P>
+
+The authors wish to thank Jean-Daniel Boissonnat, Olivier Devillers
+and Mariette Yvinec for helpful discussions [<A HREF="../biblio.html#Biblio_bdty-tcgal-00">BDTY00</A>].
+<P>
+
+<div class="NavNext"><hr> Next chapter: <a href="../Triangulation_3_ref/Chapter_intro.html">3D Triangulations</a> 
+
+
+    
+<div class="NavBottom">
+<hr><!-- Bottom Navigation --------------------------------------------- -->
+  <strong>Navigation:</strong>
+<!Up_chapter_link_35!>
+  <a href="../contents.html">Table of Contents</A>,
+  <a href="../biblio.html">Bibliography</a>,
+  <a href="../manual_index.html">Index</a>,
+  <a href="../title.html">Title Page</a>
+<!-- End of Bottom Navigation ------------------------------------------ -->
+
+
+<hr><!-- --------------------------------------------------------------- -->
+<div class="NavAddress">
+
+The <A HREF=http://www.cgal.org>CGAL Project</A> .
+
+Tue, December 21, 2004 .
+<hr></div>
+</body>  </html>  

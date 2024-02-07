@@ -1,0 +1,136 @@
+				List Comprehensions
+
+Comprehensions are compact ways to specify interesting lists of values (which
+will be generalized to tuples, sets, and dictionaries, when we discuss those
+data structures). That is, they compactly solve some "list creation" problems
+but cannot solve all list problems: we use them to create new lists but not
+mutate existing lists.
+
+The general form of a list comprehension is shown below: it uses some special
+Python code (with keywords for/in/if) inside [], which are used to create
+Python lists. In the following comprehension, f means any function (or
+expression: we can also just write var because a name by itself is a simple
+expression having a value) using var and p means any predicate (or bool
+expresssion) using var.
+
+  [f(var) for var in iterable if p(var)]
+
+Here is the meaing of this list comprehension, followed by some examples that
+use the various iterables we know: string, range/irange, open. A list
+comprehension collects together into a list (because of the outer []) a
+sequence of values specified by f(var), for var taking on every value produced
+by iterable, but each value appears only if p(var) is True.
+
+Note that the "if p(var)" part is optional and we can also write comprehensions
+as follows (in which case it has the same meaning as p(var) always being True).
+
+  [f(var) for var in iterable]
+
+which is equivalent to writing
+
+ [f(var) for var in iterable if True]
+
+Here is a first simple example, using a string iterable.
+
+  [x for x in 'richardepattis' if x not in 'aeiou']
+
+Here, x is the var, f(var) is just x, and p(var) is x not in 'aeiou'. The result
+is the list ['r', 'c', 'h', 'r', 'd', 'p', 't', 't', 's']: all the non-vowels
+letter in my name. So, "for x in 'richardepattis'" produces all the letters,
+"if x not in 'aeiou'" filters out all vowels, and "x" just means use each
+letter. 
+
+We can use the join method (with and empty string as the joining string) and
+write
+
+  ''.join([x for x in 'richardepattis' if x not in 'aeiou'])
+
+which results in the string 'rchrdptts'.
+
+In this second example, we use an irange iterable
+
+  [i**2 for i in irange(1,10)]     # note: irange not range
+
+Here, i is the var, f(var) is i**2, and p(var) is True (because the if keyword
+does not appear, so all values are included). The result is the list
+[1, 4, 9, 16, 25, 36, 49, 64, 81, 100].
+
+If we wanted to join all these values into one big string with a ':' separating 
+these values, we cannot use a .join directly on this list, because .join
+requires the values in the list being joined to be strings not ints. But, we
+could specify a slightly different comprehension, using str(i**2) as the
+expression instead of i**2
+
+  [str(i**2) for i in irange(1,10)]     # note str(i**2)
+
+which results in the list
+
+['1', '4', '9', '16', '25', '36', '49', '64', '81', '100']
+
+Given the list that this comprehension produces, we could write
+
+  ':'.join([str(i**2) for i in irange(1,10)])
+
+which results in the string '1:4:9:16:25:36:49:64:81:100'
+
+If we wanted only the squares of the prime numbers in a list, we could again
+use the "if" keyword to filter-out non-primes by writing
+
+  [i**2 for i in irange(1,10) if predicate.is_prime(i)]     # note: if ..
+
+which results in the list [4, 9, 25, 49].
+
+Finally, here is an example that creates a list of all the lines in the file
+'input.txt', with each line stripped of its '\n' at the end.
+
+  [l.rstrip() for l in open('input.txt')]
+
+If a file named 'input.txt' contained the three lines
+
+See Spot.
+See Spot run.
+Run Spot run!
+
+The list produced would be: ['See Spot.', 'See Spot run.', 'Run Spot run!']
+
+Comprehensions can get quite complicated. For example, the comprehension below
+(1) reads every line in the file and (2) for each line (2a) strips the '\n'
+from the line and THEN (2b) uses the .split method to break that line into a
+list of its words (here words in the line are assumed to be separated by
+spaces).
+
+  [l.rstrip().split(' ') for l in open('input.txt')]
+
+So the result is that this comprehension produces a list of lists of strings
+which for the file named 'input.txt" results in the list
+
+  [['See', 'Spot.'], ['See', 'Spot', 'run.'], ['Run', 'Spot', 'run.']]
+
+------------------------------------------------------------------------------
+
+We can translate a list comprehension into equivalent code that uses more
+familiar Python features. The general comprehension form, whose result is
+assigned to the name x
+
+x = [f(var) for var in iterable if p(var)]
+
+is equivalent to the Python code
+
+x = []	       	  	 # start with an empty list
+for var in iterable:	 # bind var to each values produced by iterable
+   if p(var):		 #   if var is to be included in the list...
+       x.append(f(var))	 #   add f(var) next into the list
+
+Once you understand comprehensions (by practicing writing/using them), writing
+them to create new lists is often simpler than the equivalent Python code above.
+
+What comprehensions aren't good for is mutating/changing data in an already
+existing list; for that job you need code more like the loop above. So when
+deciding whether or not to use a comprehension, ask youself if you are creating
+a new list (use comprehension) or changing an existing one (don't use
+comprehension).
+
+Finally, note that calling the list conversion function -list(iterable)-
+produces the same list result as the list comprehension [x for x in iterable].
+So, list('abcde') is the same as [x for x in 'abcde']. In this case, calling the
+conversion function list(iterable) is preferable.

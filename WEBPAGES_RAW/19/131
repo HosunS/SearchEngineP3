@@ -1,0 +1,196 @@
+<html>
+	<head>
+		<title>ICS H22 Winter06, Lab 5</title></head>
+	<body bgcolor="#ffc4de">
+		<h2 align="center">Lab #5</h2>
+		<h3>
+			Due: Friday, March 10, 11:59PM</h3>
+		<p>
+		In this lab you write a program that simulates a ride at a theme park. In this 
+		ride, people get into a small boat, navigate the boat through a course of 
+		obstacles and then dock and leave the boat. Management would like to assess how 
+		long people spend waiting for the ride and as well as how much utilization they 
+		are getting out of each boat. Note that each person takes a variable amount to 
+		time to navigate the course, so the order they depart is not necessarily the 
+		order in which they leave. Also, there is only one spot on the dock where a 
+		person can get into a boat, so while the person is climbing in, boats must wait 
+		in line. This means you will have to have two queues: one for people waiting to 
+		board a boat and one for boats waiting to be boarded. For simplicity, you can 
+		assume that unloading from the boat happens quickly and doesn't need to be 
+		accounted for.
+		<p>
+			The interface should be whatever you like:&nbsp; The easiest is the console 
+			input.&nbsp; The inputs to the simulation will include the <strong>average 
+				inter-arrival time </strong>of riders, the <strong>average loading time </strong>
+			for a rider, the <strong>average ride time </strong>for a rider, the total <strong>length 
+				of the simulation </strong>and the <strong>number of boats</strong>
+		. The inter-arrival time of riders is the length of time that elapses after one 
+		riders arrives until the next one arrives. This will vary from rider to rider, 
+		but you can input the average value so that you can examine the system under 
+		different levels of demand. Similarly, the loading and ride time of each person 
+		will vary, but you can specify the average of these values.
+		<p>
+		Time is measured in an arbitrary unit which we will call `clock ticks'. It's 
+		not terribly important what a clock tick actually represents because all the 
+		values are relative. Any interval of time (including the average values input 
+		by the user) should be specified as integers, so time is rounded to the nearest 
+		clock tick. I recommend that you keep the average inter-arrival time of riders 
+		to be at least 100 so as to minimize the effects of rounding. If the 
+		inter-arrival time is 100, then you should simulate the system for about a 
+		million clock ticks so that the values that you are measuring will converge to 
+		an average value. (The longer you run the simulation, the more stable these 
+		values will be).
+		<p>
+			The running time of your algorithm should <strong>not </strong>depend on the 
+			number of clock ticks that you run your simulation. This is because you should 
+			write your code as an <strong>event-driven </strong>simulation. That is, you 
+			will determine the next event (whether it be the arrival of a person to the 
+			rider, the departure of a boat with a rider from the dock, the return of a boat 
+			and rider to the dock) and advance the clock automatically to the time of the 
+			next event. That is, your program should take roughly the same amount of time 
+			if the average inter-arrival time, loading time and riding time is 10 and the 
+			simulation length is 1000 as it would if all of these values were multiplied by 
+			10.&nbsp; In order to do that you should store all your future events on a <STRONG>Priority 
+				Queue, </STRONG>where the events are ordered by the time they are scheduled 
+			to occur.&nbsp; To determine the next event, you just have to take the element 
+			with the smallest time value.&nbsp; The code for the <STRONG>Priority Queue</STRONG>
+			class is supplied below.<STRONG> </STRONG>
+		<P>The PriorityQueue is written as a generic data structure so that it can store 
+			any set of items which implements the interface <STRONG>Comparable </STRONG>which 
+			I have also provided for you. Note that your class which implements Comparable 
+			will have to implement a method <CODE>compareTo </CODE>because it is declared 
+			as an abstract method in Comparable. The <CODE>deleteMin() </CODE>
+		method returns the item with the smallest values according to the compareTo 
+		method.
+		<P>
+			You are also provided with other classes to use, e.g. the <strong>EventGenerator, </strong>
+			which generates the arrival of riders. Your program should have an instance of 
+			this class to generate the input data. Before you run your simulation, you 
+			should use the following method to inform the event generator of the parameters 
+			input by the user:<ul>
+				<li>
+					<code>public void setParameters( int avgInterArrivalTime, int avgLoadingTime, int 
+						avgRideTime ) </code>
+				</li>
+			</ul>
+			Note that the EventGenerator is expecting positive integers. If you call the 
+			method with a zero or negative integer, then it will throw a <strong>IllegalTimeValueException
+			</strong>(also provided). Whenever, your simulator needs to generate a new 
+			customer, you should use the following method:
+			<ul>
+				<li>
+					<code>public Rider getNextEvent( int lastArrival ) </code>
+				</li>
+			</ul>
+			This method takes in the time that the last customer arrived and will return a 
+			new instance of class <strong>Rider </strong>. Class Rider keeps the arrival 
+			time and loading time and riding time for that particular customer. You may 
+			want to add some additional data members or methods to class <strong>Rider </strong>
+		.
+		<p>
+			The EventGenerator uses a random number generator to produce the inter-arrival 
+			time, loading time and riding time for the particular customer. On average, the 
+			values generated will match the average values input by the user, but there are 
+			some random fluctuations in the values. In this case, it is implemented as a <strong>
+				Poisson Process </strong>
+		. You will probably learn about these some time in your career here in 
+		ICS.&nbsp; For example, this is the standard probabilistic process which we use 
+		to simulate networking events like packet arrivals.&nbsp; In fact, the code you 
+		are writing in this lab, for boat-and-riders simulation, is based on the same 
+		principes as real-life simulators of networks, chips, distributed computing 
+		applications, biological systems, etc, etc.
+		<p>
+			You should also use the priority queue data structure to store the boat/rider 
+			pairs are currently out on the course. You want to store these in a priority 
+			queue since you will need to determine which one returns next. The constructor 
+			for PriorityQueue takes in a value which is the maximum number of items that 
+			will ever be stored in the priority queue. Each time you run a simulation, you 
+			should create an instance of class PriorityQueue in which this value is set to 
+			be the number of boats. The method <code>add </code>throws an instance of class <strong>
+				QueueFullException </strong>
+		(also provided) if you attempt to add an item when the priority queue is full. 
+		You will need to provide code which will catch that exception when you call the 
+		add method.
+		<p>
+			You will need to write your own class <strong>Queue </strong>
+		. This should also be written as a generic data structure. In particular, you 
+		will have an instance of Queue which stores instances of Boat and an instance 
+		which stores instances of Rider. You can choose how you want to implement your 
+		queue. However, your choice must be completely transparent to the user.
+		<p>
+			The statistics which you should print out after processing all the events are:
+		</p>
+		<ul>
+			<li>
+			Total number of rider served.
+			<li>
+			Average and maximum waiting time of a rider.
+			<li>
+			Average and maximum percentage of time that a boat is waiting.
+			<li>
+				Average rider queue length - averaged over all clock ticks.
+			</li>
+		</ul>
+		<p></p>
+		<p>
+			<strong>What to turn in: </strong>
+		</p>
+		<ul>
+			<li>
+			As usual, you should turn in an electronic copy of your code to the electronic 
+			dropboxes.
+			<li>
+				You should also write up a brief report on the experiments you run with your 
+				program. Your report answer the following questions:
+				<ul>
+					<li>
+					Suppose the average inter-arrival time is 100, the average ride time is 1000 
+					and the average loading time is 100 and the number of boats is 12. What is a 
+					more effective way to reduce the waiting time - buy more boats or build a 
+					longer loading dock so that customers can board two boats at a time? You can 
+					approximate the effect of loading two boats at a time by assuming the loading 
+					time is cut in half. Answer this question by determining the number of boats 
+					that need to be bought to match the effect of lengthening the dock. Is your 
+					answer the same if you started with 20 boats?
+					<li>
+					Suppose that management has determined that the average waiting time customers 
+					are willing to tolerate is exactly the average rider+loading time. Suppose that 
+					the average ride time is 1000, average loading time is 50 and the number of 
+					boats is 20. What is the maximum traffic level (i.e. average inter-arrival 
+					time) that can be tolerated and still satisfy this constraint?
+					<li>
+						Suppose that management has determined that as long as the average rider queue 
+						length is at most 50 riders, people will continue to use the ride. Suppose that 
+						the average ride time is 1000, the average loading time is 50 and the number of 
+						boats is 20. What is the maximum traffic level (i.e. average inter-arrival 
+						time) that can be tolerated and still satisfy this constraint?
+					</li>
+				</ul>
+			</li>
+		</ul>
+		Here are the files you will need.
+		<UL>
+			<li>
+				<a href="http://www.ics.uci.edu/~stasio/winter06/lab5/EventGenerator.java">EventGenerator.java</a>
+			[modified 3/08 at 8:25pm, modified 3/10 at 2pm]
+			<LI>
+				<a href="http://www.ics.uci.edu/~stasio/winter06/lab5/Event.java">Event.java </a>
+			[added 3/08 at 8:25pm, modified 3/12 at 11:32am]
+			<LI>
+				<a href="http://www.ics.uci.edu/%7Eirani/f04-h22/lab6/Rider.java">Rider.java </a>
+			<li>
+				<a href="http://www.ics.uci.edu/%7Eirani/f04-h22/lab6/PriorityQueue.java">PriorityQueue.java
+				</a>
+			<li>
+				<a href="http://www.ics.uci.edu/%7Eirani/f04-h22/lab6/Comparable.java">Comparable.java
+				</a>
+			<li>
+				<a href="http://www.ics.uci.edu/%7Eirani/f04-h22/lab6/QueueFullException.java">QueueFullException.java
+				</a>
+			<li>
+				<a href="http://www.ics.uci.edu/%7Eirani/f04-h22/lab6/IllegalTimeValueException.java">
+					IllegalTimeValueException.java </a>
+			</li>
+		</UL>
+	</body>
+</html>

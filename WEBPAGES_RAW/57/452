@@ -1,0 +1,30 @@
+1. The rule of thumb for calculating the false positive rate for a Bloom
+filter with N cells and n elements is that it should map each element to
+approximately (ln 2) N/n cells, resulting in a table that has
+approximately half of its cells full, for which the false positive rate
+is 1/2^{(ln 2) N/n}. For N = 2^16 and n ~ 2^10, this gives a false
+positive rate of approximately 4 x 10^{-14}. For any larger false
+positive rate than this, the Bloom filter will use less space than the
+bit array.
+
+2. Maintain a set X that is guaranteed to be a superset of the k
+elements of S with the smallest hashes, and also guaranteed to have size
+O(k). Initially, set X to be empty. Then, for each element of S:
+
+- include the element in X
+
+- if this causes the number of elements in X to exceed 2k, replace X
+with the subset of its k smallest elements.
+
+Finally, when all elements of S are processed, again replace X with the
+subset of its k smallest elements. If |S|=n then there are O(n/k)
+replacement steps, each taking time and space O(k), so the whole
+algorithm takes time O(n) and space O(k).
+
+3. Let X and Y be two sequences of c/2 votes, with one vote per
+candidate, and with different subsets of candidates. Let q be a
+candidate appearing in X but not in Y, and let Z be a sequence of c/2
+votes, all for candidate q. Then in XZ, candidate q has a majority, but
+in YZ, nobody has a majority, as candidate q is just one vote short. In
+order to give a different answer to the sequences XZ and YZ, any
+streaming algorithm must have different states after X and after Y.

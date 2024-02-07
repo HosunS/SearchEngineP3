@@ -1,0 +1,31 @@
+#include "oechem.h"
+#include <iostream>
+
+using namespace std;
+using namespace OEChem;
+using namespace OESystem;
+
+int main()
+{
+  OELibraryGen libgen("[O:1]=[C:2][Cl:3].[N:4]>>[O:1]=[C:2][N:4]");
+  libgen.SetExplicitHydrogens(false);
+  libgen.SetValenceCorrection(true);
+
+  OEGraphMol mol;
+  OEParseSmiles(mol,"CC(=O)Cl");
+  libgen.SetStartingMaterial(mol,0);
+  
+  mol.Clear();
+  OEParseSmiles(mol,"NCC");
+  libgen.SetStartingMaterial(mol,1);
+
+  OEIter<OEMolBase> product;
+  for (product = libgen.GetProducts();product;++product)
+  {
+    std::string smi;
+    OECreateCanSmiString(smi,product);
+    cout << "smiles = " << smi << endl;
+  }
+
+  return 0;
+}

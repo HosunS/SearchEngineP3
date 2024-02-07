@@ -1,0 +1,282 @@
+
+WEBDAV working group meeting minutes
+Lisa Dusseault, acting WG chair
+Dec 13, 2000 3:30-5:00 PM, San Diego
+Reported by Larry Masinter
+
+Agenda:
+
+25 min: improved status reporting (Lisa)
+50 minutes: Open issues & review of Access control
+40 minutes: DeltaV report on things of general interest
+
+Advanced Status Reporting
+-------------------------
+
+Presentation by Lisa Dusseault [Slides available separately]
+
+The group discussed 
+ (1) is there a problem with adding bodies to responses?
+     Sense of the group was probably not, since IIS5 and apache 
+     already do.
+     Sense of the group was also that clients should advertise
+     their support for advanced status reporting so that server
+     can be sure not to send back unwanted information.
+ (2) A discussion of whether the XML response should replace
+    HTML bodies or be added to it
+    To be taken to list.
+ (3) response-detail could be added to 207 Multi-status body
+ (4) add language tag to <user-text> was agreed to be necessary
+ (5) discussion of registry of message codes & tags, and
+     whether there's a registry, what clients that don't
+     understand details could do besides presenting user
+     text.
+ (6) consortia could get together and define user tags
+ (7) syntax of lang tag is wrong in example
+ (8) suggestion to use "application/xml" in the examples
+    instead of "text/xml"
+    sense of the group _seemed_ to be to continue in the model 
+    established by webDAV (text/xml) but further comments welcome
+ (9) Some servers translate status codes to HTML. 
+    Roy suggested that HTML could be augmented by adding an 
+    XML island inside the html.
+    On the other hand, Sean pointed out, it's not trivial to 
+    locate an xml island within HTML.
+    Lisa pointed out that if clients can ask for advanced error
+    reporting rather than the default, they likely prefer straight
+    XML and will construct their own presentation therefrom.
+ (10) 207 gets used for a wide variety of things
+     latest proposal adds to 207
+ (11) Whether status-codes should be marked with error-level, e.g.
+    fatal vs. warning vs. informational
+    Group consensus: no, because such information is already in the
+    error code used in the header of the response (100-level 
+    informational, 200-level success at least partial, others are
+    probably fatal)
+
+Summary:  Most of the advanced status reporting proposal seemed
+acceptable, and work will proceed.  Lisa Dusseault to produce an
+Internet-Draft.
+
+ACL Open Issues & Review
+------------------------
+
+Led by Eric Sedlar, Oracle
+
+First gathered an issue list, then tackled issues one by one as
+follows:
+
+ - Authentication ID and general use thereof
+
+It was asked whether we could use the "Authentication ID" as a 
+way to identify owners of locks & other concepts that involve
+identifying users.
+
+The response was that there was no reason why one couldn't
+reuse "Principal URL", but don't use authentication ID. 
+The Principal URL is a common piece of information, a GUI might 
+throw it up in a common way.  However, it's outside the scope of 
+the ACL draft to deal with using Principal URL for locks.
+
+ - Principal collection set as a new property
+
+Why have this new collection?  Answer: the principal URLs will 
+live in a certain location, so it might be useful way of 
+discovering principal URLs.   There was discussion about whether 
+WebDAV is being used for LDAP.  Answer:  this is just a hint to 
+browser about which set of principals that might be useful to 
+set in an ACL. 
+
+It was clarified that there can be more than one such principal
+collection set. 
+
+It was clarified that the URLs in this property could be LDAP 
+URLs rather than point to a DAV collection of Principal URLs.
+
+The "principal resources" in the principal collection set
+might allow propfind or might not.  Sometimes a principal is 
+just a URI and sometimes it has properties associated with it.  
+At any rate it's intended to be read-only for the purposes of 
+this draft.
+
+It was decided that DAV:owner is already defined, so we can't 
+make it use Principal URL.
+
+It was proposed that ACL draft marshal principal-collection-set 
+via OPTIONS instead.
+
+It was suggested that principal usage should be consistent: 
+either they are just hrefs, or a principal element & subelement.
+
+
+ - OPTIONS usage w/ACLs (brought up by Barry Lind)
+
+In the current draft, read privilege does not control the OPTIONS 
+method.  Native Web servers don't do OPTIONS.  It was proposed that
+we strike the requirement that READ doesn't control OPTIONS, and
+that <dav:read> should be able to cover the OPTIONS request.
+
+
+ - Matching current user with a principal
+
+Anne raised an issue on section 5.4.1 of the ACLs draft. Must a 
+unique ID be supplied?  Answer: Text may need to be clarified.
+
+ - Standard ACL privs
+
+Should <readacl> apply to reading the <current-user-priv-set>
+property which is ACL related?  (this property lists the 
+privileges I am currently granted on the resource) Discussion:
+Access to entire ACL is different than just asking "what I can 
+do", thus doesn't need to be restricted in the same way. It's 
+likely a calculated property.  There may not be enough uniformity 
+to make this a standard.  Maybe we should specify these as 
+separate operations, gated by separate privileges.
+
+Or should access to another user's privileges on a 
+resource be governed by a separate privilege instead?
+
+Tentative decision: <dav:readacl> only applies to ACL property 
+(not current-user-priv-set).  Further discussion on list.
+
+
+ - Privilege extensibility
+
+Read & readacl privileges are separate.  Can a server define 
+something else entirely and not use either 'read' or 'readacl'?  
+What's the point of having a standard list of privileges if some 
+of them don't have to be supported?
+
+Eric explained, a conforming application will have to support 
+all of these privileges, but some may be abstract.  The client 
+can discover which privileges are abstract by querying the server 
+for the privilege tree.   A priv that's abstract is one that 
+can't be sent by client. Abstract is just a way of saying that you
+can't set it in the ACL. 
+
+Sean pointed out that the client will always have to parse the 
+privilege tree in order to parse ACLs.  This changes how you're 
+going to be thinking about ACL protocol design, and it might 
+affect client GUI design. 
+
+
+ - Getting <current-user-priv-set> for users other than current 
+   user
+
+This may be of limited usefulness, because admins can already 
+look at the ACLs.  Maybe this would be useful, but not useful 
+enough.  Todays file system implementations don't let you do this.
+It's hard to implement, even current-user-priv-set is hard to
+implement.
+    
+
+ - ACL semantics (or, should we have a UNIX-style token)
+
+Currently we have tokens to inform client of restrictions on 
+ACLs, e.g. that the max numberof ACEs the server supports is 3.  
+or to inform client what order they must be in.  However, 
+there aren't enough tokens, or of enough flexibility, to make 
+client understand the limited UNIX-style permission set of RWX 
+(read/write/execute) for self, group and public.  
+
+One option: we could have tokens that indicate the ACL can only 
+name 1 group and 1 user.  There is likely a set of common 
+constraints that you might expect several varieties of ACL
+systems to have.  
+
+Other option: we could have a token that basically says "use 
+UNIX-style".  But, if we did this, where do we stop? A token 
+for every unique ACL system?
+
+This needs further discussion, but general feeling seemed to be 
+to stick with the "constraints" tokens rather than move to
+"platforms" tokens.
+    
+
+ - Separate priv. for write-owner and write-ACL
+
+Brief discussion which seemed to answer open question
+
+ - Properties vs. Methods
+
+The discussion at the last webdav meeting seemed to end with 
+the decision that the ACL property would be set with a custom 
+method, but read with PROPFIND.  This was a compromise to make 
+everyone shut up. 
+
+Arguments included: 
+ - Pro custom write method: One shouldn't want to set ACLs via 
+PROPPATCH since it's less flexible than a custom method.
+ - All proxy support/blocking arguments ruled out of scope by 
+Lisa.
+ - Pro PROPPATCH: Existing DAV APIs use PROPPATCH. It's much 
+easier for a client to support a new standard property with 
+PROPFIND and PROPPATCH than to support a custom method.
+ - Pro custom read method: clients that want to do caching of 
+property values could screw up with live properties
+ - Pro PROPFIND: fewer round-trips to get information about 
+a resource.
+ - Pro PROPFIND: very handy to get multiple properties from
+multiple resources using depth PROPFIND.
+ - Pro custom write method: Sometimes it's very hard to set
+two properties that have side effects in the same request.  
+E.g. "turn versioning on" and "set the ACL" -- which applies
+first?  Thus PROPPATCH adds difficulties.  This argument was
+then countered:  one could always just specify that certain 
+live properties could be specified as "must be proppatched 
+alone", and this would meet the transactability requirements.
+ - Pro custom write method: Updating live properties is often
+intended to have side effects, whereas proppatching dead 
+properties doesn't.  But the client can't tell the difference 
+between having set a live property and a dead one, the server
+responds the same either way to a PROPPATCH.  Thus, a custom
+write method is required so the client can be sure the server
+has done what it intended.
+
+It was suggested a server could support both: it could allow 
+PROPPATCH and the custom method. 
+
+Final suggestion to stick with current proposal, and wait for 
+implementation experience to decide whether writing 
+properties is good.
+
+The name "right" vs. "privilege" & "permission" will be 
+discussed offline.
+
+"DeltaV report on things of general interest,"
+---------------------------------------------
+
+This quick discussion was on features or methods required in
+DeltaV that might be more broadly applicable, thus deserved
+explanation to the WebDAV group as a whole.
+
+Geoff Clemm, Jim Amsden
+
+(1) "Comment" and "creator display name" properties have been
+   added in DeltaV but may be generally useful.
+   
+(2) "Update: yes" vs. "Overwrite: yes" vs. "Overwrite: update"
+    Rather than define a new value for the Overwrite header, 
+   it was decided to propose a clarification to 2518, 
+   indicating that it's not necessary to do a DELETE before
+   an Overwrite: T operation.
+
+(3)  New response bodies included on 403 and 409; very similar
+   to advanced status reporting discussion (and intended to
+   interoperate)
+
+(4) Options request now takes a body: Roy pointed out it's 
+    supposed to.
+
+(5)  Report method, which marshals large sets of information 
+    from the server.  The intent with the REPORT functionality
+    was to be able to ask for information that the server 
+    knows how to generate.  The goal is to have a set 
+    of defined layouts of read-only information.  DeltaV decided
+    not to use (abuse?) POST for this feature, because it's just
+    request for information.  But unlike PROPFIND, parameters
+    need to be sent along with the name of the report being
+    requested.  Rather than modify PROPFIND to add this extra
+   information, DeltaV designed it to be a new method.
+
+*** End of Meeting ***   

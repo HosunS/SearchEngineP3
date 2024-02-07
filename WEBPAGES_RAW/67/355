@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>SCALE - Dashboard - Map View</title>
+
+	<!--some meta tags I do not understand-->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="">
+	<meta name="author" content="">
+
+	<!--link rel="stylesheet/less" href="less/bootstrap.less" type="text/css" /-->
+	<!--link rel="stylesheet/less" href="less/responsive.less" type="text/css" /-->
+	<!--script src="js/less-1.3.3.min.js"></script-->
+	<!--append ‘#!watch’ to the browser URL, then refresh the page. -->
+
+	<!--link to css-->
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/style.css" rel="stylesheet">
+
+	<!--jquery and bootstrap javscript-->
+	<script type="text/javascript" src="js/jquery.min.js"></script>
+	<script type="text/javascript" src="js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="js/scripts.js"></script>
+	<!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+	<!--[if lt IE 9]>
+		<script src="js/html5shiv.js"></script>
+	<![endif]-->
+
+	<!-- Fav and touch icons -->
+	<!-- <link rel="apple-touch-icon-precomposed" sizes="144x144" href="img/apple-touch-icon-144-precomposed.png">
+	<link rel="apple-touch-icon-precomposed" sizes="114x114" href="img/apple-touch-icon-114-precomposed.png">
+	<link rel="apple-touch-icon-precomposed" sizes="72x72" href="img/apple-touch-icon-72-precomposed.png">
+	<link rel="apple-touch-icon-precomposed" href="img/apple-touch-icon-57-precomposed.png">
+	<link rel="shortcut icon" href="img/favicon.png"> -->
+
+	<!--google map initialization-->
+	<style>
+		#map_canvas
+		{
+			width: 100%;
+			height: 1000px;
+		}
+	</style>
+
+	<script src="https://maps.googleapis.com/maps/api/js"></script>
+	<!--This is the google map script. Input lat/long and it places marker on map (image)-->
+	<script>
+		var address;
+		var map;
+
+		var fire =
+		{
+			url:'img/temperature.png',
+			size: new google.maps.Size(614, 460),
+			origin: new google.maps.Point(0, 0),
+			anchor: new google.maps.Point(17, 34),
+			scaledSize: new google.maps.Size(50, 50)
+		};
+		var earthquake =
+		{
+			url: 'img/earthquake.png',
+			size: new google.maps.Size(614, 460),
+			origin: new google.maps.Point(0,0),
+			anchor: new google.maps.Point(17,34),
+			scaledSize: new google.maps.Size(50,50)
+		};
+		var gas =
+		{
+			url: "img/gas.png",
+			size: new google.maps.Size(614, 460),
+			origin: new google.maps.Point(0,0),
+			anchor: new google.maps.Point(17,34),
+			scaledSize: new google.maps.Size(50,50)
+		};
+		var light =
+		{
+			url: "img/light.png",
+			size: new google.maps.Size(614, 460),
+			origin: new google.maps.Point(0,0),
+			anchor: new google.maps.Point(17,34),
+			scaledSize: new google.maps.Size(50,50)
+		};
+		var flood =
+		{
+			url: "img/flood.png",
+			size: new google.maps.Size(614, 460),
+			origin: new google.maps.Point(0,0),
+			anchor: new google.maps.Point(17,34),
+			scaledSize: new google.maps.Size(50,50)
+		};
+		var movement =
+		{
+			url: "img/movement.png",
+			size: new google.maps.Size(614, 460),
+			origin: new google.maps.Point(0,0),
+			anchor: new google.maps.Point(17,34),
+			scaledSize: new google.maps.Size(50,50)
+		};
+		var question =
+		{
+			url: "img/question.png",
+			size: new google.maps.Size(614, 460),
+			origin: new google.maps.Point(0,0),
+			anchor: new google.maps.Point(17,34),
+			scaledSize: new google.maps.Size(50,50)
+		};
+		var heartbeat =
+		{
+			url: "img/heartbeat.png",
+			size: new google.maps.Size(614, 460),
+			origin: new google.maps.Point(0,0),
+			anchor: new google.maps.Point(17,34),
+			scaledSize: new google.maps.Size(50,50)
+		};
+
+
+		function initialize()
+		{
+			var map_canvas = document.getElementById('map_canvas');
+			var map_options =
+			{
+				center: new google.maps.LatLng(44.5403, -78.5463),
+				zoom: 8,
+				mapTypeId: google.maps.MapTypeId.ROADMAP
+			}
+			map = new google.maps.Map(map_canvas, map_options)
+		}
+
+		function showPos()
+		{
+			var citylat = document.getElementById('lat').value;　
+			var citylon = document.getElementById('lon').value;　
+
+			if(citylat == '')
+			{
+				window.alert('no lat');
+				return;
+			}
+			else if(citylon == '')
+			{
+				window.alert('no lon');
+				return;
+			}
+
+			var point = new google.maps.LatLng(citylat,citylon);
+		}
+
+		function clearMarkers()
+		{
+			setAllMap(null);
+		}
+
+
+		function addMarker(parsedPayLoad)
+		{
+			var image;
+			var propertyList = Object.getOwnPropertyNames(parsedPayLoad);
+
+			if (propertyList.indexOf("event")>=0 && propertyList.indexOf("geotag")>=0)
+			{
+				if (parsedPayLoad.event === "temperature" ||
+					parsedPayLoad.event === "SCALE_Temp_sheeva" ||
+					parsedPayLoad.event === "SCALE_raw_Temp_Sheeva" ||
+					parsedPayLoad.event === "SCALE_cold_temp_Sheeva" ||
+					parsedPayLoad.event === "SCALE_high_heat_Sheeva" ||
+					parsedPayLoad.event === "SCALE_potentialfire _Sheeva" )
+				{
+					image = fire;
+				}
+				else if
+					(parsedPayLoad.event === "seismic" ||
+						parsedPayLoad.event === "SCALE_Seismic_sheeva" ||
+						parsedPayLoad.event === "SCALE_raw_Seismic_Sheeva" ||
+						parsedPayLoad.event === "SCALE_small_shake_Sheeva" ||
+						parsedPayLoad.event === "SCALE_large_shake_Sheeva" ||
+						parsedPayLoad.event === "SCALE_small_aftershock_Sheeva" ||
+						parsedPayLoad.event === "SCALE_large_aftershock_Sheeva")
+
+				{
+					image = earthquake;
+				}
+				else if (
+					parsedPayLoad.event === "explosive_gas" ||
+					parsedPayLoad.event === "SCALE_gas_detected_RPi")
+				{
+					image = gas;
+				}
+				else if (
+					parsedPayLoad.event === "light" ||
+					parsedPayLoad.event === "SCALE_dark_environment_RPi")
+				{
+					image = light;
+				}
+				else if (
+					parsedPayLoad.event === "motion" ||
+					parsedPayLoad.event === "SCALE_motion_detected_RPi")
+				{
+					image = movement;
+				}
+				else if (parsedPayLoad.event === "heartbeat")
+				{
+					image = heartbeat;
+				}
+				else
+				{
+					image = question;
+				}
+
+				var point = new google.maps.LatLng(parsedPayLoad.geotag.lat,parsedPayLoad.geotag.lon);
+				var marker = new google.maps.Marker(
+				{
+					position: point,
+					map: map,
+					title: parsedPayLoad.event,
+					icon: image});
+				marker.setMap(map);
+				//map.setCenter(point, parseFloat(4));
+			}
+
+			else
+			{
+				return;
+			}
+		}
+
+		google.maps.event.addDomListener(window, 'load', initialize);
+	</script>
+
+	<script type="text/javascript">
+		var low = 0;
+		var	medium = 0;
+		var	high = 0;
+		//put n in front to indicate number...used some of the variables before for images
+		var ntemperature = 0;
+		var nseismic = 0;
+		var ngas = 0;
+		var nlight = 0;
+		var nmotion = 0;
+		var nflood = 0;
+
+		function updateAlertNumber(parsedPayLoad,topicString)
+		{
+			var propertyList = Object.getOwnPropertyNames(parsedPayLoad);
+			if(propertyList.indexOf("prio_class")>=0)
+			{
+				now = moment();
+
+				if (parsedPayLoad.prio_class == "low") {
+					low = low+1;
+				}else if(parsedPayLoad.prio_class == "medium"){
+					medium = medium+1;
+				}else if(parsedPayLoad.prio_class == "high"){
+					high = high+1;
+				}else{
+					console.log("No priority detected");
+					console.log(parsedPayLoad);
+				}
+				$("#lowCount").text(low);
+				$("#mediumCount").text(medium);
+				$("#highCount").text(high);
+			}
+
+		}
+
+		//just a dummy name for the numbers on the drop downs
+		function updateAlertNumber2(parsedPayLoad,topicString)
+		{
+
+			now = moment();
+
+			if (parsedPayLoad.event == "SCALE_cold_temp_Sheeva" || parsedPayLoad.event == "SCALE_high_heat_Sheeva" || parsedPayLoad.event == "SCALE_potentialfire _Sheeva"|| parsedPayLoad.event == "temperature" ){
+
+				ntemperature++;
+			}
+			else if (parsedPayLoad.event == "SCALE_raw_Seismic_Sheeva" || parsedPayLoad.event == "SCALE_small_shake_Sheeva" || parsedPayLoad.event == "SCALE_large_shake_Sheeva" || parsedPayLoad.event == "SCALE_small_aftershock_Sheeva" || parsedPayLoad.event == "SCALE_large_aftershock_Sheeva"
+				|| parsedPayLoad.event == "seismic" )
+			{
+				nseismic++;
+			}
+			else if (parsedPayLoad.event == "SCALE_gas_detected_RPi" || parsedPayLoad.event == "explosive_gas" )
+			{
+				ngas++;
+			}
+			else if (parsedPayLoad.event == "SCALE_dark_environment_RPi" || parsedPayLoad.event == "light" )
+			{
+				nlight++;
+			}
+			else if (parsedPayLoad.event == "SCALE_motion_detected_RPi"|| parsedPayLoad.event == "motion" )
+			{
+				nmotion++;
+			}
+			else if (parsedPayLoad.event == "SCALE_Flood_Arduino")
+			{
+				nflood++;
+			}
+			else
+			{
+				return;
+			}
+			$("#temperatureCount").text(ntemperature);
+			$("#seismicCount").text(nseismic);
+			$("#gasCount").text(ngas);
+			$("#lightCount").text(nlight);
+			$("#motionCount").text(nmotion);
+			$("#floodCount").text(nflood);
+		}
+
+		function clearRawTable(nothing)
+		{
+			maxRows = 0;
+			$('#rawEvents > tr').remove();
+		}
+
+		function calcTimeDiff(timestamp)
+		{
+			var updatedDate = new Date(timestamp*1000);
+			var now = new Date();
+			var timeAgo = now.getTime() - timestamp;
+			var hh = Math.floor(timeAgo / 1000 / 60 / 60);
+			timeAgo -= hh * 1000 * 60 * 60;
+			var mm = Math.floor(timeAgo / 1000 / 60);
+			timeAgo -= mm * 1000 * 60;
+			var ss = Math.floor(timeAgo / 1000);
+			timeAgo -= ss * 1000;
+			return (hh + "h" + mm + "m" + ss + "s");
+			//document.write(updatedDate + " (" + hh + "h" + mm + "m" + ss + "s ago)");
+		}
+
+		function specificOnConnectionLoss()
+		{
+			console.log("Clearing table...");
+			clearRawTable();
+		}
+
+		function updateChart()
+		{
+			$(function ()
+			{
+				$('#container').highcharts(
+				{
+					chart:
+					{
+						plotBackgroundColor: null,
+						plotBorderWidth: 5,//null,
+						plotShadow: false
+					},
+					title:
+					{
+						text: ''
+					},
+					tooltip:
+					{
+						pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+					},
+					plotOptions:
+					{
+						pie:
+						{
+							allowPointSelect: true,
+							cursor: 'pointer',
+							dataLabels:
+							{
+								enabled: true,
+								format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+								style:
+								{
+									color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+								}
+							}
+						}
+					},
+					series:
+					[{
+						type: 'pie',
+						name: 'Browser share',
+						data: [
+						["High",   high/(high+medium+low)],
+						['Medium',	  medium/(high+medium+low)],
+						['Low',	low/(high+medium+low)],
+						]
+					}]
+				});
+			});
+		}
+	</script>
+
+	<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+	<script type="text/javascript">
+		// Load the Visualization API and the piechart package.
+		google.load('visualization', '1.0', {'packages':['corechart']});
+
+		// Set a callback to run when the Google Visualization API is loaded.
+		google.setOnLoadCallback(drawChart);
+
+		// Callback that creates and populates a data table,
+		// instantiates the pie chart, passes in the data and
+		// draws it.
+
+		function drawChart()
+		{
+
+			// Create the data table.
+			var data = new google.visualization.DataTable();
+			data.addColumn('string', 'Alert Priority');
+			data.addColumn('number', 'Number');
+			data.addRows
+			([
+				['high', high],
+				['medium', medium],
+				['low', low],
+				]);
+
+			// Set chart options
+			var options = {'title':'Alerts Percentage',
+			"backgroundColor": "white",
+			'pieHole': 0.4,
+			'slices': {
+				0: { 'color': 'red' },
+				1: { 'color': 'orange' },
+				2: { 'color': 'green' }
+			}
+		};
+
+			// Instantiate and draw our chart, passing in some options.
+			var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
+			chart.draw(data, options);
+		}
+	</script>
+
+	<script src="js/moment.min.js"></script>
+	<script src="js/mqttws31.js"></script>
+	<!--Sets up MQTT subscription to Charles' data-->
+	<script>
+		function getRandomInt (min, max)
+		{
+			return Math.floor(Math.random() * (max - min + 1)) + min;
+		}
+
+		$('.dropdown-menu').append('<li id="mqttStatus"><a onClick="connect()"><span class="glyphicon glyphicon-question-sign"></span>&nbsp; MQTT Status</a></li>');
+
+		var clientId = "client"+getRandomInt(0,1000000);
+		// MQTT client
+		var server = "iqueue.ics.uci.edu"; //akerue.me
+		var port = 8000;
+		var topic = "iot-1/d/+/evt/#";
+		//topic = "iot-1/d/801f02da69bc/evt/light/json";		//THIS IS A DEBUG TOPIC
+
+		var client = new Messaging.Client(server, port, clientId);
+
+		function connect()
+		{
+			//Use this trick to only load this when the DOM is ready since the processMessage function can be partial specific which will be loaded after the navbar where the MQTT template (this page) is loaded
+
+			$( document ).ready(function()
+			{
+				client.onMessageArrived = processMessage;
+			});
+
+			client.onConnectionLoss = function()
+			{
+				console.log("Lost connection to the MQTT broker");
+				$("#mqttStatus").html('<a onClick="connect();"><span class="glyphicon glyphicon-remove-circle"></span>&nbsp; Connection lost</a>');
+				specificOnConnectionLoss();	   //Allow for specific functions to be defined on the connection loss.
+				console.log("Reconnecting to broker in 2 seconds");
+				window.setTimeout('connect()',2000);
+			}
+
+			console.log("Attempting connection to " + server + ":" + port + " with client id: " + clientId);
+			client.connect(
+			{
+
+				onSuccess: function()
+				{
+					console.log("Connected to the MQTT broker");
+					$("#mqttStatus").html('<a onClick="disconnect()"><span class="glyphicon glyphicon-ok-circle"></span>&nbsp; Connected</a>');
+					client.subscribe(topic);
+				},
+				onFailure: function()
+				{
+					console.log("Could not connect to the MQTT broker");
+					$("#mqttStatus").html('<a onClick="connect();"><span class="glyphicon glyphicon-remove-circle"></span>&nbsp; Not Connected</a>');
+				}
+			});
+		}
+
+		function publish(message)
+		{
+			var msgBody = JSON.stringify(message);
+			var msgObj = new Messaging.Message(msgBody);
+			msgObj.destinationName = topic;
+			client.send(msgObj);
+			console.log("Sent message " + msgBody + " to topic "+ topic);
+		}
+
+		function parsePacket(payload)
+		{
+			payload = JSON.parse(payload);
+			return payload.d;
+		}
+
+		var numAlerts =0;
+		var initAlerts =5;
+		var listAlerts = [];
+		var minPriority = 0;
+
+		function initAlert()
+		{
+			for(var j = 0;  j<initAlerts; j++ )
+			{
+				listAlerts.push(JSON.parse('{"prio_value": 0, "event": "init"}'));
+			}
+			return;
+		}
+
+		function addAlert(parsedPayLoad,topicString)
+		{
+			var numInsert = 0;
+			if (parsedPayLoad.prio_value===null || parsedPayLoad.event===null)
+			{
+				return;
+			}
+			else if (parsedPayLoad.prio_value <= minPriority)
+			{
+				return;
+			}
+			else
+			{
+				if (listAlerts.length > initAlerts)
+				{
+					listAlerts.splice(5,1);
+				}
+
+				//add a check to see if it has reached the efnd of the array
+				//store the value of the former element before replace and rest of the list
+
+
+				for (var i = 0; i<listAlerts.length; i++)
+				{
+
+					if(parsedPayLoad.prio_value>listAlerts[i].prio_value)
+					{
+						listAlerts.splice(i,0,parsedPayLoad);
+						break;
+					}
+
+				}
+
+				//listAlerts[numAlerts] = parsedPayLoad;
+				numAlerts++;
+
+			}
+
+		}
+
+		function alertName(elementNum)
+		{
+			return listAlerts[elementNum].event;
+		}
+
+		function alertValue(elementNum)
+		{
+			return listAlerts[elementNum].prio_value;
+		}
+
+		function clearAlertText(parsedPayLoad,topicString)
+		{
+			now = moment();
+
+			$("#alert1").text(" ");
+			$("#alert2").text(" ");
+			$("#alert3").text(" ");
+			$("#alert4").text(" ");
+			$("#alert5").text(" ");
+		}
+
+		function updateAlertText()
+		{
+
+			now = moment();
+
+			$("#alert1").text(listAlerts[0].prio_value +": "+listAlerts[0].event);
+			$("#alert2").text(listAlerts[1].prio_value +": "+listAlerts[1].event);
+			$("#alert3").text(listAlerts[2].prio_value +": "+listAlerts[2].event);
+			$("#alert4").text(listAlerts[3].prio_value +": "+listAlerts[3].event);
+			$("#alert5").text(listAlerts[4].prio_value +": "+listAlerts[4].event);
+		}
+
+
+		function calcTimeDiff(timestamp)
+		{
+			var updatedDate = new Date(timestamp*1000);
+			var now = new Date();
+			var timeAgo = now.getTime() - timestamp;
+			var hh = Math.floor(timeAgo / 1000 / 60 / 60);
+			timeAgo -= hh * 1000 * 60 * 60;
+			var mm = Math.floor(timeAgo / 1000 / 60);
+			timeAgo -= mm * 1000 * 60;
+			var ss = Math.floor(timeAgo / 1000);
+			timeAgo -= ss * 1000;
+			return (hh + "h" + mm + "m" + ss + "s");
+			//document.write(updatedDate + " (" + hh + "h" + mm + "m" + ss + "s ago)");
+		}
+
+		function processMessage(msg)
+		{
+			//console.log("RAW Message: ");
+			//console.log(msg);
+			console.log("processMessage");
+			var parsedPayLoad = parsePacket(msg.payloadString);
+			var topicString = msg.destinationName;
+
+			updateAlertNumber(parsedPayLoad,topicString);
+			updateAlertNumber2(parsedPayLoad,topicString);
+			updateChart();
+			drawChart()
+
+			addAlert(parsedPayLoad,topicString);
+			updateAlertText();
+
+			//only events with a high enough priority will be added to map
+			//if(parsedPayLoad.prio_value>10)
+			//{
+				addMarker(parsedPayLoad);
+			//}
+		}
+
+		function keepAlive()
+		{
+			var msgBody = JSON.stringify('{"d":{"event":"keepAlive"}}');
+			var msgObj = new Messaging.Message(msgBody);
+			msgObj.destinationName = "iot-1/d/";
+			client.send(msgObj);
+		}
+
+
+		console.log("before init alert");
+		initAlert();
+
+		setInterval(function(){keepAlive()},3000);
+
+		console.log("before connect");
+		connect();
+	</script>
+
+	<script type="text/javascript">
+		bootstrap_alert = function()
+		{
+
+		}
+		bootstrap_alert.warning = function(message)
+		{
+			$('#alert_placeholder').html('<div id = "alert_placeholder"><div id="myAlert" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><span>'+message+'</span></div></div>')
+		}
+	</script>
+
+	<script type="text/javascript">
+		$(function()
+		{
+			$("#myAlert").bind('closed.bs.alert', function ()
+			{
+				bootstrap_alert.warning('Your text goes here');
+			});
+		});
+	</script>
+</head>
+
+<body>
+	<div class="container">
+		<div class="row clearfix">
+			<div class="col-md-12 column">
+
+				<nav class="navbar navbar-default" role="navigation">
+					<div class="navbar-header">
+						<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1"> <span class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button> <a class="navbar-brand">SCALE Dashboard</a>
+					</div>
+
+					<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+						<ul class="nav navbar-nav">
+							<li class="active">
+								<a href="map.html">Map View</a>
+							</li>
+							<li class="default">
+								<a href="list.html">List View</a>
+							</li>
+							<li class="default">
+								<a href="http://scale.ics.uci.edu"><font color="#c00">SCALE Home</font></a>
+							</li>
+						</ul>
+
+						<ul class="nav navbar-nav navbar-right">
+							<button type="button" class="btn btn-default navbar-btn disabled">Sign Out</button>
+						</ul>
+						<ul>
+						</ul>
+					</div>
+				</nav>
+			</div>
+		</div>
+		<div class ="row clearfix">
+			<div class = "col-md-12 column">
+				<div class = "jumbotron" style="background-color:white; padding:0px">
+					<div>
+						<div style ="margin-left:0px; margin-right:400px; background-color:#cecece; height:175px; width:400px; border-radius:20px; text-align:center">
+							<img style = "margin-top:27px;" src="img/logo.png" alt="SCALE Logo" height="120">
+						</div>
+
+						<font style = "color:transparent">-</font>
+						<script src="js/highcharts.js"></script>
+						<script src="js/modules/exporting.js"></script>
+						<div id="chart_div" style="margin-left:425px; margin-top: -220px; width: 325px; height:175px;"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class ="row clearfix">
+			<div class = "col-md-12 column">
+				<div class = "jumbotron" style="padding: 30px;">
+					<div style = "background-color:#cecece; width:100%; border-radius:20px" >
+						<div style="padding: 30px; text-align:center" class="btn-group-horizontal">
+							<!--dropdown5-->
+							<div class="btn-group">
+								<button type="button" class="btn btn-default btn-lg dropdown-toggle" style = "width:150px">
+									Motion <font size="3" id="motionCount" color="#06f">0</font>
+								</button>
+
+								<!-- <ul class="dropdown-menu" role="menu">
+									<li><a href="#">Motion Detected</a></li>
+									<li class="divider"></li>
+									<li><a href="#">Inactive</a></li>
+								</ul> -->
+							</div>
+							<!--dropdown4-->
+							<div class="btn-group">
+								<button type="button" class="btn btn-default btn-lg dropdown-toggle" style = "width:150px">
+									Light <font size="3" id="lightCount" color="#06f">0</font>
+								</button>
+
+								<!-- <ul class="dropdown-menu" role="menu">
+									<li><a href="#">Dark Environment</a></li>
+									<li class="divider"></li>
+									<li><a href="#">Well Lit Environment</a></li>
+									<li class="divider"></li>
+									<li><a href="#">Flash of Light</a></li>
+								</ul> -->
+							</div>
+							<!--dropdown1-->
+							<div class="btn-group">
+								<button type="button" class="btn btn-default btn-lg dropdown-toggle" style = "width:150px">
+									Temperature <font size="3" id="temperatureCount" color="#06f">0</font>
+								</button>
+
+								<!-- <ul class="dropdown-menu" role="menu">
+									<li><a href="#">Cold Temperature</a></li>
+									<li class="divider"></li>
+									<li><a href="#">High Temperature</a></li>
+									<li class="divider"></li>
+									<li><a href="#">Potential Fire</a></li>
+								</ul> -->
+							</div>
+							<!--dropdown3-->
+							<div class="btn-group">
+								<button type="button" class="btn btn-default btn-lg dropdown-toggle" style = "width:150px">
+									Gas <font size="3" id="gasCount" color="#06f">0</font> 
+								</button>
+
+								<!-- <ul class="dropdown-menu" role="menu">
+									<li><a href="#">Gas Detected</a></li>
+									<li class="divider"></li>
+									<li><a href="#">CO2 Detected</a></li>
+									<li class="divider"></li>
+									<li><a href="#">i-butane Detected</a></li>
+									<li class="divider"></li>
+									<li><a href="#">Gas Leakage</a></li>
+								</ul> -->
+							</div>
+							<!--dropdown2-->
+							<div class="btn-group">
+								<button type="button" class="btn btn-default btn-lg dropdown-toggle" style = "width:150px">
+									Seismic <font size="3" id="seismicCount" color="#06f">0</font>
+								</button>
+
+								<!-- <ul class="dropdown-menu" role="menu">
+									<li><a href="#">Small Earthquake</a></li>
+									<li class="divider"></li>
+									<li><a href="#">Large Earthquake</a></li>
+									<li class="divider"></li>
+									<li><a href="#">Small Aftershock</a></li>
+									<li class="divider"></li>
+									<li><a href="#">Large Aftershock</a></li>
+								</ul> -->
+							</div>
+							<!--dropdown6-->
+							<div class="btn-group">
+								<button type="button" class="btn btn-default btn-lg dropdown-toggle" style = "width:150px;">
+									Flood <font size="3" id="floodCount" color="#06f">0</font>
+									<!-- <span class="caret"></span> -->
+								</button>
+
+								<!-- <ul class="dropdown-menu" role="menu">
+									<li><a href="#">Flood</a></li>
+								</ul> -->
+							</div>
+						</div>
+					</div>
+					<!--button group-->
+
+					<div style = "background-color:#cecece; width:100%; border-radius:20px">
+						<!--green alert-->
+						<div style = "width:100%; margin-top:20px; margin-bottom:0px; padding:30px; padding-bottom:30px">
+							<div class="btn-group-horizontal" style="margin-bottom:-20px; text-align:center">
+								<div class="btn-group">
+									<div class="alert alert-success alert-dismissible" role="alert" style="width: 200px;">
+										<button type="button" class="close" data-dismiss="alert">
+											<span aria-hidden="true">&times;</span>
+											<span class="sr-only">Close</span>
+										</button>
+										<font size="3" id="alert1">Alert 1</font>
+									</div>
+									<!--yellow alert-->
+								</div>
+								<div class="btn-group">
+									<div class="alert alert-warning alert-dismissible" role="alert" style="width: 200px;">
+										<button type="button" class="close" data-dismiss="alert">
+											<span aria-hidden="true">&times;</span>
+											<span class="sr-only">Close</span>
+										</button>
+										<font size="3" id="alert2">Alert 2
+										</font>
+									</div>
+									<!--red alert-->
+								</div>
+								<div class="btn-group">
+									<div  class="alert alert-danger alert-dismissible" role="alert" style="width: 200px;">
+										<button type="button" class="close" data-dismiss="alert">
+											<span aria-hidden="true">&times;</span>
+											<span class="sr-only">Close</span>
+										</button>
+										<font size="3" id="alert3">Alert 3
+										</font>
+									</div>
+								</div>
+								<div class="btn-group">
+									<div  class="alert alert-danger alert-dismissible" role="alert" style="width: 200px;">
+										<button type="button" class="close" data-dismiss="alert">
+											<span aria-hidden="true">&times;</span>
+											<span class="sr-only">Close</span>
+										</button>
+										<font size="3" id="alert4">Alert 4
+										</font>
+
+									</div>
+								</div>
+								<div class="btn-group">
+									<div  class="alert alert-danger alert-dismissible" role="alert" style="width: 200px;">
+										<button type="button" class="close" data-dismiss="alert">
+											<span aria-hidden="true">&times;</span>
+											<span class="sr-only">Close</span>
+										</button>
+										<font size="3" id="alert5">Alert 5
+										</font>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class ="row clearfix">
+			<div class = "col-md-12 column">
+				<div class="jumbotron" style = "width:100%; height:1200px; padding:0px; background-color:white">
+					<div style = "width:100%; border-radius:20px">
+						<table style="margin:auto">
+							<tr>
+								<th style="text-align:center; padding-left:15px; padding-right:15px"><center><font size="3">Motion</font></center></th>
+								<th style="text-align:center; padding-left:15px; padding-right:15px"><center><font size="3">Light</font></center></th>
+								<th style="text-align:center; padding-left:15px; padding-right:15px"><center><font size="3">Temperature</font></center></th>
+								<th style="text-align:center; padding-left:15px; padding-right:15px"><center><font size="3">Gas</font></center></th>
+								<th style="text-align:center; padding-left:15px; padding-right:15px"><center><font size="3">Seismic</font></center></th>
+								<th style="text-align:center; padding-left:15px; padding-right:15px"><center><font size="3">Flood</font></center></th>
+							</tr>
+							<tr>
+								<td><center><input onclick="" type="checkbox"></center></td>
+								<td><center><input onclick="" type="checkbox"></center></td>
+								<td><center><input onclick="" type="checkbox"></center></td>
+								<td><center><input onclick="" type="checkbox"></center></td>
+								<td><center><input onclick="" type="checkbox"></center></td>
+								<td><center><input onclick="" type="checkbox"></center></td>
+							</tr>
+							<tr>
+								<td><center><img style = "height:50px" src = "img/movement.png"/></center></td>
+								<td><center><img style = "height:50px" src = "img/light.png"/></center></td>
+								<td><center><img style = "height:50px" src = "img/temperature.png"/></center></td>
+								<td><center><img style = "height:50px" src = "img/gas.png"/></center></td>
+								<td><center><img style = "height:50px" src = "img/earthquake.png"/></center></td>
+								<td><center><img style = "height:50px" src = "img/flood.png"/></center</td>
+							</tr>
+						</table>
+					</div>
+					<!-- map -->
+					<div id="map_canvas" style="margin-top: 15px;"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

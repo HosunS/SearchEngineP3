@@ -1,0 +1,366 @@
+				Lists
+
+There is a special class name list in Python, similar to the str class. We can
+
+  (1) write list literals
+  (2) call functions with list arguments
+  (3) call methods using the form name.method(other arguments)
+
+For example for strings, s.replace('a','b') means return a new string that
+contains the contents of s with every 'a' replaced by 'b'. So s = 'banana' then
+s = s.replace('a','b') means s refers to the string 'bbnbnb'.
+
+Here are the bare bones. I will demonstrate lists in class. The next lecture
+will show lots of functions we can write on lists. The reality of understanding
+lists is understanding the basic operations that we can perform on lists, and
+how to combine them with control structures to solve more complicated problems.
+
+It is an excellent idea to actually type in the lists shown below and try the
+operations to observe their result. Typing these expressions and observing
+their results will help you remember these operations, rather than just reading
+about them.
+
+List are most like strings: they contain a sequence of values. In fact, thinking
+about strings can give us useful insights into the meaning of lists and how
+they work, while we are learning them.
+
+But lists, unlike strings, have two properties that make them much more
+interesting
+
+  (1) the values in a list can be of any type: we can have lists of ints,
+      lists of strings, lists of mixed types, even lists of lists.
+
+  (2) we can change/mutate the contents of a list, adding, replacing,and
+      removing values
+
+List have literals too: any number of values (including 0), separated by commas,
+in brackets. So, the empty list is written [] (similar to the empty string '').
+Here are some examples of lists.
+
+a = [0,1,2,3,4] is a list of numbers;
+
+b = ['abc','def','ghi'] is a list of strings;
+
+c = [1,'abc',2,3,'xyz'] is a mixed list;
+
+d = [1,['abc','def'],3] is a list that contains another list.
+
+
+List operations (again, think about their string equivalents)
+
+(1) len: we can compute the length of a list (# of values at the top-level of
+    the list). For the examples above, len(a) is 5; len(b) is 3; len(c) is 5,
+    len(d) is 3: it has an int, followed by a list, followed by an int: so
+    there are 3 top-level values in this list.
+
+(2) Indexing: we can refer to each value in a list by its index, starting at 0
+    a[0] is 0; b[0] is 'abc'; c[4] is 'xyz', d[1] is ['abc','def']
+    note that c[4][0] is 'x'; d[1][1] is 'def'; d[1][1][1] is 'e'; d[-1] is 3.
+    So if a simple name or any expression using that name refers to a list, we
+    can index it. Note a[10] raises IndexError exception, meaning the list
+    index out of range; recall that a[len(a)] always raises an exception,
+    because legal indexes are 0 to len(a)-1
+
+(3) Slicing: we can refer to sublists by slicing
+    a[1:] is [1,2,3,4]; a[1:-1] is [1,2,3]; etc.
+
+(4) Checking containment: the in/not in operators
+    1 in a is True; 'ghi' in b is True; 5 in c is False; 'abc' in d is False
+      (because in checks values at the top-level of the list, not inside; but
+      'abc' in d[1] is True because d[1] is ['abc','def']).
+
+(5) Concatenation: joining two lists to create a new one (think strings)
+    [1,2,3]+['ab','cd'] is [1,2,3,'ab','cd']
+    a + a is [0,1,2,3,4,0,1,2,3,4] (just like 'abc'+'abc' is 'abcabc')
+    In both cases a new list/string
+
+(6) Multiplication: Think of 3*'abc' as 3 concatenations: 'abc' + 'abc' + 'abc'
+      or the result 'abcabcabc'
+    3 * [0] is [0]+[0]+[0] is [0,0,0] (the most commonly used form of list *)
+    2 * [1,2] is [1,2,1,2]
+    2 * d is [1,['abc','def'],3,1,['abc','def'],3]
+
+(7) Iterability: for i in a:  produces all the top-level values in a
+       (there are len(a) of them):
+    for i in a:
+        print(i,end='')
+    prints: 01234
+
+    for i in d:
+        print(i,end='')
+    prints: 1['abc','def']3
+
+    for i in d[1]:
+        print(i,end='')
+    prints: abcdef
+
+
+List (mutation) operations
+
+These have no string equivalents, because strings are immutable. If s = 'aBc',
+then s.upper() produces a new string ('ABC') but does not change s. We could
+write s = s.upper() to rebind s to refer to 'ABC'. In the examples below the
+list objects referred to are changed/mutated.
+
+(a) Assignment
+
+   suppose x = [0,1,2,3,4]
+   x[1] = 'a'
+   now x is [0,'a',2,3,4]; the value in index 1 is changed to 'a'
+   x[0] = [10,11]
+   now x is [[10,11],'a',2,3,4]; the value in index 0 is changed to [10,11]
+
+   in fact, we can even do assignment and slicing (although not used much)
+   suppose x = [0,1,2,3,4]
+   x[1:3] = ['a','b']
+   now x is [0, 'a', 'b', 3, 4]; the values in index 1-2 have 'a','b'
+      inserted
+
+(b) alist.append(avalue)
+    Appends a value at the end of the list: its len increases by 1
+    Note, this method call returns None! (see below)
+
+    Statement  	      	   	Prints
+  -------------------------------------------------
+    print(a,len(a))		[0,1,2,3,4] 5
+    a.append(5)
+    print(a,len(a))		[0,1,2,3,4,5] 6
+   
+    Note that alist.append(avalue) is a simpler/faster way to do
+
+    alist = alist + [avalue]     or     alist += [avalue]
+
+    Note what happens if we print (a.append(5)): it prints None, but it still
+    appends 5 at the end of the list object a refers to.
+
+    Statement  	      	   	Prints
+  -------------------------------------------------
+    print(a,len(a))		[0,1,2,3,4] 5
+    print(a.append(5))		None
+    print(a,len(a))		[0,1,2,3,4,5] 6
+    
+    IMPORTANT: NEVER WRITE l = l.append(value)
+    Doing so apppends value to l, but then rebinds l to None.
+    Why? l.append(value) changes the list object l refers to, but this
+    method call returns None, which l is rebound to by using the = delimiter.
+
+    alist.extend(alist2) is a simpler/fater way to do
+
+    for v in alist2: 
+        alist.append(v)  
+
+      or
+
+    alist = alist + alist2
+
+      or
+
+    alist += alist2
+
+    All four forms result in alist referring to a list object that has all
+    the values from the original alist followed by all the values in alist2
+    (and alist2 remains unchanged).
+
+(c) del form: del alist[index] or del alist[slice] (a statement)
+    a = ['a','b','c','d','e']
+    del a[2]			a is now ['a','b','d','e'], with len(a) == 4
+    del a[1:-1]                 a is now ['a','e'], with len(a) == 2
+
+
+(d) alist.pop(index)
+    Removes the value at a[index] and returns it as the value of this expression
+    A negative value for index removes from the end: alist.pop(-1) removes the
+      last value in the list.
+
+    Statement  	      	   	Prints
+  -------------------------------------------------
+    print(a,len(a))		['a','b','c','d','e'] 5
+    temp = a.pop(2)
+    print(temp,a,len(a)		'c' ['a','b','d','e'] 4
+   
+    temp = a.pop(2) is equivalent to temp = a[2] followed by del a[2]
+
+    Note taht alist.pop() -calling this method without an argument- is the same
+    as calling alist.pop(0) -popping the value at index 0.
+
+Critically important code: the following prompts the user for a sequence of
+values and puts them in the list, in that order. We can also read a file of
+values and build a list of those values by appended them into a list
+
+  l = []
+  while True:
+      x = prompt.for_int('Enter next score (-1 to terminate)')
+      if x == -1:
+          break;
+      l.append(x)
+
+
+(e) alist.sort(key,reverse) you must name these parameter if you use them
+      default for key is None; reverse is False
+
+l = ['c','e','b','d','a']
+l.sort()
+print(l)
+l.sort(reverse=True)
+print(l)
+
+prints
+  ['a','b','c','d','e']
+  ['e','d','c','b','a']
+
+l = ['dog', 'cat', 'mouse', 'frog', 'bird','gerbil', 'fish', 'iguana']
+l.sort()
+print(l)
+l.sort(reverse=True)
+print(l)
+l.sort(key=(lambda x : x[1]))     # key uses the 2nd letter in the word
+print(l)
+l.sort(key=(lambda x : x[::-1]))  # key uses the reverse of the word
+print(l)
+
+prints
+
+  ['bird', 'cat', 'dog', 'fish', 'frog', 'gerbil', 'iguana', 'mouse']
+  ['mouse', 'iguana', 'gerbil', 'frog', 'fish', 'dog', 'cat', 'bird']
+  ['cat', 'gerbil', 'iguana', 'fish', 'bird', 'mouse', 'dog', 'frog']
+  ['iguana', 'bird', 'mouse', 'dog', 'frog', 'fish', 'gerbil', 'cat']
+
+Basically, when a key is specified, values are compared by using their keys,
+not by the values themselves. So with a key of (lambda x : x[1]) Python
+compares 'bird' and 'cat' not by comparing these strings directly, but by
+comparing 'i' and 'a' (the letter in index 1 of each). So for sorting purposes
+using this lambda, Python considers 'bird' > 'cat' because 'i' > 'a'.
+
+Sorting is a power and subtle operations. Note that like append, sort mutates
+its list operand but returns None.
+
+Experiment: can you write a lambda that sorts words by their length?
+
+
+(f) index, count, and remove (by value):
+
+Calling alist.index(avalue) returns the index of the first occurrence of avalue
+in alist; if avalue does not occur anywhere in alist, then this function
+returns -1; the index function for lists is similar to the find function for
+strings.
+
+Calling alist.count(avalue) returns the number of times that avalue appears at
+the top level of alist: it returns a value >= 0.  So,
+['a','c','d','a','b'].count('a') returns 2; ['a','c','d','a','b'].count('x')
+returns 0.
+
+Calling alist.remove(avalue) removes the first occurrence of avalue from alist;
+if avalue does not occur anywere in alist, calling remove raises the ValueError
+exception. remove (like sort and append) returns the values None.
+
+Note that if avalue appears in alist, then alist.pop(alist.index(avalue)) has
+the same affect as alist.remove(avalue). If avalue does not appear in alist,
+the first expression removes the last value in the list, the second raises the
+ValueError exception.
+
+
+(g) choice and shuffle: two functions in the random module
+
+The choice function chooses a random value from a list (with each value in the
+list chosen with equal probablility) and the shuffle function mutates the
+list by randomizing the order of its values and returns the value None.
+
+from random import choice,shuffle
+print(choice(l))
+shuffle(l)
+print(l)
+
+prints (they are based on randomness; your results may vary)
+
+  dog
+  ['fish', 'gerbil', 'cat', 'mouse', 'bird', 'iguana', 'frog', 'dog']
+
+In fact, we can use the random.randint(low,high) function to write choice
+ourselves:
+
+def choice(alist : list):
+    return alist[ random.randint(0,len(alist)-1) ]
+
+Note that if we don't know what kind of values are in a list parameter, we
+annotate it by just list; if we do know (say int), we annotate it by [int].
+
+
+(h) list: converting any iteratable into a list of its values
+
+We can use list as a conversion function: its argument is anything that we can
+iterate over. The result is a list containing every value produced by the
+iteration. This is similar (but without the notion of iterable) to how we can
+use str as a conversion functions: str(5) returns the string '5'. What can we
+iterate over? str, range/irange, and open (files), and of course now, lists. 
+
+For example
+  x = list('abcde') binds x to ['a', 'b', 'c', 'd', 'e']
+  x = list(irange(1,10)) binds x to [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  x = list(open('file-name')) binds x to a list of every line in the file
+        (note that each line contains '\n' at the end)
+and
+  x = [1, 2, 3, 4, 5]
+  y = list(x) binds y to a different list object with the values 1-5 (a copy)
+
+See the discussioin below about sharing.
+
+We can think about the list function in terms of what we know about lists and
+control structures.
+  s = ...some string
+  x = list(s)
+
+is like executing the code
+
+  x = []
+  for c in s:
+    x.append(c)
+
+The end result is a list x, whose values are a sequence of all the things
+produced by iterating over s.
+
+
+(i) split and join
+
+These important and useful functions are inverses: split converts a string into
+lists of strings; join converts and a list of strings into a string.
+
+  'a,b,c,d'.split(',')           returns ['a', 'b', 'c', 'd']
+  ','.join(['a', 'b', 'c', 'd']) returns 'a,b,c,d'
+
+We will see applications of these functions soon.
+
+------------------------------------------------------------------------------
+
+Important note about sharing
+
+   suppose x = [0,1,2,3,4]
+   then we execute z = x
+   now x and z share the same list object
+   
+   if we del x[0], x and z still refer to the same object, but it has mutated
+     and it would print as [1,2,3,4]
+
+   if instead we wrote z = list(x) then z instead refers to a copy of the list
+      x: a new list object, but with the same values in its indexes.
+   if we del x[0], x would print as [1,2,3,4] but z would print as [0,1,2,3,4]:
+      the copy was not mutated
+
+   Recall the difference between the "is" operator (object identity) and the
+   "==" operator.
+   The code
+     x = [0,1,2,3,4]
+     y = x
+     print(x is y, x == y)
+   prints True True
+
+   while the code
+     x = [0,1,2,3,4]
+     y = [0,1,2,3,4]
+     print(x is y, x == y)
+   prints False True
+
+
+Coming: functions that process lists
+
+
+

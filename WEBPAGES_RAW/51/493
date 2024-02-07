@@ -1,0 +1,896 @@
+<!-- Begin header.tpl -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Ganglia:: misc Cluster Report</title>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<link type="text/css" href="css/smoothness/jquery-ui-1.10.2.custom.min.css" rel="stylesheet" />
+<link type="text/css" href="css/jquery.liveSearch.css" rel="stylesheet" />
+<link type="text/css" href="css/jquery.multiselect.css" rel="stylesheet" />
+<link type="text/css" href="css/jquery.flot.events.css" rel="stylesheet" />
+<link type="text/css" href="css/fullcalendar.css" rel="stylesheet" />
+<link type="text/css" href="css/qtip.min.css" rel="stylesheet" />
+<link type="text/css" href="css/chosen.min.css" rel="stylesheet" />
+<link type="text/css" href="./styles.css" rel="stylesheet" />
+<link type="text/css" href="js/jstree/themes/default/style.min.css" rel="stylesheet" />
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>$.uiBackCompat = false;</script>
+<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+<script type="text/javascript" src="js/jquery.livesearch.min.js"></script>
+<script type="text/javascript" src="js/ganglia.js"></script>
+<script type="text/javascript" src="js/jquery.gangZoom.js"></script>
+<script type="text/javascript" src="js/jquery.cookie.js"></script>
+<script type="text/javascript" src="js/jquery-ui-timepicker-addon.js"></script>
+<script type="text/javascript" src="js/jquery.ba-bbq.min.js"></script>
+<script type="text/javascript" src="js/combobox.js"></script>
+<script type="text/javascript" src="js/jquery.scrollTo-1.4.3.1-min.js"></script>
+<script type="text/javascript" src="js/jquery.buttonsetv.js"></script>
+<script type="text/javascript" src="js/fullcalendar.js"></script>
+<script type="text/javascript" src="js/jquery.qtip.min.js"></script>
+<script type="text/javascript" src="js/jstree/jstree.js"></script>
+<script type="text/javascript" src="js/chosen.jquery.min.js"></script>
+<script type="text/javascript">
+    var server_utc_offset=-28800;
+    var g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+
+    function refreshHeader() {
+      $.get('header.php?date_only=1', function(datetime) {
+        var title = $("#page_title").text();
+        var l = title.lastIndexOf(" at ");
+        if (l != -1)
+          title = title.substring(0, l);
+        title += " at " + datetime;
+        $("#page_title").text(title);
+        });
+    }
+
+    function refresh() {
+      var selected_tab = $("#selected_tab").val();
+      if (selected_tab == "agg") {
+        refreshAggregateGraph();
+        g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+      } else if (selected_tab == "v") {
+        refreshHeader();
+        if ($.isFunction(window.refreshView)) {
+          refreshView();
+          g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+        } else if ($.isFunction(window.refreshDecomposeGraph)) {
+          refreshDecomposeGraph();
+          g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+        } else
+          ganglia_form.submit();
+      } else if (selected_tab == "ev") {
+        refreshOverlayEvent();
+        g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+      } else if (selected_tab == "m") {
+        if ($.isFunction(window.refreshClusterView)) {
+          refreshHeader();
+          refreshClusterView();
+          g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+        } else if ($.isFunction(window.refreshHostView)) {
+          refreshHeader();
+          refreshHostView();
+          g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+        } else
+          ganglia_form.submit();
+      } else
+        ganglia_form.submit();
+    }
+
+    $(function() {
+      var range_menu = $("#range_menu");
+      if (range_menu[0])
+        range_menu.buttonset();
+
+      var custom_range_menu = $("#custom_range_menu");
+      if (custom_range_menu[0])
+        custom_range_menu.buttonset();
+
+      var sort_menu = $("#sort_menu");
+      if (sort_menu[0])
+        sort_menu.buttonset();
+
+      g_overlay_events = ($("#overlay_events").val() == "true");
+
+      g_tabIndex = new Object();
+      g_tabName = [];
+      var tabName = ["m", "s", "v", "agg", "ch", "ev", "rot", "mob"];
+      var j = 0;
+      for (var i in tabName) {
+        if (tabName[i] == "ev" && !g_overlay_events)
+          continue;
+        g_tabIndex[tabName[i]] = j++;
+        g_tabName.push(tabName[i]);
+      }
+
+      // Follow tab's URL instead of loading its content via ajax
+      var tabs = $("#tabs");
+      if (tabs[0]) {
+        tabs.tabs();
+        // Restore previously selected tab
+        var selected_tab = $("#selected_tab").val();
+        //alert("selected_tab = " + selected_tab);
+        if (typeof g_tabIndex[selected_tab] != 'undefined') {
+          try {
+            //alert("Selecting tab: " + selected_tab);
+            tabs.tabs('option', 'active', g_tabIndex[selected_tab]);
+            if (selected_tab == "rot")
+              autoRotationChooser();
+          } catch (err) {
+            try {
+              alert("Error(ganglia.js): Unable to select tab: " + 
+                    selected_tab + ". " + err.getDescription());
+            } catch (err) {
+              // If we can't even show the error, fail silently.
+            }
+          }
+        }
+        tabs.tabs({
+          beforeActivate: 
+          function(event, ui) {
+            var tabIndex = ui.newTab.index();
+            $("#selected_tab").val(g_tabName[tabIndex]);
+            if (g_tabName[tabIndex] != "mob")
+              $.cookie("ganglia-selected-tab-" + window.name, tabIndex);
+            if (tabIndex == g_tabIndex["m"] ||
+              tabIndex == g_tabIndex["v"] ||
+              tabIndex == g_tabIndex["ch"])
+              ganglia_form.submit();
+          }
+        });
+      }
+    });
+
+  $(function () {
+    $("#metrics-picker").val("load_one");
+    $(".header_btn").button();
+
+    done = function done(startTime, endTime) {
+            setStartAndEnd(startTime, endTime);
+            document.forms['ganglia_form'].submit();
+    }
+
+    cancel = function (startTime, endTime) {
+            setStartAndEnd(startTime, endTime);
+    }
+
+    defaults = {
+        startTime: 1486876554,
+        endTime: 1486880154,
+        done: done,
+        cancel: cancel
+    }
+
+    $(".host_small_zoomable").gangZoom($.extend({
+        paddingLeft: 67,
+        paddingRight: 30,
+        paddingTop: 38,
+        paddingBottom: 25
+    }, defaults));
+
+    $(".host_medium_zoomable").gangZoom($.extend({
+        paddingLeft: 67,
+        paddingRight: 30,
+        paddingTop: 38,
+        paddingBottom: 40
+    }, defaults));
+
+    $(".host_default_zoomable").gangZoom($.extend({
+        paddingLeft: 66,
+        paddingRight: 30,
+        paddingTop: 37,
+        paddingBottom: 50
+    }, defaults));
+
+    $(".host_large_zoomable").gangZoom($.extend({
+        paddingLeft: 66,
+        paddingRight: 29,
+        paddingTop: 37,
+        paddingBottom: 56
+    }, defaults));
+
+    $(".cluster_zoomable").gangZoom($.extend({
+        paddingLeft: 67,
+        paddingRight: 30,
+        paddingTop: 37,
+        paddingBottom: 50
+    }, defaults));
+
+    function rrdDateTimeString(date) {
+      return (date.getMonth() + 1) + "/" + date.getDate() + "/" + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes();
+    }
+
+    function setStartAndEnd(startTime, endTime) {
+        // we're getting local start/end times.
+
+        // getTimezoneOffset returns negative values east of UTC,
+        // which is the opposite of PHP. we want negative values to the west.
+        var local_offset = new Date().getTimezoneOffset() * 60 * -1;
+        var delta = local_offset - server_utc_offset;
+        var date = new Date((Math.floor(startTime) - delta) * 1000);
+        $("#datepicker-cs").val(rrdDateTimeString(date));
+        date = new Date((Math.floor(endTime) - delta) * 1000);
+        $("#datepicker-ce").val(rrdDateTimeString(date));
+    }
+
+    initShowEvent();
+    initTimeShift();
+  });
+
+
+</script>
+
+</head>
+<body style="background-color: #ffffff;" onunload="g_refresh_timer=null">
+
+
+
+
+<div id="tabs">
+  <div id="tabs-menu", >
+    <ul>
+      <li><a href="#tabs-main">Main</a></li>
+      <li><a href="#tabs-search">Search</a></li>
+      <li><a href="#tabs-main">Views</a></li>
+      <li><a href="aggregate_graphs.php">Aggregate Graphs</a></li>
+      <li><a href="#tabs-main">Compare Hosts</a></li>
+            <li><a href="events.php">Events</a></li>
+      
+      <li><a href="breakdown_reports.php">Reports</a></li>
+      <li><a href="#tabs-autorotation" onclick="autoRotationChooser();">Automatic Rotation</a></li>
+      <li><a href="#tabs-livedashboard" onclick="liveDashboardChooser();">Live Dashboard</a></li>
+            <li><a href="cubism_form.php">Cubism</a></li>
+      
+      <li><a href="#tabs-mobile" onclick="window.location.href='mobile.php';">Mobile</a></li>
+    </ul>
+  </div>
+
+<div id="tabs-main">
+<form action="./" method="GET" name="ganglia_form">
+  <div style="padding:5px;background-color:#dddddd">
+     <big style="float:left;"><b id="page_title">misc Cluster Report at Sat, 11 Feb 2017 22:15:54 -0800</b></big><input style="float:right;" class="header_btn" type="submit" value="Get Fresh Data"/><div style="clear:both"></div>
+  </div>
+  <div style="padding:5px 5px 0 5px;">
+    <div style="float:left;" id="range_menu" class="nobr">Last&nbsp;&nbsp;<input OnChange="ganglia_form.submit();" type="radio" id="range-hour" name="r" value="hour" checked="checked"/><label for="range-hour">hour</label><input OnChange="ganglia_form.submit();" type="radio" id="range-2hr" name="r" value="2hr" /><label for="range-2hr">2hr</label><input OnChange="ganglia_form.submit();" type="radio" id="range-4hr" name="r" value="4hr" /><label for="range-4hr">4hr</label><input OnChange="ganglia_form.submit();" type="radio" id="range-day" name="r" value="day" /><label for="range-day">day</label><input OnChange="ganglia_form.submit();" type="radio" id="range-week" name="r" value="week" /><label for="range-week">week</label><input OnChange="ganglia_form.submit();" type="radio" id="range-month" name="r" value="month" /><label for="range-month">month</label><input OnChange="ganglia_form.submit();" type="radio" id="range-year" name="r" value="year" /><label for="range-year">year</label><input OnChange="ganglia_form.submit();" type="radio" id="range-job" name="r" value="job" /><label for="range-job">job</label></div>
+    <div style="float:left;" id="custom_range_menu">or <span class="nobr">from <input type="TEXT" title="Feb 27 2007 00:00, 2/27/2007, 27.2.2007, now -1 week, -2 days, start + 1 hour, etc." NAME="cs" ID="datepicker-cs" SIZE="17"> to <input type="TEXT" title="Feb 27 2007 00:00, 2/27/2007, 27.2.2007, now -1 week, -2 days, start + 1 hour, etc." name="ce" ID="datepicker-ce" SIZE="17"> <input type="submit" value="Go">
+<input type="button" value="Clear" onclick="ganglia_submit(1)"></span>
+</div>
+    <div style="float:right;">&nbsp;&nbsp;<button class="header_btn" onclick="window.location='./?p=2&amp;c=misc';return false;">Physical View</button></div>
+    <div style="clear:both;"></div>
+  </div>
+  
+  
+    <div id="node_menu" style="padding:5px 5px 0 5px;">
+    <b><a href="./?m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"> Grid</a></b> <b>&gt;</b>
+<b><a href="./?c=misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">misc</a></b> <b>&gt;</b>
+<input type="hidden" name="c" value="misc">
+<select name="h" OnChange="ganglia_form.submit();"><option value="">--Choose a Node</option><option value="acdc.ics.uci.edu">acdc.ics.uci.edu
+<option value="adrian-monk-v1.ics.uci.edu">adrian-monk-v1.ics.uci.edu
+<option value="adrian-monk-v2.ics.uci.edu">adrian-monk-v2.ics.uci.edu
+<option value="adrian-monk-v3.ics.uci.edu">adrian-monk-v3.ics.uci.edu
+<option value="adrian-monk-v4.ics.uci.edu">adrian-monk-v4.ics.uci.edu
+<option value="adrian-monk-v6.ics.uci.edu">adrian-monk-v6.ics.uci.edu
+<option value="adrian-monk-v7.ics.uci.edu">adrian-monk-v7.ics.uci.edu
+<option value="adrian-monk-v8.ics.uci.edu">adrian-monk-v8.ics.uci.edu
+<option value="adrian-monk-v10.ics.uci.edu">adrian-monk-v10.ics.uci.edu
+<option value="adrian-monk-v11.ics.uci.edu">adrian-monk-v11.ics.uci.edu
+<option value="adrian-monk-v12.ics.uci.edu">adrian-monk-v12.ics.uci.edu
+<option value="columbo-v1.ics.uci.edu">columbo-v1.ics.uci.edu
+<option value="columbo-v6.ics.uci.edu">columbo-v6.ics.uci.edu
+<option value="goliath.ics.uci.edu">goliath.ics.uci.edu
+<option value="hercule-poirot.ics.uci.edu">hercule-poirot.ics.uci.edu
+<option value="idaho.ics.uci.edu">idaho.ics.uci.edu
+<option value="kate-beckett-v1.ics.uci.edu">kate-beckett-v1.ics.uci.edu
+<option value="kate-beckett-v2.ics.uci.edu">kate-beckett-v2.ics.uci.edu
+<option value="kate-beckett-v3.ics.uci.edu">kate-beckett-v3.ics.uci.edu
+<option value="kate-beckett-v4.ics.uci.edu">kate-beckett-v4.ics.uci.edu
+<option value="matt-smith-v0.ics.uci.edu">matt-smith-v0.ics.uci.edu
+<option value="matt-smith-v1.ics.uci.edu">matt-smith-v1.ics.uci.edu
+<option value="matt-smith-v2.ics.uci.edu">matt-smith-v2.ics.uci.edu
+<option value="matt-smith-v3.ics.uci.edu">matt-smith-v3.ics.uci.edu
+<option value="medusa.ics.uci.edu">medusa.ics.uci.edu
+<option value="mog.ics.uci.edu">mog.ics.uci.edu
+<option value="mulholland.ics.uci.edu">mulholland.ics.uci.edu
+<option value="nancy-drew-v1.ics.uci.edu">nancy-drew-v1.ics.uci.edu
+<option value="nancy-drew-v2.ics.uci.edu">nancy-drew-v2.ics.uci.edu
+<option value="peter-capaldi-v0.ics.uci.edu">peter-capaldi-v0.ics.uci.edu
+<option value="peter-capaldi-v1.ics.uci.edu">peter-capaldi-v1.ics.uci.edu
+<option value="peter-capaldi-v2.ics.uci.edu">peter-capaldi-v2.ics.uci.edu
+<option value="peter-capaldi-v3.ics.uci.edu">peter-capaldi-v3.ics.uci.edu
+<option value="richard-castle-v0.ics.uci.edu">richard-castle-v0.ics.uci.edu
+<option value="richard-castle-v2.ics.uci.edu">richard-castle-v2.ics.uci.edu
+<option value="richard-castle-v5.ics.uci.edu">richard-castle-v5.ics.uci.edu
+<option value="rockford-v2.ics.uci.edu">rockford-v2.ics.uci.edu
+<option value="rockford-v5.ics.uci.edu">rockford-v5.ics.uci.edu
+<option value="santacruz.ics.uci.edu">santacruz.ics.uci.edu
+<option value="sheldon-cooper.ics.uci.edu">sheldon-cooper.ics.uci.edu
+<option value="steele-v1.ics.uci.edu">steele-v1.ics.uci.edu
+<option value="stuart-v1.ics.uci.edu">stuart-v1.ics.uci.edu
+<option value="stuart-v2.ics.uci.edu">stuart-v2.ics.uci.edu
+<option value="wil-wheaton.ics.uci.edu">wil-wheaton.ics.uci.edu
+<option value="adrian-monk-v9.ics.uci.edu">adrian-monk-v9.ics.uci.edu
+<option value="arcus-8.ics.uci.edu">arcus-8.ics.uci.edu
+<option value="arcus-9.ics.uci.edu">arcus-9.ics.uci.edu
+<option value="asterix-1.ics.uci.edu">asterix-1.ics.uci.edu
+<option value="asterix-2.ics.uci.edu">asterix-2.ics.uci.edu
+<option value="asterix-3.ics.uci.edu">asterix-3.ics.uci.edu
+<option value="asterix-4.ics.uci.edu">asterix-4.ics.uci.edu
+<option value="asterix-5.ics.uci.edu">asterix-5.ics.uci.edu
+<option value="asterix-6.ics.uci.edu">asterix-6.ics.uci.edu
+<option value="asterix-7.ics.uci.edu">asterix-7.ics.uci.edu
+<option value="asterix-8.ics.uci.edu">asterix-8.ics.uci.edu
+<option value="asterix-9.ics.uci.edu">asterix-9.ics.uci.edu
+<option value="asterix-10.ics.uci.edu">asterix-10.ics.uci.edu
+<option value="bug.ics.uci.edu">bug.ics.uci.edu
+<option value="cbcl-1.ics.uci.edu">cbcl-1.ics.uci.edu
+<option value="cbcl-2.ics.uci.edu">cbcl-2.ics.uci.edu
+<option value="cbcl-4.ics.uci.edu">cbcl-4.ics.uci.edu
+<option value="cbcl-7.ics.uci.edu">cbcl-7.ics.uci.edu
+<option value="christopher-eccleston.ics.uci.edu">christopher-eccleston.ics.uci.edu
+<option value="cloudet.ics.uci.edu">cloudet.ics.uci.edu
+<option value="columbo-v7.ics.uci.edu">columbo-v7.ics.uci.edu
+<option value="columbo.ics.uci.edu">columbo.ics.uci.edu
+<option value="csc64-1.ics.uci.edu">csc64-1.ics.uci.edu
+<option value="drg.ics.uci.edu">drg.ics.uci.edu
+<option value="hermod.ics.uci.edu">hermod.ics.uci.edu
+<option value="ichasc.ics.uci.edu">ichasc.ics.uci.edu
+<option value="kingoftown.ics.uci.edu">kingoftown.ics.uci.edu
+<option value="kiss.ics.uci.edu">kiss.ics.uci.edu
+<option value="loquat.ics.uci.edu">loquat.ics.uci.edu
+<option value="melvil-dewey.ics.uci.edu">melvil-dewey.ics.uci.edu
+<option value="motorhead.ics.uci.edu">motorhead.ics.uci.edu
+<option value="neuromancer.ics.uci.edu">neuromancer.ics.uci.edu
+<option value="peter-davison.ics.uci.edu">peter-davison.ics.uci.edu
+<option value="rainbow-blue.ics.uci.edu">rainbow-blue.ics.uci.edu
+<option value="rainbow-orange.ics.uci.edu">rainbow-orange.ics.uci.edu
+<option value="rainbow-red.ics.uci.edu">rainbow-red.ics.uci.edu
+<option value="rainbow-yellow.ics.uci.edu">rainbow-yellow.ics.uci.edu
+<option value="sln.ics.uci.edu">sln.ics.uci.edu
+<option value="stats-1.ics.uci.edu">stats-1.ics.uci.edu
+<option value="stats-2.ics.uci.edu">stats-2.ics.uci.edu
+<option value="stats-4.ics.uci.edu">stats-4.ics.uci.edu
+<option value="tristram.ics.uci.edu">tristram.ics.uci.edu
+<option value="tweedle-dee.ics.uci.edu">tweedle-dee.ics.uci.edu
+<option value="tweedle-dum.ics.uci.edu">tweedle-dum.ics.uci.edu
+<option value="wintermute.ics.uci.edu">wintermute.ics.uci.edu
+<option value="xander.ics.uci.edu">xander.ics.uci.edu
+</select>
+&nbsp;&nbsp;
+  </div>
+  
+
+<input type="hidden" name="tab" id="selected_tab" value="m">
+<input type="hidden" id="vn" name="vn" value="">
+<input type="hidden" id="hide-hf" name="hide-hf" value="false">
+
+<input type="hidden" id="overlay_events" value="true">
+
+<hr size="1" noshade>
+<!-- End header.tpl -->
+<!-- Begin cluster_view.tpl -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/protovis/3.3.1/protovis.min.js"></script>
+
+<script type="text/javascript">
+function Heatmap(elem_id, data) {
+  this.elem_id = elem_id;
+  this.data = data;
+  this.num_cols = data.length;
+  this.cell_size = $("#" + elem_id).height() / this.num_cols;
+  var this_map = this;
+
+  this.vis = new pv.Panel()
+    .width($("#" + elem_id).width())
+    .height($("#" + elem_id).height())
+    .margin(2)
+    .strokeStyle("#aaa")
+    .lineWidth(4)
+    .antialias(false);
+
+  this.fill = pv.Scale.linear().
+    domain(0, 0.25, 0.5, 0.75, 1.00).
+    range("#e2ecff", "#caff98", "#ffde5e", "#ffa15e", "#ff634f");
+
+  this.row = this.vis.add(pv.Panel)
+    .data(pv.range(this.num_cols))
+    .height(this.cell_size)
+    .top(function(d) { return d * this_map.cell_size;});
+
+  this.cell = this.row.add(pv.Panel)
+    .data(pv.range(this.num_cols))
+    .height(this.cell_size)
+    .width(this.cell_size)
+    .left(function(d) { return d * this_map.cell_size;})
+    .fillStyle(function(col_index, row_index) { return this_map.fill(this_map.data[row_index][col_index].load);})
+    .title(function(col_index, row_index) { return this_map.data[row_index][col_index].host + ", load = " + (this_map.data[row_index][col_index].load * 100).toFixed(0) + "%";});
+}
+
+Heatmap.prototype.setData = function(data) {
+  this.data = data;
+  this.num_cols = data.length;
+  this.cell_size = $("#" + this.elem_id).height() / this.num_cols;
+}
+
+Heatmap.prototype.render = function() {
+  this.vis.render();
+}
+
+function refreshClusterView() {
+  $.get('cluster_view.php?' + jQuery.param.querystring() + '&refresh', function(data) {
+    var item = data.split("<!-- || -->");
+
+    $('#cluster_title').html(item[1]);
+
+    $('#cluster_overview').html(item[2]);
+
+    if ($('#load_pie').size())
+      $('#load_pie').attr("src", item[3].replace(/&amp;/g, "&"));
+
+    if ($('#heatmap-fig').size()) {
+      eval("heatmap.setData(" + item[4] + ")");
+      heatmap.render();
+    }
+
+    if ($('#stacked_graph').size()) {
+      var localtimestamp = parseInt(item[0]);
+      var src = $('#stacked_graph').attr('src');
+      $('#stacked_graph').attr("src", jQuery.param.querystring(src, "&st=" + localtimestamp));
+    }
+
+    var host_metric_graphs = $('#host_metric_graphs');
+    host_metric_graphs.css('height', host_metric_graphs.height() + "px");
+    host_metric_graphs.html(item[5]);
+  });
+
+  $("#optional_graphs img").each(function (index) {
+    var src = $(this).attr("src");
+    if ((src.indexOf("graph.php") == 0) ||
+        (src.indexOf("./graph.php") == 0)) {
+      var d = new Date();
+      $(this).attr("src", jQuery.param.querystring(src, "&_=" + d.getTime()));
+    }    
+  });
+}
+
+$(function() {
+  // Modified from http://jqueryui.com/demos/toggle/
+  // run the currently selected effect
+  function runEffect(id){
+    // most effect types need no options passed by default
+    var options = { };
+
+    options = { to: { width: 200,height: 60 } }; 
+    
+    // run the effect
+    $("#"+id+"_div").toggle("blind",options,500);
+  };
+ 
+  // set effect from select menu value
+  $('.button').click(function(event) {
+    runEffect(event.target.id);
+    return false;
+  });
+
+  $("#edit_optional_graphs").dialog({ autoOpen: 
+                                      false, minWidth: 550,
+                                      beforeClose: function(event, ui) {  
+                                        location.reload(true); 
+                                      }});
+  $("#edit_optional_graphs_button").button();
+  $("#save_optional_graphs_button").button();
+  $("#close_edit_optional_graphs_link").button();
+
+  $("#edit_optional_graphs_button").click(function(event) {
+    $("#edit_optional_graphs").dialog('open');
+    $('#edit_optional_graphs_content').html('<img src="img/spinner.gif">');
+    $.get('edit_optional_graphs.php', 
+          "clustername=misc", 
+          function(data) {
+            $('#edit_optional_graphs_content').html(data);
+          });
+    return false;
+  });
+
+  $("#save_optional_graphs_button").click(function(event) {
+    $.get('edit_optional_graphs.php', 
+          $("#edit_optional_reports_form").serialize(), 
+          function(data) {
+            $('#edit_optional_graphs_content').html(data);
+            $("#save_optional_graphs_button").hide();
+            setTimeout(function() {
+              $('#edit_optional_graphs').dialog('close');}, 5000);
+          });
+    return false;
+  });
+
+  $("#show_hosts_scaled").buttonset();
+
+      $("#metrics-picker").chosen({ max_selected_options:1,
+                                  search_contains:true,
+                                  no_results_text:"No metrics matched",
+                                  placeholder_text_single:"Select a metric"}).
+    on('change', function (evt, params) { ganglia_form.submit();});
+  
+});
+</script>
+
+
+
+<style type="text/css">
+  .toggler { width: 500px; height: 200px; }
+  a.button { padding: .15em 1em; text-decoration: none; }
+  #effect { width: 240px; height: 135px; padding: 0.4em; position: relative; }
+  #effect h3 { margin: 0; padding: 0.4em; text-align: center; }
+  #heatmap-fig {
+    width: 200px;
+    height: 200px;
+  } 
+</style>
+
+<div id="edit_optional_graphs">
+  <div style="text-align:center">
+    <button  id='save_optional_graphs_button'>Save</button>
+  </div>
+  <div id="edit_optional_graphs_content">Empty</div>
+</div>
+
+<div style="background:rgb(238,238,238);text-align:center;">
+  <font size="+1" id="cluster_title">Overview of misc @ 2017-02-11 22:15</font>
+</div>
+
+<table border="0" cellspacing=4 width="100%">
+<tr>
+<td align="left" valign="top">
+<div id="cluster_overview">
+<table cellspacing=1 cellpadding=1 width="100%" border=0>
+ <tr><td>CPUs Total:</td><td align=left><B>793</B></td></tr>
+ <tr><td width="60%">Hosts up:</td><td align=left><B>44</B></td></tr>
+ <tr><td>Hosts down:</td><td align=left><B>46</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td colspan=2><font class="nobr">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>3%, 3%, 4%</b></td></tr>
+ <tr><td colspan=2>Avg Utilization (last hour):<br>&nbsp;&nbsp;<b>5%</b></td></tr>
+ </table>
+
+</div>
+<!-- A place to put custom HTML for the cluster view. -->
+
+
+</td>
+<td rowspan=2 align="center" valign=top>
+<div id="optional_graphs" style="padding-bottom:4px">
+<br>
+
+</div>
+
+</td>
+</tr>
+
+<tr>
+ <td align="center" valign="top">
+
+Server Load Distribution<br />
+<div id="heatmap-fig">
+<script type="text/javascript">
+var heatmap = new Heatmap("heatmap-fig", [[{host:"acdc.ics.uci.edu",load:0},{host:"adrian-monk-v1.ics.uci.edu",load:0},{host:"adrian-monk-v2.ics.uci.edu",load:0.0775},{host:"adrian-monk-v3.ics.uci.edu",load:0.02},{host:"adrian-monk-v4.ics.uci.edu",load:0},{host:"adrian-monk-v6.ics.uci.edu",load:0.01},{host:"adrian-monk-v7.ics.uci.edu",load:0}],[{host:"adrian-monk-v8.ics.uci.edu",load:0},{host:"adrian-monk-v10.ics.uci.edu",load:0},{host:"adrian-monk-v11.ics.uci.edu",load:0},{host:"adrian-monk-v12.ics.uci.edu",load:0},{host:"columbo-v1.ics.uci.edu",load:0.065},{host:"columbo-v6.ics.uci.edu",load:0.19},{host:"goliath.ics.uci.edu",load:0}],[{host:"hercule-poirot.ics.uci.edu",load:1.335},{host:"idaho.ics.uci.edu",load:0},{host:"kate-beckett-v1.ics.uci.edu",load:0.045},{host:"kate-beckett-v2.ics.uci.edu",load:0},{host:"kate-beckett-v3.ics.uci.edu",load:0},{host:"kate-beckett-v4.ics.uci.edu",load:0},{host:"matt-smith-v0.ics.uci.edu",load:0}],[{host:"matt-smith-v1.ics.uci.edu",load:0.005},{host:"matt-smith-v2.ics.uci.edu",load:0},{host:"matt-smith-v3.ics.uci.edu",load:0},{host:"medusa.ics.uci.edu",load:0.18},{host:"mog.ics.uci.edu",load:0},{host:"mulholland.ics.uci.edu",load:0},{host:"nancy-drew-v1.ics.uci.edu",load:0.045}],[{host:"nancy-drew-v2.ics.uci.edu",load:0},{host:"peter-capaldi-v0.ics.uci.edu",load:0},{host:"peter-capaldi-v1.ics.uci.edu",load:0},{host:"peter-capaldi-v2.ics.uci.edu",load:0},{host:"peter-capaldi-v3.ics.uci.edu",load:0},{host:"richard-castle-v0.ics.uci.edu",load:0},{host:"richard-castle-v2.ics.uci.edu",load:0}],[{host:"richard-castle-v5.ics.uci.edu",load:0},{host:"rockford-v2.ics.uci.edu",load:0},{host:"rockford-v5.ics.uci.edu",load:0},{host:"santacruz.ics.uci.edu",load:0},{host:"sheldon-cooper.ics.uci.edu",load:0},{host:"steele-v1.ics.uci.edu",load:0.2825},{host:"stuart-v1.ics.uci.edu",load:0.065}],[{host:"stuart-v2.ics.uci.edu",load:0.095},{host:"wil-wheaton.ics.uci.edu",load:0.005},{host:"unused",load:0},{host:"unused",load:0},{host:"unused",load:0},{host:"unused",load:0},{host:"unused",load:0}]]);
+heatmap.render();
+    </script>
+ </div>
+
+ </td>
+</tr>
+</table>
+
+<center>
+<table width="100%" border=0>
+<tr>
+  <td colspan="1">
+  <font size="+1" style="text-align:center">Stacked Graph - load_one </font> 
+  </td>
+</tr>
+<tr>
+  <td>
+  <center><img id="stacked_graph" src="stacked.php?m=load_one&amp;c=misc&amp;r=hour&amp;st=1486880148" alt="misc load_one "></center>
+  </td>
+</tr>
+</table>
+</center>
+
+
+<div id="cluster_view_chooser" style="padding:5px;background:rgb(238,238,238);">
+  <div style="text-align:center;padding:5px;">
+        <div class="nobr">misc <strong>load_one </strong>
+      last <strong>hour</strong>
+      sorted <strong>by name</strong>
+    </div>
+    <div style="display:inline;">
+     Metric&nbsp;
+            <select name="m" id="metrics-picker"><option value="apache_report">apache_report</option><option value="apache_response_report">apache_response_report</option><option value="boottime">boottime</option><option value="bytes_in">bytes_in</option><option value="bytes_out">bytes_out</option><option value="cpu_aidle">cpu_aidle</option><option value="cpu_idle">cpu_idle</option><option value="cpu_nice">cpu_nice</option><option value="cpu_num">cpu_num</option><option value="cpu_report">cpu_report</option><option value="cpu_speed">cpu_speed</option><option value="cpu_system">cpu_system</option><option value="cpu_user">cpu_user</option><option value="cpu_wio">cpu_wio</option><option value="disk_free">disk_free</option><option value="disk_total">disk_total</option><option value="gexec">gexec</option><option value="gmond_started">gmond_started</option><option value="ip_address">ip_address</option><option value="last_reported">last_reported</option><option value="last_reported_timestamp">last_reported_timestamp</option><option value="last_reported_uptime_in_sec">last_reported_uptime_in_sec</option><option value="load_all_report">load_all_report</option><option value="load_fifteen">load_fifteen</option><option value="load_five">load_five</option><option value="load_one">load_one</option><option value="load_report">load_report</option><option value="location">location</option><option value="machine_type">machine_type</option><option value="mem_buffers">mem_buffers</option><option value="mem_cached">mem_cached</option><option value="mem_free">mem_free</option><option value="mem_report">mem_report</option><option value="mem_shared">mem_shared</option><option value="mem_total">mem_total</option><option value="network_report">network_report</option><option value="nfs_v3_client_report">nfs_v3_client_report</option><option value="os_name">os_name</option><option value="os_release">os_release</option><option value="packet_report">packet_report</option><option value="part_max_used">part_max_used</option><option value="pkts_in">pkts_in</option><option value="pkts_out">pkts_out</option><option value="proc_run">proc_run</option><option value="proc_total">proc_total</option><option value="sample_report">sample_report</option><option value="swap_free">swap_free</option><option value="swap_total">swap_total</option><option value="varnish_report">varnish_report</option></select>
+     
+    </div>
+    
+    <div id="show_hosts_scaled" style="display:inline;padding-left:10px;">Show Hosts Scaled:
+            <input type="radio" name="sh" value="2" id="shch2" OnClick="ganglia_form.submit();" ><label for="shch2">Auto</label>
+            <input type="radio" name="sh" value="1" id="shch1" OnClick="ganglia_form.submit();" checked><label for="shch1">Same</label>
+            <input type="radio" name="sh" value="0" id="shch0" OnClick="ganglia_form.submit();" ><label for="shch0">None</label>
+      
+    </div>
+          <div style="display:inline;padding-left:10px;" class="nobr">Size&nbsp;&nbsp;<SELECT NAME="z" OnChange="ganglia_form.submit();"><OPTION VALUE="small" SELECTED>small</OPTION>
+<OPTION VALUE="medium">medium</OPTION>
+<OPTION VALUE="large">large</OPTION>
+<OPTION VALUE="xlarge">xlarge</OPTION>
+<OPTION VALUE="xxlarge">xxlarge</OPTION>
+<OPTION VALUE="mobile">mobile</OPTION>
+</SELECT>
+</div>
+      <div style="display:inline;padding-left:10px;" class="nobr">Columns&nbsp;&nbsp;<SELECT NAME="hc" OnChange="ganglia_form.submit();">
+<OPTION VALUE=0 >0
+<OPTION VALUE=1 >1
+<OPTION VALUE=2 >2
+<OPTION VALUE=3 >3
+<OPTION VALUE=4 SELECTED>4
+<OPTION VALUE=5 >5
+<OPTION VALUE=6 >6
+<OPTION VALUE=7 >7
+<OPTION VALUE=8 >8
+<OPTION VALUE=9 >9
+<OPTION VALUE=10 >10
+<OPTION VALUE=11 >11
+<OPTION VALUE=12 >12
+<OPTION VALUE=13 >13
+<OPTION VALUE=14 >14
+<OPTION VALUE=15 >15
+<OPTION VALUE=16 >16
+<OPTION VALUE=17 >17
+<OPTION VALUE=18 >18
+<OPTION VALUE=19 >19
+<OPTION VALUE=20 >20
+<OPTION VALUE=21 >21
+<OPTION VALUE=22 >22
+<OPTION VALUE=23 >23
+<OPTION VALUE=24 >24
+<OPTION VALUE=25 >25
+</SELECT>
+ (0 = metric + reports)</div>
+    
+  </div>
+  <div style="text-align:center;">
+    Show only nodes matching <input name=host_regex ><input class="header_btn" type="SUBMIT" VALUE="Filter"><div style="display:inline;padding-left:10px;" class="nobr">Max graphs to show <select onChange="ganglia_submit();" name="max_graphs"><option value=0>all</option><option>1000</option><option>500</option><option>200</option><option>100</option><option>50</option><option>25</option><option>20</option><option>15</option><option>10</option></select></div><div style="display:inline;padding-left:10px;" class="nobr"><div id="sort_menu" class="nobr" style="display:inline">Sorted&nbsp;&nbsp;<input OnChange="ganglia_submit();" type="radio" id="radio-ascending" name="s" value="ascending" /><label title="Sort hosts by ascending metric value" for="radio-ascending">ascending</label><input OnChange="ganglia_submit();" type="radio" id="radio-descending" name="s" value="descending" /><label title="Sort hosts by descending metric value" for="radio-descending">descending</label><input OnChange="ganglia_submit();" type="radio" id="radio-by_name" name="s" value="by name" checked="checked"/><label title="Sort hosts by name" for="radio-by_name">by name</label></div></div>
+  </div>
+</div>
+
+<div id="host_metric_graphs">
+<center>
+<table id=graph_sorted_list>
+<tr>
+<td class=down><b><a href="?c=misc&amp;h=cbcl-7.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">cbcl-7.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 96 days, 8:26:35 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=adrian-monk-v9.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">adrian-monk-v9.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 99 days, 9:30:46 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=peter-davison.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">peter-davison.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 116 days, 9:08:07 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=asterix-7.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">asterix-7.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 24 days, 7:59:44 ago</font></b></td></tr><tr>
+<td class=down><b><a href="?c=misc&amp;h=columbo.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">columbo.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 136 days, 8:49:45 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=asterix-5.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">asterix-5.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 24 days, 7:59:44 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=asterix-8.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">asterix-8.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 24 days, 7:59:40 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=asterix-3.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">asterix-3.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 24 days, 7:59:39 ago</font></b></td></tr><tr>
+<td class=down><b><a href="?c=misc&amp;h=loquat.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">loquat.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 80 days, 13:36:57 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=stats-1.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">stats-1.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 80 days, 13:36:53 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=columbo-v7.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">columbo-v7.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 31 days, 6:33:22 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=drg.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">drg.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 80 days, 13:36:55 ago</font></b></td></tr><tr>
+<td class=down><b><a href="?c=misc&amp;h=kiss.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">kiss.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 8 days, 9:53:22 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=motorhead.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">motorhead.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 8 days, 9:53:22 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=rainbow-red.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">rainbow-red.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 24 days, 7:59:42 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=rainbow-blue.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">rainbow-blue.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 24 days, 7:59:42 ago</font></b></td></tr><tr>
+<td class=down><b><a href="?c=misc&amp;h=tweedle-dee.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">tweedle-dee.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 8 days, 9:53:14 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=asterix-4.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">asterix-4.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 24 days, 7:59:41 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=christopher-eccleston.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">christopher-eccleston.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 31 days, 7:07:58 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=csc64-1.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">csc64-1.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 80 days, 13:36:52 ago</font></b></td></tr><tr>
+<td class=down><b><a href="?c=misc&amp;h=kingoftown.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">kingoftown.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 80 days, 13:36:54 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=stats-2.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">stats-2.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 80 days, 13:36:53 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=stats-4.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">stats-4.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 80 days, 13:36:53 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=bug.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">bug.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 102 days, 12:22:32 ago</font></b></td></tr><tr>
+<td class=down><b><a href="?c=misc&amp;h=sln.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">sln.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 80 days, 13:36:53 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=rainbow-orange.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">rainbow-orange.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 24 days, 7:59:44 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=cbcl-2.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">cbcl-2.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 96 days, 8:26:41 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=tweedle-dum.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">tweedle-dum.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 8 days, 9:53:22 ago</font></b></td></tr><tr>
+<td class=down><b><a href="?c=misc&amp;h=cbcl-4.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">cbcl-4.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 96 days, 7:55:13 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=tristram.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">tristram.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 8 days, 9:53:01 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=asterix-9.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">asterix-9.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 24 days, 7:59:45 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=arcus-8.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">arcus-8.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 22 days, 22:14:36 ago</font></b></td></tr><tr>
+<td class=down><b><a href="?c=misc&amp;h=asterix-10.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">asterix-10.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 11 days, 11:02:36 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=cloudet.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">cloudet.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 80 days, 13:36:55 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=ichasc.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">ichasc.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 80 days, 13:36:54 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=rainbow-yellow.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">rainbow-yellow.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 24 days, 7:59:41 ago</font></b></td></tr><tr>
+<td class=down><b><a href="?c=misc&amp;h=neuromancer.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">neuromancer.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 80 days, 13:36:53 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=xander.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">xander.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 80 days, 13:37:06 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=wintermute.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">wintermute.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 80 days, 13:36:53 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=cbcl-1.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">cbcl-1.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 96 days, 8:26:41 ago</font></b></td></tr><tr>
+<td class=down><b><a href="?c=misc&amp;h=asterix-6.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">asterix-6.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 11 days, 11:51:35 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=melvil-dewey.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">melvil-dewey.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 107 days, 12:11:22 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=asterix-1.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">asterix-1.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 24 days, 7:59:26 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=arcus-9.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">arcus-9.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 22 days, 22:14:34 ago</font></b></td></tr><tr>
+<td class=down><b><a href="?c=misc&amp;h=hermod.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">hermod.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 80 days, 13:36:55 ago</font></b></td>
+<td class=down><b><a href="?c=misc&amp;h=asterix-2.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">asterix-2.ics.uci.edu</a></b><br><i>load_one:</i> <b>down <br>&nbsp;<font size="-2">Last heartbeat 11 days, 11:50:29 ago</font></b></td>
+<td><div><font style='font-size: 8px'>acdc.ics.uci.edu</font><br><a href="?c=misc&amp;h=acdc.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=acdc.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="acdc.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>adrian-monk-v1.ics.uci.edu</font><br><a href="?c=misc&amp;h=adrian-monk-v1.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=adrian-monk-v1.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="adrian-monk-v1.ics.uci.edu" border=0 style="padding:2px;"></a></div></td></tr><tr>
+<td><div><font style='font-size: 8px'>adrian-monk-v2.ics.uci.edu</font><br><a href="?c=misc&amp;h=adrian-monk-v2.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=adrian-monk-v2.ics.uci.edu&amp;l=e2ecff&amp;v=0.62&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="adrian-monk-v2.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>adrian-monk-v3.ics.uci.edu</font><br><a href="?c=misc&amp;h=adrian-monk-v3.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=adrian-monk-v3.ics.uci.edu&amp;l=e2ecff&amp;v=0.08&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="adrian-monk-v3.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>adrian-monk-v4.ics.uci.edu</font><br><a href="?c=misc&amp;h=adrian-monk-v4.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=adrian-monk-v4.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="adrian-monk-v4.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>adrian-monk-v6.ics.uci.edu</font><br><a href="?c=misc&amp;h=adrian-monk-v6.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=adrian-monk-v6.ics.uci.edu&amp;l=e2ecff&amp;v=0.02&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="adrian-monk-v6.ics.uci.edu" border=0 style="padding:2px;"></a></div></td></tr><tr>
+<td><div><font style='font-size: 8px'>adrian-monk-v7.ics.uci.edu</font><br><a href="?c=misc&amp;h=adrian-monk-v7.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=adrian-monk-v7.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="adrian-monk-v7.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>adrian-monk-v8.ics.uci.edu</font><br><a href="?c=misc&amp;h=adrian-monk-v8.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=adrian-monk-v8.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="adrian-monk-v8.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>adrian-monk-v10.ics.uci.edu</font><br><a href="?c=misc&amp;h=adrian-monk-v10.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=adrian-monk-v10.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="adrian-monk-v10.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>adrian-monk-v11.ics.uci.edu</font><br><a href="?c=misc&amp;h=adrian-monk-v11.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=adrian-monk-v11.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="adrian-monk-v11.ics.uci.edu" border=0 style="padding:2px;"></a></div></td></tr><tr>
+<td><div><font style='font-size: 8px'>adrian-monk-v12.ics.uci.edu</font><br><a href="?c=misc&amp;h=adrian-monk-v12.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=adrian-monk-v12.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="adrian-monk-v12.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>columbo-v1.ics.uci.edu</font><br><a href="?c=misc&amp;h=columbo-v1.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=columbo-v1.ics.uci.edu&amp;l=e2ecff&amp;v=0.13&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="columbo-v1.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>columbo-v6.ics.uci.edu</font><br><a href="?c=misc&amp;h=columbo-v6.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=columbo-v6.ics.uci.edu&amp;l=e2ecff&amp;v=0.19&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="columbo-v6.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>goliath.ics.uci.edu</font><br><a href="?c=misc&amp;h=goliath.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=goliath.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="goliath.ics.uci.edu" border=0 style="padding:2px;"></a></div></td></tr><tr>
+<td><div><font style='font-size: 8px'>hercule-poirot.ics.uci.edu</font><br><a href="?c=misc&amp;h=hercule-poirot.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=hercule-poirot.ics.uci.edu&amp;l=ff634f&amp;v=5.34&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="hercule-poirot.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>idaho.ics.uci.edu</font><br><a href="?c=misc&amp;h=idaho.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=idaho.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="idaho.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>kate-beckett-v1.ics.uci.edu</font><br><a href="?c=misc&amp;h=kate-beckett-v1.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=kate-beckett-v1.ics.uci.edu&amp;l=e2ecff&amp;v=0.18&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="kate-beckett-v1.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>kate-beckett-v2.ics.uci.edu</font><br><a href="?c=misc&amp;h=kate-beckett-v2.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=kate-beckett-v2.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="kate-beckett-v2.ics.uci.edu" border=0 style="padding:2px;"></a></div></td></tr><tr>
+<td><div><font style='font-size: 8px'>kate-beckett-v3.ics.uci.edu</font><br><a href="?c=misc&amp;h=kate-beckett-v3.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=kate-beckett-v3.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="kate-beckett-v3.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>kate-beckett-v4.ics.uci.edu</font><br><a href="?c=misc&amp;h=kate-beckett-v4.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=kate-beckett-v4.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="kate-beckett-v4.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>matt-smith-v0.ics.uci.edu</font><br><a href="?c=misc&amp;h=matt-smith-v0.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=matt-smith-v0.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="matt-smith-v0.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>matt-smith-v1.ics.uci.edu</font><br><a href="?c=misc&amp;h=matt-smith-v1.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=matt-smith-v1.ics.uci.edu&amp;l=e2ecff&amp;v=0.01&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="matt-smith-v1.ics.uci.edu" border=0 style="padding:2px;"></a></div></td></tr><tr>
+<td><div><font style='font-size: 8px'>matt-smith-v2.ics.uci.edu</font><br><a href="?c=misc&amp;h=matt-smith-v2.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=matt-smith-v2.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="matt-smith-v2.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>matt-smith-v3.ics.uci.edu</font><br><a href="?c=misc&amp;h=matt-smith-v3.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=matt-smith-v3.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="matt-smith-v3.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>medusa.ics.uci.edu</font><br><a href="?c=misc&amp;h=medusa.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=medusa.ics.uci.edu&amp;l=e2ecff&amp;v=0.18&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="medusa.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>mog.ics.uci.edu</font><br><a href="?c=misc&amp;h=mog.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=mog.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="mog.ics.uci.edu" border=0 style="padding:2px;"></a></div></td></tr><tr>
+<td><div><font style='font-size: 8px'>mulholland.ics.uci.edu</font><br><a href="?c=misc&amp;h=mulholland.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=mulholland.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="mulholland.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>nancy-drew-v1.ics.uci.edu</font><br><a href="?c=misc&amp;h=nancy-drew-v1.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=nancy-drew-v1.ics.uci.edu&amp;l=e2ecff&amp;v=0.09&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="nancy-drew-v1.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>nancy-drew-v2.ics.uci.edu</font><br><a href="?c=misc&amp;h=nancy-drew-v2.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=nancy-drew-v2.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="nancy-drew-v2.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>peter-capaldi-v0.ics.uci.edu</font><br><a href="?c=misc&amp;h=peter-capaldi-v0.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=peter-capaldi-v0.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="peter-capaldi-v0.ics.uci.edu" border=0 style="padding:2px;"></a></div></td></tr><tr>
+<td><div><font style='font-size: 8px'>peter-capaldi-v1.ics.uci.edu</font><br><a href="?c=misc&amp;h=peter-capaldi-v1.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=peter-capaldi-v1.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="peter-capaldi-v1.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>peter-capaldi-v2.ics.uci.edu</font><br><a href="?c=misc&amp;h=peter-capaldi-v2.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=peter-capaldi-v2.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="peter-capaldi-v2.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>peter-capaldi-v3.ics.uci.edu</font><br><a href="?c=misc&amp;h=peter-capaldi-v3.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=peter-capaldi-v3.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="peter-capaldi-v3.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>richard-castle-v0.ics.uci.edu</font><br><a href="?c=misc&amp;h=richard-castle-v0.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=richard-castle-v0.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="richard-castle-v0.ics.uci.edu" border=0 style="padding:2px;"></a></div></td></tr><tr>
+<td><div><font style='font-size: 8px'>richard-castle-v2.ics.uci.edu</font><br><a href="?c=misc&amp;h=richard-castle-v2.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=richard-castle-v2.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="richard-castle-v2.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>richard-castle-v5.ics.uci.edu</font><br><a href="?c=misc&amp;h=richard-castle-v5.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=richard-castle-v5.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="richard-castle-v5.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>rockford-v2.ics.uci.edu</font><br><a href="?c=misc&amp;h=rockford-v2.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=rockford-v2.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="rockford-v2.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>rockford-v5.ics.uci.edu</font><br><a href="?c=misc&amp;h=rockford-v5.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=rockford-v5.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="rockford-v5.ics.uci.edu" border=0 style="padding:2px;"></a></div></td></tr><tr>
+<td><div><font style='font-size: 8px'>santacruz.ics.uci.edu</font><br><a href="?c=misc&amp;h=santacruz.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=santacruz.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="santacruz.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>sheldon-cooper.ics.uci.edu</font><br><a href="?c=misc&amp;h=sheldon-cooper.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=sheldon-cooper.ics.uci.edu&amp;l=e2ecff&amp;v=0.00&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="sheldon-cooper.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>steele-v1.ics.uci.edu</font><br><a href="?c=misc&amp;h=steele-v1.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=steele-v1.ics.uci.edu&amp;l=caff98&amp;v=1.13&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="steele-v1.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>stuart-v1.ics.uci.edu</font><br><a href="?c=misc&amp;h=stuart-v1.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=stuart-v1.ics.uci.edu&amp;l=e2ecff&amp;v=0.13&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="stuart-v1.ics.uci.edu" border=0 style="padding:2px;"></a></div></td></tr><tr>
+<td><div><font style='font-size: 8px'>stuart-v2.ics.uci.edu</font><br><a href="?c=misc&amp;h=stuart-v2.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=stuart-v2.ics.uci.edu&amp;l=e2ecff&amp;v=0.38&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="stuart-v2.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+<td><div><font style='font-size: 8px'>wil-wheaton.ics.uci.edu</font><br><a href="?c=misc&amp;h=wil-wheaton.ics.uci.edu&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img class=host_small_zoomable src="./graph.php?m=load_one&amp;z=small&amp;c=misc&amp;h=wil-wheaton.ics.uci.edu&amp;l=e2ecff&amp;v=0.02&amp;r=hour&amp;su=1&amp;st=1486880148&amp;x=6.40&amp;n=0&amp;vl=+" title="wil-wheaton.ics.uci.edu" border=0 style="padding:2px;"></a></div></td>
+
+</tr>
+</table>
+
+
+
+
+
+<p>
+(Nodes colored by 1-minute load) | <a href="./node_legend.html">Legend</A>
+</p>
+
+</center>
+
+</div>
+
+<!-- End cluster_view.tpl -->
+<!-- Begin footer.tpl -->
+</form> <!-- ganglia-form -->
+</div> <!-- tabs-main -->
+
+<div id="tabs-search">
+  Search term matches any number of metrics and hosts. For example type web or disk; wait a split second, and a drop down menu will show up with choices.
+  <!-- Uses LiveSearch from http://andreaslagerkvist.com/jquery/live-search/ -->
+  <div id="metric-search">
+    <form method="post" action="/search/" onsubmit="return false;">
+      <p>
+	<label>
+	    <small>Search as you type</small><br />
+	    <input type="text" name="q" id="search-field-q" size="60" placeholder="Search as you type" on />
+	</label>
+      </p>
+    </form>
+  </div>
+</div> 
+
+<div id="create-new-view-dialog" title="Create new view">
+  <div id="create-new-view-layer">
+    <form id="create_view_form">
+      <input type="hidden" name="create_view" value="1">
+      <fieldset>
+	 <label for="new_view_name">View Name</label>
+	 <input type="text" name="vn" id="new_view_name" class="text ui-widget-content ui-corner-all" />
+         <center><button style="margin:10px;" onclick="createView(); return false;">Create</button></center>
+      </fieldset>
+    </form>
+  </div>
+  <div id="create-new-view-confirmation-layer"></div>
+</div>
+
+<script>
+$(function(){
+  var create_new_view_dialog = $("#create-new-view-dialog");
+  if (create_new_view_dialog[0])
+    create_new_view_dialog.dialog({
+      autoOpen: false,
+      height: "auto",
+      width: "auto",
+      modal: true,
+      position: { my: "top",
+                  at: "top+200",
+                  of: window },
+      close: function() {
+        $("#create-new-view-layer").toggle();
+        $("#create-new-view-confirmation-layer").html("");
+	newViewDialogCloseCallback();
+      }
+    });
+});
+</script>
+
+<div id="metric-actions-dialog" title="Metric Actions">
+  <div id="metric-actions-dialog-content">
+	Available Metric actions.
+  </div>
+</div>
+
+<script>
+$(function(){
+  initMetricActionsDialog();	
+});
+</script>
+
+<div id="tabs-mobile"></div>
+
+<div id="tabs-autorotation">
+Invoke automatic rotation system. Automatic rotation rotates all of the graphs/metrics specified in a view waiting 
+30 seconds in between each. This will run as long as you have this page open.
+<p>
+Please select the view you want to rotate.</p>
+  <div id="tabs-autorotation-chooser">
+Loading view, please wait...<img src="img/spinner.gif" />
+  </div>
+</div>
+
+<div id="tabs-livedashboard">
+Live dashboard provides you with an overview of all view metrics in a compact format. Data updates every 15 seconds.
+Only those elements that contain a metric or graph report are supported. Aggregate graphs will not be included.
+<p>
+You can get more graphs per page by using your browser zoom functionality.
+<p>
+Please select the view you want to view</p>
+  <div id="tabs-livedashboard-chooser">
+Loading view, please wait...<img src="img/spinner.gif" />
+  </div>
+</div>
+
+
+<div align="center">
+<font size="-1" class="footer" >
+<hr />
+Ganglia Web Frontend version 3.7.1
+<a href="http://ganglia.sourceforge.net/downloads.php?component=ganglia-webfrontend&amp;version=3.7.1">Check for Updates.</a><br />
+
+Ganglia Web Backend <i>(gmetad)</i> version 3.7.2
+<a href="http://ganglia.sourceforge.net/downloads.php?component=gmetad&amp;version=3.7.2">Check for Updates.</a><br />
+
+Downloading and parsing ganglia's XML tree took 0.0597s.<br />
+Images created with <a href="http://www.rrdtool.org/">RRDtool</a> version 1.4.8.<br />
+<a href="http://dwoo.org/">Powered by Dwoo</a> 1.1.1.<br />
+</font>
+</div>
+</div> <!-- div-tabs -->
+<div id="popup-dialog" title="Inspect Graph">
+  <div id="popup-dialog-navigation"></div>
+  <div id="popup-dialog-content">
+  </div>
+</div>
+
+<script>
+$(function(){
+  $("#popup-dialog").dialog({ autoOpen: false, 
+                              width:800, 
+                              height:500,
+                              position: { my: "top",
+                                          at: "top+200",
+                                          of: window } } );
+});
+</script>
+</body>
+<!-- End footer.tpl -->
+</html>
+

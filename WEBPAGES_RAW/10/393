@@ -1,0 +1,261 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>27.1.3 OEChem Examples</title>
+<META NAME="description" CONTENT="27.1.3 OEChem Examples">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node223.html">
+<LINK REL="previous" HREF="node221.html">
+<LINK REL="up" HREF="node219.html">
+<LINK REL="next" HREF="node223.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node221.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node219.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node223.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node221.html">27.1.2 Set Theory to</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node219.html">27.1 Ontology and Schema</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node223.html">27.1.4 Data Modeling Bibliography</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION0030130000000000000000">
+27.1.3 OEChem Examples</A>
+</H2>
+
+<P>
+The above explanation should go some way to explaining OEChem's
+decision to attach biopolymer information to each atom, rather than
+have container classes for residues and chains (and presumably
+connected components, NMR models, etc...).  The OEResidue class is
+therefore an additional set of fields that may be associated with
+an atom.  It does not denote or prescribe an amino or nucleic acid
+but instead stores atom-specific data such as atom serial number,
+b-factor and occupancy, in addition to residue information, chain
+information, fragment information, NMR model information, etc...
+
+<P>
+The residue information associated with an atom can be set with the
+OEAtomSetResidue function, and is retrieved with the OEAtomGetResidue
+function.  The PDB and Macromodel file format readers parse this
+information from the input file format.  Additionally, OEChem allows
+residue information to be perceived directly from the connection
+table using the OEPerceiveResidues function.
+
+<P>
+For many algorithms processing biomolecules, it is convenient to
+maintain the atoms of the OEMolBase in sorted order to group atoms
+in the same residue next to one another, and residues in the same
+chain sequentially.  This can be done conveniently in OEChem using
+the OEPDBOrderAtoms function.  Note, that OEPercieveResidues calls
+OEPDBOrderAtoms automatically.
+
+<P>
+A common idiom is therefore the following code snippet:
+
+<P>
+<dl><dd><pre class="verbatim">void MyPrepareProtein(OEMolBase &amp;mol)
+{
+  if (OEHasResidues(mol))
+  {
+    OEPDBOrderAtoms(mol);
+  }
+  else OEPerceiveResidues(mol);
+}
+</pre></dl>
+
+<P>
+As a teaching example, the following code demonstrates one way
+of reporting the number of different chains in an OEMolBase.
+
+<P>
+<dl><dd><pre class="verbatim">unsigned int MyCountChains1(OEMolBase &amp;mol)
+{
+  unsigned int result = 0;
+  OEIter&lt;OEAtomBase&gt; atom;
+  bool first = true;
+  char prev = '\0';
+  char chain;
+
+  for (atom=mol.GetAtoms(); atom; ++atom)
+  {
+    OEResidue res = OEAtomGetResidue(atom);
+    chain = res.GetChainID();
+    if (first || (chain != prev))
+      result++;
+    first = false;
+    prev = chain;
+  }
+  return result;
+}
+</pre></dl>
+
+<P>
+A slightly improved version would be to use OEChem's SameChain function.
+
+<P>
+<dl><dd><pre class="verbatim">unsigned int MyCountChains2(OEMolBase &amp;mol)
+{
+  OEIter&lt;OEAtomBase&gt; atom;
+  unsigned int result = 0;
+  OEResidue prev;
+
+  for (atom=mol.GetAtoms(); atom; ++atom)
+  {
+    OEResidue res = OEAtomGetResidue(atom);
+    if (prev &amp;&amp; OESameChain(res,prev))
+      continue;
+
+    prev = res;
+    result++;
+  }
+  return result;
+}
+</pre></dl>
+
+<P>
+Clearly, a MyCountResidues function would look almost identical but
+use the OESameResidue function instead of OESameChain.  The slightly
+more complicated example below, reports the number of residues in
+each chain.
+
+<P>
+<dl><dd><pre class="verbatim">void MyReportResidues1(OEMolBase &amp;mol)
+{
+  OEIter&lt;OEAtomBase&gt; chain;
+  OEResidue prevchain;
+
+  for (chain=mol.GetAtoms(); chain; ++chain)
+  {
+    OEResidue chainres = OEAtomGetResidue(chain);
+    if (!prevchain || !OESameChain(chainres,prevchain))
+    {
+      OEIter&lt;OEAtomBase&gt; residue;
+      OEResidue prevres;
+
+      unsigned int count = 0;
+      for (residue=mol.GetAtoms(); residue; ++residue)
+      {
+        OEResidue resres = OEAtomGetResidue(residue);
+        if (OESameChain(resres,chainres))
+          if (!prevres || !OESameChain(resres,prevres))
+          {
+            prevres = resres;
+            count++;
+          }
+      }
+
+      cout &lt;&lt; count &lt;&lt; " residues in chain "
+           &lt;&lt; chainres.GetChainID() &lt;&lt; endl;
+      prevchain = chainres;
+    }
+  }
+}
+</pre></dl>
+
+<P>
+Whilst the above example contains the doubly nested loops that some
+structural biologists like to see, the same output can be generated
+even more efficiently by:
+
+<P>
+<dl><dd><pre class="verbatim">void MyReportResidues2(OEMolBase &amp;mol)
+{
+  OEIter&lt;OEAtomBase&gt; atom;
+  unsigned int count = 0;
+  OEResidue residue;
+  OEResidue chain;
+
+  for (atom=mol.GetAtoms(); atom; ++atom)
+  {
+    OEResidue res = OEAtomGetResidue(atom);
+
+    if (!chain)
+      chain = res;
+    else if (!OESameChain(res,chain))
+    {
+      cout &lt;&lt; count &lt;&lt; " residues in chain "
+           &lt;&lt; chain.GetChainID() &lt;&lt; endl;
+      chain = res;
+      count = 0;
+    }
+
+    if (!residue || !OESameResidue(res,residue))
+    {
+      residue = res;
+      count++;
+    }
+  }
+
+  if (count)
+      cout &lt;&lt; count &lt;&lt; " residues in chain "
+           &lt;&lt; chain.GetChainID() &lt;&lt; endl;
+}
+</pre></dl>
+
+<P>
+Of course, just because OEChem uses an extremely advanced representation
+of biopolymers, there's absolutely nothing to prevent a user slurping
+this information into a FORTRAN common block or whichever representation
+best suits their way of thinking about the problem.
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node221.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node219.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node223.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node221.html">27.1.2 Set Theory to</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node219.html">27.1 Ontology and Schema</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node223.html">27.1.4 Data Modeling Bibliography</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

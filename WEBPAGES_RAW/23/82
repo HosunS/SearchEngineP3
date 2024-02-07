@@ -1,0 +1,53 @@
+// GuessNumberGame.java
+//
+// ICS 21: Lab 0
+//
+// Written by Alex Thornton for ICS 21 Summer 2009
+// Minor revisions by Norman Jacobson for ICS 21 Fall 2009
+//
+// This class implements the "engine" for the "guess a number" game.
+// The engine is in charge of choosing a random "target number," comparing the
+// user's guesses to the target number, and responding accordingly.
+//
+// Notice that this class does not perform input/output.  This is by
+// design.  The user interface and the "engine"  are separated into
+// two classes, for a very good reason: it allows the user interface
+// to be changed without affecting the engine at all.  This may seem
+// silly in a program as small as this one, but we want to illustrate,
+// as early as possible, that the way to go with object-oriented  
+// progamming is to write relatively simple components that do single, 
+// targeted jobs and that know as little as possible about one another.  
+// Fo instance, GuessNumberGame doesn't rely on the fact that this
+// program's user interface uses the console.  That means that we
+// could replace the user interface with a graphical one without
+// making any modifications to GuessNumberGame.
+
+import java.util.Random;
+
+public class GuessNumberGame
+{
+	private static Random r = new Random();
+	private int targetNumber;
+	
+	public GuessNumberGame(int range)
+	{
+		targetNumber = r.nextInt(range) + 1;
+	}
+
+
+	public GuessResponse checkGuess(int guess)
+	{
+		if (targetNumber < guess)
+		{
+			return GuessResponse.TARGET_IS_SMALLER;
+		}
+		else if (targetNumber > guess)
+		{
+			return GuessResponse.TARGET_IS_LARGER;
+		}
+		else
+		{
+			return GuessResponse.CORRECT;
+		}
+	}
+}

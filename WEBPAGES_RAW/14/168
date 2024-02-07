@@ -1,0 +1,32 @@
+from Numberjack import *
+
+def model_queens(N):
+    # N vars with domain size N
+    queens = VarArray(N, N)
+    # columns are implicitly enforced
+    model = Model(
+        AllDiff(queens), # rows
+        AllDiff([queens[i] + i for i in range(N)]), # anti-diagonal
+        AllDiff([queens[i] - i for i in range(N)]), # diagonal
+        )
+    return (queens, model)
+
+def solve_queens(argv):
+    N = int(argv[0])
+    (queens, model) = model_queens(N)
+    solver = model.load('Mistral')
+    solver.startNewSearch()
+    while solver.getNextSolution():
+        print 'Solution:'
+        print_chessboard(queens)
+
+# utility to print chessboard nicely
+def print_chessboard(queens):
+    separator = '+---'*len(queens)+'+'
+    for queen in queens:
+        print separator
+        print '|   '*queen.get_value()+'| Q |'+'   |'*(len(queens)-1-queen.get_value())
+    print separator
+
+solve_queens(sys.argv[1:])
+

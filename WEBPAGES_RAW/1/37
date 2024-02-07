@@ -1,0 +1,63 @@
+1. Suppose we wish to build a data structure that stores a set of n
+three-dimensional points and answers queries requesting the number of
+points within an axis-parallel box. We are considering three multilevel
+data structures for this problem: (i) an outer data structure in the
+form of a binary search tree on the x-coordinates of all the points,
+each node of which stores an inner data structure in the form of a
+kD-tree on the y and z coordinates of its descendant points, and (ii) an
+outer data structure in the form of a kD-tree on the x and y coordinates
+of all the points, each node of which stores an inner data structure in
+the form of a binary search tree on the z coordinates of the points
+within its rectangle.
+
+(a) How much space would data structure (i) use, and what is its query
+time?
+
+(b) How much space would data structure (ii) use, and what is its query
+time?
+
+(c) Can fractional cascading be applied to either of the two data
+structures? If so, what is the improved query time that would be
+obtained by using it?
+
+2. Suppose we wish to store a set of two-dimensional points, and answer
+queries requesting the number of points within a specified axis-aligned
+right triangle. Show that a kD-tree may require Omega(n) time per query
+for this problem.
+
+3. Suppose we wish to solve the problem of, given data points in the
+plane, listing all points contained in a query triangle.  We attempt to
+solve it with the following data structure:
+
+- We partition the points into a set of nested convex hulls:
+  H_0 is the convex hull of the input, H_1 is the hull of the points
+  other than the ones already vertices H_0, and in general
+  H_i is the hull of the points other than the ones that are already
+  vertices of some hull H_j for j<i.
+
+- We store each convex hull separately, in a data structure that allows
+  us to perform binary searches (e.g. a sorted array of its vertices).
+  We do not use fractional cascading.
+
+- To answer a query for the points in triangle T, we apply the
+  following pseudocode:
+
+  def query(T):
+      for i in range(0, number of hulls):
+          for each of the three lines L_0, L_1, L_2 on the boundary of T:
+              use binary search to find the two points where L_j crosses H_i
+	      (or discover that it doesn't cross H_i)
+
+          split the hull H_i into paths at the (at most six) crossing points
+          found above (or a single path if there are no crossing points)
+
+          for each path into which H_i is split:
+              if the first segment of the path is contained in T:
+                  output all vertices of H_i in the path
+
+          if none of L_0, L_1, and L_2 cross H_i and
+                  no vertices of H_i were output:
+              break
+
+Explain why this pseudocode does not correctly and efficiently answer
+the range query.

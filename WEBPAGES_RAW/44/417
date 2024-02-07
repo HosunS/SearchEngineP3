@@ -1,0 +1,74 @@
+/**************************************************************************************************
+Bayesian Ideas and Data Analysis
+Chapter 11: Count Data
+SAS code for the FMD example in the ZIP subsection
+*****************************************************************************************************/
+
+proc import out=FMDdata1
+  datafile='G:\MyDocuments\BAYES\PoissonRegression\FMDdata\FMDData.xls'
+  dbms=excel replace;
+  getnames=yes;
+  sheet="Sheet1";
+run;
+proc print data=FMDdata1;
+run;
+
+proc means data=FMDdata1;   
+ var Cattle;
+run;
+
+
+data FMDdata;
+  set FMDdata1;
+  stdcattle=(Cattle-162667.88)/ 112105.31;
+run;
+proc print data=FMDdata;
+run;
+
+
+
+/* 1. MLEs for ordinary Poisson regression of the FMD 1998 data.  
+      Response: yi = FMD count in province i
+      Covariates:  EasternTurkey (1=east; 0=west);  standardized cattle population 
+      AIC=231.2    BIC=237.8
+*/
+proc genmod data=FMDdata;
+  model FMD1998=stdcattle EasternTurkey / dist=Poisson;
+run;
+
+
+
+
+/* 2. Bayesian ordinary Poisson regression of the FMD 1998 data.  
+      Response: yi = FMD count in province i
+      Covariates:  EasternTurkey (1=east; 0=west);  standardized cattle population  
+      DIC=231.2.  Estimates similar to MLEs
+*/
+proc mcmc data=FMDdata nbi=15000 nmc=1000000 dic propcov=quanew;
+parms beta1 0 beta2 0 beta3 0;
+prior beta: ~ normal(0,var=1000);
+mu = exp(beta1 + beta2*stdcattle + beta3*EasternTurkey);
+model FMD1998 ~ poisson(mu);
+run;
+
+
+
+
+
+/* 3. Bayesian ZIP regression of the FMD 1998 data.  
+      Response: yi = FMD count in province i
+      Covariates:  EasternTurkey (1=east; 0=west);  standardized cattle population 
+      DIC=172.3
+*/
+proc mcmc data=FMDdata nbi=15000 nmc=1000000 dic propcov=quanew;
+parms beta1 0 beta2 0 beta3 0 pi 0.5;
+prior beta: ~ normal(0,var=1000);
+mu = exp(beta1 + beta2*stdcattle + beta3*EasternTurkey);
+prior pi ~ uniform(0,1);
+llike=log(pi*(FMD1998 eq 0) + (1-pi)*pdf("poisson",FMD1998,mu));
+model general(llike);
+run;
+
+
+
+

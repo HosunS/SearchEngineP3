@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Virtual Chemical Space</title>
+    <meta charset="utf-8">      
+    <!-- Include JQuery for tabs and UI plugins -->
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.colorbox-min.js"></script>
+    <script type="text/javascript" src="/js/chemdb.js"></script>
+    <!-- Include styling -->
+    <link rel="stylesheet" type="text/css" href="/css/chemdb.css" />
+    <link rel="stylesheet" type="text/css" href="/css/colorbox.css" /> 
+    <link type="text/css" href="/css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />
+
+    <script type="text/javascript">
+            // Define AJAX submission
+            function ajax_submit(formID, targetID){
+                var values = $(formID).serialize();         
+                var url = $(formID).attr('action');         
+                $(targetID).load(url+"/?"+values, function(){
+                	initialize(targetID);
+                	if("#synthesisTree" == targetID)
+                	    $("#synthesisTreeLink").click();
+                });
+            }
+            
+            function initialize(target){
+            	if (target=="#query"){
+                	// Initialize UI on submit buttons
+                    $("#query input:submit").button();
+                    $("#query input:button").button();
+                    $("#query input:button").addClass("button");
+                    $("#query input:button.float-right").addClass("button-width");
+                    $("#query a.button").addClass("button-width").button();
+                    $(".search-button").button({
+                        icons: {            
+                            secondary: "ui-icon-search"
+                        }
+                    });
+                    
+                    // Initialize JME links
+                    $("#query a.JMEPopup").click(targetSketchPopup);            
+                    
+                    // Bind forms
+                    $("#VirtualSpaceQueryWeb").submit(function() {              
+                        ajax_submit("#"+this.id, "#query");             
+                        return false;
+                    });
+                    
+                    $(".hide").show();
+                }
+            	else if (target=="#synthesisTree"){
+            		// Bind forms
+                    $("#VirtualSpaceSynthesisTreeWebform").submit(function() {         
+                        ajax_submit("#"+this.id, "#synthesisTree");
+                        return false;
+                    });
+                    
+                    // Init buttons     
+                    $("#synthesisTree .button").button();
+                    $("#checkAvailability").click(function(){
+                        $('<input>').attr({
+                            type: 'hidden',             
+                            name: this.name,
+                            value: this.value
+                        }).appendTo('#VirtualSpaceSynthesisTreeWebform');
+                        $("#VirtualSpaceSynthesisTreeWebform").submit();
+                    });
+                    $("#clearState").click(function(){
+                        $('<input>').attr({
+                            type: 'hidden',                         
+                            name: this.name,
+                            value: this.value
+                            }).appendTo('#VirtualSpaceSynthesisTreeWebform');
+                        $("#VirtualSpaceSynthesisTreeWebform").submit();
+                    });         
+                    
+                    // Initialize summary report button with colorbox
+                    $("#summaryReportlink").live('click', function(){           
+                        var url = "VirtualSpaceSynthesisTreeWeb.py/?summaryReport=Summary%20Report&" + $('#summaryReportform').serialize();
+                        $("#summaryDiv").load(url+" #summaryContent");
+                        $("#summaryReportlink").colorbox({inline:true, open:true, width:"900px", height:"500px"});
+                        return false;
+                    });
+                    
+                    // Hide Synthesis Tree when showing summary report
+                    if ("Summary Report" == "(summaryReport)s"){
+                       $(".syntreediv").hide();
+                    }                    
+                    
+                    // Initialize synthesis tree colorbox
+                    $("#synthesisTreeLink").colorbox({inline:true});                
+                    $("#synthesisTreeLink").button({
+                        icons: {            
+                            secondary: "ui-icon-newwin"
+                        }
+                    });
+            	}
+            }
+            
+            $(document).ready(function() {              
+                // Dynamically load virtual space query form                                
+                $('#query').load('VirtualSpaceQueryWeb.py', function(){
+                    initialize("#query");
+                    //Hide retro synth suggestions and unsuccessful reagents
+                    $(".hide").hide();
+                });
+                            
+                // Load synthesis tree in div and initialize with color box
+                $('#synthesisTree').load('VirtualSpaceSynthesisTreeWeb.py', function(){
+                	initialize("#synthesisTree");
+                });
+            });
+        </script>
+        <!-- VirtualSpaceQueryWeb Javascript -->
+        <script type="text/javascript">
+            function targetSketchPopup()
+            {           
+                $.colorbox({open:true, iframe:true, width:"500px", height:"500px", href:"../JMEPopupWeb.py?parentForm=VirtualSpaceQueryWeb&smilesField=targetSmiles&JMEPopupWeb=True&smiles="+$("#targetSmiles").val()});
+            }
+            
+            function drillDownPrecursor( precursorSmi, reagent_id )
+            {
+                $("#targetSmiles").val(precursorSmi);
+                if ( reagent_id )
+                {   // If a specific reagent was selected, then filter the reagentSelect
+                    //var reagentOptions = document.forms[0].reagentSelect.options;
+                    var reagentOptions = $("reagentSelect").options;
+                    //alert(reagentOptions[0]);
+                    for( var i=0; i < reagentOptions.length; i++ )
+                    {
+                        reagentOptions[i].selected = (reagentOptions[i].value == reagent_id);
+                    }
+                }
+                $("#VirtualSpaceQueryWeb").submit();
+            }
+            
+            function addToSynthesisTree( precursorSmi, reagent_id )
+            {
+                var synthesisTreeForm = $("#VirtualSpaceSynthesisTreeWebform");               
+                
+                synthesisTreeForm.find("#new_precursorSmi").val(precursorSmi);
+                synthesisTreeForm.find("#new_reagent_id").val(reagent_id);
+                synthesisTreeForm.find("#new_targetSmiles").val($("#targetSmiles").val());
+                synthesisTreeForm.find("#command").attr("name",'addReactionStep');
+                        
+                //synthesisTreeForm.submit();
+                ajax_submit("#VirtualSpaceSynthesisTreeWebform", "#synthesisTree");
+                $("#synthesisTreeLink").click();
+            }
+            
+            function virtualSpaceBuildingBlocks( precursorSmi, reagent_id )
+            {
+                var buildingBlocksForm = document.forms['buildingBlocks'];
+                buildingBlocksForm.precursorSmi.value = precursorSmi;
+                buildingBlocksForm.reagentSelect.value = reagent_id;
+                buildingBlocksForm.submit();
+            }
+            
+            <!-- Molecule View JavaScript -->
+            function magnifyMolecule( smilesField )
+            {
+                var smiles = smilesField.value; // Indirect access to ensure proper handling of special characters
+                var zoomPopup =
+                    window.open('/cgibin/tools/MoleculeView.py?MoleculeView=True&smiles='+smiles );
+            }
+            
+            <!-- Reaction Details JavaScript -->                           
+            function reactionDetails( reactionStrField, reagent_id )
+            {
+                var reactionStr = reactionStrField.value;
+                window.open('../reaction/ReactionStepDetailsWeb.psp?reactionStr='+reactionStr+'&reagent_id='+reagent_id+'&ignoreSelfReactions=False' );
+            }
+                               
+            var HELP_MESSAGES = Array();
+            HELP_MESSAGES['level2Check'] = '"Look ahead" an additional level to identify retro-reactions that can be applied to the precursors after the first level step.';
+            HELP_MESSAGES['target'] = 'Target structure to deconstruct with retro-reactions.  Enter a SMILES string representation or click the sketch icon to draw the structure.';
+            HELP_MESSAGES['reagentSelect'] = 'List of reaction models available to use.  To only use a subset set of these, select them from the list. (Ctrl+Click for multiple).';
+            HELP_MESSAGES['availabilityCheck'] = 'Check all virtual precursors generated against ChemDB to see if existing "real" chemical is already available.';
+            HELP_MESSAGES['VirtualSpaceQueryWeb'] = 'Apply all of the retro-reactions listed against the target structure to identify virtual precursors.';
+            HELP_MESSAGES['precursor'] = 'Click to recursively analyze this structure as a target for retro-synthesis.';
+            HELP_MESSAGES['reagent'] = 'Click to view details on all products predicted for this reaction.';
+            HELP_MESSAGES['addToSynthesisTree'] = 'Save this reaction information to the synthesis tree for future reference.';
+            HELP_MESSAGES['buildingBlocks'] = 'Find existing building block chemicals similar to these precursor molecules to design a combinatorial library of virtual products.';
+            HELP_MESSAGES['chemical_id'] = 'ChemDB chemical ID for available chemical.  Click to view detailed records, including vendor information.';
+            HELP_MESSAGES['magnify'] = 'Click to view an enlarged view of the molecule, including rotatable 3D conformation.';
+            HELP_MESSAGES['reactionStats'] = 'Reaction reliability score with underlying statistical factors.  The amount that different factors are weighted is modifiable under the "Scoring Weights" section.';
+            HELP_MESSAGES['scoringWeights'] = 'Weightings for reaction reliability score factors.  Score, which is used to rank reaction suggestions, is a linear combination of the weighted factors. Thus, "weight = 0" indicates no contribution and negative values indicate undesirable factors.';
+            
+            HELP_MESSAGES['weight_unintendedProducts'] = 'Penalty for unintended products predicted for the suggested reaction';
+            HELP_MESSAGES['weight_unintendedStereoisomers'] = 'Penalty for products predicted for the suggested reaction which are stereoisomers of the intended product';
+            HELP_MESSAGES['weight_maxCarbonCount'] = 'Penalty per carbon atom in precursor with the most carbon atoms.  Based on convergent design principle which prefers to minimize of the maximum precursor size.';
+            HELP_MESSAGES['weight_maxAtomCount'] = 'Penalty per non-hydrogen atom in precursor with the most such heavy atoms.  Based on convergent design principle which prefers to minimize of the maximum precursor size.';
+            HELP_MESSAGES['weight_maxRingSystemCount'] = 'Penalty per ring system in precursor with the most ring systems.  Based on principle of reducing molecular complexity.';
+            HELP_MESSAGES['weight_chiralAtoms'] = 'Penalty per chiral atom in ALL precursors.  Suggests opportunities to execute stereocontrolled reactions.';
+            HELP_MESSAGES['weight_chiralBonds'] = 'Penalty per chiral bond in ALL precursors.  Suggests opportunities to execute stereocontrolled reactions.';
+            HELP_MESSAGES['weight_targetReproduced'] = 'Whether the intended target was even reproduced when predicting the course of the suggested reaction';
+            HELP_MESSAGES['weight_Caution1Messages'] = 'Penalty for any Caution messages raised during reaction suggestion.  These generally should not prevent a reaction from being used.';
+            HELP_MESSAGES['weight_Warning2Messages'] = 'Penalty for any Warning messages raised during reaction suggestion.  The suggested reaction may still work, but with unintended reactivity.';
+            HELP_MESSAGES['weight_Error3Messages'] = 'Penalty for any Error messages raised during reaction suggestion.  The suggestion reaction is likely unusable.';
+            
+            function showHelp( messageKey )
+            {
+                //var helpField = parent.synthesisTree.document.forms[0].contextHelp;
+                var helpField = parent.$("#synthesisTree").contents().find("#contextHelp");
+                        
+                if ( HELP_MESSAGES[messageKey] )
+                {
+                    helpField.value = HELP_MESSAGES[messageKey];                
+                }
+                else
+                {
+                    helpField.value = messageKey;
+                }            
+            }
+            
+            function alertHelp( messageKey )
+            {
+                if ( HELP_MESSAGES[messageKey] )
+                {
+                    alert( HELP_MESSAGES[messageKey] );
+                }
+                else
+                {
+                    alert( messageKey );
+                }
+            }
+        </script>
+        
+        <!-- Synthesis Tree Javascript -->
+        <script type="text/javascript">
+            function selectMolecule( moleculeSmi )
+            {
+                $("#targetSmiles").val(moleculeSmi);        
+                $("#VirtualSpaceQueryWeb").submit();        
+                parent.$.fn.colorbox.close();
+            }
+            
+            function selectReagent( parentMoleculeSmi )
+            {       
+                $("#VirtualSpaceSynthesisTreeWebform").find("#new_targetSmiles").val(parentMoleculeSmi);
+                $("#VirtualSpaceSynthesisTreeWebform").find("#command").attr("name", 'removeReactionStep');
+                $("#VirtualSpaceSynthesisTreeWebform").submit();
+            }            
+            
+            function showHelp2( messageKey )
+            {
+                var HELP_MESSAGES = Array();
+                HELP_MESSAGES['molecule'] = 'Click to recursively analyze this structure as a target for retro-synthesis.';
+                HELP_MESSAGES['reagent'] = 'Click to view details on all products predicted for this reaction.';
+                HELP_MESSAGES['removeReagent'] = 'Click to remove this reaction from the synthesis tree.';
+                HELP_MESSAGES['checkAvailability'] = 'Check all chemicals in the synthesis tree against ChemDB to see if existing "real" chemicals are available.';
+                HELP_MESSAGES['clearState'] = 'Remove all reactions and molecules from the synthesis tree.';
+                HELP_MESSAGES['summaryReport'] = 'Generate a summary report of the synthesis tree, including reaction references and starting material vendor information.';
+                HELP_MESSAGES['chemical_id'] = 'ChemDB chemical ID for available chemical.  Click to view detailed records, including vendor information.';
+                HELP_MESSAGES['magnify'] = 'Click to view an enlarged view of the molecule, including rotatable 3D conformation.';
+                
+                helpField = $('#contextHelp');    
+                if ( HELP_MESSAGES[messageKey] )
+                {
+                    helpField.text(HELP_MESSAGES[messageKey]);
+                }
+                else
+                {
+                    helpField.text(messageKey);
+                }
+            }
+        </script>
+        <style>
+            .button-width{
+                width: 200px;
+            }
+        </style>
+</head>
+
+<body>
+<div id="background">           
+    <div id="content">
+        <div id="header">
+            <div id="chemdb-logo"></div>
+            <span>ChemDB: Virtual Chemical Space</span>
+            <div id="top-nav">                
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Tools</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/BabelWeb.py">Babel</a></li>
+                        <li><a href="/cgibin/Mass2Structure.py">Mass2Structure</a></li>                        
+                        <li class="odd"><a href="/cgibin/tools/MolInfoWeb.py">MolInfo</a></li>
+                        <li><a href="/cgibin/MSFragment.py">MSFragment</a></li>
+                        <li class="odd"><a href="/cgibin/PatternCountScreenWeb.py">Pattern Count Screen</a></li>
+                        <li><a href="/cgibin/PatternMatchCounterWeb.py">Pattern Match Counter</a></li>
+                        <li class="odd"><a href="/cgibin/Smi2DepictWeb.py">Smi2Depict</a></li>
+                        <li><a href="/cgibin/reaction/ReactionProcessorWeb.py">Reaction Processor</a></li>
+                    </ul>
+                </div>                                                                          
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Applications</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/ChemicalIndexWeb.py">Chemical Search</a></li>
+                        <li><a href="http://cosmos.igb.uci.edu/">COSMOS</a></li>
+                        <li class="odd"><a href="/cgibin/tutorial/ReactionTutorialSetupWeb.py">Reaction Explorer</a></li>
+                        <li><a href="http://reactions.igb.uci.edu/">Reaction Predictor</a></li>                        
+                        <li class="odd"><a href="/cgibin/reaction/VirtualSpaceWeb.py">Virtual Chemical Space</a></li>
+                    </ul>
+                </div>
+            </div>   
+            <div id="crumbs"><!-- <a class="breadcrumb" href="http://chemdb.ics.uci.edu" target="_top">ChemDB</a>
+ --><a href="/">Home</a> <img class="crumb-arrow" src='/images/arrow.png' /> <a class="breadcrumb" href="#">Virtual Chemical Space</a></div>
+        </div>
+        
+        <div id="loadingDiv"><img src="/images/loading.gif" /></div>            
+        <a id="synthesisTreeLink" class="margin-top" href="#synthesisTree">My Synthesis Tree</a>            
+        <div style="display:none;">                
+            <div id="synthesisTree"></div>
+            <div id="summaryDiv"></div>
+        </div>            
+        <div id="query"></div>            
+    </div>
+</div>
+</body>
+</html>

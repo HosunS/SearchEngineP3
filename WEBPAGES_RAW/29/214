@@ -1,0 +1,244 @@
+Advanced Collections Minutes - May 25, 1999
+
+Attending: Judy Slein, Jim Whitehead, Geoff Clemm, Jason Crawford, Chuck Fay
+
+ACTION ITEMS
+
+Jim W: Revise definitions / write text to explain how the definitions
+relate to RFC 2518.
+
+Judy: Revise proposed language for LOCK and MOVE / DELETE.
+
+Judy: Try to draft an operational definition of the integrity constraints on
+bindings.
+
+MISCELLANEOUS LOGISTICS
+
+6/25 submit spec and requirements to Internet Drafts
+Iron out major issues by 6/8 meeting if possible, then edit for 2 weeks
+Submit on 6/25 even if there are outstanding issues or inconsistencies
+
+Geoff is presenting the advanced collections spec to the versioning
+team tomorrow.
+
+Geoff is willing to lead a session on the advanced collections spec at
+the Oslo IETF.  Jim will try to schedule a session.
+
+TERMINOLOGY: INTERNAL MEMBERS VS. MEMBERS
+
+Geoff: We need to be able to distinguish between immediate members and
+all members at whatever depth (transitive closure of members)
+
+We could use "internal members" for members at depth 1, "members" for
+members at any depth.
+Or we could use "members" for depth 1, and some other term for
+members at all depths.
+
+Let's stick with the terminology people are used to.
+
+"Internal" in RFC 2518 was supposed to distinguish internal from external 
+members (resources that are referenced and really reside in a different 
+collection hierarchy).  "Internal" is really obsolete now, as referencing / 
+bindings have evolved.
+
+Keep using it because people are used to it. 
+
+"Internal" gives the sense that it's part of the collection's state, which
+is not what we intend.
+
+Can we use plain "member" to mean the whole hierarchy?  There is the danger
+that people will map "member" to "internal member". We want an adjective to 
+go with it when we are talking about the transitive closure of members. 
+
+Candidates:
+
+internal members vs. transitive members, member by itself is either
+
+deep members, depth members
+
+ancestor / descendent, parent / child
+
+AGREED: We will always use a qualified form, either "internal
+member" or "transitive member". 
+
+WHAT ARE COLLECTION MEMBERS?
+
+In RFC 2518 a collection member is a URL.  A binding is *not* just a URL.
+A binding is an association between a URL segment and a resource.
+
+Geoff: Let's not talk about member bindings.  Members are neither bindings
+nor segments, but absolute (or maybe relative) URLs.
+
+Judy: If members are not bindings, but bindings are part of the state of
+collections, then we have redundant or overlapping state. It would be strange to say
+that a collection's membership is not part of its state.  There's a dependency
+between one end of a binding and a member URL. 
+
+Jim W: If we say that a member is an absolute URL, how do we decide which
+one?  Any binding may generate many mappings. 
+
+Geoff: The member is the URL that is induced by the URL of the collection.
+There may be many member URLs for a single binding.  If a collection is 
+identified by URLs /x/ and /y/, the members of /x/ are /x/a and /x/b, and
+the members of /y/ are /y/a and /y/b.  The member names are induced by 
+the collection name.
+
+Geoff: PROPFIND returns one URL for each member.  It is the URL that is the 
+parent collection's URL (determined by the request-URI) + segment.  It's
+ok to allow PROPFIND to return relative URLs.
+
+Jim W: Doesn't want members to be relative URLs. RFC 2518 wants full URLs.
+
+Jim: if we want to preserve member to be full URL, how do we define member?
+
+We need to make it clear what the relationship is between member and binding.
+
+A member is not part of the state of anything. It just shows up in reports.
+A collection's state is a set of bindings, not its members.
+A member URL is not part of the state of a collection. (arbitary, infinite set of URLs
+that identify members -- pick one relative to request-URI)
+
+Don't let people think that the strings that came back from PROPFIND are 
+part of the state of a collection.
+
+People tend to think the members are the URLs, the mapping names.  Bindings induce
+these URLs in a predictable way.  The binding is the underlying thing.
+
+RFC 2518 says that collection members are URIs 
+
+Are the member URIs relative or absolute? In RFC 2518, they were immediately
+relative to the URI of the collection.
+
+Geoff can live with either relative or absolute.
+
+Must distinguish between a list of segments and a list of bindings.  If you 
+associate the same segment with a different resource, you've changed the 
+state of the collection. Make sure people know the state is a set of bindings, 
+not a set of segments.
+
+Geoff: There aren't any free-floating bindings.  All bindings are part of the state
+of some collection.
+
+Jason: We may need to keep the term "member bindings" to contrast with 
+the bindings of the collection to its parents.
+
+We need to decide what kinds of things the members of a collecton are: bindings
+or URIs.
+
+Consistency with RFC 2518 would mean we say that collection members are URIs.
+
+Add a paragraph on how bindings are related to collection members.
+
+Jim W: Keep definitions basically as they are. Just talk about how they are
+related to RFC 2518.
+
+Geoff: Use "member" to be the thing that's in a collection, and explain
+the relationship of that thing to bindings, URIs, etc.
+Tell people how to read RFC 2518: the member URIs are not the collection's
+state; bindings are.
+
+ACTION: Jim W will write modifications to definitions or text to go around the 
+definitions, might get rid of "member binding".
+
+ALL-BINDINGS HEADER
+
+Yaron didn't protest about All-Bindings.  Probably no one else thought about it.
+
+Jim W: The only problem with an All-Bindings header is that if a server doesn't 
+understand All-Bindings, it will ignore the header and will still return 2xx.
+But since the server is doing less than it claims, that's probably ok.  
+
+Geoff: You can only create multiple bindings BIND, so any server that doesn't
+understand All-Bindings won't have multiple bindings to the same resource
+anyhow.
+
+Judy: No, you could create them out-of-band.
+
+Geoff: You can only create mappings out-of-band, not bindings.
+
+Jim W: A binding is like a resource, it's an abstraction. So there can be 
+out-of-band ways to create them.
+
+Judy: Anyhow, I'm ok with servers that don't understand All-Bindings reporting
+success.
+
+Add All-Bindings to the spec. AGREED.
+
+LOCK AND DELETE/MOVE
+
+Jim W: Thought we agreed in e-mail that the least restrictive requirement to 
+insure the mapping used in the LOCK request stays intact is the right thing.
+
+Jim W: Agrees with Geoff that it's better not to talk in terms of locking 
+bindings.  Just say that a LOCK acts to preserve the mappings.
+
+Leave it up to the server to decide how to make that happen.
+
+Follow Geoff's suggestion to get rid of language about bindings.
+
+ACTION: Judy will revise her proposed language.
+
+INTEGRITY OF BINDINGS
+
+Roy noted that a URI can end up pointing to different things over 
+its lifetime.  
+
+Judy: Right.  The text I drafted isn't expressed very well.  I think what's really
+true is that the identity of a binding is determined by the segment (in its
+collection) and the resource that the binding associates.  If the same segment gets 
+associated with a different resource, that means the original binding was destroyed and
+a different binding now exists.  So what I want to guarantee is that once created,
+a binding will not be destroyed except by a DELETE request on a mapping induced
+by that binding.
+
+Geoff: This is not verifiable via the protocol, so can't be interpreted consistently.
+
+Jim: We need an operational definition.
+
+Judy will try again, for an operational definition.
+
+late binding / early binding -- late binding means underlying resource can be 
+different
+warn that there may be late binding
+
+What are we trying to help the server implementer to do?
+
+Just say in DELETE section that if you delete a binding, resource continues 
+to return the entity for requests through the remaining bindings.
+
+Judy: The problem is that for off-server bindings, the server where the resource
+lives may think there are no more bindings (and so think it's ok to do
+garbage collection) when there are still off-server bindings to the resource.
+So the server where the binding lives bears some responsibility for guaranteeing
+integrity.
+
+Operationally, you are trying to make sure that certain DELETEs don't happen 
+or certain BINDs don't happen, so say
+   Fail the DELETE unless . . .
+   Fail the BIND unless . . .
+There's only a problem for multiple bindings, so only need to talk about it
+in the context of BIND (the only way you can get multiple bindings to the same
+resource).
+
+The client needs to understand why its getting a certain status back.
+
+Judy ACTION: Send mail describing what cases do you want to prevent, try 
+writing a minimal set of rules, or propose language for the spec.
+
+JUDY'S ISSUE #4: SEMANTICS OF BINDINGS
+
+All the parts of this have been addressed except the question whether there
+is any difference between COPY as defined in RFC 2518 and COPY as we define
+it.
+
+Geoff: The semantics are the same.
+
+Jim W: It's worth saying that when you do a copy, don't duplicate all the 
+bindings at the destination.
+
+Geoff: You just create a new resource, and a new binding to it.
+
+Judy: Didn't want to suggest removing anything Jim had included, but just perhaps
+to point out that there is really no change in the semantics, just a change in
+vocabulary.
+

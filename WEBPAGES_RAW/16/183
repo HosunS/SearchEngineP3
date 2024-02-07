@@ -1,0 +1,206 @@
+		"Small" Efficiency Improvement for HashEquivalence
+
+In this lecture we will move away from looking at complexity classes for the
+Equivalence class and focus on various way to improve (the constant for)
+performance.
+
+0) I timed my solution with the standard compress_to_root algorithm for
+   N = 200,000 and merge_factor = 5. I did this five times, with the following
+   results 
+
+   1.51; 1.498; 1.498; 1.482; 1.498 : average = 1.498
+
+   Note that the # of remaining classes was 8-17, and the MaxHeight was 2.
+
+1) Next, I pre-allocated compress_set as private instance variable. In this way
+   its constructor/destructor is called just once -when the Equivalence  is
+   constructed/destructed- and not once each time compress_to_root is called.
+   But note that it must be cleared before return, so that the next time
+   compress_to_root is called it is empty.
+
+   Edits
+     Remove: local compress_set declaration
+     Add   : ics::HashSet<T> compress_set; //in private
+     Add   : ..., compress_set(1,thash)    //in constructor
+     Add   : compress_set.clear();         //at end of compress_to_root
+
+   I timed this compress_to_root algorithm 5 times
+   .936; .936; .952; .936;  .936: average .939 = 62.6% of previous
+
+2) Next, I changed the HashSet to an ArraySet for compress_set, because I
+   expect the set size to be small, and for small sets, the simpler
+   implementation is likely to be faster. You will find the average size of
+   this set in Quiz #8 and see it is small.
+
+   Edits   
+     Add   : #include "array_set.hpp"        //at top; HashSet still used too
+     Change: ics::ArraySet<T> compress_set;  //in private
+     Change: ..., compress_set(5)            //in constructor: preallocate 5
+
+   I timed this compress_to_root algorithm 5 times
+   .515; .499; .484; .514; .499: average .502 = 53.5% of previous
+                                                33.5% of original
+
+3) Next, I changed the ArraySet to an ArrayQueue: all I do with the values is
+   iterate over them and the values are known to not be duplicates, so a set,
+   which checks for duplicates, is wasting time. Note, I left the name as
+   compress_set even though I should rename it compress_queue.
+
+   Edits   
+     Change: #include "array_queue.hpp"				//at top
+     Change: ics::ArrayQueue<T> compress_set;			//in private
+     change: compress_set.insert(a) -> compress_set.enqueue(a)  //compress_to_root
+
+   I timed this compress_to_root algorithm 5 times
+   .530; .515; .546; .530; .530: average .530 = 100.6% of previous
+
+   Although this implementation is slower, we can continue simplifying queues
+   in a way that we could not simplify sets.
+
+4) Next, I replaced the iterator by a loop dequeuing values (and using those
+   dequeued values). Becaue the ArrayQueue is empty after dequeuing all values,
+   I don't have to clear it at the end of compress_to_set.
+
+   Edits   
+   Replace: while (!compress_set.empty())  //last for loop in compress_to_root
+              parent[compress_set.dequeue()] = to_root;
+   Remove: compress_set.clear();
+
+   I timed this compress_to_root algorithm 5 times
+   .453; .468; .452; .452; .468: average .459 = 91.4% of time after 2 (not 3)
+                                                30.6% of original
+
+5) Next, I replaced the Queue by a Stack, whose push/pop operations are
+   simple/faster than enqueue/dequeue
+
+   I timed this compress_to_root algorithm 5 times
+   .453; .453; .452; .437; .437: average .446 = 97.2% of previous
+                                                29.7% of original
+
+6) Next, I removed the compress_set data structure all together, by using
+   two loops on the parent map: once to find the root, once to make each node
+   refer to the root.
+
+   Edits:
+     Remove: #include "array_queue_.hpp" and all references to compress_set
+     Replace body of compress_to_root by the following code
+     
+     ...
+
+   I timed this compress_to_root algorithm 5 times
+   .468; .468; .453; .468; .468: average .465 = 104% of previous
+                                                31.2% of original
+
+   This implementation is slower, so I discarded it and went back to
+   implementation 5.
+
+7) Next, I removed the precondition check in this private helper method: the
+   two public methods compress_to_root is called in (in_same_class and 
+   merge_classes_of) already do this precondition check so it is redundant.
+
+   Edits
+     Remove (or comment out) precondition check
+
+   I timed this compress_to_root algorithm 5 times
+   .421; .421; .436; .406; .405: average .418 = 93.7% of step 5 (not previous)
+                                                27.9% of original
+
+8) Next, I added back the precondition check but replaced the looping code with
+   a simple recursive solution. Note
+
+   Edits
+     Replace: the body with the following code
+
+     ...
+
+   I timed this compress_to_root algorithm 5 times
+   .453; .453; .452; .437; .468: average .453 = 108% of previous
+
+   So, this code is a bit faster than the looping code that included the same
+   precondition check. As you might expect, adding back the precondition check
+   slows down this code, because the recursive call performs the precondition
+   check more than once: it performs it on each recursive call (and recursive
+   calls are guaranteed to pass the tests); see below for a net improvement
+   once the precondition checking code is removed again.
+
+9) Next, I removed the precondition check just as I did in 6. Note that with
+   recursive calls doing this precondition each time, we expect an even better
+   performance improvement, because the precondition check is performed on each
+   (recursive) call.
+
+   Edits
+     Remove (or comment out) precondition check
+
+   I timed this compress_to_root algorithm 5 times
+   .405; .390; .406; .406; .390: average .399 = 95.5% of time after 7 (not 8)
+                                                26.6% of original
+
+   So in this case (once the precondition check is removed) the recursive code
+   runs faster than the iterative code.
+
+10) Next, I used the property of erase (returning its old associated value) in
+   merge_classes_of to simplify the manipulation of root_size map
+
+   Edits
+     Replace (in merge_classes)
+
+     ...
+
+   I timed this compress_to_root algorithm 5 times
+   .490; .406; .406; .390; .390: average .396 = 99.2% of previous
+                                                26.4% of original
+
+11) Next, I used += in the code above to increment the root_size maps, which
+    avoids doing two [] operators for the same root
+
+   Edits
+   Replace (in merge_classes)
+
+     ...
+
+   I timed this compress_to_root algorithm 5 times
+   .390; .390; .390; .390; .390: average .390 = 98.5% of previous
+                                                26.0% of original
+
+12) Finally, I removed the precondition checks in public functions: caution!
+    I will talk in class about checking preconditions a bit more.
+
+   I timed this compress_to_root algorithm 5 times
+   .390; .406; .3390; .406; .390: average .396 = 1.02% of previous
+
+  This is strange, beecause the execution time seemed to go up even though
+  code was removed!
+
+Going back to implementation 11, the code (while still in the same complexity
+class) uses just 26.0% of the time of the original code that I wrote, running
+over 3 times faster. Although we have focused on complexity class analysis of
+code this quarter, there are many interesting tricks (understandable at the
+level of data structures) that we can perform to improve the performance of our
+code. Although recent optimizations didn't gain much efficiency.
+
+As a reminder, using Array_Equivalence would take about 40 minutes to solve the
+problem once (2,370 seconds), which Hash_Equivalence (with the changes made
+here) now solves in .39 seconds.
+
+------------------------------------------------------------------------------
+
+Added Fall 15:
+
+I can think of one other interesting change to make, but it is harder than the
+ones already made, and requires a new data structure. Imagine that we stored
+just one Map (call it lookup): from T -> pointer to a node. Each node would
+contain 3 values: the value for T, a pointer to its parent (another node - or
+the same node for roots), and its size (which is stored everywhere, but is
+relevant only for node representing roots).
+
+Now, to do a compression, we would use the lookup map to find the node, then
+follow the parent pointers up to its root (not using any map to find the root).
+Now, to go from a node to its parent does not require looking in a map: it
+requires only following a pointer. In fact, we would change the parameter of
+the helper method compress_to_root to not take a value of type T, but to take a
+pointer to the node that represents T (using the lookeup map, in the public
+methods that are passed a value for T and then call compress_to_root).
+
+I conjecture that this might cut the time by another reasonable factor (based on
+doing fewer map look-ups: even with maps implemented by hash tables, that is
+much slower than just following a pointer.

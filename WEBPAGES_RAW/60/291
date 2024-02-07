@@ -1,0 +1,189 @@
+Priority Queues
+
+MOTIVATION:
+Dijkstra's algorithm for shortest paths from vertex s in graph G
+
+def Dijkstra(s,G):
+    tentative = dict mapping s->0, others->+infty
+    final = {}
+    while tentative:
+        find vertex v minimizing tentative[v]
+        for each edge v->w:
+            if w not in final:
+                tentative[w] = min(tentative[w], tentative[v]+length(v,w))
+        final[v] = tentative[v]
+        del tentative[v]
+
+What data structure operations are performed?
+(1) store and update tentative and final scores for vertices
+    (here written as dict, could instead be attributes on vertex objs)
+(2) keep data structure maintaining minimum tentative score
+
+data structure mapping objects to values and keeping track of
+minimum values is called a priority queue (or sometimes a heap)
+
+basic priority queue operations:
+- create new priority queue
+- add item to queue (with given value)
+- find smallest item in priority queue
+- remove smallest item in priority queue
+
+unfortunate terminology:
+  priorities are called "keys"
+  opposite meaning to dictionary keys
+
+also used here:
+- change priority of an item already in the queue
+  (here, decrease key / increase priority)
+
+useful in some other applications:
+- remove non-minimal item (could implement change = remove + add)
+- merge priority queues
+
+
+Binary heaps
+- array structure: x[i] >= x[(i-1)//2]
+- tree structure
+- new pq: queue = []
+- add item: append then bubble up
+- find smallest: queue[0]
+- remove smallest: replace with last item then bubble down
+
+Time per add/remove: O(log n)
+
+How to use binary heaps for Dijkstra:
+(1) maintain auxiliary dict mapping vertices to heap locations;
+    update dict when items bubble up or down;
+    decrease_key by changing value then bubbling up
+time = O((m+n) log n), space=O(n)
+
+(2) modify Dijkstra's algorithm so that it doesn't use decrease_key:
+
+def Dijkstra(s,G):
+    tentative = heap containing s with key 0
+    final = {}
+    while tentative:
+        find and remove min object v and key d from tentative
+        if v not in final:
+            for each edge v->w:
+                tentative.add(w, d+length(v,w))
+        final[v] = d
+
+time=O((m+n) log n) again, no extra dict, space goes up
+(each vertex may be in heap many times)
+
+
+
+SURVEY OF ALTERNATIVE HEAP STRUCTURES
+
+Binary heap:
+    add, remove, change key operations O(log n); find min O(1)
+    very little overhead (single array of object-key pairs)
+
+d-ary heap:
+    like binary can be stored in array (condition: x[(i-1)//d] <= x[i])
+    add-item, decrease_key O(log_d n) [fewer steps in bubble up]
+    remove item O(d log_d n) [each bubble down step looks at d children]
+    e.g. in Dijkstra, choose d ~ m/n gives time O(m log_{m/n} n)
+
+leftist heap:
+    unlike binary heap, allows merge operations
+
+    instead of complete binary tree, allow any "leftist" binary tree
+    (represented by nodes with left/right child pointers and height values)
+
+    leftist = at all nodes, left subtree is deeper than right
+	so to find shortest path to null pointer, follow right children
+        (in particular right path has length O(log n))
+    nodes store object-key values, decreasing towards root
+
+    version 1:
+        also store parent pointers per node
+
+	to merge two leftist heaps, follow right paths
+	(giving two sorted sequences of O(log n) values),
+	merge the two sorted sequences to form a single tree,
+	then swap left-right at selected nodes to make leftist again
+
+        to add an item, make a new one-item heap and merge
+
+	to delete an item with nonempty children,
+        replace it with the merge of its two children
+
+	to delete an item with no children,
+	clear the pointer at its parent node and swap children if nec.
+
+        to change a key, delete it and re-add the item
+
+        => all operations O(log n), a little cumbersome
+
+    version 2 (lazy):
+        no parent pointers
+
+	to delete an item, mark it as "deleted"
+	to merge two heaps, make a new parent marked as "deleted"
+	to add an item, make a new one-item heap and merge
+	to change a key, delete the old key and add the new one
+
+        but where is the minimum value?  no longer at root
+
+	to find the minimum, traverse the tree finding
+	paths of deleted nodes from the root, collecting non-del children
+	then use non-lazy meld on all children
+
+        => each op leads to O(1) marks => O(1) later melds
+	so amortized O(log n) per operation
+
+binomial heaps [ch.19]:
+    alternative more complicated mergeable heap
+    all operations O(log n)
+
+Fibonacci heaps [ch.20]:
+    heap allowing insert, delete-min (not arbitrary delete),
+    decrease-key (not arbitrary change-key), merge
+    
+    all operations O(1) time (amortized for decrease-key)
+    except delete O(log n) (amortized)
+    so Dijkstra time becomes O(m + n log n)
+
+    arbitrary delete and change-key could be handled
+    by lazy deletion, O(log n) amortized each
+
+    structure:
+        forest of rooted non-binary trees
+        heap-ordered (key[parent] <= key[self])
+	all degrees <= log n
+
+	represented by nodes with:
+		parent
+		child: arbitrary one of the node's children
+		left, right: doubly linked circular list of siblings
+                (left, right pointers of roots give list of all trees)
+		degree (# of children)
+		mark (boolean, true if lost a child since parent last changed)
+	overall structure is represented by pointer to tree w/smallest root
+	also store total number of nodes in the tree
+
+    insert new item:
+        make it into a new singleton tree
+	add it into the circular list of tree roots
+	change pointer to min root if new item is smaller
+
+    find min item:
+        obvious
+
+    merge two trees:
+        concatenate their list of tree roots
+	set min root pointer to smaller of two min roots
+
+    delete min:
+	turn children of min into roots of new trees
+	group roots by their degrees (e.g. bucket sort)
+	while two roots x and y have the same degree, root(x)<root(y):
+            make y into a child of x and update buckets
+
+    decrease key:
+        remove the item x from its parent's list of children
+	    and make it into a new tree root
+	do the same for the sequence of marked ancestors of x
+	    until finding an unmarked ancestor, which gets marked

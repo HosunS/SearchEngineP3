@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AquaSol: predict aqueous solublity of small molecules using UG-RNN ensembles</title>
+    <meta charset="utf-8"> 
+    <!-- Include JQuery for tabs and UI plugins -->     
+    <script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.unserialize.js"></script>
+    <script type="text/javascript" src="/js/jquery-ui-1.8.16.custom.min.js"></script>    
+    <script type="text/javascript" src="/js/jquery.colorbox-min.js"></script> 
+    <script type="text/javascript" src="/js/chemdb.js"></script>
+    <!-- Include styling -->
+    <link rel="stylesheet" type="text/css" href="/css/chemdb.css" />
+    <link rel="stylesheet" type="text/css" href="/css/colorbox.css" /> 
+    <link type="text/css" href="/css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />
+    
+    <script type="text/javascript" src="../../resource/toolkit.js"></script>
+    <script type="text/javascript">
+    function setAllCheckboxes(obj)
+    {
+    	if ( $(obj).is(':checked') )
+    		$("input[type=checkbox]").attr('checked', true);
+    	else
+    		$("input[type=checkbox]").attr('checked', false);
+    }
+    
+    // Wait until DOM is fully loaded
+    $(document).ready(function(){
+        // Initialize buttons
+        $(".button").button();       
+        
+        // Initialize tabs
+        $("#tabs").tabs();
+        
+        // Initialize checkboxes                
+        $("#checkall").click(function(){    	
+            setAllCheckboxes(this);
+        });
+        $("input[type=checkbox]").attr('checked', true);
+        
+        // Bind function to form submission event
+        $("#AquaSolWeb").submit(function(){        	
+            // Load into results div
+            $(".hide").hide();            
+            var url = $(this).attr("action");
+            var params = $(this).serialize();
+            $.post(url, params, function(data){             
+                $("#results").html($(data).find("#results").contents());
+                $("#results").find("img").addClass("shadow");                
+                $(".hide").show();            
+            });
+            
+            return false;
+        });
+    });
+    </script>
+</head>
+<body onLoad="document.forms[0].smiles.focus(); document.forms[0].smiles.select();" topmargin=0 leftmargin=0>
+<div id="background">           
+    <div id="content">
+        <div id="header">
+            <div id="chemdb-logo"></div>
+            <span>
+                AquaSol: predict aqueous solubility of small molecules using UG-RNN ensembles</br>
+                <a href="/resource/UG-RNN.zip" target="_blank">Link to UG-RNN Source Code</a></br>
+                <a href="http://pubs.acs.org/doi/abs/10.1021/ci400187y" target="_blank">Link to UG-RNN Paper</a> </br>
+                <a href="/resource/UG-RNN-results.zip" target="_blank">Link to UG-RNN Paper Supplemetary Material</a>
+            </span>
+            <div id="top-nav">                
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Tools</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/BabelWeb.py">Babel</a></li>
+                        <li><a href="/cgibin/Mass2Structure.py">Mass2Structure</a></li>                        
+                        <li class="odd"><a href="/cgibin/tools/MolInfoWeb.py">MolInfo</a></li>
+                        <li><a href="/cgibin/MSFragment.py">MSFragment</a></li>
+                        <li class="odd"><a href="/cgibin/PatternCountScreenWeb.py">Pattern Count Screen</a></li>
+                        <li><a href="/cgibin/PatternMatchCounterWeb.py">Pattern Match Counter</a></li>
+                        <li class="odd"><a href="/cgibin/Smi2DepictWeb.py">Smi2Depict</a></li>
+                        <li><a href="/cgibin/reaction/ReactionProcessorWeb.py">Reaction Processor</a></li>
+                        <li class="odd"><a href="/cgibin/tools/AquaSolWeb.py">AquaSol</a></li>
+                    </ul>
+                </div>                                                                          
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Applications</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/ChemicalIndexWeb.py">Chemical Search</a></li>
+                        <li><a href="http://cosmos.igb.uci.edu/">COSMOS</a></li>
+                        <li class="odd"><a href="/cgibin/tutorial/ReactionTutorialSetupWeb.py">Reaction Explorer</a></li>
+                        <li><a href="http://reactions.igb.uci.edu/">Reaction Predictor</a></li>                        
+                        <li class="odd"><a href="/cgibin/reaction/VirtualSpaceWeb.py">Virtual Chemical Space</a></li>
+                    </ul>
+                </div>
+            </div>   
+            <div id="crumbs"><!-- <a class="breadcrumb" href="http://chemdb.ics.uci.edu" target="_top">ChemDB</a>
+ --><a href="/">Home</a> <img class="crumb-arrow" src='/images/arrow.png' /> <a class="breadcrumb" href="#">AquaSol</a></div>
+        </div>
+        
+        <div id="loadingDiv"><img src="/images/loading.gif" /></div>
+        <div id="tabs" class="margin-top">
+            <form id="AquaSolWeb" name="AquaSolWeb" action="AquaSolWeb.py" method=post>
+                <ul>
+                    <li><a href="#tabs-1">Molecule Input</a></li>
+                    
+                </ul>
+                
+                <div id="tabs-1" class="module">
+                    <div class="module">                                                            
+                        
+                        <span class="module-sub-header float-left margin-top">SMILES</span>
+                        <a class="sketch-button float-right" href="../JMEPopupWeb.py?parentForm=AquaSolWeb&smilesField=smiles&JMEPopupWeb=True">Sketch <img src="../../resource/edit.gif" style="border:0; float:none;" alt="Draw structure" /></a>
+                        <input type="text" id="smiles" name="smiles" class="margin-top" style="width:90%" value="">
+                    </div>
+                    
+                    <input type="hidden" name="AquaSolWeb" value="Submit">
+                    <button type="submit" class="search-button float-right margin-top">Predict</button>
+                </div>                                               
+            </form>
+        </div>
+        
+            <div class="ui-widget-header hide">Results</div>                           
+            <div id="results" class="module hide">
+                <div class="module-sub-header module-column-left">Molecule</div> 
+                <div class="module-sub-header module-column-right">Information </div>   
+                            
+            </div>
+            <!--<div class="ui-widget-header">UG-RNN Source Code</div>
+            <a href="/cgibin/resource/UG-RNN.zip">UG-RNN</a>
+            -->
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

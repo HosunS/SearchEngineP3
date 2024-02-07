@@ -1,0 +1,35 @@
+// Test of closest pair algorithms
+// David Eppstein, UC Irvine, 19 Apr 1997
+//
+// Quadtree closest pair algorithm
+// Maintains a quadtree over the distance matrix; closest pair = quadtree root
+//
+// Total space: 16/3 n^2 + O(n) bytes
+// Time per insertion or single distance update: O(Dn)
+// Time per deletion or point update: O(n)
+// Time per closest pair: O(log n)
+
+#include "ClosestPairs.h"
+#include "PointSet.h"
+
+class QuadTreeCP : public ClosestPairs {
+ 	double * distances;
+ 	PointSet * parent_dist;
+ 	QuadTreeCP * parent;
+ 	int * active;
+ 	unsigned long maxpts;
+ 	Distance & dist;
+ 	
+ 	// two halves of UpdatePoint, separate because recursion is a little diff
+ 	void UpdateRow(point);
+ 	void UpdateCol(point);
+
+ public:
+ 	~QuadTreeCP();
+ 	QuadTreeCP(long np, long mp, Distance & d);
+ 	void operator += (point);
+ 	void operator -= (point);
+ 	double operator () (point & a, point & b);
+ 	void UpdatePoint(point);
+ 	void UpdateDistance(point,point);
+};

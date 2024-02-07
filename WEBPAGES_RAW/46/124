@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="generator" content="AsciiDoc 8.6.7">
+<title>Rio: A System Solution for Sharing I/O between Mobile Systems</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+pre {
+  padding: 0;
+  margin: 0;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #777777;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+tt {
+  font-family: monospace;
+  font-size: inherit;
+  color: navy;
+}
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overriden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+.monospaced {
+  font-family: monospace;
+  font-size: inherit;
+  color: navy;
+}
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+
+
+/*
+ * Theme specific overrides of the preceding (asciidoc.css) CSS.
+ *
+ */
+body {
+  font-family: Garamond, Georgia, serif;
+  font-size: 17px;
+  color: #3E4349;
+  line-height: 1.3em;
+}
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Garmond, Georgia, serif;
+  font-weight: normal;
+  border-bottom-width: 0;
+  color: #3E4349;
+}
+div.title, caption.title { color: #596673; font-weight: bold; }
+h1 { font-size: 240%; }
+h2 { font-size: 180%; }
+h3 { font-size: 150%; }
+h4 { font-size: 130%; }
+h5 { font-size: 115%; }
+h6 { font-size: 100%; }
+#header h1 { margin-top: 0; }
+#toc {
+  color: #444444;
+  line-height: 1.5;
+  padding-top: 1.5em;
+}
+#toctitle {
+  font-size: 20px;
+}
+#toc a {
+    border-bottom: 1px dotted #999999;
+    color: #444444 !important;
+    text-decoration: none !important;
+}
+#toc a:hover {
+    border-bottom: 1px solid #6D4100;
+    color: #6D4100 !important;
+    text-decoration: none !important;
+}
+div.toclevel1 { margin-top: 0.2em; font-size: 16px; }
+div.toclevel2 { margin-top: 0.15em; font-size: 14px; }
+em, dt, td.hdlist1 { color: black; }
+strong { color: #3E4349; }
+a { color: #004B6B; text-decoration: none; border-bottom: 1px dotted #004B6B; }
+a:visited { color: #615FA0; border-bottom: 1px dotted #615FA0; }
+a:hover { color: #6D4100; border-bottom: 1px solid #6D4100; }
+div.tableblock > table, table.tableblock { border: 3px solid #E8E8E8; }
+th.tableblock, td.tableblock { border: 1px solid #E8E8E8; }
+ul > li > * { color: #3E4349; }
+pre, tt, .monospaced { font-family: Consolas,Menlo,'Deja Vu Sans Mono','Bitstream Vera Sans Mono',monospace; }
+tt, .monospaced { font-size: 0.9em; color: black;
+}
+div.exampleblock > div.content, div.sidebarblock > div.content, div.listingblock > div.content { border-width: 0 0 0 3px; border-color: #E8E8E8; }
+div.verseblock { border-left-width: 0; margin-left: 3em; }
+div.quoteblock { border-left-width: 3px; margin-left: 0; margin-right: 0;}
+div.admonitionblock td.content { border-left: 3px solid #E8E8E8; }
+@media screen {
+  body {
+    max-width: 50em; /* approximately 80 characters wide */
+    margin-left: 16em;
+  }
+
+  #toc {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 13em;
+    padding: 0.5em;
+    padding-bottom: 1.5em;
+    margin: 0;
+    overflow: auto;
+    border-right: 3px solid #f8f8f8;
+    background-color: white;
+  }
+
+  #toc .toclevel1 {
+    margin-top: 0.5em;
+  }
+
+  #toc .toclevel2 {
+    margin-top: 0.25em;
+    display: list-item;
+    color: #aaaaaa;
+  }
+
+  #toctitle {
+    margin-top: 0.5em;
+  }
+}
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([1-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install(2);
+/*]]>*/
+</script>
+</head>
+<body class="article">
+<div id="header">
+<h1>Rio: A System Solution for Sharing I/O between Mobile Systems</h1>
+<div id="toc">
+  <div id="toctitle">Table of Contents</div>
+  <noscript><p><b>JavaScript must be enabled in your browser to display the table of contents.</b></p></noscript>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>In Unix-like operating systems, everything is abstracted as a file.
+<em>Device files</em> are the files that abstract I/O devices. We have built
+Rio, an I/O sharing solution between mobile systems using device files
+as the boundary. You can find more details on Rio in our MobiSys&#8217;14
+paper:</p></div>
+<div class="paragraph"><p>Ardalan Amiri Sani, Kevin Boos, Min Hong Yun, and Lin Zhong, "Rio: A System
+Solution for Sharing I/O between Mobile Systems," in Proc. ACM MobiSys,
+June 2014.
+(<a href="http://www.ruf.rice.edu/<sub>mobile/publications/amirisani2014mobisys.pdf">PDF</a>)
+(<a href="http://www.ruf.rice.edu/</sub>mobile/rio.html">video demo</a>)</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_people">People</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.owlnet.rice.edu/~ardalan">Ardalan Amiri Sani</a> (Lead Student)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.owlnet.rice.edu/~kevinaboos">Kevin Boos</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://mhyun.web.rice.edu/">Min Hong Yun</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.ruf.rice.edu/~lzhong">Lin Zhong</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_software_overview">1. Software Overview</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Rio comes in 7 repositories.</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+The kernel modules: this repository has the client and server stubs.
+</p>
+</li>
+<li>
+<p>
+The Linux kernel: this is a patched Android Linux kernel that
+includes the required modifications to support Rio.
+</p>
+</li>
+<li>
+<p>
+Android frameworks: these are five modified repositories (mainly I/O
+service and HAL repositories) that are needed for Rio.
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>Our source code is hosted in Github. You can use
+the following instructions to download them. Preferably, download the
+repositories to the locations specified below. This will make it easier
+for you to follow the rest of the instructions and use our scripts.</p></div>
+<div class="paragraph"><p>Download the kernel modules to ~/dfv in your file system.</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>$ git clone -b rio https://github.com/arrdalan/dfv_modules.git</pre>
+</div></div>
+<div class="paragraph"><p>For the rest of the modules, you first need to download the CyanogenMod
+source code. Use the following link to download it for Galaxy Nexus
+(GSM) (codename "maguro"). Note that we have built Rio on CyanogenMod
+version 10.1.3-RC1, so make sure you use the same version. Also, make
+sure you download the CyanogenMod sources to ~/dfv/android_dfv/system.</p></div>
+<div class="paragraph"><p><a href="http://wiki.cyanogenmod.org/w/Maguro_Info">http://wiki.cyanogenmod.org/w/Maguro_Info</a></p></div>
+<div class="paragraph"><p>Now, you need to update 6 repositories of Cyanogenmod with Rio&#8217;s
+updates. You can do that as follows:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre># Update the kernel
+$ cd ~/dfv/android_dfv/system/kernel/samsung/tuna
+$ git remote add dfv_origin https://github.com/arrdalan/dfv_android_tuna_kernel.git
+$ git fetch dfv_origin dfv:dfv
+$ git checkout dfv
+
+# update the frameworks repositories
+$ cd ~/dfv/android_dfv/system/device/samsung/tuna
+$ git remote add dfv_origin https://github.com/arrdalan/dfv_android_tuna_device.git
+$ git fetch dfv_origin dfv:dfv
+$ git checkout dfv
+
+$ cd ~/dfv/android_dfv/system/hardware/ti/omap4xxx
+$ git remote add dfv_origin https://github.com/arrdalan/dfv_android_omap4xxx.git
+$ git fetch dfv_origin dfv:dfv
+$ git checkout dfv
+
+$ cd ~/dfv/android_dfv/system/hardware/invensense
+$ git remote add dfv_origin https://github.com/arrdalan/dfv_android_invensense.git
+$ git fetch dfv_origin dfv:dfv
+$ git checkout dfv
+
+$ cd ~/dfv/android_dfv/system/external/tinyalsa
+$ git remote add dfv_origin https://github.com/arrdalan/dfv_android_tinyalsa.git
+$ git fetch dfv_origin dfv:dfv
+$ git checkout dfv
+
+$ cd ~/dfv/android_dfv/system/frameworks/native
+$ git remote add dfv_origin https://github.com/arrdalan/dfv_android_native.git
+$ git fetch dfv_origin dfv:dfv
+$ git checkout dfv</pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_instructions">2. Instructions</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>In these instructions, we will show you how to set up Rio to share the
+camera, audio devices, and accelerometer between two Galaxy Nexus
+smartphones.</p></div>
+<div class="sect2">
+<h3 id="_compilation">2.1. Compilation:</h3>
+<div class="paragraph"><p>Android:</p></div>
+<div class="paragraph"><p>Follow the instructions in the link in the previous section to compile
+CyanogenMod and install it on both smartphones.</p></div>
+<div class="paragraph"><p>Now, compile the kernel modules as follows:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>$ cd ~/dfv/dfv_modules
+$ source make.sh android</pre>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_setting_up_the_system">2.2. Setting up the system</h3>
+<div class="paragraph"><p>We have developed some scripts that will make
+the process easier for you.
+Download them using the following commands:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre># Note: here is where we want to put the scripts
+$ cd ~/dfv/dfv_modules
+$ git clone -b rio https://github.com/arrdalan/dfv_scripts.git</pre>
+</div></div>
+<div class="sect3">
+<h4 id="_copying_the_files_to_the_smartphones">2.2.1. Copying the files to the smartphones</h4>
+<div class="paragraph"><p>In the server, create a directory at:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>/sdcard/dfv_server</pre>
+</div></div>
+<div class="paragraph"><p>And in the client, create a directory at:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>/sdcard/dfv_client</pre>
+</div></div>
+<div class="paragraph"><p>Then, create two adb aliases in your machine for the smartphones. We
+will use adbs for the server and adbc for the client. You can create the
+aliases by adding the following two lines to your bashrc.</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>alias adbs='adb -s &lt;server smartphone serial number&gt;'
+alias adbc='adb -s &lt;client smartphone serial number&gt;'</pre>
+</div></div>
+<div class="paragraph"><p>Note: you can get the serial number of the smartphones by running</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>$ adb devices</pre>
+</div></div>
+<div class="paragraph"><p>Now, you can use the scripts to push the files to the smartphones using
+the following commands:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>$ cd ~/dfv/dfv_modules/dfv_scripts
+$ source scripts/push_to_android_server.sh
+$ source scripts/push_to_android_client.sh</pre>
+</div></div>
+</div>
+<div class="sect3">
+<h4 id="_loading_the_kernel_modules">2.2.2. Loading the kernel modules</h4>
+<div class="paragraph"><p>The following instructions need to be executed in adb shell. For
+example, to get to the server shell, use:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>$ adbs shell
+# Now, run the following in the adb shell
+$ su</pre>
+</div></div>
+<div class="paragraph"><p>Load the kernel modules in the server using:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre># In server adb shell
+$ cd /sdcard/dfv_server
+$ source load_server_android.sh</pre>
+</div></div>
+<div class="paragraph"><p>Load the kernel modules in the client using:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre># In client adb shell
+$ cd /sdcard/dfv_client
+$ source load_client_android.sh</pre>
+</div></div>
+</div>
+<div class="sect3">
+<h4 id="_using_shared_devices">2.2.3. Using shared devices</h4>
+<div class="paragraph"><p>To use device X (X chosen from the set [accelerometer, audio, camera]),
+run the following commands:</p></div>
+<div class="paragraph"><p>First, enable sharing of that device in the server:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre># In server adb shell
+$ cd /sdcard/dfv_server
+# replace X with your target device chosen from the set above
+$ source enable_X_server_android.sh</pre>
+</div></div>
+<div class="paragraph"><p>Then, enable sharing of that device in the client:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre># In client adb shell
+$ cd /sdcard/dfv_client
+# replace X with your target device chosen from the set above
+$ source enable_X_client_android.sh</pre>
+</div></div>
+<div class="paragraph"><p>Note: Make sure you enable the sharing on the server first.</p></div>
+<div class="paragraph"><p>You can disable sharing using:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre># In client adb shell
+$ cd /sdcard/dfv_client
+# replace X with your target device chosen from the set above
+$ source disable_X_client_android.sh</pre>
+</div></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre># In server adb shell
+$ cd /sdcard/dfv_server
+# replace X with your target device chosen from the set above
+$ source disable_X_server_android.sh</pre>
+</div></div>
+<div class="paragraph"><p>Note: Make sure you disable the sharing on the client first.</p></div>
+<div class="paragraph"><p>Now, the device is shared. Read the usage notes below on how to use the
+shared device.</p></div>
+</div>
+<div class="sect3">
+<h4 id="_usage_notes">2.2.4. Usage notes</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+Test the accelerometer using an accelerometer-based game.
+  Try to align the server with the client before starting to play the
+  game.
+</p>
+</li>
+<li>
+<p>
+For audio, you can play any music on the client. Make sure you start
+  playing the music after you have enabled the audio using the commands
+  above and stop the music before disabling the audio sharing.
+</p>
+</li>
+<li>
+<p>
+Disable all the audio and tones in the server settings. We have
+  noticed that once you use the audio devices locally on the server,
+  sharing the audio with the client will fail. We have not yet looked into
+  the reason for this.
+</p>
+</li>
+<li>
+<p>
+The default audio buffering latency is set to 308 ms, which is
+  large. You can use smaller buffering latencies by writing your target
+  latency to the file /data/local/audio_period_size.txt. For example,
+  for 10 ms latency, use the following commands. You will need to
+  restart the client smartphone for the new latency to be effective.
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre># In client adb shell
+$ echo '10\n' &gt; /data/local/audio_period_size.txt</pre>
+</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+For the camera, we have hardcoded the resolution in the Android
+framework to be 128x96 (in file
+~/dfv/android_dfv/hardware/ti/omap4xxx/camera/CameraHal.cpp in case you
+wanted to change it). This is because we cannot support higher
+resolutions at adequate framerates (see the paper for the actual
+numbers), and camera applications might not allow the user to choose
+such a low resolution.
+
+</p>
+</li>
+<li>
+<p>
+We have noticed that on some client smartphones, it is needed to first
+  launch the camera app locally (not using Rio), otherwise using the
+  server camera through Rio will fail. We have not yet looked into the
+  reason for this.
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_changelog">3. ChangeLog</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+November 2, 2014: version 1.0 is released.
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_supported_features">4. Supported Features</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The released source code only supports a subset of
+functionalities/features reported in the paper. The rest of
+features/functionalities will be supported in future releases as they
+are thoroughly tested. Please see below for
+more details.</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Full virtualization of device file operations, needed to share an
+  I/O device at the device file boundary. The code currently has been
+  tested only for ARM.
+</p>
+</li>
+<li>
+<p>
+Required extensions to Android framework. (Android 4.2.2, CyanogenMod 10.1.3-RC1)
+</p>
+</li>
+<li>
+<p>
+Kernel modules needed for sharing the I/O over socket-based connections.
+</p>
+</li>
+<li>
+<p>
+Required extensions to the Linux kernel. (Kernel 3.0)
+</p>
+</li>
+<li>
+<p>
+Support for the camera, audio devices (speaker and microphone), and
+  sensors. Note 1: the code is only tested for Galaxy Nexus smartphones
+  (GSM) using TI OMAP4 SoC (CyanogenMod codename "maguro").
+  Moreover, it has not been tested for
+  other sensors than accelerometer (e.g., compass and gyro).
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2014-11-03 11:39:23 CST
+</div>
+</div>
+</body>
+</html>

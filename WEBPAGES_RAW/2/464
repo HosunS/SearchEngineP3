@@ -1,0 +1,353 @@
+	Reference Variables in Linked List Processing/Special Linked Lists
+
+
+Introduction (mostly Special Linked Lists):
+
+In this lecture we will first examine the use of references and pointers to
+pointers to learn alternative ways to write some linked list processing code.
+Then we will examine some standard variations to simple linear-linked lists:
+circular, header, trailer, and doubly-linked lists. We will discuss the
+tradeoffs between using these lists and simple linear-linked lists. Standard
+linear-linked lists are used more often than any of these variants, but it is
+interesting to see what tradeoffs the variants allow: Programming Assignment #2
+(and some later programming assignments) will involve these variants.
+
+
+------------------------------------------------------------------------------
+
+References and Pointers to Pointers
+
+Recall that if a parameter is passed by reference, the parameter aliases the
+storage location of the argument. We will draw pictures of aliased arguments by
+having a line (not an arrow, arrows are for pointers) lead from the parameter
+to the argument (the parameter will not have its own box, it will just show the
+arrowless line connecting it to the box it aliases). In the code, whenever we
+examine/change a reference parameter we are really examining/changing the
+argument passed to it. The parameter is bound automatically to the address of
+the argument and examined/stored by automatic dereferencing the address.
+
+Note that we often see "const T&" as the mode/type of a parameter: that
+provides a fast way to do the equivalent of parameter mode/type "T": access an
+argument of type T and do not change it: for large chunks of data & is faster
+because it passes the address of T; it doesn't copy all the values in T (but
+the const ensures the reference is not used to change T or any part of T). So
+this mode is fast and safe. For passing "small" types (like int), both take the
+same amount of time, but accessing a value through an address (indirectly) is a
+bit slower. So, there are efficiency tradeoffs.
+
+We can use references to simplify code for the functions that change linked
+lists (e.g., adding/removing values): by writing void functions that do not have
+to return a value. Here are the standard void add_front, add_rear, and
+remove_lookahead functions, where the pointer to the begining of the linked
+list is passed by reference (and not const). We read the mode/type
+specification right to left: "LN<T>*& l" means "l is a reference to a pointer
+to an LN object instantiated with values of type T".
+
+In all these cases, we call these functions like: add_front(x,some_value); they
+do not return a result but instead change either x's state (by the reference
+mode parameter) or the state of some LN in the linked list x points to. The
+only changes to the code from the original functions that we studied are that
+the parameter l may be changed (meaning the argument matching l may be changed),
+and that no value is returned.
+
+template<class T>
+void add_front(LN<T>*& l, const T& value) {
+  l = new LN<T>(value,l);
+}
+
+template<class T>
+void add_rear(LN<T>*& l, cont T& value) {
+  if (l == nullptr)
+    l = new LN<T>(value); //Default argument for 2nd parameter is nullptr
+  else {
+    for (LN<T>* p = l; /*see body for termination*/; p = p->next)
+      if (p->next == nullptr) {
+        p->next = new LN<T>(value);
+        break;
+      }
+  }
+}
+
+template<class T>
+void remove_lookahead (LN<T>*& l, const T& to_remove) {
+  if (l == nullptr)
+    return;
+
+  if(l->value == to_remove) {
+    LN<T>* to_delete = l;
+    l = l->next;
+    delete to_delete;
+  }else{
+    for (LN<T>* p = l; p->next != nullptr; p = p->next)
+      if (p->next->value == to_remove) {
+        LN<T>* to_delete = p->next;
+        p->next = p->next->next;
+        delete to_delete;
+        break;
+      }
+  }
+}
+
+Examine the first picture accompanying this lecture note. It illustrates how
+add_rear(x,...); works when x is nullptr (on the left) and when x points to a
+linked list (on the right). Again, do some hand simulations to better
+understand how the reference parameter l is used in the code, following the
+rules and graphics for reference parameters.
+
+Finally, we can get some leverage from using pointers to pointers in our code,
+although the complexity and extra execution overhead can be high. The following
+function removes a value from a list. It uses p to point to a pointer and uses
+a small amount of (complicated) code to remove the first LN containing
+to_remove from the list.
+
+In a call remove_ptp(x,5) it starts with p pointing to the storage occupied by
+the variable x. Here is the first example of a pointer that does NOT point to
+an object, but instead points to a storage location that points to an object:
+p will first point to x's storage, and then p will point to the storage of next
+instance variables in the LN (list node) objects in the linked list.
+
+In this code, p traverses the linked list until p points to a storage location
+(the "x" variable or the "next" instance variable in some LN object) such that
+(*p)->value equals to_remove: in this case the code updates the variable p
+points to; it stores a pointer to the LN beyond the first one storing to_remove.
+
+By using a pointer to a pointer we don't need to use either lookahead or ghost
+pointers, but the extra indirection of p pointing to a variable containing a
+pointer makes the code complicated to understand and less efficient to execute.
+
+You should still try hand simulating it using pictures, but I consider
+understanding this code a bit beyond what is required for this course.
+
+template<class T>
+void remove_ptp (LN<T>*& l, T to_remove) {
+  for (LN<T>** p =&l; (*p) != nullptr; p = &((*p)->next))
+    if ((*p)->value == to_remove) {
+      LN<T>* to_delete = *p;
+      (*p) = (*p)->next;
+      delete to_delete;
+      break;
+    }
+}
+
+------------------------------------------------------------------------------
+
+Circular Linked Lists:
+
+A circular linked list is a linked list whose rear LN points to its front LN
+(so nullptr does not mark the end of the list). It becomes a bit arbitrary to
+speak of a front and rear when these LN nodes are arranged in a circle. A
+circular list may be empty, but if there are LN nodes, none of them have a next
+instance variable storing nullptr. See the pictures of simple circular linked
+lists. The one LN version is especially interesting because its next instance
+variable points to itself (since its single node is both its front and rear).
+
+Here is code to print a circular linked listing by printing the first node,
+the second, ...., the last, and then literally "..." to show the nodes continue
+in a circle.
+
+template<class T>
+
+void print(LN<T>* cl) {
+  if (cl == nullptr) {
+     std::cout << "nullptr";
+     return;
+  }
+
+  std::cout << cl->value;
+  for (LN<T>* p = cl->next; p != cl; p = p->next)
+    std::cout << "->" << p->value;
+  std::cout << "..."
+
+There are a few applications for circular lists. One allows us to represent
+and efficiently process a queue by having a single pointer to the "rear"
+value in the queue (instead of one to the front and one to the rear). Note that
+in a circular list, the node one beyond the rear is the front, so both the
+front and rear nodes in a queue are easily reached from the rear node: all
+"action" in a queue is at the front (remove) or rear (add). If we pointed to the
+front node, there could be an arbitrary number of nodes between it and the rear
+node, so it would take lots of time to reach the rear node from the front; but
+it takes only one operation to reach the front node from the rear. So it isn't
+intuitive, but pointing to the rear node is the right node to point to.
+
+If rear points to the last node an a queue represented by a circular list,
+here is code to add to the rear of the queue (enqueue). Draw a picture of an
+empty list, a circular list with one node, and a circular list with 3-5 nodes
+and simulate this code on those lists to see that it is correct.
+
+  if (rear != nullptr)
+    rear = rear->next = new LN<int>(some_value,rear->next);//rear->next is front
+  else
+    rear = new LN(some_value);       //Make it a 1 node circular list, pointing
+    rear->next = rear;               //  to itself; cannot do in 1 statement
+  }
+    
+If rear points to the last node in a queue represented by a circular list,
+here is code to remove the front of the queue. Draw a picture of an empty
+list, a circular list with one node, and a circular list with 3-5 nodes and
+simulate this code on those lists to see that it is correct.
+
+  if (rear != nullptr) {
+    int front_value = rear->next->value;  //Front is after rear (even if same)
+    if (rear->next == rear)               //Just 1 node in the list?
+      rear = nullptr; 			  //Yes, make empty list
+    else
+      rear->next = rear->next->next;      //No,  rear->next refers to new front
+  }   		   			  //     the one current after front 
+
+For simplicity, this code does not delete the removed LN.
+
+If we had to represent a huge number of queues, most of which are empty,
+using a class that stored one pointer to the rear of a circular linked list
+will save space when compared to using a class that stores two pointers to the
+front and rear of a linear-linked list.
+
+
+------------------------------------------------------------------------------
+
+Header Linked Lists:
+
+A header linked list is a linked list that always contains a special header
+node; an empty header list contains just this one node. The header node stores
+no data (in its value); this node exists solely to simplify code that processes
+linked lists by ensuring that every "real" node in the linked list is preceded
+(is pointed to) by some node. This guarantee allows us to never have to change
+what front points to (it always refers to the header) and therefore we do not
+need any special-case code to handle this (now impossible) option, or reference
+parameters, or pointers to pointers (the other ways to simplify this code).
+
+For example, I wrote the following code for adding a value v to the rear of a
+linked list (which also caches a pointer to the rear LN)
+
+    if (front == nullptr)
+       front = rear = new LN<int>(v);
+    else
+       rear = rear->next = new LN<int>(v);
+
+If the linked list were a header list, an empty list would have a front and
+rear: would both point to the header node (whose ->next is set to nullptr in the
+constructor). We could simplify the codeabove to the following single line of
+code (because front would never store a nullptr)
+
+    rear = rear->next = new LN<int>(e);
+
+In a header list, one never changes front: it always refers to the header.
+So every "real" node that we manipulate in the list is guaranteed to have a
+previous node pointing to it (via its next instance variable). This guarantee
+often simplifies the code for adding and removing nodes (see the example above),
+although some other operations (like traversal) might be more complicated,
+because we must remember to skip the header node. 
+
+
+------------------------------------------------------------------------------
+
+Trailer Linked Lists:
+
+A trailer linked list is a linked list that always contains a special trailer
+node; an empty trailer list contains just this one node. As with a header node,
+this node stores no data in its value; this node exists solely to simplify
+code that processes linked lists by ensuring that every "real" node in the
+linked list is followed by a node. In "trailer lists", every list has a special
+(valueless) trailer node at the end. So, an "emtpy trailer list" would have one
+list node in it. All "real" nodes in the list come before the trailer. By using
+a trailer node, we can remove a node that we have a pointer to, without
+needing a pointer to the node before it!
+
+I'll show this "trick" in class; hand simulate the following code again to see
+how it works (do it with p pointing to the first, last and middle node in a
+trailer list). Note that the "last" node IN a trailer list is the one before
+the trailer node. This code works correctly only if the node p points to is
+always followed by another node (which is guaranteed for a trailer list; and p
+-the node to be removed- must never point to the trailer itself).
+
+    LN<T>* to_delete = p->next;
+    p->value = to_delete->value;
+    p->next  = to_delete->next;
+    delete to_delete;
+
+in fact, in C++ we can collapse the inner two statements into
+   *p = *to_delete;
+
+The statement *p = *to_delete copies both the instance variables in the LN
+to_delete points to into the LN p points to.
+
+Sometimes it is useful to combine header and trailer nodes into one list,
+allowing all simple methods (both those simple for header lists and those
+simple for trailer list) to be written simply. The next picture illustrates an
+empty header/trailer list and one containing three int values.
+
+
+------------------------------------------------------------------------------
+
+Doubly-Linked Lists:
+
+A doubly-linked list is a non-linear linked list: it contains pointers both to
+the node that comes before (prev) and after (next) it in the linked list. We
+would define such a doubly-linked node (DLN) as
+
+template<class T>
+class DLN {
+  public:
+    LN ()
+      : prev(nullptr), next(nullptr){}
+    LN (const DLN<T>& dln)
+      : value(dln.value), prev(dln.prev), next(dln.next){}
+    LN (T v, DLN<T>*p = nullptr, DLN<T>* n = nullptr)
+      : value(v), prev(p), next(n){}
+
+    T       value;
+    DLN<T>* prev;
+    DLN<T>* next;
+};
+
+Given this definition, we can traverse a doubly-linked list in either direction:
+we can reach any node from any other node. The cost for this flexibility is an
+increase in the space needed to store a doubly-linked list: twice as many
+pointers in each node (2 instead of 1) and the requirement to change twice as
+many pointers when we mutate the list, e.g., when adding/removing values in
+nodes.
+
+For example, when we add a node to a doubly-linked list, we need to make
+the next variable of the one before it refer to the new node, and the prev
+variable of the one after it refer to the new node. And in the new node itself,
+we need to set its prev variable as well as its next instance variable.
+
+The following method illustrates how to remove a node from a doubly-linked list.
+Assume DLN<T>* node_to_remove;
+  
+    if (node_to_remove->prev == nullptr) // or (front == node_to_remove)
+       front = node_to_remove->next;
+     else
+       node_to_remove->prev->next = node_to_remove->next;
+
+     if (node_to_remove->next != nullptr)
+       node_to_remove->next->prev = node_to_remove->prev;
+
+If the node added is at the front or rear of a doubly-linked list, there are
+all sorts of special cases to handle. By having both a header and a trailer
+node in a doubly-linked list, we can simplify this code and remove all the
+special cases. For example, in a doubly-linked lists with header and trailer
+nodes, we can simplify the remove code above to
+
+     node_to_remove->prev->next = node_to_remove->next;
+     node_to_remove->next->prev = node_to_remove->prev;
+
+But now, even an empty list has two nodes: the header and trailer, linked to
+each other.
+
+Note that node_to_remove->prev with a header node will never be nullptr, and
+likewise node_to_remove->next with a trailer node will never be nullptr. But, to
+create an empty doubly-linked header/trailer list requires the following code:
+
+  front = new DLN<int>()
+  front->next = new DLN<int>();
+  front->next->prev = front;
+
+which is a bit convoluted.
+
+
+The overhead and extra complexity of these special linked lists make them more
+cumbersome to use than simple linear linked lists, but sometimes we require
+their extra functionality.
+
+Probably trailer lists are the most practical of all these special lists, and
+we will use them in some part of out programming assignments.

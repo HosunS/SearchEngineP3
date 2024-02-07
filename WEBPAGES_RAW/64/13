@@ -1,0 +1,177 @@
+<HTML>
+<HEAD>
+<TITLE>
+ICS 180, April 15, 1997</TITLE>
+<META name="Owner" value="eppstein">
+<META name="Reply-To" value="eppstein@ics.uci.edu">
+</HEAD><BODY>
+<IMG SRC="icslogo2.gif" WIDTH=472 HEIGHT=72 ALT=""><P>
+<A HREF="index.html">
+<H1>ICS 180A, Spring 1997:<BR>
+Strategy and board game programming</H1></A>
+
+<H2>Lecture notes for April 15, 1997<BR>
+Tuning the evaluation function</H2>
+
+<P>
+Last time I talked about the different types of functions that evaluate 
+features in a position, and how to combine them into an evaluation 
+function by adding the values of many such functions.  But, where do the 
+numbers come from?
+
+<P>
+E.g., in Othello, you might have say four functions:
+<PRE>
+f(pos) = material (# of my pieces - # of opponent pieces)
+g(pos) = corners (# I control - # opponent controls)
+h(pos) = mobility (# moves I have available)
+</PRE>
+You want to form an evaluation function by combining these (probably with 
+some other terms): eval = a f + b g + c h.  For instance, you might try 
+eval = -1*f + 10*g + 1*h.  But where do these numbers come from?  What 
+combination of numbers gives the best performance?
+
+<P>
+There are various methods for finding numbers by hand:
+
+<UL>
+<P><LI><B>Normalize</B>. Since you only care about the ordering of 
+evaluations, and (usually) not the actual evaluation values, you can 
+multiply everything by the same constant without changing the results.
+What this means is that you can choose some particular value
+(say the material value of a pawn) and force it to be one, so that all the 
+other values are expressed in terms of how many pawns that value is worth.
+The net effect is that you have one fewer parameter that needs setting.
+
+<P><LI><B>Deduce constraints</B>. Sometimes it is possible to choose some 
+of the parameters by considering what you want the machine to do in 
+certain types of positions. For instance, in chess, it is usually bad to 
+trade a rook for a bishop or knight, even if you also end up winning a 
+single pawn, but good if you win two pawns, so the material values should satisfy 
+R&gt;B+P (to prevent the single-pawn trade) and R&lt;B+2P (to encourage 
+the double-pawn trade). The more of these inequalities you have, the 
+smaller the set of weights that satisfy them.
+This can sometimes help get to a reasonable 
+starting approximation for the evaluation weights, but you probably still 
+need to do some adjustment afterwards.
+
+<P><LI><B>Hand tweaking</B>. Most commonly used. Simply play your program enough 
+times to get an idea of its strengths and weaknesses, guess which 
+parameters would improve those the best, and pick new values for the 
+parameters. Produces a reasonable answer 
+quickly. Requires that you understand the game well enough to play 
+reasonable games against the computer and analyze what it does wrong
+(i.e. best when the computer is stupid and you are intelligent).
+</UL>
+
+... and without human intervention (much of this should be review from 171, 
+for those students who've taken 171 already; you probably won't have time to do 
+much more than hand-tweaking):
+
+<UL>
+<P><LI><B>Hill-climbing</B> is like hand-tweaking: make 
+a small change to the weights, test out performance of that change, keep 
+the change only if performance improves, repeat many times.
+Tends to be slow, get stuck in "local optima" in which eval weights are bad 
+but any change makes them even worse.
+
+<P><LI><B>Simulated annealing</B>. Like hill-climbing, makes small changes 
+to eval and keeps changes that improve performance. But if change doesn't 
+improve performance, sometimes (randomly, with a certain probability) 
+accepts the change anyway, in an attempt to escape local optima. Need to 
+specify these probabilities; they should start high and gradually become 
+lower.  Even slower than hill-climbing but eventually can get good values.
+
+<P><LI><B>Genetic algorithms</B>. Hill-climbing and simulated annealing 
+maintain one good set of weights, which they change gradually.  Instead, 
+genetic algorithms maintain a collection of several different good sets of 
+weights, add new sets to the collection by combining pairs of existing ones 
+(take some weights from one and some from another, with a little mutation 
+as well), and keep the size of the collection down by killing off sets of 
+weights with bad performance.
+
+<P><LI><B>Neural networks</B>. Really, this is more a type of evaluation 
+function than a method for choosing weights: a neuron is a function of the 
+form threshhold(weighted sum of inputs), and one can form networks in which the 
+neurons in the first layer take as inputs some basic features of the 
+position (e.g. the individual bits of a bitboard representation) and 
+successive layers take as inputs the neurons from the previous layer.
+So a one-layer network with only one-input neurons is the same as the 
+first-order evaluation functions we talked about last time, but it's 
+straightforward to build much more complicated neural networks, and 
+it's not hard to use such a thing as the evaluation function (just 
+recompute the outputs of neurons with changed inputs).  The question is as 
+before, how to set the weights?  Along with the other methods above, there 
+are some that have been developed specifically for neural networks, such 
+as "temporal difference learning". The basic idea is to decide when the 
+network makes a bad decision, and determine for each weight separately whether 
+changing it up or down would lead to a better decision, so it's a lot like 
+hill-climbing.  One advantage of neural nets is they need even less human 
+intelligence than the other automatic learning methods: you don't even 
+really need to understand the game well enough to program a decent 
+evaluation function. However, in the time available to us (a few weeks), 
+you'll get good results faster by being more intelligent yourselves and 
+leaving less of the work to the machines.
+</UL>
+
+All of these methods require some method of automatically evaluating the 
+performance of a program.
+
+<UL>
+<P><LI>We can run the program on a large suite of test positions (say, 
+taken from high-quality human games) and see if it gets the right answers. 
+
+<P><LI>We can play the program against some known opponent (say another 
+program) and see how often it wins. Or, we can play the program against itself, or against other versions of 
+itself; e.g. in hill-climbing the modified program can play against the 
+unmodified one. Both of these have the disadvantage that, unless there is 
+some randomness in the system, both programs will play exactly the same 
+each time, so you only get to see the results of one game which may not be 
+representative of overall play.  One possible way around this would be to 
+start playing several different games at positions taken from some test 
+suite.
+
+<P><LI>We can compare the results of the evaluation function with the 
+results of combining evaluation and search. If the eval is good, they 
+should be similar, but is vice versa true?
+</UL>
+
+What has actually been done in automatically learning evaluation weights?
+A good source for this is Jay Scott's
+"<A HREF="http://satirist.org/learn-game/">machine learning in
+games</A>" web page. He lists two experiments that I think are
+particularly interesting:
+
+<UL>
+<P><LI>John Stanback (well-known as a commercial chess programmer) tried 
+using a genetic algorithm to set the weights in the evaluation function of 
+his program Zarkov.  He only ran 2000-3000 games, which I think is way too 
+few, and got material values that were ok but still worse than hand-tuned 
+values. I think the lesson is that genetic algorithms do work, but need 
+either a lot of generations or a good initial set of weights.
+
+<P><LI>Risto Miikkulainen, genetic algorithms researcher at U. Texas, gave 
+a talk last year on some experiments he'd done with Othello. He used a 
+genetic algorithm to tune the weights in a neural net evaluation function.
+Performance evaluation of a net was done by play against a fixed opponent.
+If the fixed opponent played randomly, the neural net learned an evaluation
+in the form of piece-square 
+tables (pieces in corners are good, pieces next to corners are bad, etc) 
+after which it won all the time and stopped learning.
+Against an opponent combining piece-square tables with a short search,
+it eventually (after weeks of computer 
+time) learned a better mobility-based strategy.  But if its opponent was 
+already a sophisticated mobility-based program, it lost all the time and 
+never started learning.  I think the lesson is to play against programs of 
+similar strength, for instance to compare different evaluations in the 
+genetic algorithm's current collection by playing them against each other, 
+or alternatively to play against several fixed opponents of different 
+strengths.
+</UL>
+
+<HR>
+<A HREF="/~eppstein/">David Eppstein,
+<A HREF="/">Dept. Information & Computer Science</A>,
+<A HREF="http://www.uci.edu/">UC Irvine</A>,
+<!--#flastmod file="970415.html" -->.
+</BODY></HTML>

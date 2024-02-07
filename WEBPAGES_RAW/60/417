@@ -1,0 +1,139 @@
+Minutes of the WebDAV WG Meeting at IETF-42
+
+The WebDAV working group held a meeting at the Chicago IETF on
+Thursday, August 27, 1998, from 1PM to 3PM.  There were 55 people in
+attendance.  The meeting was chaired by Jim Whitehead, and minutes
+were taken by John Stracke, Stephen Martin, and Jim Davis.
+
+Jim Davis presented on the Advanced Collections requirements document;
+his slides are available at:
+
+<http://www.ics.uci.edu/pub/ietf/webdav/chicago/ietf42acr.html>
+
+The Advanced Collections requirements document is currently in WG Last
+Call.  There were several issues raised concerning these requirements:
+
+* There may be a requirement to be able to create a reference where the
+  owner designates the destination as not visible.
+
+* Should there be a choice about whether deleting the target of a direct 
+  reference also deletes all (direct) references.
+
+* Should access control of references be distinct from those of the target.
+
+* Should the owner of a resource should be able to prevent creation of
+  references to it using access control facilities?  This would affect
+  requirements for access control, not advanced collections.
+
+* Is there a need for references that pass some but not all operations.
+
+* The documents need to be more clear on whether a reference is to a
+  resources or to a URI.  Furthermore, the language defining a member 
+  of a collection is not very precise in describing what a member is 
+  (Resource vs URI).
+
+Jim Davis next presented on the Advanced Collections protocol document.
+Some modifications to the protocol were discussed:
+
+* Add a new property dav:references, which provides backpointers from
+  a target to all resources that refer to it.
+
+* Redefine DAV's semantics for MOVE to insert a step between the COPY
+  and the DELETE.  This inserted step, called UPDATE, updates any
+  references to the resource, if possible, changing the ref-target
+  property to reflect the new location.  This resolves a conceptual issue
+  of when referential updates are performed when MOVE is defined as a
+  COPY (which doesn't update references), followed by a DELETE.
+
+* Remove the "dav:passthrough" property, instead, just define a
+  dav:reftype property which takes either dav:direct or dav:indirect 
+  values. The rationale for this change is the dav:passthrough 
+  property would have allowed client to create paradoxical references, 
+  e.g. ones which pass through GET but not HEAD. For a useful direct 
+  reference, there seems to be only one sensible set of values for 
+  what should be passed through, and what not, namely:
+
+  affect target:
+   GET, HEAD, PUT, POST, PROPFIND, PROPPATCH
+  affect reference:
+   DELREF, DELETE, COPY, or MOVE
+
+  except that the returned headers from GET and HEAD include extra
+  headers (Ref-Type and Ref-Target) added by the reference itself,
+  which thus allow the client to discover that the reference is a
+  reference.
+
+* A question was raised concerning whether a direct reference can point 
+  to a direct ref?  Yes.  All the Ref-Type and Ref-Target headers are 
+  returned.  This is sufficient for the client to determine where the 
+  reference points to.
+
+* Since the DELETE method deletes a reference no matter what type, there
+  is no need for the special DELREF method.
+
+The ordered collections part of the document was skipped because Jim
+Davis ran out of time.  However, ordered collections were discussed at
+a breakout session on the Advanced Collections Protocol, held in the
+afternoon on Wednesday, August 26.  Issues raised at this meeting
+concerning ordered collections:
+
+* The LOCK method must also take headers for assigning initial
+  position in ordering, because a LOCK on a non-existent resource
+  creates (at least temporarily) a new member of a collection.
+
+* Rename the dav:arbitary ordering value to dav:custom.
+
+  Some feel that the name dav:custom better reflects the meaning of a
+  collection that is ordered, but where the ordering is ad-hoc and
+  known only to a human.
+
+  It allows for four possible conditions of ordering
+   1) Not supported on server.  No orderingtype property.
+   2) Supported, but this collection is not ordered.  dav:unordered
+   3) dav:custom
+   4) Some other URL
+
+* Allowing the ORDERPATCH method to modify the position of more than one
+  resource at a time was discussed.  Though objections to this were raised 
+  at the Redmond meeting, noone at the breakout session could remember the
+  rationale for this objection.
+
+Lisa Dusseault Lippert presented on Access Control Goals, and her
+slides are available at:
+
+<http://www.ics.uci.edu/pub/ietf/webdav/chicago/access_control/>
+
+Some discussion over the scope of this protocol: are we creating a
+mechanism to manage underlying, pre-existing ACLs, or are we creating
+a mechanism to manage DAV-specific ACLs? Consensus seems to be that
+the latter is the case.
+
+Issues raised during the presentation are:
+
+* Should ACLs apply to properties, and should properties have access rights
+  scoped to an individual property.
+
+* Requirements should mention where and when the WebDAV access control
+  facility relates to access control faclilies of other protocols.
+
+* It should be a goal of the protocol to have a simple interitance
+  mechanism. Dynamic vs static may not be necessary.
+
+Chris Kaler presented results from the Raleigh meeting of the
+Versioning and Variant Authoring design team.  His slides are
+available online at:
+
+<http://www.ics.uci.edu/pub/ietf/webdav/chicago/versioning/>
+
+There was some discussion over why/whether versioning needs to support 
+downlevel clients.
+
+Jim Whitehead opened discussion on whether we need to do configuration
+management or not.  Previously the WG said no; the versioning design
+team feels that versioning without CM wouldn't be too useful, so we
+should do something simple, at least.  Consensus seemed to be that CM
+is going to be necessary for many customers, but a burden for some
+others, so we should aim for a versioning protocol that can subset to
+leave out the CM.
+
+*** Meeting Adjourned ***

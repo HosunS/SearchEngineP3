@@ -1,0 +1,30 @@
+% magic square problem
+
+include "alldifferent.mzn";
+
+int: n = 3;
+
+array[1..n,1..n] of var 1..(n*n): square;
+
+%int: sum_val = n*(n*n+1) div 2;
+var 1..(n*n+(n*n-1)+(n*n)-2) : sum_val;
+
+constraint
+alldifferent(r,c in 1..n) (square[r,c])
+/\
+forall (c in 1..n) (sum (r in 1..n) (square[r,c]) = sum_val)
+/\
+forall (r in 1..n) (sum (c in 1..n) (square[r,c]) = sum_val)
+/\
+sum (i in 1..n) (square[i,i]) = sum_val
+/\
+sum (i in 1..n) (square[i,n+1-i]) = sum_val;
+
+solve satisfy;
+
+output ["Magic constant: ", show(sum_val), "\n"] ++
+[
+  show(square[r,c]) ++ "\t" ++
+  if c=n then "\n" else " " endif
+  | r,c in 1..n
+];

@@ -1,0 +1,229 @@
+<HTML>
+<head>
+<title>  Inheritance </title>
+<H1> Inheritance </H1>
+ Goals: increase reusability, reliability and comprehensibility.
+<h3> Relationships between classes</h3>
+ <ul>
+   <li> One class may <b> use </b> another class.
+   <li> One class may  <b> contain </b> another class. (Has-a)
+   <li> One class may <b> inherit </b> from another class. (is-a)
+   <li> Pay attention to the relationships between classes.
+ </ul>
+<h3> Inheritance </h3>
+<li> Old method: code copying.
+<li> New method: Classes with inheritance.
+<li> You can inherited methods and data.
+<li> Inheritance permits minor variation and sharing.
+<li> Polymorphism permits determination of which
+    function to execute at run-time, decided by object type.
+<li> Java supports single-inheritance, ie. you can inheritance
+   hierarchy from a tree and each object is a member of only
+  one tree. An argument for this is simplicity.
+<li> A limited form of multiple inheritance is achieved with interfaces,
+   which is the next topic.
+</ul>
+
+  <h3> Inheritance Example  </h3>
+    <pre> public class NormedComplex
+             extends Complex         // the inheritance 
+     {
+        private double norm;
+        
+         NormedComplex(double x, double y)
+        {
+           super(x,y);    // if this is not here, super() is assumed.
+                          // if super() not defined, compiler error.
+           norm = x*x-y*y;
+        }
+        NormedComplex()
+        {
+          this(0,0);     // No call to super() as "this" will call super.
+        } 
+       
+        public void normalize()
+        {
+          setReal(getReal()/norm);            // getReal is inherited
+          setComplex(getImaginary()/norm);
+        }
+       ....
+      }
+
+</pre>  
+<h3> Shadowing/Overriding </h3>
+ <ul>
+  <li>  Super can be used to access data member and member functions of the
+ superclass (the one which was extended). 
+ <li> In the subclass, one can use the same variable name or method name
+   as in the superclass.
+     This <em>shadows </em> (hides) the inherited value. To get the inherited
+     value use super.x. 
+ <li> One can also shadow methods, which is called <em>overriding </em>.
+      Again to get the inherited method, use super.method(...).
+  <li> You cannot go up more than one level, by using super.super....
+  <li> You can prevent shadowing/overriding by declaring the member
+   to be final. It is common to declare constants to be final.
+  <li> You cannot increase the accessibility in subclasses.
+ </ul>
+
+
+ <h3> Casting </h3>
+  <ul>
+   <li> Casting converts an instance of one type  to another type, via
+      the prefix operator (type).
+   <li> Casting can be explicit or implicit.
+   <li> Examples of implicit casting:
+      <ul>
+         <li>  3+4.2    Here 3 is cast from integer to float.
+         <li>  "sam"+3  Here 3 is cast from integer to String.
+       </ul>
+   <li> Implicit casting is also called upcasting or widening,
+       as the object gains additional fields, usually set to
+     some default value.
+    <li>  Explicit casting typical narrows or removes fields, which
+    is called downcasting.
+    This can be dangerous as information maybe lost. For example:
+       <pre>
+         int i = 1000;
+         byte b = (byte) i;       
+      </pre>
+    If you are sure of the range of variable's value, casting may not
+   hurt, as in:
+
+      <pre>
+          int i  = 4;
+          byte b = (int)4;
+      </pre>  
+       
+    <li>
+     A typical use of casting occurs when retrieving elements
+    from some container, such as a Vector. 
+    <pre>
+       Vector v = new Vector();
+       v.addElement(Complex c = new Complex(3,4));   // c is upcast to object
+       Complex c1 = v.getElementAt(0);   // This is an error, instead use
+       Complex c1 = (Complex) v.getElementAt(0);  // downcasting
+    </pre>
+    Notice that in Java Vectors are unsafe as Vectors (and other containers)
+   only hold Objects. Without undue cost, you can't enforce a Vector
+   of a particular type. Here Java is not as strongly typed as C++ is,
+which would accomplish the task via templates.
+   
+   </ul>
+
+  <h3> Abstract Classes </h3>
+  <ul>
+    <li> An <em> abstract </em> method consists of the signature followed by 
+      a semicolon, e.g.  double area();
+    <li> An abstract method is used to set up a promise or contract that
+      every concrete subclass will implement the abstract method.
+  <li> A class is <em>abstract </em>
+      if it has at least one  method without an implementation or
+       if it is declared abstract.
+   <li> A class that contains an abstract method must be declared
+       abstract.
+    <li> You cannot instantiated (have an instance of) an abstract class.
+     <li> Subclasses of an abstract class may be abstract.
+     <li> Subclasses of a concrete class can be abstract.
+     <li> If a subclass overrides all the abstract methods, then it
+       can be instantiated.
+
+  </ul>
+
+ <h3> Polymorphism Example </h3>
+<pre>
+  abstract class Shape  //  can't be instantiated
+  {
+    double  area();  // notice prototype
+    double perimeter();
+  }
+  class Rectangle extends Shape 
+   {                            
+     double length, width;
+     Rectangle(double length , double width)
+      { 
+        this.length = length;
+        this.width = width;
+      }
+     double area()
+    {
+      return length*width;
+    }
+     double perimeter()
+     {
+      return 2*length + 2*width;
+      }
+    }
+  class Square extends Rectangle 
+     {
+        square(double side)
+       {
+          super(side,side);
+       }
+     }
+ class Circle extends Shape
+
+   {
+     double radius;
+     circle(double radius)
+     {
+       this.radius = radius;
+     }
+    double area()
+   {
+     return Math.PI*radius*radius;
+   }
+   double perimeter()
+  {
+    return Math.PI*diameter(); // you don't worry about order of declaration
+  }
+  double diameter()
+  {
+    return 2*radius;
+ }
+</pre>
+<h3> Polymorphism Example 2 </h3>
+ Suppose we have graphical objects like buttons, scrollbars,
+textfields, canvas, radio buttons and the like.
+<br> Suppose each is derived from a superclass class component, which
+ has a paint method.
+<br> Suppose each graphical object overrides the paint method, saying
+ how it should be drawn on display.
+ <br> Suppose we have a method update() which has a container for
+all the objects on display and simple calls paint on each of them.
+ <br> Notice how easy it will be to add a new graphical object.
+ <br> This is how  Applet draw on the screen.
+ 
+<h3> What have we accomplished? </h3>
+ <ul>
+ <li> guaranteed that all implementation of shape have area function,
+    otherwise compile-time error.
+ <li> allowed for uniform determination of area via polymorphism,
+  e.g. we could have a vector of shapes which was a mixture of
+  rectangles, squares, and circles and we could loop through them
+  and determine each objects area. But remember we need to cast them
+  to shape.
+ </ul>
+
+
+  <h3> Accessibility Rules  </h3>
+ The boundaries of accessibility are determined by class, subclass
+and package. If you write your code(classes) in one  directory, then the
+classes are all part of the same anonymous package.
+  <ul>
+    <li> <em> Public </em> means accessible to anyone.
+    <li> <em> Private </em> means accessible only to members of the class
+   or to its inner classes.
+    <li> <em> No designation </em> means package or friendly accessibility,
+   ie. full visibility of methods and data to anyone in  the same package.
+    <li> <em> Protected </em> means accessible to subclasses
+    and to package members.
+    <li>  <em> Private Protected </em> means accessible only to subclasses.
+    <li> Note: when you subclass and override, you cannot increase the
+         accessibility. This would lead to a compile error.
+         
+   </ul>
+
+
+</BODY>
+</HTML>

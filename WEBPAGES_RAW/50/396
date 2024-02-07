@@ -1,0 +1,178 @@
+#  CS284A Final Project
+#  written in Python
+#  Hansook Kim Chong
+#  3/17/2008
+
+#------------------------------------------------------------------------------------------
+#  Finding a nuclear receptor binding site, Inverted Repeat separated by 1 nucleotide (IR1)
+#  A nuclear transcription factor, FXR, is known to have IR-1 DNA binding site.
+#  This python program contains functions to find the highest rankings of IR-1 sites.   
+#------------------------------------------------------------------------------------------
+
+import os, sys
+from math import *
+from pprint import pprint
+import FastaReader
+import re
+import string
+import pickle
+from scipy import factorial
+
+## def factorial(n): # function for factorial
+##     if n == 0:
+## 	return 1
+
+##     fact = 1
+
+##     for item in xrange(2, n+1):
+## 	fact *= item
+
+##     return fact
+
+def Choose(n, k): # function for (n choose k)
+    c = factorial(n) / factorial(k) / factorial(n-k)
+    print "choose = ", c
+    return factorial(n) / factorial(k) / factorial(n-k)
+
+def HyperGeometry(N, n, K, k): 
+    # function for calculating hypergeometric distribution probability mass function
+    #hyper=0
+    #hyper = (Choose(K, k))*(Choose(N-K, n-k))/(Choose (N, n))
+    #return hyper
+
+    hyper = log(Choose(K, k)) + log(Choose(N-K, n-k)) - log (Choose (N, n))
+
+    return exp(hyper)
+
+def pValHypGeom(N, n, K, k):
+    # function for calculating sum of p value for i
+    pVal = 0.0
+    low = min(n, K)
+
+    for item in xrange(k, low + 1):
+	pVal += HyperGeometry(N, n, K, item)
+    return pVal
+
+comp = string.maketrans('ACGTN', 'TGCAN')
+RevComp = lambda s: string.translate(s, comp)[::-1]
+
+def seqDict(fileName):
+    # To make dictionaries for promoter name (key) and its sequence (value) from fasta file
+    Gene = {} 
+    reader = file(fileName) #  Open file  
+    for item in FastaReader.read_fasta(reader):
+	name = item.name.split(" ")[0]
+	Gene[name] = item.sequence.upper()
+    return Gene
+
+def checkIR(sequence, n=6):
+    return sequence[:n] == RevComp(sequence[-n:])
+
+def EnumIR1seq(gene, nmerLen=6, spacer=1):
+    """This function can find IR-1 sites.  
+    Returns dictionary of IR-1 half sites (key) with its frequency (value)
+    """
+    
+    sixmerDict = {}
+
+    for name, promoter in gene.iteritems():
+	Nmer_List = []
+
+	for item in range(0, len(promoter) - (nmerLen * 2) + spacer - 1):
+
+            ir = promoter[item: item + (nmerLen * 2) + spacer]
+
+            irs = list(ir)
+            keyword = irs[:]
+
+            keyword[nmerLen] = "".join(["N"] * spacer)
+            keyword = "".join(keyword)
+            irs[nmerLen] = "".join(["[ACGT]"] * spacer)
+            irs = "".join(irs)
+
+	    if not (keyword in Nmer_List) and checkIR(ir, n=nmerLen):
+
+                Nmer_List.append(keyword)
+                
+		p = re.compile(irs) # make reg expr
+		m = p.findall(promoter) # find the IR-1 site
+
+                if len(m) > 0:
+                    sixmerDict[keyword] = sixmerDict.get(irs, 0) + len(m)
+    
+    return sixmerDict
+
+def sortByValue(dict):
+    # sorts by p values
+    Dict=dict.items()
+    revItems = [[v[1], v[0]] for v in Dict]
+    revItems.sort()
+    return [revItems[i][1] for i in range(0, len(revItems))]
+
+#"FDR5GWFXR_targetsPromoterSeq.txt"
+
+def main():
+    nmerLen = 6
+    spacer = 1
+
+    #peakSeq="FDR5GWFXR_PeakStartStop+-300Seq.txt"
+    #promSeq= "FDR5GWFXRtop100byFDRforPromSeq.txt"
+
+    peakSeq = "FDR5GWFXRpeakStartStopTop100+-300seq.txt"#"FDR5GWFXR_PeakStartStop+-300Seq.txt"
+    promSeq = "2006-07-18_MM8_RefSeq_promoter.fasta"
+
+    myPromSeq = seqDict(promSeq) # all 2.5kb promoter sequences
+    myPeakSeq = seqDict(peakSeq) # subset sequences
+
+    # Total sequence numbers
+    totalIRpeak = len(myPeakSeq)  # subset sequences  
+    totalIRSeq = len(myPromSeq) # all 2.5kb promoter sequences
+
+    print totalIRpeak, totalIRSeq
+
+    myIRpeak = EnumIR1seq(myPeakSeq, nmerLen)
+    print "Done with peaks, there are %i IR distinct sites in them" % len(myIRpeak)
+
+    myIRall = {}
+    pValues = {} #dict.fromkeys(myIRpeak.keys(), 0)
+
+    for irnum, key in enumerate(myIRpeak.iterkeys()):
+
+        print "IR number = ", irnum
+        sys.stdout.flush()
+
+        k = list(key)
+        k[nmerLen] = "".join(["[ACGT]"] * spacer)
+        k = "".join(k)
+
+        for seqnum, promoter in enumerate(myPromSeq.values()):
+
+            p = re.compile(k) # make reg expr
+            m = p.findall(promoter) # find the IR-1 site
+
+            hits = 0
+            if len(m) > 0:
+                hits = 1
+            
+            myIRall[key] = myIRall.get(key, 0) + hits 
+
+
+        print myIRall[key], myIRpeak[key]
+        
+        try:
+            pValues[key] = pValHypGeom(totalIRSeq, totalIRpeak,
+                                       myIRall[key], myIRpeak[key])
+        except:
+            print "Error: N = %i, n = %i, K = %i, k = %i " % (totalIRSeq, totalIRpeak,
+                                                              myIRall[key], myIRpeak[key])
+        print pValues[key]
+        sys.stdout.flush()
+    print myIRall
+            
+    sortedPvalues = sortByValue(pValues)
+
+    for key in sortedPvalues:
+        print key, pValues[key] #temp = '\t'.join([key, "n", RevComp(key), str(pValues[key])]) + '\n'
+
+if __name__ == "__main__":
+    main()

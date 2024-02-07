@@ -1,0 +1,654 @@
+				AVL Trees
+
+In this lecture we will cover AVL (Adelson-Velskii and Landis) trees. An AVL
+tree is a special kind of BST, with order AND structure properites. As with
+BSTs, the order property is the same: it ensures that we can search for any
+value in O(Height); the structure property ensures that the height of an AVL
+tree is always O(Log N). So, all AVL trees are always reasonably well balanced:
+there are no pathological AVL trees. AVL trees, invented in 1962, were the
+first searchable binary trees whose height was guaranteed not to exceed O(Log N)
+(for trees with N nodes).
+
+You can google other kinds of trees with a guaranteed or just expected (on
+average) O(Log N) worst case for searching, adding, and removing nodes: Splay
+Trees, (2,4) Trees, and Red-Black trees. These tend to be more complicated to
+understand, but are faster (or use less space). We will study only AVL trees in
+detail in this course.
+
+
+AVL Trees:
+  Order   : Same as a binary search tree. So they are easily/quickly searchable
+            using exactly the same algorithm as for BSTs
+
+ Structure: For every node in the tree, the difference in heights between
+            its children cannot exceed 1. That is, the left child can have a
+            height one higher than the right, the right child can have
+            a height one higher than the left, or both children can have the
+            same height. This property keeps these trees reasonably well
+            balanced (a small constant times the the optimal height) and nowhere
+            near pathological. Processing time -which is always O(Height)- will
+	    be O(Log N), but the constant can be bigger, because of now having
+            to satisfy a structure property.
+
+Note that to make everything work right, we will continue to assign an
+empty tree a height of -1. Thus the following tree (showing the height of
+every node)
+
+   A
+   2\
+     B
+     1\
+       C
+       0
+
+does not satisfy the AVL property (it certainly looks unbalanced) because A's
+left child (an empty subtree) has height -1 (by the definition above) and its
+right child (B) has height 1, for a difference of 2, which violates the
+structure property.
+
+Regular BSTs have no structure property. They are structured solely by the
+order in which the values are added to the tree (which allows for building
+pathological trees). The structural property of AVL trees ensures that all are
+reasonably well balanced, regardless of the order that the nodes are added and
+removed, and therefore guaranteed to be searched quickly, with no pathologies.
+
+Recall the height of an N node BST can be N-1 in the worst case. We've seen
+that the best height we can get (from a perfectly balanced binary tree) is
+about Log2 N; for AVL trees, we can achieve this same height in the best case,
+but in the worst case the height is 2 Log2 N, meaning at worst it is about twice
+as deep as optimal, but we can ALWAYS search for a node in O(Log N) -throwing
+out the constant 2. We will prove this result at the end of the AVL section in
+these notes. There actually is a tighter bound that we will prove, at worst the
+height is 1.44 Log2 N for an AVL tree. Recall that for random BSTs that we
+constructed, the heights were mostly 2-4 times the minimum, so on average the
+height of a BST is still only a few times the height of an AVL tree.
+
+Let us now see how to use the order and structure properties to add and remove
+nodes in O(Log N) as well, ensuring these properties are restored after the
+addition and removal.
+
+There are many ways to represent an AVL tree. One straightforward way is to
+store an int representing the height in each node (caching it rather than
+having to recompute it). Of course, the height of any parent is 1 + the height
+of its highest child. This information will be used and updated in the
+algorithms below.
+
+Adding and removing nodes follows the pattern we saw in heaps (but reversed:
+we first satisfy the order property, and then work on satisfying the structure
+property while retaining the order property). We add/remove in an AVL tree just
+as in a BST, possibly violating the structure property, and then restore the
+structural property "cheaply" -that is, having to look at O(Log N) nodes, and
+doing at most O(1) work for each node.
+
+------------------------------------------------------------------------------
+
+Adding a Value to an AVL tree:
+
+To add a value, we start by adding it as in any BST. Then we traverse the tree
+backwards -from that node towards the root- adjusting the heights as we go
+upward to account for the new node. IF we reach a node that violates the
+"heights of the children are no different than 1"  structure property, we
+perform an adjustment: one "rotation" on that node and the two underneath it:
+the two visited right before the "bad" one, on the way up toward the root from
+the added node. Each rotation ensures the order property is still satisified
+while restoring the structure property.
+
+There are 4 possible patterns of these 3 nodes (actually 2 possible patterns,
+and their mirror-image versions), each with its own transformation/rotation that
+re-establishes the structure property. In all these cases, the 4 subtrees
+under A, B, and C appear left to right, labelled T1, T2, T3, and T4
+
+Notice here, the nodes are labelled such that A < B < C; and everything
+in T1 < everything in T2 < ...T3  < ... T4. Finally, notice ALL the trees
+on the right are the SAME in terms of their ABC and T1 T2 T3 T4 pattern.
+
+      C				    B
+     / \	                 /     \
+    B  T4                    A            C
+   / \		=>          / \          / \   
+  A  T3			   T1  T2       T3  T4
+ / \
+T1 T2
+
+
+   A				    B
+  / \		                 /     \
+T1   B                       A            C
+    / \         =>          / \          / \   
+   T2  C		   T1  T2       T3  T4
+     / \
+    T3 T4
+
+
+      C				    B
+     / \	                 /     \
+    A  T4                    A            C
+   / \		=>          / \          / \   
+  T1 B			   T1 T2        T3  T4
+    / \
+   T2 T3
+
+
+   A				    B
+  / \		                 /     \
+T1   C                       A            C
+    / \         =>          / \          / \   
+   B  T4		   T1 T2        T3  T4
+  / \
+ T2 T3
+
+
+Recall that the heights of AVL trees are O(Log N). Threfore, both going down
+the tree (to add the value where it belongs) and back up the tree (looking for
+a violation of the AVL property and restoring it via a rotation) require
+O(Log N) operations: so the combined complexity class for adding a node and
+restoring the structure property is O(Log N). Any rotation is a constant
+amount of work (not trivial to do -lots of pointer changes- but not dependent
+on the size of the tree): it is something done locally at any unbalanced node
+and its child and grandchild.
+
+Here is an example. Given the following AVL tree (it would be useful for you to
+fill in the heights of every node, and verify that it satsified the order and
+structure properties of AVL trees)
+
+       44
+     /     \
+   17        78
+    \        /  \
+     32     50   88
+            / \
+          48  62
+
+If we added 54, according to the order property we would get the tree
+
+        44
+     /      \
+   17         78
+    \        /  \
+     32     50   88
+            / \
+          48  62
+              /
+             54
+
+We move toward the root from 54 to 62, to 50, and finally to 78. At 78 we see
+a violation of the structure property: its left child (50) is of height 2 and
+its right child (88) is of height 0 - a difference of more than one. So which
+rotation do we apply? We use 78 (where we noticed the problem) as the root of
+the rotation; we use its child that has the larger height (it always has one
+whose height is larger if we need the rotation there), and we use its
+grandchild with the larger height, or if the heights are tied, we use the
+grandchild related to the child in the same way that the child was related to
+the root of the rotation.
+
+So, we apply the rotation to 78, 50, and 62
+
+              78
+             /   \
+            50   T4  
+           /  \
+          T1   62
+              /  \
+             T2  T3
+
+using the 3rd of the four patterns above, whic produces the following result
+pattern
+
+                 62
+              /      \
+            50       78
+            / \     /  \
+          T1  T2   T3  T4
+
+which when T1-T4 are filled in (some are empty) produces the result
+
+        44
+     /      \
+   17         62
+    \        /  \
+     32     50   78
+            / \    \
+          48  54   88
+
+After a rotation, we do not need to keep going back towards the root: we
+don't need to update the stored heights nor look for any more violations of the
+structure property. After one rotation,, every node above it will have the
+same height and will satisfy the order and structure properties.
+
+So when ADDING a node to the tree, at most ONE rotation is required to fix the
+structure property: once we perform any rotation at a node, its ancestors will
+not violate the structure property. Also, we can stop "going toward the root
+recomputing heights" whenever the height of a node remains unchanged (its
+ancestor nodes will all keep their same heights).
+
+What justifies the comments above? When we add a node, the tree becomes
+unbalanced because the height of some node becomes one too big; after one
+rotation, the difference of the heights of its subtrees are made within 1, by
+reducing that height, thus restoring to its old height the node above it. So
+the heights of ancestor nodes remain the same (so the AVL structure property
+doesn't need further correction).
+
+------------------------------------------------------------------------------
+
+Removing a Value from an AVL tree:
+
+For removing a value the process is different but similar. After removing the
+node (as in a regular BST: remember the leaf node/one child/two children rules)
+we again continue up from the parent of the removed node towards the root. If
+we find a node whose children violate the structure property, we use that node,
+its child whose height is larger, and its grandchild with the larger height (or
+if the heights are tied, we use the grandchild related to the child in the same
+way that the child was related to the root of the rotation). Then we apply a
+rotation (as we did above for adding a node to an AVL tree).
+
+So, in the above tree if we remove 32, we have the tree
+
+        44
+     /      \
+   17         62
+             /  \
+            50   78
+            / \    \
+          48  54  88
+
+We move toward the root from 17, to 44. At 44 we see a violation of the
+structure property: its left child (17) is of height 0 and its right child
+(62) is of height 2 -a difference of  more than one. So, we apply the rotation
+to 44, 62 (its bigger height child) and 78 (since both grandchildren have the
+same height, and the child is the right child of the root of the rotation)
+which is the second of the four patterns above) and get the following tree as
+a result.
+
+      62
+      / \
+    44   78
+    / \   \
+  17  50  88 
+     /  \
+   48   54
+
+In this case we are done, because we made it all the way back to the root.
+But, in general, for REMOVE (unlike ADD), if we were not at the root, we'd
+have to continue up towards the root, updating the stored heights AND looking
+for more nodes not satisfying the structure property, and maybe doing more
+rotations (as many as necessary).
+
+What justifies the comments above? When we remove a node, the tree becomes
+unbalanced because the height of some node becomes one too small; after one
+rotation, the difference of the heights of its subtrees are made within 1, by
+reducing one height, and it is POSSIBLE that the height of the node above it
+also has its height reduced by the rotation and now is too small when compared
+to its sibling, so this process might have to continue checking/rebalancing all
+the way back to the root.
+
+Both going down the tree (to remove the value) and back up the tree (looking
+for one or more violation of the AVL property and restoring any via 
+rotations) require O(Log N) operations, so the combined complexity class for
+removing a node and restoring the structure property is O(Log N). Each
+rotation is a constant amount of work (not trivial, but not dependent on the
+size of the tree): it is something done locally.
+
+----------
+Bottom-Line Expectations:
+
+I expect you to be able to draw pictures of AVL trees and update them
+according to these algorithms; I DO NOT expect you to write the code for
+them in C++. I also expect you to be able to reproduce the transformations
+from memory. This isn't pure memorization: we talked in class about all the
+requirements and symmetries that make these rules easy to memorize/generate.
+----------
+
+------------------------------------------------------------------------------
+
+Metrics of AVL-Trees: Size vs Height
+
+Let us look at the problem of computing the minimum number of nodes that are
+needed to create an AVL tree of height h. Call this number m(h). We want to 
+find some relationship between h and m(h). First, let's look at this problem
+for BSTs.
+
+In a BST, there is no structure property. We know that m(0) = 1, since we need
+one node to create a BST of height 0. Also, we can always add a parent to a
+tree of height h with the minimum number of nodes to create a tree of height
+h+1 with the minimal number of nodes. so m(h) = 1 + m(h-1), where m(0) = 1.
+Iterating evaluation of this function we find
+
+  m(h) = 1 + m(h-1)
+       = 2 + m(h-2)
+       = 3 + m(h-3)
+       ...
+       = i + m(h-i)
+
+we know m(0) = 1, so we solve for when h-i = 0,; it is i = h. Now we have
+m(h) = h + m(0) = h + 1. Therefore the minimum number of nodes that are needed
+to create a BST with height h must be h+1 nodes (a pathological tree). Also 
+note that from our first lecture on BSTs, a BST with height h has at most
+2^(h+1) - 1 nodes. So all BSTs of height h have between h+1 and 2^(h+1)- 1
+nodes. So for BSTs, we can have both pathalogical and well-balanced trees.
+
+Now let's look at AVL trees using the same kind of argument; AVL trees have a
+more stringent structure property (ruling out pathological trees) so the
+minimum number of nodes needed for a tree of height h will be more than h+1.
+
+First, let's examine two base cases: for h = 0, the tree must have at least 1
+node as with a BST; likewise, for h = 1, the tree must have at least 2 nodes.
+
+h = 0                   h = 1
+
+  A            A                B
+                \       or     /
+                 B            A 
+
+All these trees trivially satisfy the AVL structure property.
+
+Now for h = 2, each of the following four trees satisfies the AVL structure
+property, but no trees with just 3 nodes do, and no any pathological trees with
+4 nodes do either. So m(2) = 4.
+   
+        B            B          C            C 
+       / \          /  \       /  \         /  \
+      A   C        A    D     A    D       B    D
+           \           /       \          /
+            D         C         B        A
+
+Notice that in all these cases for an h = 2 AVL tree, we have a root, with a
+minimal sized tree of h = 1 as one subtree (so the height of the entire tree is
+2), and a minimual sized tree of h = 0 as the other subtree. We want as few
+nodes as possible here, and the AVL structure property allows a difference of
+1 in heights in these two minimal subtrees.
+
+In fact, we can write an exact equation for m(h): m(h) = 1 + m(h-1) + m(h-2),
+where m(0) = 1 and m(1) = 2. The smallest number of nodes in a tree of height h
+is 1 (it root) + the smallest number of nodes in a tree of height h-1 (so the
+height of the entire tree is h) plus the smallest number of nodes in a tree of
+height h-2  (we want as few nodes as possible here, and the AVL structure
+property allows a minimum height AVL tree of h-2 here).
+
+Here is a short table of values for h and m(h)
+
+  h  |  m(h)
+-----+-------
+  0  |    1
+  1  |    2
+  2  |    4
+  3  |    7
+  4  |   12
+  5  |   20
+  6  |   33
+  7  |   54
+  8  |   88
+  9  |  143
+ 10  |  232
+
+We know that m is a strictly increasing function, so m(h-2) < m(h-1).
+Therefore, 1+m(h-1) >= m(h-2), therefore 1+m(h-1)+m(h-2) >= 2m(h-2), so using
+the definition of m(h) we have  m(h) >= 2m(h-2). Iterating evaluations of this
+function.
+
+  m(h) > 2 x m(h-2)
+          > 4 x m(h-4)
+          > 8 x m(h-6)
+          ...
+          > 2^i x m(h-2i)
+
+we know m(0) = 1, so we solve for when h-2i = 0,; it is i = h/2. Now we have
+m(h) >= 2^(h/2) x m(0) = 2^(h/2). So the minimum number of nodes in an AVL tree
+of height h grows at least as fast than 2^(h/2): it is Omega(2^(h/2)). Now that
+we have a relationship between h and m(h), but let us rewrite it as follows
+
+  m(h)      >= 2^(h/2)     just proved
+  Log2 m(h) >= h/2         taking logs (base 2) of each side we have
+  h/2       <= Log2 m(h)   reverse the  inequality
+  h         <= 2 Log2 m(h) flip the sides and multiply each side by two
+
+This says the height of an AVL tree grows no faster than 2 times the Log of the
+minimum number of nodes: h is O(Log2 m(h)).
+
+If n(h) is the number of nodes in some actual AVL tree of height h. We know
+that m(h) <= n(h) (from the definition of m(h): the minimum number of nodes in
+an AVL tree of height h), so h <= 2 Log2 m(h) <= 2 Log2 n(h). Since the number
+of operations needed to search, add, and remove in an AVL tree is proportional
+to its height h, the number of operations is <= 2 Log2 N, where N is the number
+of nodes in some actual AVL tree. 
+
+In fact, the equation m(h) = 1 + m(h-1) + m(h-2) (with m(0) = 1 and m(1) = 2)
+is a slight modification of the fibonacci sequence: f(i) = f(i-1) + f(i-2),
+with f(0) = 0 and f(1) = 1. Using that knowledge, with appropriate mathematics
+we can can approximate m(h) very accurately as  m(h) = phi^(h+3)/sqrt(5) - 1,
+where phi is (1+sqrt(5))/2 or ~1.618034, and is also known as the golden
+ratio.  Here is a short table of these values
+
+ h  |  m(h)   |  phi^(h+3)/sqrt(5) - 1
+----+---------+-------------------------
+ 0  | 	 1    |	    0.9
+ 1  |	 2    |	    2.1
+ 2  |	 4    |	    4.0
+ 3  |	 7    |	    7.0
+ 4  |	12    |	   12.0
+ 5  |	20    |	   20.0
+ 6  |	33    |	   33.0
+ 7  |	54    |	   54.0
+ 8  |	88    |	   88.0
+ 9  |  143    |	  143.0
+10  |  232    |	  232.0
+
+Dropping the - 1 term (it is small compared to phi^(h+2)/sqrt(5) as h gets big)
+and taking logs (base phi) of each side we have
+
+ Log(base phi) m(h) ~ h+3 -Log(base phi) sqrt(5)
+
+recall Loga x = Log2 x/log2 a, so Log(base phi) x = Log2 x /Log2 phi, so we
+have
+
+ Log2 m(h)/Log2 phi ~ h+3 - Log(base phi) sqrt(5)
+
+1/Log2 phi ~1.44, and Log(base phi) sqrt(5) = 1.672, so we have
+
+  1.44 Log2 m(h) ~ h + 3 - 1.662
+
+  h ~ 1.44 Log2 m(h) - 1.338, and by dropping this constant term we have
+
+  h ~ 1.44 Log2 m(h)
+
+Again, if n(h) is the number of nodes in some actual AVL tree of height h. We
+know that m(h) <= n(h) (from the definition of m(h): the minimum number of
+nodes in an AVL tree of height h), so
+
+  h ~ 1.44Log2 m(h) - 1.338 <= 1.44Log2 n(h) - 1.338 < 1.44Log2 N
+
+Since the number of operations needed to search, add, and remove in an AVL tree
+is proportional to its height h, the number of operations is < 1.44 Log2 N,
+where N is the number of nodes in the actual AVL tree. 
+
+So, in the worst case for AVL trees, the search, add, and remove operations are
+all O(Log2 N) and the constant is actually closer to 1.44 than to 2.
+
+Another interesting fact about AVL trees is that if the leaf at the minimum
+depth is at depth d, then the leaf at the maximum depth is at most at depth 2d
+(this also represents the height of the tree). Observe for any AVL tree, if we
+go upward from the node at the minimum depth its parent can have a descendant
+that is at most 1 depth deeper; its grandparent can have a node that at most is
+2 depths deeper; .... For each ancestor, it can have a descendant that is at
+most one depth deeper. It has d ancestors (is at depth d), the deepest node in
+the entire tree is d+d = 2d : each of the d ancestors can have a descedant one
+more deeper than d.
+
+For example, in the minimal AVL tree below
+
+                44
+             /      \
+           /          \
+         17           70
+        /  \         /   \
+       8   30      62     78
+      /    / \            /
+     5   20  40         75
+             /
+            35
+
+Node 62 is at the minimum depth of 2. It parent has a node of depth 3; its
+grandparent (the root) has a node of depth 4 (2*2).
+
+------------------------------------------------------------------------------
+
+A Removal Requiring Two Rotations:
+
+Here is an example of removal in an AVL tree that requires two rotations. This
+tree can be constructed using the formula above. It has the minimum number of
+nodes for a height 4 tree.
+
+                44
+             /      \
+           /          \
+         17           70
+        /  \         /   \
+       8   30      62     78
+      /    / \            /
+     5   20  40         75
+             /
+            35
+
+Verify that this is an AVL tree (order property and structure property: fill
+in all the heights and compare the heights for a difference of more than 1)
+
+Now, remove the value 62 (the leaf at the minimum depth).
+
+                44
+             /      \
+           /          \
+         17           70
+        /  \             \
+       8   30             78
+      /    / \            /
+     5   20  40         75
+             /
+            35
+
+At this point, the value 70 has two children in its right subtree (height 1)
+and no childtren in its left subtree (height -1), so the height difference is
+> 1. So we do a rotation using the nodes containing 70, 78, and 75 (all the
+T subtrees here are empty!). The tree becomes.
+
+                44
+             /      \
+           /          \
+         17           75
+        /  \         /   \
+       8   30      70     78
+      /    / \
+     5   20  40
+             /
+            35
+
+Recompute the heights for all the changed nodes.
+
+Now notice that this operations reduces by one the height of the subtree that
+used to store 70 as its root (it now stores 75): from 2 to 1. When we started
+the height of this right subtree was 1 less than the height of the left
+subtree, and now the height of the right subtree has been reduced by 1 because
+of the rotation. So, the rotation causes the root of the tree (44) to now have
+a left child (storing value 17) with a height of 3 and a right child (storing
+value 75) with a height of 1; the difference between these two heights is > 1.
+
+So we do another rotation, this time using 44, 17, and 30. (we use 30, because
+this grandchild of the root of rotation has a bigger height than its sibling,
+8). The tree becomes
+
+                30
+             /      \
+           /          \
+         17           44
+        /  \         /   \
+       8   20      40     75
+      /           /      /  \
+     5           35     70  78
+
+Finally, notice that the root of this tree changed its value from 44 to 30 and
+its height from 4 down to 3. So if the root were a left subtree of a node whose
+right subtree was height 5 (which is OK when the height of this subtree was 4),
+the height of the right subtree will now be > 1 larger then the height of this
+left subtree, causing it to do another rotation.... That is why when removing
+nodes, we might have to do more than one rotation.
+
+
+Other Balanced Trees:
+
+Red-Black trees and Splay trees are more "modern" balanced trees, also
+guaranteed to have their heights O(Log N). Their height bounds are a bit worse
+than AVL trees, but they do less work to "restore the structure property of the
+tree". Thus, their search algorithms runs more a bit more slowly, but their
+algorithms for insertion/deletion run more quickly. Their main advantage is
+that they store no extra information (recall that AVL trees need to store/cache
+the height of every node, stored at that node).
+
+
+------------------------------
+
+Odds & Ends:
+
+In this section we will discuss augmenting tree nodes (however they are defined)
+with an extra pointer that allows a child to point directly to its parent. This
+is not needed for many simple trees and tree operations, but in all the data
+structures that we define, we are at liberty to add any pointers that we
+might find useful. 
+
+Notice that locating the parent, given its child, was critical for algorithms
+that process heaps. But in heaps, we didn't have to store parent pointers,
+because heap nodes were store in an array, and knowing the index of a node
+allowed us to calculate the index of its parent (and children).
+
+Recall in our study of doubly-linked lists, although the extra links allow us
+to do new operations (like go backwards in the list), we often have to write
+extra code (for old operations, like insert, remove etc.) to maintain/update
+these extra pointers. So, having such extra pointers can be both useful and
+cumbersome.
+
+We could augment our typical TN to be
+
+template<class T>
+class TN<T> {
+  public:
+    TN ()                     : left(nullptr), right(nullptr), parent(nullptr){}
+    TN (Entry v, TN<T>* l = nullptr,
+                 TN<T>* r = nullptr,
+                 TN<T>* p = nullptr) : value(v), left(l), right(r), parent(p){}
+
+    T        value;
+    TN<T>*   parent;
+    TN<T>*   left;
+    TN<T>*   right;
+};
+
+
+Note that the root of the tree would be the only node whose parent was nullptr.
+So, given a pointer to a node t, we could determine whether it was the root
+by checking whether t.parent == nullptr.
+
+Given a pointer to any non-root node, here is the code to make its parent
+point to its left child (instead of to it) and the left child to point to its
+new parent. This is how we would remove a node with one (left) child from a BST.
+This is a bit tricky and we need write an if first to determine whether the
+node is a left or right child of its parent, to know which pointer of its
+parent to change.
+
+template<class T>
+void makeParentReferToLeftChild(TN<T>* t) {//Assumes t not root/has a parent
+  if (t->parent->left == t)		   //Make parent's left/or right
+    t->parent->left  = t->left;            //  point to t's left
+  else
+    t->parent->right = t->left;
+  t->left->parent = t->parent;		   //make t->left refer to
+}					   //  its new parent
+
+Hand simulate this code on an example to see which two pointers are changed. 
+
+We can also use it to compute the depth of a node (how many ancestors it
+has).
+
+template<class T>
+int depth(TN<T>* t) {
+  if (t == nullptr)
+    return -1;
+  else
+    return 1 + depth(t->parent);
+  }

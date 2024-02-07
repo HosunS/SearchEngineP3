@@ -1,0 +1,860 @@
+<HR><PRE>
+<B>From:</B>           <A HREF="mailto:callahan@condor.cs.jhu.edu">callahan@condor.cs.jhu.edu</A> (Paul Callahan)
+<B>Newsgroups:</B>     comp.theory
+<B>Subject:</B>        Jordan Sorting with Splay Trees conjecture
+<B>Date:</B>           12 Aug 1995 13:40:08 -0400
+<B>Organization:</B>   The Johns Hopkins University CS Department
+</PRE><HR><PRE>
+Jordan Sorting is the problem of sorting a list of numbers by
+x-coordinate, assuming that the numbers represent intersections of a
+non-self-intersecting (i.e. Jordan) curve with the x-axis, and that
+they are given in the order that they appear along this curve.  It has
+been known for about a decade (as far as I my research has determined)
+that Jordan Sorting can be performed in linear time.
+
+What I'm curious about is the following conjecture given in a
+paper that presents a linear time algorithm (reference given below):
+
+    Our second remark is that there may be a much simpler way
+    to sort Jordan sequences in linear time: we merely insert
+    the items in the sequence one-at-a-time into a splay tree 
+    ... and then access them in sorted order.  ... On the basis
+    of Sleator and Tarjan's dynamic optimality conjecture, we 
+    conjecture than this sorts Jordan sequences in O(n) time.
+
+This is from "Sorting Jordan Sequences in Linear Time Using
+Level-Linked Search Trees" (Hoffman, Mehlhorn, Rosensteihl, and
+Tarjan, _Information and Control_ 68 (1986) pp.170--184).
+
+Several later papers claim to present simpler algorithms, but the
+most recent one I've seen (1990) is still not nearly as simple
+as the approach using splay trees.  So, I'm curious if this
+conjecture has been treated either theoretically or experimentally.
+
+From a theoretical perspective, one would think that if the conjecture
+is true, it would at least be easier to prove than the dynamic
+optimality conjecture, and would still be a pretty interesting result.
+
+It strikes me as even more attractive as an experimental issue,
+though, because there is existing code for splay trees, and random
+Jordan sequences are not hard to generate (of course, this leaves open
+the issue of generating "hard" cases of Jordan Sorting).  In a sense,
+there's no excuse at all for not performing this experiment.  My
+literature search was far from exhaustive, so if there are
+experimental results, I'd very much appreciate a reference.
+
+It seems to me that if the conjecture is actually true, then one could
+perhaps make a careful study of the splay tree algorithm for Jordan
+Sorting and try to infer what it is doing to achieve such good
+results.  This would provide a non-trivial linear time algorithm that
+in some sense "exists in nature" rather than being the consequence of
+clever design.  If true, that strikes me (and some other people, I
+hope) as quite remarkable despite the fact that it would do no better
+than a known optimal algorithm.
+
+-- 
+        --- Paul Callahan --- <A HREF="mailto:callahan@cs.jhu.edu">callahan@cs.jhu.edu</A> ---
+
+"The first principle in science is to invent something nice to look at 
+ and then decide what it can do." -- Rowland Emett
+</PRE><HR><PRE>
+<B>From:</B>           <A HREF="mailto:callahan@biffvm.cs.jhu.edu">callahan@biffvm.cs.jhu.edu</A> (Paul Callahan)
+<B>Newsgroups:</B>     comp.theory
+<B>Subject:</B>        A family of Jordan Sequences for which Splay Sort is Omega(n log n)
+<B>Date:</B>           25 Sep 1995 14:13:09 -0400
+<B>Organization:</B>   The Johns Hopkins University CS Department
+</PRE><HR><PRE>
+About a month and a half ago, I posted an inquiry about a conjecture
+related to sorting Jordan sequences.  A Jordan sequence is a list of
+intersections of a non-self-intersecting plane curve with the x-axis.
+The Jordan sequence sorting problem is to sort these intersections by
+x coordinate.  The non-crossing-curve restriction implies that the
+number of Jordan sequences of n values is O(c^n) for some c, rather
+than n!, implying that a general-purpose comparison-based sorting
+algorithm may not be optimal. In fact has been known for over a decade
+that Jordan sequences can be sorted in O(n) time using only
+comparisons (I emphasize the point about comparisons to avoid getting
+mired in the MSD-radix-sort flame war now in progress).
+
+Anyway, there is an appealing conjecture in two of the papers
+presenting linear time algorithms (Information and Control, 68 170-184
+(1986) and Information Processing Letters 35 85-92 (1990)) that if the
+values in a Jordan Sequence are simply inserted into a splay tree, and
+read off in sorted order, then this might also require O(n) time in
+the worst case.  This general technique is usually called Splay Sort,
+and can for certain kinds of input be shown to require much less time
+than a worst-case optimal comparision-based sort such as Mergesort.
+If I understand the Jordan Sequence conjecture correctly, I can show that it is
+incorrect.  
+
+I don't know if the following result is new, but it's fairly
+specialized and doesn't seem to lead anywhere, so I'm posting it here
+after wondering for about a month what to do with it.  Because this posting
+not a formal publication, I'm going to leave out some steps.  It
+should not be too hard to fill in the details.  
+
+First, to prove a lower bound on sorting a sequence using Splay Sort,
+it will suffice to prove a lower bound for any algorithm that uses
+insertions into a binary search tree using any rotation strategy.  In
+fact, the more general kind of lower bound is often easier to prove
+than a lower bound for Splay Sort itself, owing to the work of Robert
+Wilber in FOCS '86 (revised version in Siam J Comp vol. 18 no. 1),
+which provides two powerful methods for showing lower bounds on
+accessing sequences of values in Binary Search Trees.  We will not
+really need these methods here, but only the corollary that accessing
+the nodes of a binary tree containing the values 0,1,...,2^k-1 in
+bit-reversed order (i.e. taking the binary representations of these
+values in increasing order but reversing the "significance" of the
+bits) requires Omega(k 2^k) rotations
+
+In the following, I'm going to use the claim that sorting a sequence by
+inserting it into a binary tree is as hard as accessing the same
+sequence in a tree containing these values.  I haven't proved this,
+but it seems to me that each time a value is inserted (a new leaf
+added at what was a "null pointer"), one could imagine that that value
+already existed as a node in the tree but had not previously been
+accessed.  It should thus be possible to construct an initial tree
+containing the values to be sorted for which the rotation sequence is
+the same whether one is inserting into an intially empty tree, or
+accessing from an initally full tree.  (Originally, I had a more
+complicated idea for a proof that would not require this claim
+but I think it is true, and it results in a cleaner argument).
+
+Now, what remains is simply to construct a family of "hard" Jordan
+Sequences such that for any value of n there is a sequence in this
+family containing at least n elements.  As it happens, the sequences
+in this family will bear a relationship to bit-reversed order that
+will cause them to require Omega(n log n) rotations to sort using any
+binary search tree, according to the result of Wilber.
+
+First I'll give an intuitive explanation of where these sequences come
+from.  If one were to take a looped, flattened out strip of paper and
+view it facing the edge, this would look like a very simple Jordan
+Curve.  I.e.:
+
+             +---------------------------------------+
+             |                                       |
+             +---------------------------------------+
+
+(unfortunately, ASCII graphics make it unclear, so let me repeat that
+this is viewed on edge, not from above, as it might also appear).
+
+If this is folded over on itself to double its thickness, we
+get another Jordan Curve, but which is somewhat more convoluted.
+
+       I.e:
+
+            +-------------------+
+            |                   |
+            +---------------+   |
+                            |   |
+            +---------------+   |
+            |                   |
+            +-------------------+
+
+We can repeat this "doubling over" process as many times as we like,
+each time doubling the number of intersections of the curve with
+a vertical line.  For larger examples, it becomes more convenient to
+represent the shape of the curve using two sets of matching
+parentheses (this is the representation normally used to prove a bound on the
+number of Jordan Sequences).  E.g., if we double over two more times,
+and rotate 90 degrees so the curve intersects the x-axis, we obtain:
+
+            (((((((())))))))
+            ()()(())(((())))
+
+Matching parentheses in the top sequence with arcs above and those in
+the bottom sequence with arcs below gives us the actual curve.
+
+To connect this idea with bit-reversed order, we will describe the
+folding process as a transformation on a sequence of numbers that will
+denote the actual Jordan Sequence in question.  The correspondence to
+folding is not too hard to see, but will be omitted here, since it
+is not really needed once we obtain the final form of the construction.
+
+First, in the original loop, the sequence of intersections is the same
+both on the curve and on the intersecting line, so we denote this
+sequence 0 1.
+
+Now, given such a sequence, we obtain the next, doubled over, sequence
+as follows:
+
+    (1) double each number in the sequence
+    (2) append the new sequence to its own reverse
+    (3) Add 1 to every odd-positioned number in the sequence
+        (the leftmost position is considered even).
+
+E.g.
+
+     0 1   --&gt;    0 2        by (1)
+           --&gt;    0 2 2 0    by (2)
+           --&gt;    0 3 2 1    by (3)
+
+     0 3 2 1  --&gt;  0 6 4 2   
+              --&gt;  0 6 4 2 2 4 6 0
+              --&gt;  0 7 4 3 2 5 6 1
+
+     0 7 4 3 2 5 6 1  --&gt;  0 14 8 6 4 10 12 2
+                      --&gt;  0 14 8 6 4 10 12 2 2 12 10 4 6 8 14 0
+                      --&gt;  0 15 8 7 4 11 12 3 2 13 10 5 6 9 14 1
+
+     etc.
+
+Here I'll resort to "proof by example" and simply point out that
+if you take the increasing sequence:
+
+       0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+
+and connect pairs of numbers adjacent in the sequence obtained in the
+process above with non-crossing arcs (also connecting the end values
+0 and 1) you will obtain the Jordan Curve determined by the set of 
+matching parentheses given earlier.
+
+Recall that for the lower bound, we want to connect this in some way
+to bit reversed order.  So, yet another way to obtain the above
+sequence is to define the following function f on k-bit binary numbers
+denoted B = b    ... b
+             k-1      0
+
+In the following, assume "+" denotes exclusive-or, and let
+
+            f(b   ... b )  = (b + b ) (b + b) ... (b   +b ) b0
+               k-1     0       1   0    2   0       k-1  0
+
+In other words, reverse the order of bits 1 through k-1, keeping b
+                                                                  0
+
+in the same position.  Also, if b  = 1, then invert bits 1 through k-1.
+                              0
+
+E.g.,
+
+       B     f(B)
+      ---    ---
+      000    000
+      001    111   
+      010    100
+      011    011
+      100    010
+      101    101
+      110    110
+      111    001
+
+Now, to get the kth sequence determined by the process given
+previously, we merely take the values i = 0,...,2^k-1 expressed in
+binary, and apply the function f to each i in increasing order.  (We
+overload the meaning of f(i) to denote the result of converting i to a
+binary string, applying f, and converting it back to an integer.)  It
+can be seen that from the above table, the sequence for k=3 is 
+0 7 4 3 2 5 6 1, which corresponds to that obtained previously.
+
+I imagine a lot of readers on this newsgroup don't find examples very
+convincing, no matter how large they are and how nicely they work out.
+Fortunately, once the function f has been defined as above, it
+suffices to show only that the sequence f(0), f(1), ..., f(2^k-1) is a
+Jordan Sequence, which is an easier task than showing it corresponds
+to the particular Jordan sequences illustrated earlier.
+
+To do this, it is necessary to show that if the numbers 0,1,...,2^k-1
+are written in order left to right, then adjacent numbers in the sequence
+f(0),f(1), ..., f(2^k-1) can be connected by non-crossing arcs alternating
+above and below the list of numbers.
+
+A key observation needed for such a proof is that two arcs, one from 
+a to b, and another from c to d cannot cross so long as a+b = c+d.  The
+other is that they cannot cross if a &lt; b &lt; c &lt; d.  The set of arcs
+from a to b can be put in k+1 equivalence classes according to a+b, so
+that there is no crossing within each equivalence class.  The second
+observation can then be used to exclude crossings between arcs in
+distinct equivalence classes.
+
+So, if I were writing a more rigorous article, it would now say something like
+"Lemma: For all k<U>&gt;</U>0, the sequence f(0),f(1),...,f(2^k-1) is a
+Jordan Sequence."  This would be followed by a proof, which is here
+left as an exercise.
+
+What remains is to show that it requires Omega(k 2^k) comparisons to
+sort such a sequence using Splay Sort.  This can be seen by
+considering only those f(i) such that i is even.  Let R(i) denote the
+result of reversing the order of the bits in the binary representation
+of i.  By definition of f, we know that for even values of i,
+f(i)=2*R(i/2), so the subsequence f(0), f(2), ..., f(2^k-2) must be in
+bit-reversed order.  Since the sequence f(0),f(1),...,f(2^k-1)
+contains 2^(k-1) elements in bit-reversed order, the result of Wilber
+implies that the time to access such a sequence in a binary search
+tree is Omega((k-1)2^(k-1)), and this also provides a bound on the time
+to sort the sequence using Splay Sort.
+
+Then, it follows that there exists a c such that for any value of n,
+one can construct a Jordan Sequence of length greater than n that
+requires c n log n comparisons to sort using Splay Sort, refuting the
+conjecture (as I understood it) that Splay Sort is a linear time
+algorithm for sorting Jordan Sequences.
+
+-- 
+        --- Paul Callahan --- <A HREF="mailto:callahan@cs.jhu.edu">callahan@cs.jhu.edu</A> ---
+
+"The first principle in science is to invent something nice to look at 
+ and then decide what it can do." -- Rowland Emett
+</PRE>
+<HR><PRE>
+<B>From:</B>           <A HREF="mailto:rew@lightstone.com">rew@lightstone.com</A> (Bob Wilber at PUMICE)
+<B>Newsgroups:</B>     comp.theory
+<B>Subject:</B>        Re: Jordan Sequences for which Splay Sort is Omega(n log n)
+<B>Date:</B>           27 Sep 1995 15:57:48 -0500
+<B>Organization:</B>   UTexas Mail-to-News Gateway
+</PRE><HR><PRE>
+Paul Callahan showed that a bit reversal permutation can be imbedded in a
+Jordan sequence.
+
+&gt;In the following, I'm going to use the claim that sorting a sequence by
+&gt;inserting it into a binary tree is as hard as accessing the same
+&gt;sequence in a tree containing these values.  I haven't proved this,
+&gt;but it seems to me that each time a value is inserted (a new leaf
+&gt;added at what was a "null pointer"), one could imagine that that value
+&gt;already existed as a node in the tree but had not previously been
+&gt;accessed.  It should thus be possible to construct an initial tree
+&gt;containing the values to be sorted for which the rotation sequence is
+&gt;the same whether one is inserting into an intially empty tree, or
+&gt;accessing from an initally full tree.
+
+This is the crux of the matter -- can the lower bound in [1] be used to
+get an an Omega(n log n) lower bound on Jordan sorting via insertion into
+a symmetrically ordered binary tree?  That lower bound assumed that all
+elements are in the tree at the start, that they are being accessed in some
+specified order (allowing rotations in the tree), and that no insertions or
+deletions are done.
+
+&gt;(Originally, I had a more
+&gt;complicated idea for a proof that would not require this claim
+&gt;but I think it is true, and it results in a cleaner argument).
+
+I believe your claim is false.  But I think the lower bound can be patched
+up to work for this case.
+
+Consider how Jordan sorting with a binary tree proceeds:
+
+First, we traverse the simple closed curve, each time we encounter an 
+intersection with the x axis, we insert that intersection point into a binary
+tree that is symmetrically ordered by the x coordinate.
+
+Second, we access the items in the tree, in order by x coordinate.
+
+At the end of the first pass the items are sorted by x coordinate, so the
+second pass accesses the nodes in sequential order.  This pass takes linear
+time, including when the splay algorithm is used to do the accessing, as was
+proved by Tarjan [2].
+
+So any lower bound must be applied to the first pass, when the items are
+being inserted.  I find it convenient to "reverse the film" -- items are
+inserted into a tree in sequential order by x coordinate, in linear time,
+and then they are deleted in the order they appear on the curve (that is,
+deleted according to a Jordan sequence).  We want to show that the deletion
+phase takes n log n time.
+
+We need to extend the model to allow for deletions.  I think the following
+definition covers all the cases:
+
+Definition:  A *standard deletion* of a node v can occur when v has at most
+one child.  In that case, if v has no children (it is a leaf) it is simply
+removed.  Otherwise v is removed and v's only child is made a child of v's
+parent (if v was not the root) or is made the root (if v was the root).
+
+In general, to delete a node v you do some sequence of rotations so that
+v has at most one child, and then you do a standard deletion of v.
+
+For example, as I recall deletion of a node v in a splay tree proceeds as
+follows:
+
+1.  v is splayed to the root and removed, leaving its left and right subtrees,
+    L and R.
+
+2.  The largest node in L, r, is splayed to the root of L.
+
+3.  R is made the right subtree of r.
+
+This can be cast into the "standard model" as follows:
+
+1.  v is splayed to the root.  Its left subtree is L.
+
+2.  The largest node in L, r, is splayed to the root of L, making r the left
+    child of v.
+
+3.  r is rotated over v.
+
+4.  v has no left child; a standard deletion of v is done.
+
+Clearly this has the same complexity as the usual deletion routine.
+
+In the model when we delete v we must also count the cost of accessing v from
+the root.  In order to fold all the costs into rotations, we require that the
+algorithm be "normalized" so that before deleting any node it first rotates
+that node to the root.  This can always be done without increasing the
+time by more than a constant factor, because if the original algorithm does
+a standard deletion of some node v at depth d, it could first rotatate v to
+the root, then rotate v back to where it was (using 2d - 2 rotations), and
+then delete v.  The cost of the extra rotations is just a constant times the
+cost of following the path from the root to v.  Likewise a look up of v is
+always done by rotating v to the root.
+
+Two lower bound methods were given in [1], I will only patch up the first one
+(both methods give an Omega(n log n) bound for accessing the bit reversal
+permutation).
+
+It is important to understand that the intuition behind both lower bounds is
+that items you access "get in the way" of items that you want to access later,
+and must be rotated over.  But if you can delete nodes, you can sometimes get a
+node v out of the way by deleting it, which might be cheaper than forcing
+several nodes "underneath" to rotate over v.  So the ability to shrink the
+tree as you go might invalidate the lower bounds given in [1].
+
+Here's a very quick review of the first lower bound method.  We have some
+binary search tree T, whose n nodes may be considered to be consecutive
+integers.  We allow rotations and standard deletions on T.  A lower bound tree
+Y with 2n - 1 nodes is constructed whose leaves are the initial nodes of T and 
+whose internal nodes lie between nodes in T, that is, they may be taken to be 
+half integers.  T changes through rotations and deletions but Y is fixed.  For
+getting the lower bound on the bit reversal permutation Y is taken to be a
+balanced binary tree.  The sequence of nodes in T to be accessed is s[1], s[2],
+..., s[m].  (A node is "accessed" if we either look it up or delete it; in both
+cases such a node must be rotated to the root in a normalized algorithm.)
+Given numbers x <U>&lt;</U> y, s{x, y} is the subsequence consisting of those s[i]s that
+are in the interval [x, y].  For each internal node u of Y, a score l(u) is
+computed as follows: Let x and y be the minimum and maximum leaves of the
+subtree rooted at u, and let s' = s{x, y} and let m' be the length of s'.  Then
+
+l(u) = |{ i in [1, m'] | (s'(i) &lt; u and s'(i+1) &gt; u) or
+                         (s'(i) &gt; u and s'(i+1) &lt; u) }|.
+
+That is, l(u) counts how many times the subsequence s' hops from the left
+subtree of u to the right subtree, or vice versa.
+
+The sum of the l(u)'s is a lower bound on the number of rotations that must
+be done to access sequence s, if no deletions are done.
+
+A key part of the argument is that if s(i) &lt; u and s(i+1) &gt; u, then at some
+point between the access of s(i) and the access of s(i+1) there had to be a
+rotation of some node c &gt; u over some node d &lt; u.  Furthermore, such a rotation
+has no affect on the generalized subtrees T{x, u} and T{u, y} corresponding to
+the leaves of u's left and right subtrees, so it is not already counted in
+the scores of u's children.  (See [1] for the definition of a generalized
+subtree.)
+
+But suppose now that we allow standard deletions.  If, for example, s(i) is at
+the root, has s(i+1) as its right child, and has no left child, then after
+accessing s(i) we can access s(i+1) simply by deleting s(i).  No rotations had
+to be done at all.  One might try to fix this by counting deletions of nodes in
+[x, y] in the score l(u), but this doesn't work because such such deletions
+would be doubled counted in some of u's children.  In other words, either
+T{x, u} or T{u, y} is affected by any deletion of a node in [x, y].
+
+To fix the lower bound note that if there is some j &gt; i such that s(j) <U>&lt;</U> s(i),
+then even if s(i) is deleted it has to be the case that between the access of
+s(i) &lt; u and the access of s(i+1) &gt; u there's going to be a rotation of a node
+c &gt; u over a node d &lt; u.  (Use the first rotation after the access of s(i) that
+causes s(j) to have an ancestor that is &gt; u; no standard deletion can cause
+this to happen.)
+
+Given sequence s of length m, say that i in [1, m] is an *end access* for s
+if either s(j) &gt; s(i) for all j in [i+1, m] or else s(j) &lt; s(i) for all
+j in [i+1, m].  That is, i is not an end access if for some j1, j2 &gt; i,
+s(j1) <U>&lt;</U> s(i) and s(j2) <U>&gt;</U> s(i).  Intuitively, end accesses are the nodes we
+can get out of the way by deletion.
+
+Modify the score for u as follows:
+
+l'(u) =  |{ i in [1, m] | ((s'(i) &lt; u and s'(i+1) &gt; u) or
+                           (s'(i) &gt; u and s'(i+1) &lt; u)) and
+                          i is not an end access in subsequence s'}|.
+
+Now the lower bound goes through, using l'(u) rather than l(u), because we
+only count a rotation for u when s(i) &lt; u and s(i+1) &gt; u, and there is some
+j &gt; i with s(j) &lt; u.  (Or else s(i) &gt; u and s(i+1) &lt; u, and there is some
+j &gt; i with s(j) &gt; u.)
+
+For the bit reversal permutation it is convenient to index the sequence from
+0, so that s(i) = bit_reversal(i).  For a bit reversal sequence on k bits,
+it is easy to show that there are only k+1 end accesses.  These are at those
+                        j
+elements s(i) equal to 2  - 1, for some j in [0, k].  So the score assigned
+to a node u at the j'th level of the lower bound tree, whose subsequence is a
+bit reversal permutation on j bits, is
+         j
+l'(u) = 2  - 1 - (j + 1).
+
+                         k-j
+The j'th level of Y has 2    nodes, so summing all the scores we get
+      __
+      \   k-j     j                    k
+L  =  /_ 2    * (2  - j - 2)  = (k-4)*2  + k + 4.
+  1 <U>&lt;</U> j <U>&lt;</U> k
+
+          k
+With n = 2 ,  this gives an Omega(n log n) lower bound.
+
+So any algorithm that sorts a Jordan sequence by inserting the elements into
+a binary tree, maintained via rotations, requires n log n time.
+
+Note that at any single internal node u of the the lower bound tree the
+subtracting out of the end accesses can cause a radical reduction in u's score.
+For example, if the subsequence for u = 10.5 is
+    1 20 2 19 3 18 4 17 5 16 6 15 7 14 8 13 9 12 10 11
+then l(u) = 19 but l'(u) = 0.
+
+Indeed, if the nodes are in the following "zig-zag" binary tree
+
+     1
+      \
+       20
+      /
+     2
+      \
+       19
+      /
+     3
+      \
+       ...
+
+They can be accessed in the stated order solely through standard deletions,
+with no rotations.
+
+Question:  Are there sequences of n nodes where the lower bound for accessing
+with deletions is d(n) and the lower bound for accessing without deletions is
+not O(d(n) + n)?  Such a sequence will need many end accesses in many of its
+subsequences.
+
+[1]  R. Wilber, "Lower Bounds for Accessing Binary Search Trees With Rotations"
+     SIAM J. Computing, 18(1) (1989) pp. 56-67.
+
+[2]  R. Tarjan, "Sequential Access in Splay Trees Takes Linear Time",
+     Combinatorica 5 (1985)  pp. 367-378.
+</PRE><HR><PRE>
+<B>From:</B>           <A HREF="mailto:rew@lightstone.com">rew@lightstone.com</A> (Bob Wilber at PUMICE)
+<B>Newsgroups:</B>     comp.theory
+<B>Subject:</B>        Re[2]: Jordan Sequences for which Splay Sort is n log n
+<B>Date:</B>           1 Oct 1995 13:28:32 -0500
+<B>Organization:</B>   UTexas Mail-to-News Gateway
+</PRE><HR><PRE>
+There is a statement I made in my last post that needs some correction and
+clarification.
+
+Paul Callahan said:
+&gt;In the following, I'm going to use the claim that sorting a sequence by
+&gt;inserting it into a binary tree is as hard as accessing the same
+&gt;sequence in a tree containing these values.  I haven't proved this,
+&gt;but it seems to me that each time a value is inserted (a new leaf
+&gt;added at what was a "null pointer"), one could imagine that that value
+&gt;already existed as a node in the tree but had not previously been
+&gt;accessed.  It should thus be possible to construct an initial tree
+&gt;containing the values to be sorted for which the rotation sequence is
+&gt;the same whether one is inserting into an intially empty tree, or
+&gt;accessing from an initally full tree.
+&gt;(Originally, I had a more
+&gt;complicated idea for a proof that would not require this claim
+&gt;but I think it is true, and it results in a cleaner argument).
+
+and I said
+&gt;I believe your claim is false...
+
+It is clear that the model of insertion that Callahan had in mind is that nodes
+are always inserted as leaves in the appropriate part of the tree.  It that
+case his claim is easily proven to be true.  Starting from an empty tree, carry
+out a sequence of rotations and insertions of new leaves until all nodes have
+been inserted, creating some tree T.  Now carry out the sequence backward,
+starting from T, except that when you would delete a leaf (the backwards
+version of inserting it), instead leave the node in place and mark it as
+deleted.  Subsequent rotations in the backwards sequence do not involve any
+marked leaves.  Furthermore, leaves marked as deleted stay at the fringe of the
+tree, that is, it is never the case that a marked leaf has an unmarked leaf as
+a child.  So the backward sequence of rotations can be carried out.  In the 
+final tree all nodes are marked.  This is the tree that satisfies the claim.
+
+What I had in mind was a more general model of insertion, namely, the reverse
+of "standard deletions", and it is with this more general type of insertion
+that the claim appears to be false.  A standard insertion of a node v into a
+tree T is defined as follows:
+
+1.  Let x be the largest node &lt; v in T, and let y be the smallest node &gt; v in
+    T.  (For now assume that v is neither smaller than every node in T, nor
+    bigger than every node in T.)
+
+2.  Either x is an ancestor of y or y is an ancestor of x.  Assume the former.
+    Let u[0] = x, u[1], u[2], ..., u[k] = y be the path from x to y.  u[1] is
+    the right child of x and for i &gt; 1, u[i] is the left child of u[i-1].
+    Node v can be made a child of any one of the u[i]s.  If it is made a child
+    of x, it is a right child, otherwise it is a left child.  v has no left
+    child and is given u[i+1] as a right child (unless i = k, in which case
+    v is a leaf).
+
+3.  If v is less than every node in T, we can either make v the root (with T as
+    its right subtree) or can insert v as a left child of any of the nodes
+    along the leftmost path of T.  Similarly when v is greater than every node
+    in T.
+
+4.  The cost of a standard insertion is the cost of following the path from
+    the root to v after v is inserted.
+
+Note that the argument used above to prove Callahan's claim for insertions of
+leaves doesn't work for the more general type of insertion, because marked
+nodes might be left in the middle of the tree (with unmarked nodes as children)
+and this can make subsequent rotations in the reverse sequence invalid.
+
+It is trivial to emulate a splay tree insertion by means of rotations and a
+standard insertion, with no change in the cost of the operation.  I don't
+see any way to emulate a splay tree insertion with rotations and an insertion
+of a leaf, while retaining the original cost.
+
+So the "patched up" lower bound of my previous post seems to be necessary to be
+able to claim that a splay sort of a bit reversal permutation, or of a Jordan
+sequence, requires n log n time.
+</PRE><HR><PRE>
+<B>From:</B>           <A HREF="mailto:callahan@biffvm.cs.jhu.edu">callahan@biffvm.cs.jhu.edu</A> (Paul Callahan)
+<B>Newsgroups:</B>     comp.theory
+<B>Subject:</B>        Re: Re[2]: Jordan Sequences for which Splay Sort is n log n
+<B>Date:</B>           2 Oct 1995 11:49:20 -0400
+<B>Organization:</B>   The Johns Hopkins University CS Department
+</PRE><HR><PRE>
+In article &lt;06edc080@lightstone.com&gt;,
+Bob Wilber at PUMICE &lt;<A HREF="mailto:rew@lightstone.com">rew@lightstone.com</A>&gt; wrote:
+&gt;There is a statement I made in my last post that needs some correction and
+&gt;clarification.
+&gt;
+...
+&gt;It is clear that the model of insertion that Callahan had in mind is that nodes
+&gt;are always inserted as leaves in the appropriate part of the tree.  It that
+&gt;case his claim is easily proven to be true.  
+...
+&gt;What I had in mind was a more general model of insertion, namely, the reverse
+&gt;of "standard deletions", and it is with this more general type of insertion
+&gt;that the claim appears to be false.  
+
+OK, this is a point I hadn't considered, so I guess things are a bit
+more complicated than I had hoped.  As I mentioned, I had a backup
+argument.  This relied on a different claim that seemed clear at the
+time, namely that to insert an element into a binary tree, one must
+access either its successor or predecessor in symmetric order.
+
+Now that you bring up the issue of general insertions, even the latter
+claim seems less clear to me, because it is only true in the
+case of leaf insertions that one must link the node directly to
+either its successor or predecessor.  However, it should still hold
+because one cannot certify that a node is being inserted into the
+correct place without having seen its successor and predecessor (at least
+assuming no extra information is maintained in the tree).
+
+Anyway, instead of bounding the rotations from the very beginning, we
+can simply ignore the cost of inserting the first half of the
+bit-reversed sequence (even-valued elements).  Then, to bound the cost
+of inserting the remaining (odd-valued) elements, we would find the
+cost of accessing any sequence of successors or predecessors of these
+elements (which I think should be Omega(n log n)).  Since the above
+poster seems to have patched up my argument to his own satisfaction,
+there is probably no need for this (especially if the correspondence
+between his name and the author of one of the cited papers is not
+coincidental.)
+
+Actually, this brings up another unstated assumption I would have to
+use, which is that the cost of accessing *any* subsequence of n/2
+elements from a list of n elements in bit-reversed order is 
+Omega(n log n).  I would be surprised if this were not true, but I don't know
+the best way of proving it.  Clearly, there are some sequences that
+are "hard" to access but which contain an "easy" subsequence of length
+n/2, but intuitively it looks like any subsequence of a bit-reversed
+permutation should have the same property of breaking down the kind of
+locality of reference needed to obtain o(n log n) rotations.  I'd
+appreciate any insight into this.  I suspect that the machinery
+needed for the lower bound on bit-reversed sequences would be sufficient,
+but maybe there is a simpler argument.
+
+-- 
+        --- Paul Callahan --- <A HREF="mailto:callahan@cs.jhu.edu">callahan@cs.jhu.edu</A> ---
+
+"The first principle in science is to invent something nice to look at 
+ and then decide what it can do." -- Rowland Emett
+</PRE><HR><PRE>
+<B>From:</B>           <A HREF="mailto:rew@lightstone.com">rew@lightstone.com</A> (Bob Wilber at PUMICE)
+<B>Newsgroups:</B>     comp.theory
+<B>Subject:</B>        Re: Jordan Sequences for which Splay Sort is n log n
+<B>Date:</B>           3 Oct 1995 14:34:15 -0500
+<B>Organization:</B>   UTexas Mail-to-News Gateway
+</PRE><HR><PRE>
+I wrote:
+&gt;What I had in mind was a more general model of insertion, namely, the reverse
+&gt;of "standard deletions", and it is with this more general type of insertion
+&gt;that the claim appears to be false.  
+
+Paul Callahan wrote:
+&gt;OK, this is a point I hadn't considered, so I guess things are a bit
+&gt;more complicated than I had hoped.  As I mentioned, I had a backup
+&gt;argument.  This relied on a different claim that seemed clear at the
+&gt;time, namely that to insert an element into a binary tree, one must
+&gt;access either its successor or predecessor in symmetric order.
+&gt;
+&gt;Now that you bring up the issue of general insertions, even the latter
+&gt;claim seems less clear to me, because it is only true in the
+&gt;case of leaf insertions that one must link the node directly to
+&gt;either its successor or predecessor.  However, it should still hold
+&gt;because one cannot certify that a node is being inserted into the
+&gt;correct place without having seen its successor and predecessor (at least
+&gt;assuming no extra information is maintained in the tree).
+
+Well, this brings up an issue that arises with any sort of lower bound --
+what's the right model?  When inserting node v in a tree that contains
+immediate predecessor x and immediate successor y, it is arguable that one
+should charge for the cost of finding both x and y, in order to certify that v
+is being inserted in a legal spot (let's call these two nodes bounds(v)).
+Instead, for standard insertions I charge the cost of following the path from
+the root to the newly inserted node.  My reasons for choosing the cost model I
+did are as follows:
+
+1.  Symmetry.  The cost of a standard insertion is the same as the cost of a
+standard deletion of the same node in the time reversed sequence.  It is clear
+that when deleting node v it is not necessary to charge for finding bounds(v).
+
+2.  Generality.  This is a more generous cost model than the one that charges
+for finding bounds(v), so any lower bound obtained with this cost model will
+apply to a broader class of algorithms.  In principle, an algorithm doesn't
+need to look for bounds(v).  For example, store the minimum and maximum
+values in the entire tree, and in addition, store with each non-root node
+v the minimum value of the subtree it is a root of, if v is a right child of
+its parent, or the maximum value of the subtree it is a root of, if v is a
+left child of its parent.  With these values we can verify the validity of an
+insertion while only having to look as far as the child of the node being
+inserted.  These values can be maintained in constant time under rotations.
+For example, if x is a left child of z and y is a right child of x, then when
+x is rotated over z, x gets z's old extremum value (either a minimum or a 
+maximum), z gets y's old minimum, and y gets x's old maximum.  When a standard
+deletion or insertion is done, the cost of making the required updates of
+extrema can be charged against the cost of following the path from the root to
+the inserted or deleted node.
+
+Most balanced search tree algorithms need *some* sort of extra information in
+the tree.  For example, red-black trees need a bit per node that tells whether
+they're red or black (splay trees are unusual in that they don't have any such
+extra information).  So, while storing one extra value in each node is more
+overhead than some other search algorithms have, it seems arbitrary to reject
+out of hand algorithms that do that.  And there might be a less costly way to
+avoid looking at bounds(v).
+
+3.  Simplicity.  If I charge for finding bounds(v), I have to figure out what
+bounds(v) is.  For a highly regular sequence like the bit reversal permutation
+this is easy, but in general it might be harder than counting end accesses.
+
+&gt;Anyway, instead of bounding the rotations from the very beginning, we
+&gt;can simply ignore the cost of inserting the first half of the
+&gt;bit-reversed sequence (even-valued elements).  Then, to bound the cost
+&gt;of inserting the remaining (odd-valued) elements, we would find the
+&gt;cost of accessing any sequence of successors or predecessors of these
+&gt;elements (which I think should be Omega(n log n)).
+
+Well, yes, if for inserting each node v you charge for accessing bounds(v)
+I believe this works.  For the second half of the bit reversal permutation,
+br(n/2), br(n/2 + 1), ..., br(n-1), the nodes accessed are
+bounds(br(n/2)), bounds(br(n/2 + 1)), ..., bounds(br(n-1)), from which we can
+extract the subsequence br(0), br(1), ..., br(n/2 - 1).  And this takes
+Omega(n log n) time to access.  A complicating factor is that as you proceed,
+nodes are being inserted into the tree (you're not just doing accesses) but
+I don't think this affects the validity of the lower bound proofs.  This is
+sufficient to establish a bound on splay sorting, since a splay insertion of v
+does in fact access bounds(v).
+
+&gt;Since the above poster seems to have patched up my argument to his own
+&gt;satisfaction, there is probably no need for this (especially if the
+&gt;correspondence between his name and the author of one of the cited papers is
+&gt;not coincidental.)
+
+The probability of two people with my name looking at this problem is low.
+
+&gt;Actually, this brings up another unstated assumption I would have to
+&gt;use, which is that the cost of accessing *any* subsequence of n/2
+&gt;elements from a list of n elements in bit-reversed order is 
+&gt;Omega(n log n).  I would be surprised if this were not true, but I don't know
+&gt;the best way of proving it.
+
+I thought this was self evident.  Suppose I can access some sequence s[1],
+s[2], ..., s[n] in time f(n).  Then the same algorithm also accesses any
+subsequence, s[i_1], s[i_2], ..., s[i_k] in time f(n).  (Just ignore the
+accesses you don't care about.)  So any lower bound on accessing the
+subsequence is necessarily a lower bound on accessing the full sequence.
+</PRE><HR><PRE>
+<B>From:</B>           <A HREF="mailto:callahan@condor.cs.jhu.edu">callahan@condor.cs.jhu.edu</A> (Paul Callahan)
+<B>Newsgroups:</B>     comp.theory
+<B>Subject:</B>        Re: Jordan Sequences for which Splay Sort is n log n
+<B>Date:</B>           3 Oct 1995 17:23:32 -0400
+<B>Organization:</B>   The Johns Hopkins University CS Department
+</PRE><HR><PRE>
+In article &lt;0718e6e0@lightstone.com&gt;,
+Bob Wilber at PUMICE &lt;<A HREF="mailto:rew@lightstone.com">rew@lightstone.com</A>&gt; wrote:
+
+&gt;I thought this was self evident.  Suppose I can access some sequence s[1],
+&gt;s[2], ..., s[n] in time f(n).  Then the same algorithm also accesses any
+&gt;subsequence, s[i_1], s[i_2], ..., s[i_k] in time f(n).  (Just ignore the
+&gt;accesses you don't care about.)  So any lower bound on accessing the
+&gt;subsequence is necessarily a lower bound on accessing the full sequence.
+
+Actually, I meant that the bound should also hold in the other
+direction for bit-reversed sequences.  What I want to show is that the
+lower bound for the full bit-reversed sequence is (to within a
+constant) a lower bound for any subsequence containing half the
+elements.
+
+There are sequences for which this doesn't hold.  For example, interleave
+a bit-reversed sequence with a sequence in increasing order.  Then
+the full sequence requires Omega(n log n) rotations for access, but
+it contains a subsequence (the one in increasing order) that requires
+O(n) rotations.  But what I'm claiming is that the bit-reversed
+sequence does not contain any such "easy" sequence as a subsequence.
+
+Is this true?
+-- 
+        --- Paul Callahan --- <A HREF="mailto:callahan@cs.jhu.edu">callahan@cs.jhu.edu</A> ---
+
+"The first principle in science is to invent something nice to look at 
+ and then decide what it can do." -- Rowland Emett
+</PRE><HR><PRE>
+<B>From:</B>           <A HREF="mailto:rew@lightstone.com">rew@lightstone.com</A> (Bob Wilber at PUMICE)
+<B>Newsgroups:</B>     comp.theory
+<B>Subject:</B>        Re: Jordan Sequences for which Splay Sort is n log n
+<B>Date:</B>           4 Oct 1995 11:59:49 -0500
+<B>Organization:</B>   UTexas Mail-to-News Gateway
+</PRE><HR><PRE>
+&gt;Actually, I meant that the bound should also hold in the other
+&gt;direction for bit-reversed sequences.  What I want to show is that the
+&gt;lower bound for the full bit-reversed sequence is (to within a
+&gt;constant) a lower bound for any subsequence containing half the
+&gt;elements.
+&gt;
+&gt;There are sequences for which this doesn't hold.  For example, interleave
+&gt;a bit-reversed sequence with a sequence in increasing order.  Then
+&gt;the full sequence requires Omega(n log n) rotations for access, but
+&gt;it contains a subsequence (the one in increasing order) that requires
+&gt;O(n) rotations.  But what I'm claiming is that the bit-reversed
+&gt;sequence does not contain any such "easy" sequence as a subsequence.
+&gt;
+&gt;I this true?
+
+I suspect that it is, but I don't have a proof.
+
+However, you don't need such a strong claim for your proof to work.  Let's look
+at it again.  We have a proof that accessing a bit reversal permutation of
+length n via a binary search tree algorithm requires c * n log n time,
+for some c &gt; 0.
+
+We insert into an initially empty tree a bit reversal permutation on k bits,
+          k
+with n = 2  elements.  We want to show that inserting the last n/2 elements
+requires accessing the n/2 nodes already in tree in bit reversal order.  Fix k
+at 4.  When br(n/2) = 0001 is inserted, we must access the lower of
+bounds(0001), namely, the lower of 0000 and 0010.  The higher of these
+two nodes is an ancestor of the lower, so we actually visit both and are free
+to charge for accessing either one.  So charge for acessing 0000.  When we
+insert br(n/2 + 1) = 1001, we must access 1000 and 1010.  Charge for 1000.
+When we insert br(n/2 + 1) = 0101, we must access 0100 and 0110.  Charge for
+0100.  The sequence of accesses we charge for, 0000, 1000, 0100, 1100, ....,
+1110, is a full bit reversal permutation on k-1 bits (the k'th bit being fixed
+at 0), with no missing elements.  So this takes c*(n/2) log (n/2) =
+Omega(n log n) time.
+
+The only lower bound being applied here is to a complete bit reversal
+permutation, not some arbitrary subsequence of a bit reversal permutation.
+</PRE>

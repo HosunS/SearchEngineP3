@@ -1,0 +1,2205 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+  <title>1-d Arrays, The <b>Object</b> class, and Simple Collections</title>
+</head>
+
+<body BGCOLOR="white">
+
+<center>
+<h1>1-d Arrays, The <b>Object</b> class, and Simple Collections</h1>
+<p>
+<h2>Introduction to Computer Science I-III<br>
+ICS-21/-22/-23<br>
+</h2>
+<p>
+</center>
+
+
+
+<!-- Introduction -->
+
+<a name="Introduction"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Introduction</b></td>
+<td width ="80%">
+  In this lecture, we will discuss a powerful aggregate data structure: arrays.
+  Arrays allow us to store collections of arbitrary-sized sequences of values
+    (both primitive types and references to objects), and easily access and
+    manipulate all these values.
+  We will learn how to declare arrays, picture them, and perform operations
+    on arrays (mostly by looping, and performing operations on the individual
+    values in the arrays).
+  We will examine how arrays can be used as instance variables in classes.
+  <p>
+  Once we have learned the basic array material, we will discuss wrapper
+    classes and the <b>Object</b> class.
+  Putting all this information together, we will learn how to represent two
+    simple, general, and powerful collection classes (stack and queue) with
+    expandable arrays stored as instance variables.
+  We will follow-up on this material later in the semester, with a systematic
+    study of even more powerful Java collection classes.
+  <p>
+  Arrays are very similar to objects from a special class, and we will
+    exploit this similarity throughout our discussion of arrays.
+  There is also a strong connection between arrays (which are indexed by a
+    sequence of integers) and <b>for</b> loops (which easily generate a
+    sequence of such integers).
+  Finally, there is also a connection between files and arrays: often the
+    information stored in a file (easily processed sequentially) is read and
+    stored into an array (where it can be easily and efficiently processed -and
+    reprocessed- either sequentially or randomly).
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Declaring Arrays -->
+
+<a name="DeclaringArrays"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Declaring<br>(and initializing)<br>Arrays</b></td>
+<td width ="80%">
+  We declare and initialize array variables like other class variables, but by
+    specifying the type and constructor in a special form: for 1-dimensional
+    (1-d) arrays, the type is specified as any Java type (primitive or
+    reference) followed by <b>[]</b>; the constructor uses that same type,
+    with an <b>int</b> value (computed by a literal or more general expression)
+    inside the brackets.
+  The value computed from this expression specifies the length of the array:
+    how many values it contains.
+  Once we construct an array object, its length may not change: there is
+    no mutator for that operation.
+  So, for example, we can declare and initialize an array variable storing a
+    reference to an object containing 5 <b>int</b>s by the declaration
+  <pre><b>  int[] a = new int[5];</b></pre>
+  This variable, and the object it refers to, are illustrated in the following
+    picture.
+  <p>
+</tbody>
+</table>
+   <img src="images/intarray.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  Pronounce <b>[]</b> as "array"; so <b>int[]</b> is pronounces as "int array".
+  Array objects are labelled by their array type; they contain two major parts:
+    a sequence of indexed boxes and a special box named <b>length</b>.
+  Notice four important facts about arrays illustrated by this picture.
+  <ul>
+    <li>
+      An array is a <b>homogeneous</b> data structure: each of its indexed
+        members is labelled by (and stores) the same type (here <b>int</b>).
+      Constrast this with the other classes that we have discussed, which are
+        <b>heterogeneous</b>: each of their instance variables can store a
+        different type.
+      We can declare arrays to store sequences of either primitive or reference
+        types.
+      Because this is an <b>int[]</b>, each box in the sequence stores an
+        <b>int</b> value, and is so labelled.
+      Each box in the sequence is also labelled by its index (<b>0</b>,
+        <b>1</b>, <b>2</b>, etc.) which is always an <b>int</b> no matter what
+        type is stored inside each box.
+    <p>
+    <li>
+      The indexes are numbered from <b>0</b> to one less than the length of the
+        array (here the maximum index is <b>4</b>, which is one less than the
+        length of the array, which is <b>5</b>).
+      This decision, while elegant from a mathematical perspective, is a
+        disaster from a psychological perspective: most humans start counting
+        at <b>1</b>, not <b>0</b>, and most of us expect the length of the
+        array to be the same as the index of the last box in the array.
+      But C, C++, and Java all start the indexes of their arrays at <b>0</b>,
+        so, we must overcome human nature when we use arrays in programming.
+    <p>
+    <li>
+      Each array object defines a <b>public final int length</b> instance
+        variable that stores the length of the array.
+      Its value is specified when the array object is constructed, and is
+        unchangeable after that: because <b>length</b> has the <b>final</b>
+        access modifier, we CANNOT attempt to change its value.
+      But, we can directly access (i.e., not through an accessor) the value
+        stored in this field.
+      In this example, we could write <b>a.length</b> in our code: it is an
+        expression that evaluates to <b>5</b>.
+      In fact, we can always specify the highest legal index in the array
+        object by the expression <b>a.length-1</b>.
+      So given a reference to an array, we can always determine its length,
+        and from it the highest index.
+    <p>
+    <li>
+       Like all instance variables, ALL INDEXED MEMBERS ARE AUTOMATICALLY
+         INITIALIZED when the array object is constructed.
+       Java initializes them as it initializes all instance variables: for the
+         primitive types, it uses <b>0</b> for <b>int</b>, <b>0.</b> for
+         <b>double</b>, <b>false</b> for <b>boolean</b>, and the null character
+         for <b>char</b>; for all reference types it uses <b>null</b>
+         (meaning that they do not refer to any object).
+       Here all the indexed members are initialized to <b>0</b>.
+  </ul>
+  <p>
+  We must use only non-negative lengths when we construct arrays objects
+    (a length of <b>0</b> is allowed, and does have some interesting uses).
+  If we specify a negative value, the special constructor for arrays throws the
+     <b>NegativeArraysSizeException</b>.
+  <p>
+  We can also construct an array by declaring all the values that it must
+    contain; in such a case, the length of the array is automatically inferred
+    from the number of values.
+  So, for example, we can declare and initialize an array variable storing a
+    reference to an object containing the five <b>int</b> values 4, 2, 0, 1,
+    and 3 (in that order) by the declaration
+  <pre><b>  int[] a = new int[]{4, 2, 0, 1, 3};</b></pre>
+  If you think about <b>int[]</b> as the class name and <b>{4,2,0,1,3}</b> as
+    the parameters to the constructor for an object from that class, this
+    syntax is reasonable.
+  Of course, we cannot take this similarity too far, because constructors
+    always have a set number of parameters, while any number of arguments
+    are allowed between these braces.
+  The types of all the values in the braces must be compatible with the
+    type of the array used in the constructor.
+  <p>
+  We illustrate the result of executing this declaration by the following
+    picture.
+  <p>
+</tbody>
+</table>
+   <img src="images/intarray2.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+
+</tbody>
+</table>
+
+
+
+<!-- Accessing Arrays-->
+
+<a name="AccessingArrays"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Accessing Arrays by their Indexed Members</b></td>
+<td width ="80%">
+  We can access any individual member stored in an array object by using
+  <ul>
+    <li>the variable that refers to the array object,
+    <li>and the index of the member that we want to access
+         (written as an expression inside brackets).
+  </ul>
+  So, if we declare <b>int[] a = new int[]{4, 2, 0, 1, 3};</b> then we  can
+    write <b>System.out.println( a[0] );</b> Java would print the value stored
+    in index <b>0</b> in array <b>a</b>, which is <b>4</b>.
+  We pronounce <b>a[0]</b> as "a at index 0" or just "a sub 0" (similar to the
+    subscript in mathematical notation: think of the sequence 
+    <b>a<sub>0</sub></b>, <b>a<sub>1</sub></b>, <b>a<sub>2</sub></b>, etc.)
+  Likewise, we can write
+  <pre><b>  if (a[2] == 0)
+    ...some statement</b></pre>
+  which checks to see whether or not zero was stored in the array object
+    referred to by  <b>a</b>, at index <b>2</b>. 
+ <p>
+  Note that <b>a</b> is of type <b>int[]</b> (pronounced <i>int array</i>);
+    any access to a member stored in an index of <b>a</b> is of type
+    <b>int</b>.
+  Generally, if <b>a</b> is of type <b>T[]</b> (pronounced <i>t array</i>),
+    then any access to a member stored in an index of <b>a</b> is of type
+    <b>T</b>.
+  <p>
+  The golden rule of arrays says, <i>"Do unto any array member as you would do
+    unto a variable of the same type"</i>.
+  So wherever we can use an <b>int</b> variable, we can use an <b>int[]</b>
+    member.
+  Thus, we can write <b>a[2] = 8;</b>, using <b>a[2]</b> on the left side of
+    the <b>=</b> state-change operator (changing the value stored in index
+    <b>2</b> from <b>0</b> to <b>8</b>).
+  We can even write <b>a[2]++;</b>, which increments the value stored in index
+    <b>2</b> of the array.
+  So, when you ask yourself the question, "Can I use access an array member and
+    use it here?", the question simplifies to, "Can I use a variable (of the 
+    same type) here?"
+  <p>
+  In fact, the value written inside the brackets can be any expression that
+    evaluates to an <b>int</b>; we will see how variables and more complicated
+    expressions are used for  indexing arrays later in this lecture.
+  For now, note that writing <b>a[a.length-1] = 0;</b> stores <b>0</b> in the
+    last index of the array object. 
+  <p>
+  Note that when accessing a member in an array, if the value computed for the
+    index is less than 0, or greater than OR EQUAL TO the length of the array,
+    then trying to access the member at that index causes Java to throw the
+    <b>ArrayIndexOutOfBoundsException</b> which contains a message showing what
+    index was attempted to be accessed.
+  So, writing <b>a[a.length] = 0;</b> throws this exception, since the index
+    <b>5</b> is not in the array object.
+  <p>
+  Finally, here is a picture that shows how to declare a variable refering to
+    an array object, but this time the array object stores a <b>String</b> in
+    each index.
+  After this declaration are three expression statements that intialize these
+    indexes with new <b>String</b> objects.
+<p>
+</tbody>
+</table>
+   <img src="images/stringarray.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  Although indexes are always integers, the values stored at each index 
+    depends on the type used to declare/construct the array.
+  In this example, each index stores a reference to a <b>String</b> object.
+  Finally, using what we learned above, we could have declared and intialized
+    this variable and its array object in just one declaration: by either
+</tbody>
+</table>
+  <pre><b>String[] s = new String[]{new String("ABC"), new String("LMN"), new String("XYZ")};</b></pre>
+  <pre><b>String[] s = new String[]{"ABC", "LMN", "XYZ"};</b></pre>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  The second, more simple, declaration is correct because of the special
+   property of <b>String</b> literals that they construct their own objects.
+  <p>
+  Note that because of the golden rule, we can use <b>s[0]</b> just like any
+    variable of type <b>String</b>; therefore, we can write the expression
+    <b>s[0].length()</b> which returns 3 (the length of the <b>String</b>
+    object referred to in index <b>0</b> in the <b>String</b> array <b>s</b>).
+  So generally, when arrays store references to objects in their indexed
+    members, we can call an appropriate method (based on the type of the
+    reference) on any member in the array.
+  Here we can call any <b>String</b> method on any object stored in this array.
+</tbody>
+</table>
+
+
+
+<!-- Processing Arrays -->
+
+<a name="ProcessingArrays"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Processing Arrays</b></td>
+<td width ="80%">
+  Most code that processes an array does so by iterating through it: looking at
+    the value stored in each indexed member in the array object.
+  Typically, a <b>for</b> loop is used to generate all the indexes for the
+    array object.
+  Study the following code carefully; although short, it contains all the
+    fundamentals that you need to understand for writing array processing code.
+  This code computes the sum of all the values in an <b>int[]</b>.
+  <pre><b>  int sum = 0;
+  for (int i=0; i&lt;a.length; i++)
+    sum += a[i];
+  System.out.println("Sum = " + sum);</b></pre>
+  Below is a (non-compact) trace table that illustrates the hand simlation of
+    this code.
+  Notice how the same statement <b>sum += a[i];</b> is repeatedly executed,
+    but it has a slightly different meaning every time, because the value
+    stored in <b>i</b> changes, so the indexed member being added to <b>sum</b>
+    is always different.
+  <p>
+  <img src="images/sumtrace.gif"></image>
+  <p>
+  Notice the <b>for</b>'s continuation test: <b>i&lt;a.length</b>.
+  When the length is <b>5</b> (as in this example), the final <b>i</b> for
+    which the body is executed is <b>4</b>(the highest index in the array);
+    when <b>i</b> increments to <b>5</b>, the test is <b>false</b> for the
+    first time, so the body is not executed, and instead the loop is
+    terminated.
+  We can write this test as <b>i&lt;=a.length-1</b>, which has the same meaning,
+    but few "real" programmers write the test this way.
+  <p>
+  The following code prints on one line, separated by spaces, all the values
+    stored in an array.
+  After all the values are printed (and the loop terminates), it ends the line.
+  Notice that the same <b>for</b> loop code is used (this time to examine and
+    print, not add together) every member stored in the array object; only the
+    body of the loop (telling Java what to do with each indexed member) is
+    different.
+  <pre><b>  for (int i=0; i&lt;a.length; i++)
+    System.out.print(a[i]+" ");
+  System.out.println();</b></pre>
+  <p>
+  Below, a more interesting version of this loop prints a comma-separated list
+     of values stored in the array: the last one is not followed by a comma,
+     but by a new line.
+  The <b>String</b> to catenate is decided by a conditional expression.
+  <pre><b>  for (int i=0; i&lt;a.length; i++)
+    System.out.print( a[i]+(i&lt;a.length-1?",":"\n") );</b></pre>
+  <p>
+  The following code prompts the user to fill in each value in an array.
+  Notice that the same <b>for</b> loop code is used (this time to store into
+    every indexed member in the array object); again, only the body of the
+    loop is different.
+  <pre><b>  for (int i=0; i&lt;a.length; i++)
+    a[i] = Prompt.forInt("Enter value for a["+i+"]");</b></pre>
+  <p>
+  The following code computes and prints the maximum value stored in an array.
+  Because the original maximum value comes from index <b>0</b> in the array
+    (the first value stored in the array), the <b>for</b> loop starts at index
+    <b>1</b> (the second value stored in the array).
+  <pre><b>  int max = a[0];
+  for (int i=1; i&lt;a.length; i++)
+    if (a[i]>max)
+      max = a[i];
+  System.out.println("Max = " + max);</b></pre>
+  We also could have also written this code as follows, initializing
+    <b>max</b> to <b>Integer.MIN_VALUE</b> and starting the <b>for</b> loop at
+    index <b>0</b>, guaranteeing <b>a[0]</b>'s value will be stored into
+    <b>max</b> during the first loop iteration.
+  <pre><b>  int max = Integer.MIN_VALUE;
+  for (int i=0; i&lt;a.length; i++)
+    if (a[i]>max)
+      max = a[i];
+  System.out.println("Max = " + max);</b></pre>
+  <p>
+  Examine the Javadoc for the <b>Integer</b> class to learn about this
+    <b>public static final int</b> value.
+  Then, hand simulate this second loop to understand why/how it works.
+  In fact, we could replace the <b>if</b> statement by either
+    <b>max = Math.max(max,a[i]);</b> or 
+    <b>max = (a[i]>max ? a[i] : max);</b> and compute the same result,
+    although I prefer the <b>if</b> statement.
+  <p>
+  Finally, the following code loads all the information from a file into an
+    array.
+  We often perform this operation early in a proagram, and then process the
+    information in the array one or more times, beause it is easier to
+    manipulate the information in an array than a file.
+  To work, the file must first store the length of the array needed; it is read
+    first and used to construct an array object exactly the right size to
+    store all the remaining values.
+  Then, we must read the remaining values from the file individually, and
+    store them into the array.
+  <pre><b>  TypedBufferReader tbr = 
+    new TypedBufferReader("Enter file to load in array");
+  String[] s = new String[tbr.readInt()];
+  for (int i=0; i&lt;a.length; i++)
+    a[i] = tbr.readString();
+  tbr.close();</b></pre>
+  Note that we have omitted a <b>try</b>/<b>catch</b> block for catching
+    exceptions: we are assuming that the file contains all correct data, and
+    we never try to read past the last data value in the file.
+  Of course, writing this code in a block allows us to decide how to handle
+     exceptions (wrong type of data, not enough data, etc).
+  <p>
+  The <a href="../../programs/arraydemo.zip">Array Demonstration</a>
+    application contains all the code described in this section (and more).
+  Please download, unzip, run, and examine this code (it is discussed again
+    in the secion illustrating how arrays appear in the Eclipse debugger).
+</tbody>
+</table>
+
+
+
+<!-- Strings as Arrays -->
+
+<a name="StringsAsArrays"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Strings As Arrays</b></td>
+<td width ="80%">
+  A brief observation.
+  The <b>String</b> reference type also has "array-like" properties:
+    a <b>String</b> is a sequence of characters and you can access the
+    individual <b>char</b>s in a <b>String</b>.
+  There are a few relevant differences to know (also check out this material
+    in Sun's Javadoc for the <b>String</b> class).
+  Assume that we declare <b>String s = "ABC";</b>
+  <ul>
+    <li>Unlike arrays, <b>String</b>s employ a <b>public int length</b> method
+          (not a <b>public</b> instance variable) for accessing the length of
+          the <b>String</b>.
+        Thus we must write something like <b>s.length()</b> (which returns
+          <b>3</b>); this inconsistency is foolish.
+    <li>Unlike arrays, <b>String</b>s employ a <b>charAt</b> method (not
+          <b>[]</b>) for accessing the <b>char</b> at a specified index in the
+          <b>String</b> (e.g., <b>s.charAt(0)</b>, which is <b>'A'</b>.
+        Because this class is immutable, there is no way to change the
+          character stored at an index.
+    <li>Unlike arrays, when accessing an illegal index in a <b>String</b> (with
+           <b>charAt</b>), Java throws <b>StringIndexOutOfBoundsException</b>
+           (not <b>ArrayIndexOutOfBoundsException</b>).
+  </ul>
+  We often think about processing the members in a <b>String</b> using the same
+    techniques (a <b>for</b> loop) as when processing members in an array.
+  For example, here is a typical loop for processing all the characters a
+    <b>String</b>: it adds up the ASCII values of all the characters.
+    <pre><b>  String s = Prompt.forString("Enter Name");
+  int asciiCharSum = 0;
+  for (int i=0; i&lt;s.length(); i++)
+     asciiCharSum += s.charAt(i);  //Implicit conversion char->int
+  System.out.println(s +"'s ASCII sum = " + asciiCharSum);</b></pre>
+  Hand simulate this code with the input <b>HOLYBIBLE</b> or <b>al gore</b>.
+</tbody>
+</table>
+
+
+
+<!-- Array Methods -->
+
+<a name="ArrayMethods"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Array Methods</b></td>
+<td width ="80%">
+  It is often convenient to move array processing operations into methods.
+  In this section, we will show how to write <b>public static</b> methods
+    that process arrays (we can put such methods in our application, or in
+    a library class); then we will exame non-<b>static</b> methods for
+    processing arrays that are stored as instance variables.
+  <p>
+  The first method finds and returns the lowest index that stores the
+    <b>String</b> value specified by the second parameter.
+  Note the form of the parameter variable for the array: it is the same as
+    declaring a local variable of the <b>String[]</b> type.
+  <pre><b>  public static int findLowestIndexOf(String[] a, String value) {
+    for (int i=0; i&lt;a.length; i++)
+      if (a[i].equals(value))
+        return i;
+
+    return -1;
+  }</b></pre>
+  Here the code immediately returns the value stored in <b>i</b> if it finds an
+    <b>i</b> such that <b>a[i]</b> stores the same (<b>.equals</b>)
+    <b>String</b> as <b>value</b>; there is no reason to search any further.
+  By standard convention, returning <b>-1</b> means <b>value</b> was not found
+    in <b>a</b> (since <b>-1</b> is NEVER a legal index in an array).
+  This method returns <b>-1</b> only after it discovers that no member in the
+    array store <b>value</b>.
+  Note the use of two <b>return</b> statements, which I believe simplify this
+    code (don't agree? try writing this method with only one <b>return</b> and
+    show it to me if it is simpler).
+  <p>
+  The next method returns whether every member in the array stores 0.
+  It has a similar test/return structure as <b>findLowestIndexOf</b>.
+  <pre><b>  public static boolean all0(int[] a) {
+    for (int i=0; i&lt;a.length; i++)
+      if (a[i] != 0)
+        return false;
+
+    return true;
+  }</b></pre>
+  Here the code immediately returns <b>false</b> as soon as it finds a non-0
+     member in the array (there is no reason to search any further).
+  This method returns <b>true</b> only after it discovers that every member
+    in the array does store a <b>0</b>.
+  <p>
+  I often see beginners write such code as follows.
+  This code is more complicated and slower than the code above: it is terrible.
+  If you want to be a programmer, avoid overly complicated and slow code.
+  <pre><b>  public static boolean all0(int[] a) {
+    int count0s = 0;                     //terrible code
+    for (int i=0; i&lt;a.length; i++)       //terrible code
+      if (a[i] == 0)                     //terrible code
+        count0s++;                       //terrible code
+                                         //terrible code
+    if (count0s == a.length)             //terrible code
+      return true;                       //terrible code
+    else                                 //terrible code
+      return false;                      //terrible code
+  }</b></pre>
+  <p>
+  The next method determines whether an array is stored in increasing order
+    (technically, non-decreasing order, because we ensure only that a
+    subsequent value is no smaller than -at least as big as- the preceeding
+    one).
+  Note the interesting <b>for</b> loop bounds, and the interesting use of the 
+    index in the body of the loop.
+  If an array stores N values, we must compare N-1 pairs of values to compute
+    this answer.
+  For the first iteration, we are comparing <b>a[0]>a[1]</b>; for the last
+    iteration we care comparing <b>a[a.length-2] > a[a.length-1]</b>, which
+    is comparing the next-to highest index with the highest one in the array.
+   <pre><b>  public static boolean increasing(int[] a) {
+    for (int i=0; i&lt;a.length-1; i++)
+      if (a[i] > a[i+1])
+        return false;
+
+    return true;
+  }</b></pre>
+  Here the code immediately returns <b>false</b> as soon as it finds a member 
+    in the array that is followed by a smaller value (there is no reason to
+    search any further).
+  This method returns <b>true</b> only after it discovers that every member
+    (but the last) in the array is followed by a value that is at least as big.
+  <p>
+  The following three-parameter method swaps the values in positions
+    <b>i</b> and <b>j</b> in array <b>a</b>.
+   <pre><b>  public static void swap(int i, int j, int[] a) {
+    int temp = a[i];
+    a[i] = a[j];
+    a[j] = temp;
+  }</b></pre>
+  We can illustrate an example of a call to this method using the following
+    call frame.
+<p>
+</tbody>
+</table>
+   <img src="images/swapframe.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  Notice that this method changes the state of the array object whose
+    reference it is passed.
+  The argument <b>x</b> still refers to the same object (the method cannot
+    change what object it refers to), but the state of that object has been
+    changed inside the method.
+<p>
+  Finally, here is an interesting method: interesting because it returns
+    a new array object.
+  The <b>lengthAtLeast</b> method takes a <b>String[]</b> as a parameter and
+     returns another <b>String[]</b> as a result: the returned result contains
+     only those  <b>String</b>s from the parameter array that are at least
+     <b>n</b> characters long (specified by the second parameter).
+  <pre><b>  public static String[] lengthAtLeast(String[] a, int n) {
+    int answerLength = 0;
+    for (int i=0; i&lt;a.length; i++)
+      if (a[i].length() > n)
+        answerLength++;
+
+    String[] answer  = new String[answerLength];
+    int      answerI = 0;
+    for (int i=0; i&lt;a.length; i++)
+      if (a[i].length() > n)
+        answer[answerI++] = a[i];  //Note the different values used for indexes
+
+    return answer;
+  }</b></pre>
+  This method works by first determining how many values must be returned.
+  Then it declares an array with exactly that length.
+  Next it fills the array with the required values: notice how the
+    postfix <b>++</b> operator returns as a result the original value
+    of <b>answerI</b> but also increments it for the next interation.
+  Finally the method returns the new array it constructed and filled.
+  <p>
+  Assume that we declare
+   <b><pre> String[] s = new String[]{"a", "ab", "abc", abcd", "abcde"}</pre></b>
+  We can then write <b>String[] special = lengthAtLeast(s,3);</b> or even
+    <b>s = lengthAtLeast(s,3);</b> if we never need to access the original
+    array object (making <b>s</b> now refer to the one <b>lengthAtLeast</b>
+    constructed.
+</tbody>
+</table>
+
+
+
+<!-- Array Instance Variables-->
+
+<a name="ArrayInstances"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Arrays Instance Variables</b></td>
+<td width ="80%">
+  We can also write classes that define arrays for their instance variables,
+    constructors that intialize them, and methods that process these intialized
+    instance variables.
+  In fact, the <b>DiceEnsemble</b> class (not <b>SimpleDiceEnsemble</b>)
+    does extactly this.
+  It defines just three instance variables:
+  <b><pre>  private int   sidesPerDie;
+  private int   rollCount;
+  private int[] pips;</pre></b>
+  Here, the <b>pips</b> array stores the number of pips showing on each of
+    the dice in the ensemble.
+  Recall from our original pictures (which will now make more sense, because
+    we know about array objects)
+    that we illustrated the declaration of
+    <b><pre>  DiceEnsemble d1 = new DiceEnsemble(2,6);</pre></b>
+  by
+<p>
+</tbody>
+</table>
+   <img src="images/diceobject.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  The constructor for this class reinitializes <b>sidesPerDie</b> and
+    <b>pips</b> (<b>rollCount</b> is declared to store <b>0</b>).
+  <b><pre>  public DiceEnsemble (int numberOfDice, int sidesPerDie)
+    throws IllegalArgumentException {
+    if (numberOfDice < 1)
+      throw new IllegalArgumentException
+        ("DiceEnsemble constructor: Number of dice ("+numberOfDice+") < 1"); 
+    if (sidesPerDie < 1)
+      throw new IllegalArgumentException
+        ("DiceEnsemble constructor: Sides per die ("+sidesPerDie+") < 1"); 
+
+    this.sidesPerDie  = sidesPerDie;
+    this.pips         = new int[numberOfDice];
+    //No name conflict for pips; we could write: pips = new int[numberOfDice]
+  }</pre></b>
+    which reinitializes the instance variable <b>sidesPerDie</b> with the
+      value of the second parameter and
+    reinitializes the instance variable <b>pips</b> (by using the first
+      parameter) to refer to an array that is exactly the right length to
+      contain values for each of the dice in the ensemble.
+  Once these instance variables are initialized, the <b>getNumberOfDice</b>
+    method becomes just
+  <b><pre>  public int getNumberOfDice ()
+  {return pips.length;}</pre></b>
+  So, there is no need to use another instance variable to store the number
+    of dice; that information is already stored in -and can be accessed via-
+     the <b>public final int length</b> instance variable of the <b>pips</b>
+     array.
+  <p>
+  Likewise, the <b>roll</b> mutator/command becomes simply needs to 
+    increment <b>rollCount</b> and fill in every member in the array to which
+    <b>pip</b> refers with new and random pip values for the dice.
+  <b><pre>  public DiceEnsemble roll () {
+    rollCount++;
+    for (int i=0; i&lt;pips.length; i++)
+      pips[i]  = (int)Math.round(Math.random()*sidesPerDie + .5); 
+    return this;
+  }</pre></b>
+  Many other methods use the <b>pip</b> array to compute their results.
+  After <b>roll</b> has stored new pips, the <b>getPipSum</b> method
+    becomes just
+  <b><pre>  public int getPipSum ()
+    throws IllegalStateException {
+    if (rollCount == 0)
+      throw new IllegalStateException
+        ("getPipSum called, but dice not rolled");
+
+    int pipSum = 0;
+    for (int i=0; i&lt;pips.length; i++)
+      pipSum += pips[i];
+    return pipSum;
+  }</pre></b>
+  which adds up all the values in the <b>pips</b> array.
+  Notice that this method declares a local variable <b>pipSum</b>.
+  Why is this not declared as an instance variable?
+  Because this information is used only while the method is executing;
+    after that, its values can be forgotten, therefore there is no need
+    to store it as an instance variable.
+  Generally, if a variable can be declared locally instead of as an
+    instance variables, that is to be preferred.
+  <p>
+  Finally, the <b>getPips</b> method is also simple, but a bit subtle.
+  <b><pre>  public int getPips (int dieIndex)
+     throws IllegalStateException, IllegalArgumentException {
+    if (rollCount == 0)
+      throw new IllegalStateException
+       ("getPip called, but dice not rolled");
+
+    if (dieIndex < 1 || dieIndex > pips.length)
+      throw new IllegalStateException
+        ("getPip called, but dieIndex("+dieIndex+
+         ") is not in the range [1,"+pips.length+"]");
+
+    return pips[dieIndex-1];
+  }</b></pre>
+  It first checks for either no rolls or a <b>dieIndex</b> that is not legal;
+    it is not in the range <b>[1..number of dice]</b>; in either case, it
+    throws an exception.
+  Otherwise it returns the pips showing on the die specified by
+    <b>dieIndex</b>: die <b>1</b> is stored in array index <b>0</b>,
+    die <b>2</b> is stored in array index <b>1</b>, etc.; which is
+    why the subtraction occurs in the index calculation.
+  <p>
+  So, it is easy to declare array instance variables in classes, initialize 
+    them in constructors, and manipulate them in non-<b>static</b> methods.
+  I recommend that you examine how the other methods in the <b>DiceEnsemble</b>
+   class work with the <b>pips</b> array instance variable.
+</tbody>
+</table>
+
+
+
+<!-- Arrays and the Debugger-->
+
+<a name="Debugger"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Arrays and the Debugger</b></td>
+<td width ="80%">
+  The Eclipse debugger easily displays arrays in the <b>Variables</b> pane.
+  Recall that the disclosure box in the debugger allows us to observe each
+    instance variable in an object; for arrays it displays each index and the
+    indexed member stored in the array.
+  Surprisingly, the debugger doesn't display the <b>length</b> instance
+    variable, but we can infer its value from the index of the last member
+    shown.
+  <p>
+  As with any object, the array's indexed members are available by clicking on
+    the disclosure box (plus sign); doing so changes the contents of this box
+    (to minus sign) and discloses the indexes and their members in the array.
+  Of course, if the array members themselves refer to objects, they too
+    will have their own disclosure boxes, which we can click to disclose
+    further information about these objects.
+  <p>
+  The sample program declares
+  <pre><b>  int   howBig = Prompt.forInt("Enter length for the array");
+  int[] a      = new int[howBig];</b></pre>
+  If we enter <b>5</b> at the prompt, the <b>Variables</b> pane in the
+    debugger shows
+  <p>
+  <img src="images/debug1.gif"></image>
+  <p>
+  Note that <b>a</b> is not yet shown, because it has not been declared.
+  After <b>a</b>'s declaration is executed, the debugger shows
+  <p>
+  <img src="images/debug2.gif"></image>
+  <p>
+  Now <b>a</b> appears; its value shows as <b>int[5]</b>, which means a five
+    element <b>int</b> array.
+  Ignor the <b>id</b> part of the value.
+  If we click the disclosure box (plus sign), it changes into a minus sign,
+    and discloses all the indexes and their members in the array.
+  <p>
+  <img src="images/debug3.gif"></image>
+  <p>
+  Here all the array values are shown to store zero initially, because that
+    is the default for <b>int</b> instance variables, and the members of arrays
+    are much like these.
+  After prompting the user for a new value to store in each index (I entered
+    <b>3</b>, <b>8</b>, <b>12</b>, <b>-5</b>, <b>7</b>), the debugger shows
+  <p>
+  <img src="images/debug4.gif"></image>
+  <p>
+  These values are all highlighted in yellow, because I set a breakpoint after
+    the entire input loop, executing it completely before the debugger stops.
+  Run the <a href="../../programs/arraydemo.zip">Array Demonstration</a>
+    application and familiarize yourself with the operation of the debugger
+    for programs declaring arrays.
+</tbody>
+</table>
+
+
+
+<!-- Arrays and Classes -->
+
+<a name="ArraysAndClasses"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Arrays and Classes for Modeling Data</b></td>
+<td width ="80%">
+  Finally, arrays and classes act together synergistically.
+  A class is a heterogeneous data type: it defines any number of instance
+    variables, each declared with its own individual name to store a different
+    type of value.
+  An array is a homogeneous data type: it defines one name storing an arbitrary
+    number of indexed values, all declared to store the same type of value.
+  <p>
+  Combinations of arrays and classes have all the descriptive power that we
+    need to model almost any kind of information in the computer.
+  As the semester progresses, we will see more sophisticated uses of arrays and
+    classes combined: e.g., an array where each of its members is an object
+    from a class (and inside each object in the class is an instance variable
+    in which an array of other values is stored).
+  <p>
+  Before continuing with our discussion of arrays as instance variables in
+    collection classes, we take short detour to discuss four related topics:
+    wrapper classes, the <b>Object</b> class, the <b>instanceof</b> operator,
+    and reference casting.
+</tbody>
+</table>
+
+
+
+<!-- Wrapper Classes -->
+
+<a name="Wrapper"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Wrapper Classes</b></td>
+<td width ="80%">
+  Java provides four <b>wrapper classes</b>, one for each of the four
+    primitive types in Java.
+  Their names are <b>Integer</b>, <b>Double</b>, <b>Character</b>, and
+    <b>Boolean</b> (note the standard capitalization for class names).
+  All these classes are defined in the <b>java.lang</b> package.
+  The main purpose of each wrapper class is to be able represent a primitive
+    value as an object: one that contains just that primitive value as its
+    state.
+  Each class has a constructor whose parameter is a primtive; each has a
+    method that returns the value of the primitive stored in the constructed
+    object (<b>intValue</b>, <b>doubleValue</b>, <b>charValue</b>, and
+     <b>booleanValue</b> name these methods respectively).
+  Objects of these classes are immutable, so once an object is constructed the
+    primitive it stores never changes.
+  Examine the Javadoc pages for these wrapper classes; observe their many
+    constructors and methods (all accessors/queries).
+  <p>
+  So, for example, we can define <b>Integer x = new Integer(10);</b>
+    the variables <b>x</b> now stores a reference to an object constructed
+    from the <b>Integer</b> class whose state is <b>10</b>.
+  We cannot write <b>x+1</b> because <b>x</b> is not an <b>int</b> but is
+    an <b>Integer</b>, and there is no prototype for <b>+</b> that adds
+    an <b>Integer</b> to an <b>int</b>.
+  But, we can write <b>x.intValue() + 1</b> because the <b>intValue</b> method
+    returns an <b>int</b>: the one stored in the object <b>x</b> refers to.
+  <p>
+  Because wrapper classes are immutable, there is no way to increment the
+    primitive value that is stored in the object <b>x</b> refers to.
+  But, we could write <b>x = new Integer(x.intValue()+1)</b> whose execution
+    is illustrated below.
+  <p>
+</tbody>
+</table>
+   <img src="images/incinteger.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  After executing this statement, the value in the object <b>x</b> refers to
+    is one bigger: but instead of changing the state of the original object,
+    <b>x</b> now refers to a different one.
+  When we discuss increasing the length of an array, we will see a similar
+    solution.
+  <p>
+  Wrapper classes also define various other useful information (and sometimes,
+    quite a lot).
+  For example, we have seen that the <b>Integer</b> class stores the
+    <b>static final int</b> values <b>MIN_VALUE</b> and <b>MAX_VALUE</b>;
+    it also stores the <b>static int</b> method <b>parseInt</b>): e.g.,
+    <b>int i = Integer.parseInt("123");</b>
+  <p>  
+  From what we know of Java so far, there is no reason to use wrapper classes!
+  But, we are about to explore two simple but general collections, stack and
+    queue, which can store only references to objects, and not primitives.
+  In this context, if we want to store a primitive value in such collections,
+    we must first wrap it in an object (using a constructor of the appropriate
+    wrapper class), and store a reference to that object in the collection.
+</tbody>
+</table>
+
+
+
+
+<!-- The Object Class -->
+
+<a name="Object"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>The Object Class</b></td>
+<td width ="80%">
+  The <b>Object</b> class in Java is a very special class.
+  When we learn about inheritance hierarchies, we will see that this class is
+    special because it is at the root of the inheritance hierarchy: every
+    class in Java is an extension/specialization of the <b>Object</b> class.
+  (You can see this trivially if you look at the Javadoc for any other class:
+    it will always show <b>java.lang.Object</b> as the first class in
+    the hierarchy.)
+  This class is defined in the <b>java.lang</b> package.
+  For now, though, we will concentrate on just two salient facts about the
+    <b>Object</b> class, discussed below.
+  <p>
+  We can specify <b>Object</b> as the type of a variable: this includes local
+     variables, parameter variables, instance variables -and now, even the
+     type stored as the indexed members in array variables.
+  If we declare a variable to be of the <b>Object</b> type...
+  <ol>
+    <li>The variable can store a reference to an object constructed from any
+          class.
+      <li>The only methods that we can call on the variable are those methods
+          defined in the <b>Object</b> class.
+  </ol>
+  We have always spoken of a reference variable storing a reference to a
+    object constructed from a <b>compatible</b> class: up to now, this has
+    always meant "constructed from the same class": e.g., Java ALLOWS
+    <b>Timer t = new Timer();</b> but DOES NOT ALLOW
+    <b>Timer t = new Rational(1,2);</b>
+  Now, we see from the rule above that a variable declared to be of type
+    <b>Object</b> can store any reference, because any reference is
+    compatible with <b>Object</b>.
+  <p>
+  So, Java ALLOWS <b>Object o = new Object();</b> and
+    <b>Object o = new Timer();</b> and
+    <b>Object o = new Rational(1,2);</b>
+  Note, though, that we still cannot store a value of a primitive type
+    in such a variable: e.g., Java DOES NOT ALLOW
+    <b>Object o = 10;</b> because it must store a reference value, not a
+    primitive value.
+  But remember that we can use wrapper classes to achieve an equivalent result:
+    e.g., Java allows <b>Object o = new Integer(10);</b>
+  <p>
+  The <b>Object</b> class defines only about a dozen methods, of which
+    <b>toString</b> is the only one that we have studied.
+  Thus, Java allows calling <b>o.toString()</b> regardless of which
+    ALLOWABLE declaration above we use.
+  Regardless of what kind of object the reference in an <b>Object</b>
+    variable refers to, we can call only <b>Object</b> methods on it.
+  So, even if we wrote <b>Object o = new Integer(10);</b> Java DOES NOT ALLOW
+    calling <b>o.intValue()</b> because <b>intValue</b> is not a method defined
+    in the <b>Object</b> class.
+  <p>
+  Thus, using the type <b>Object</b> gives us power in one dimension but 
+    restricts power in another.
+  It is powerful because variables of this type can store (generic) references
+    to any objects.
+  But, it restricts us from calling all but a few methods on these variables.
+  This balance of power will be explored throughout the rest of this lecture
+    and addressed later, as the basis of inheritance hierarchies and
+    polymorphic behavior.
+  <p>
+  There is an important distinction between the declared type of a variable
+    and the class of the object to which it refers.
+  There was no distinction before, because the type of a variable and
+    the class of the object to which it refers were always the same.
+  What seems like a small leak in this rule will turn into a mighty river
+    as we discuss interfaces and inheritance hierarchies.
+<!---
+  Examine the following code
+  <b><pre>  Object o;
+  if (Math.random() < .5)
+    o = new Rational(1,2);
+  else
+    o = new Integer(10);
+  ...code using o</pre></b>
+  We know after the <b>if</b> statement that <b>o</b> refers to an object
+    constructed from either the <b>Raional</b> or <b>Integer</b> class.
+  What methods should we be able to call on <b>o</b>? The methods defined in
+    <b>Rational</b>? The methods defined in  <b>Integer</b>?
+  Java (and we) cannot tell, because a random number determines what object
+    reference is stored in <b>o</b>.
+  Because of inheritance (both classes inherit from <b>Object</b>), the only
+    methods thate we can guarantee are callable are those defined in the
+    <b>Object</b> class.
+--->
+</tbody>
+</table>
+
+
+
+<!-- instanceof -->
+
+<a name="Instanceof"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>The instanceof operator</b></td>
+<td width ="80%">
+  We have learned that variables declared of type <b>Object</b> can store
+    references to objects constructed from any class.
+  Java provides a way for us to check whether a reference refers to an
+    instance of a specified class.
+  The <b>instanceof</b> operator (one of two operators in the Java that are
+    also keywords) performs this operation, returning a <b>boolean</b> result.
+  Its form of use is <b>x instanceof Integer</b>; it is a binary infix
+     operator whose second operand is the name of a class.
+  <p>
+  When we learn about reference casting below, we will see statements like
+  <b><pre>  if (x instanceof Integer)
+  ...do something with x knowing it is a reference to an Integer</pre></b>
+  Finally, Java considers <b>null</b> to not be an instance of any class (it
+     refers to no instance of a class).
+  So <b>null instanceof <i>C</i></b> returns <b>false</b> for any class
+    <b><i>C</i></b>.
+  Lets summarize our current understanding of the <b>instanceof</b> operator.
+  If <b>r instanceof <i>C</i></b> returns <b>true</b> it means that
+    <b>r</b> stores a non-<b>null</b> reference to an object constructed from
+    class <b><i>C</i></b>; if it returns <b>false</b> it means that either
+    <b>r</b> stores <b>null</b> or it stores a reference to an object
+     constructed from a class other than <b><i>C</i></b>.
+</tbody>
+</table>
+
+
+<!-- Reference Casting -->
+
+<a name="Casting"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Reference Casting</b></td>
+<td width ="80%">
+  We have learned that we can store any reference into an <b>Object</b>
+    variable.
+  But once we do so, we can use the <b>Object</b> variable to call only
+    methods defined in the <b>Object</b> class.
+  We will now learn how to tell Java to treat a reference stored in an
+    <b>Object</b> variable just like a reference to the class that the object
+    it refers to was really constructed from (gulp! reread the previous
+     sentence, it it tortuous).
+  This allows us to use <b>Object</b> variables to call all the methods defined
+    in that class of the object to which it refers..
+  We will discuss this asymmetry in this lecture, and explore it further and
+    deeper in the lectures on inheritance.
+  <p>
+  Assume that we define <b>Object o = new Integer(10);</b>
+  Java DOES NOT ALLOW us to call <b>o.intValue()</b>; it would detect
+    and report such an error at compile time.
+  But Java DOES ALLOW us to call <b>((Integer)o).intValue()</b>.
+  Here we are using reference casting to cast <b>o</b> to be a
+    reference to an object of type <b>Integer</b> (which it is) and then we
+    are calling the <b>intValue</b> method on that casted reference.
+  In casting, we always write the type that we are casting TO in parentheses;
+    here we are casting <b>o</b> to be of type <b>Integer</b>.
+  We need the other (outer) parentheses because casting has a lower precedence
+    than member selection (the dot operator), and we want to cast first.
+  <p>
+  When we cast an <b>Object</b> reference to another class, we are telling the
+    Java compiler to act as though that reference really refers to an object
+    from that class.
+  Afterward, the Java compiler allows us to use the casted reference to call
+    any methods defined in that class.
+  When Java actually runs our code (after the program compiles correctly) it
+    checks each cast: if Java discovers that the cast won't work  -that the
+    reference doesn't really refer to an object from the specified
+    class- then it throws the <b>ClassCastException</b> before trying to call
+    the method.
+  Java checks the cast by automatically using the <b>instanceof</b>
+    operator: if the cast <b>(Integer)o</b> appears in our code, Java first
+    checks <b>o instanceof Integer</b>, throwing an exception if this
+    expression evaluates to <b>false</b>.
+  (technically, if <b>o</b> stores <b>null</b> Java throws the
+    <b>NullPointerException</b> before even checking <b>instanceof</b>.)
+  <p>
+  Thus, even given the declaration <b>Object o = new Integer(10);</b> we
+    could write <b>((Double)o).doubleValue()</b> in our code.
+  Because <b>o</b> is casted to a <b>Double</b>, the Java compiler allows
+    us to call the <b>doubleValue()</b> method on it.
+  But, whent the program runs, this cast will throw the
+    <b>ClassCastException</b> because the cast fails: when Java checks
+    <b>o instanceof Double</b> this expression evaluates to <b>false</b>.
+  <p>
+  Thus, we separate our understanding of casting into <b>Compile Time</b> and
+     <b>Run Time</b> components.
+  Assume that we write the cast <b>(<i>C</i>)o</b> in our code.
+  <ul>
+    <li><b>Compile time</b>: Java allows <b>o</b> to be treated as if it 
+             refers to an object from class <b><i>C</i></b>.
+           Specifically, we can call any methods defined from class
+             <b><i>C</i></b> on it.
+    <li><b>Run time</b>: Java checks the cast to make sure it is correct: that
+             the casted reference really does refer to an object from class
+             <b><i>C</i></b>
+           If it does, the code continues executing; if it doesn't, Java throws
+             <b>ClassCastException</b>.
+  </ul>
+  So, a cast is a promise that Java believes while it is compiling the program,
+    but also checks while running the program.
+  It is an excellent example of Reagan's statement about arms reduction
+    treaties with the former Soviet Union: Trust but verify.
+  <p>  
+  We can explicitly use the <b>instanceof</b> operator to ensure that our
+    code will never throw <b>ClassCastException</b>.
+  We can write code like
+  <b><pre>  if (o instanceof Integer) {
+    Integer i = (Integer)o;
+    ...use of i; e.g., i.intValue()
+  }</pre></b>
+  In this code, the cast cannot fail beause the block containing the cast is
+    executed only when the <b>if</b>'s test, <b>o instanceof Integer</b>,
+    evaluates to <b>true</b>.
+  <p>
+  Pragmatically, casting is most often performed by itself in a variable
+    declaration, as illustrated above.
+  As an example, most classes include an <b>equals</b> method that allows
+    comparison with a reference to any object.
+  For example, the <b>Rational</b> class should include an <b>equals</b>
+    method defined by
+<b><pre>  public boolean equals(Object other)
+  {
+    if ( !(other instanceof Rational) )   //From a different class?
+      return false;
+    if (other == this)                    //Is the same object?
+      return true;                        //  no need to check fields!
+
+    //Cast is guaranteed to work: other is instanceof Rational
+    Rational otherRational = (Rational)other;
+
+    //Check State (both fields)
+    return this.numerator   == otherRational.numerator &&
+           this.denominator == otherRational.denominator;
+  }</pre></b>
+  Most <b>equals</b> methods follow the same three-part strategy:
+  <ol>
+    <li>If the parameter is not a reference to an object of the correct type,
+          it returns <b>false</b>.
+    <li>If the parameter is <b>==</b> to <b>this</b>, then we are comparing
+          an object to itself, in which case it returns <b>true</b>
+          immediately, without checking the state of the object; we know that
+          any object stores the same state as itself.
+    <li>Otherwise, it legal to cast the parameter and store it in a local
+          variable of the correct type; once that is done, the states of
+          <b>this</b> object and the other one are compared.
+  </ol>
+</tbody>
+</table>
+
+
+
+<!-- Collection Classes -->
+
+<a name="Collection"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Collection Classes: An Introduction</b></td>
+<td width ="80%">
+  Collection classes manage collections of values.
+  They include methods to add values to the collection, remove values from the
+    collection, and inquire about values in the collection.
+  We use arrays to store these values, and unlike our previous discussion
+    the arrays are not always filled.
+  Generally, a collection class can be represented by two instances variables:
+    one refers an array storing all the values in the collection; the other
+    is an <b>int</b> that keeps track of how many indexed members in the array
+    are actually being used.
+  <p>
+  In the rest of this lecture we will discuss two simple and well-known
+    collection classes: stack and queue.
+  These classes are useful in many programs that model real-world data and
+    processes.
+  Their definitions will heavily rely on the <b>Object</b> type: both in
+     methods and for array instance variables.
+  Such collections can be used, unchanged, in any programs that we write.
+  This kind of generality and reusability is the holy grail of effective
+    class design.
+  <p>
+  The stack and queue collections are straightforwad to implement.
+  The straightforward implementation of the stack collection (which implements
+    a last-in/first-out ordering) is efficient.
+  But, the straightforward implementation of the queue collection (which
+    implemements a first-in/first-out ordering) is not efficient; later in
+    the semester we will examine a second, more complicated but efficient
+    implementation of queues. 
+  A fundamental component of both implementations is a <b>doubleLength</b>
+     method to increase the length of the array storing the collection.
+  <p>
+  The <b>SimpleStack</b> and <b>SimpleQueue</b> classes that we cover in 
+    this lecture (along with a simple driver application for each), are
+    available online.
+  You can download, unzip, run, and examine all this code in the
+    <a href="../../programs/simplestackdemo.zip">
+      SimpleStack Demonstration</a> and
+    <a href="../../programs/simplequeuedemo.zip">
+      SimpleQueue Demonstration</a>
+     applications.
+  <p>
+</tbody>
+</table>
+
+
+<!-- Stacks and LIFO -->
+
+<a name="Stack"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Stacks and LIFO </b></td>
+<td width ="80%">
+  We can visualize a stack as a vertical array, whose indexes increase as the
+    array goes upward.
+  The biggest index that stores a non-<b>null</b> reference is known as the
+    <b>top</b> of the stack.
+  Each <b>SimpleStack</b> object stores two instance variables: a reference to
+     such an array and a value <b>top</b>.
+  References are both added (pushed on) and removed (popped off) near the top 
+   of the stack; this means that we characterize a stack as Last-In/First-Out:
+    the last reference added to (pushed on) the stack is the first one removed
+    (popped off).
+  Such a stack is declared and initialized simply by
+     <b>SimpleStack x = new SimpleStack();</b>
+  The following picture shows a stack onto which three strings have been
+     pushed.
+  <p>
+</tbody>
+</table>
+   <img src="images/stack.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  Notice that <b>stack</b> is declared to be of type <b>Object[]</b>
+    so each indexed member can store a reference to any object.
+  Also, we represent <b>null</b> by a slash (<b>/</b>), as appears in array
+    index 3 in the picture above; we will continue to use this graphical
+    notation throughout the rest of the course for <b>null</b> references.
+  <p>
+  The <b>SimpleStack</b> collection class consists of definitions (elided here,
+     but fully shown in the discussion below) for the following constructors,
+     methods, and fields.
+  <pre><b>  //Constructors
+  public SimpleStack (int initialSize) throws IllegalArgumentException {...}
+  public SimpleStack () {...}
+
+  //Mutators/Commands
+  public void    makeEmpty () {...}
+  public void    push      (Object o) {...}
+  public Object  pop       () throws IllegalStateException {...}
+  
+  //Accessors/Queries
+  public Object  peek      () throws IllegalStateException {...}
+  public boolean isEmpty   () {...}
+  public int     getSize   () {...}
+  public String  toString  () {...}
+
+  //Private (helper) methods
+  private void doubleLength() {...}
+  
+  //Fields (instance variables)
+  private Object[] stack;
+  private int      top = -1;</b></pre>
+  Let's explore in detail the implementation of each constructor and method,
+    in terms of how they manipulate the instance variables.
+</tbody>
+</table>
+
+
+
+<!-- Length Doubling -->
+
+<a name="LengthDoubling"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Length Doubling</b></td>
+<td width ="80%">
+  Before looking at all the <b>public</b> constructors and methods, we 
+    will examine the <b>private doubleLength</b> method, which is called
+    only in <b>push</b>
+  As we push more values onto a stack, the array storing these values must get
+    bigger.
+  Although the length of an array object cannot be changed once it has been
+    constructed, the <b>doubleLength</b> method does the equivalent by
+    constructing a new, bigger object; we used much the same approach to
+    "increment" a variable refering to an immutable <b>Integer</b> object.
+  Thes code for length doubling is quite simple, but subtle.
+  <b><pre>  private void doubleLength ()
+  {
+    Object[] temp = new Object[stack.length*2];
+    for (int i=0; i&lt;stack.length; i++)
+      temp[i] = stack[i];
+    stack = temp;
+  }</pre></b>
+  This method is called only when the array object that <b>stack</b> refers to
+    is filled with references.
+  It works in three steps:
+  <ol>
+    <li>It declares the local variable <b>temp</b> and initializes it to refer
+          to a newly constructed array object whose length is twice as big as
+          the length of the array <b>stack</b> refers to.
+        Initially, all indexed members store <b>null</b>.
+    <li>It copies all the non-<b>null</b> references from <b>stack</b> to
+          <b>temp</b> in order (from <b>0</b> up to <b>top</b>).
+    <li>It makes <b>stack</b> refer to the new object.
+  </ol>
+  Thus, for all intents and purposes, we have doubled the length of
+    <b>stack</b>: it now refers to an array that stores the same values, but
+    whose length (for storing new values) is twice as long.
+  The picture below illustrates how this method executes.
+<p>
+</tbody>
+</table>
+   <img src="images/doublelength.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  Notice that <b>top</b> remains unchnaged at <b>1</b> because there are
+    still only two references stored in the array (at indexed members
+    <b>0</b> and <b>1</b>).
+  The instance variable <b>stack</b> no longer refers to the old array object,
+    so eventually Java will recycle this object.
+  <p>
+  Another, similar way to write this method (maybe a bit clearer than
+    using <b>temp</b>) is
+  <b><pre>  private void doubleLength ()
+  {
+    Object[] old = stack;
+    stack = new Object[stack.length*2];
+    for (int i=0; i&lt;old.length; i++)
+      stack[i] = old[i];
+  }</pre></b>
+  <p>
+  Although this class doesn't define it, I have written the <b>trimLength</b>
+    method below.
+  This method shrinks the array to be just big enough to store all the
+    current references in <b>stack</b>.
+  Here, the first line constructs a "just big enough" array and then the
+    <b>for</b> loop copies all the references into it.
+  <b><pre>  private void trimLength()
+  {
+    Object[] temp = new Object[top+1];
+    for (int i=0; i&lt;=top; i++)
+      temp[i] = stack[i];
+    stack = temp;
+  }</pre></b>
+  We could likewise implement this method with <b>old</b> instead of
+    <b>temp</b>.
+  Note that we could include an <b>if</b> to immediately return if 
+    <b>stack.length</b> were equal to <b>top+1</b>, but his code,
+    while redundant, works.
+  If we called <b>x.trimLength()</b> the actions in the picture above would be
+    reversed.
+</tbody>
+</table>
+
+
+
+<!-- Stack Implementation -->
+
+<a name="StackImplementation"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Stack Implementation</b></td>
+<td width ="80%">
+  We will now explore all the <b>public</b> constructors and methods in this
+    class.
+  You are invited to hand simulate this code and draw the relevant pictures
+    to help you better understand it.
+  We start with the definition of the general constructor.
+  <b><pre>  public SimpleStack (int initialSize)
+    throws IllegalArgumentException
+  {
+    if (initialSize < 1)
+      throw new IllegalArgumentException
+        ("SimpleStack Constructor: initialSize("+initialSize+") < 1");
+
+    stack = new Object[initialSize];
+  }</pre></b>
+  Basically, this constructor verifies the <b>initialSize</b> parameter
+    and then uses it to construct an array that can contain that many
+    references.
+  Recall that when arrays of references are constructed, all indexed members
+    store <b>null</b>.
+  Observe that <b>top</b> is declared to store <b>-1</b> initially, and no
+    change is made to it here.
+  We say that the stack is empty if it is in this state.
+  In fact, it is a class invariant that there are always <b>top+1</b> values
+    stored in the stack; so at constuction there are <b>0</b> values stored.
+  Another explanation for this intial value will emerge when
+    we study the code for the <b>push</b> method.
+  <p>
+  The second constructor has no parameter and constructs an array with
+    enough room for just one value.
+  It is written simply as
+  <b><pre>  public SimpleStack ()
+  {this(1);}</pre></b>
+  Unless we know  something special about how many values we will push on
+    a stack, we will often use this simpler constructor.
+  <p>
+  The <b>makeEmpty</b> method removes all references from the stack and 
+    reinitializes <b>top</b> to <b>-1</b>; so, after this method call the
+    stack is again empty.
+  We define this method, a mutator/command, by
+  <b><pre>  public void makeEmpty ()
+  {
+    for (int i=0; i&lt;=top; i++)
+      stack[i] = null;
+    top = -1;
+  }</pre></b>
+  To understand this method, hand simulate it in the state illustrated in the
+    picture above.
+  Note that all indexed members greater than <b>top</b> already store
+    <b>null</b>.
+  <p>
+  The <b>push</b> method, a mutator/command, adds a reference on top of the
+    stack; the reference in its parameter <b>o</b> is stored one beyond the
+    old top of the stack, and becomes the new top of the stack.
+  It first checks to see if there is no more room in the array; if so, it
+    doubles the length of the array as described above.
+  Then it always increments <b>top</b> and stores the reference <b>o</b> at
+    this new index in the array (there will always be room to store it).
+<b><pre>  public void push (Object o)
+  {
+    if ( getSize() == stack.length)
+      doubleLength();
+        
+    top++;
+    stack[top] = o;        //or just stack[++top] = o;
+  }</pre></b>
+  Notice that a newly constructed <b>SimpleStack</b> stores <b>-1</b> in 
+    <b>top</b>; the first time that this method is called it increments that
+    value to <b>0</b> and then stores the parameter into the array at index
+    <b>0</b>.
+  Notice that the <b>if</b> calls <b>getSize</b> to check whether there is 
+    not enough room for the new reference on the stack (we can worry about the
+    details of this method later).
+  Finally, notice that the semantics of the prefix operator <b>++</b> allows us
+    to perform both state changes in a single statements:
+    <b>stack[++top] = o;</b>
+  <p>
+  Because its parameter type is <b>Object</b>, we can call <b>push</b>
+    with any argument that refers to an object.
+  In fact, we can easily push different classes of objects onto the same stack,
+    as illustrated below.
+<p>
+</tbody>
+</table>
+   <img src="images/stack2.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  The <b>pop</b> method, a mutator/command and accessor/queury, returns a
+    reference to the object
+    currently at the top of the stack, and it also removes that reference from
+    the stack (replacing it by <b>null</b>); the value underneath it becomes
+    the new top of the stack.
+  Of course, if the stack is empty when this method is called, it throws
+    <b>IllegalStateException</b> (the stack is in an illegal state to perform
+    the <b>pop</b> operation).
+  This code is written as
+  <b><pre>  public Object pop () throws IllegalStateException
+  {
+    if ( isEmpty() )
+      throw new IllegalStateException
+        ("SimpleStack pop: Stack is empty");
+    
+    Object answer = stack[top];
+    stack[top] = null;
+    top--;                       //or just stack[top--] = null;
+    return answer;
+  }</b></pre>
+  Notice how the reference at the top of the stack is stored in the local
+    variable <b>answer</b>; then the old indexed member is set to <b>null</b>
+    and <b>top</b> is decremented; then the stored <b>answer</b> is returned.
+  Notice that the <b>if</b> calls <b>isEmpty</b> to check whether there is no
+    value on the stack to be popped (we can worry about the details of this
+    method later).
+  Finally, notice that the semantics of the postfix operator <b>--</b> allows
+    us to perform both state changes in a single statement:
+    <b>stack[top--] = null;</b>
+  <p>
+  Notice that the <b>pop</b> method returns a reference of type <b>Object</b>.
+  Recall that this means that the reference returned can refer to an object
+    from any class.
+  Obviously we can write <b>Object o = x.pop();</b> to store this reference,
+    but we cannot do anything interesting with <b>o</b> (only call methods
+    on it that are defined in the <b>Object</b> class).
+  But, if we know the reference is to a <b>String</b> object, we can instead
+    write <b>String s = (String)x.pop();</b>
+  The cast here is mandatory, otherwise the Java compiler will detect and
+    report an error.
+  Recall that the member selector operator (the dot) has precedence over the
+    cast; in this statement we want to apply the cast last, so we need no 
+    extra grouping parentheses.
+  <p>
+  Finally, note the asymmetry: we can call <b>push</b> without casting
+    (any argument reference stored to an <b>Object</b> parameter works); but
+     when we call <b>pop</b>, we must cast the reference to do anything useful
+     with it.
+  Another way of saying this: putting a reference in a stack hides its type;
+    when taking a reference out of a stack its type must be restored with a 
+    cast.
+  Of course, we can check its type with the <b>instanceof</b> operator.
+  <p>
+  Similarly, the <b>peek</b>, an accessor/query, returns the reference
+     currently at the top of the stack (like <b>pop</b>) but it DOES NOT
+     remove it (unlike <b>pop</b>).
+  <b><pre>  public Object peek () throws IllegalStateException
+  {
+    if ( isEmpty() )
+      throw new IllegalStateException("SimpleStack pop: Stack is empty");
+    
+    return stack[top];
+  }</b></pre>
+  The <b>isEmpty</b> accessory/query, used in <b>pop</b> and <b>peek</b>, 
+    returns whether or not the stack is empty.
+  It is written simply as
+  <b><pre>  public boolean isEmpty ()
+  {return top == -1;}</pre></b>
+  Recall that in an empty stack, <b>top</b> stores <b>-1</b>.
+  Another way to implement this method would be <b>return getSize() == 0;</b>
+  <p>
+  The <b>getSize</b> accessory/query, returns the number of references on the
+    stack.
+  It is written simply as
+  <b><pre>  public int getSize ()
+  {return top+1;}</pre></b>
+  Recall that in an empty stack, <b>top</b> stores <b>-1</b>; in this case
+    the value <b>getSize</b> returns is <b>0</b>.
+  Recall that there is a class invariant that states there are always
+    <b>top+1</b> values stored in the stack.
+  <p>
+  Finally, the <b>toString</b> method returns the value of <b>top</b>, the
+    <b>length</b> of the <b>stack</b> array, and the <b>String</b> values
+    of all the references in the stack.
+  It uses lots of catenation to get the job done.
+  <b><pre>  public String toString ()
+  {
+    String answer = "SimpleStack[top="+top+"/length="+stack.length;
+    for (int i=0; i<=top; i++)
+      answer += ";stack["+i+"]="+stack[i];
+    answer +=  "]";
+    
+    return answer;
+  }</pre></b>
+  <p>
+  In summary:
+  Each <b>SimpleStack</b> stores the <b>stack</b> array (storing the references
+    in the stack) and <b>top</b> (storing the index of the last reference).
+  Generally, <b>push</b> increments <b>top</b> by 1 and <b>pop</b> decrements
+     <b>top</b> by 1.
+  So that the first <b>push</b> (or any <b>push</b> on an empty stack) stores
+    its reference in index <b>0</b>.
+  The number of references in the stack is always <b>top+1</b>; an empty stack
+    stores <b>0</b> references so <b>top</b> in an empty stack must be
+    <b>-1</b>.
+  The size of the array is doubled when necessary (and it never shrinks).
+  <p>
+  Stacks are famous in Computer Science, because method calls are implements
+     via stacks.
+  When a method is called, it call frame (or the computer equivalent) is pushed
+    onto the call stack.
+  This is the same call stack that appears in a pane in the debugger (although
+    it grows from the top downward).
+  Each call to a method pushes that method onto the call stack; each return
+    from a method pops that method off the call stack (returning to execute
+     code at the new method on top of the call stack -the one that called the
+     method that just returned).
+  In fact, stacks are so common in computing (see the next section too) most
+    computers have special instructions that push/pop a value onto/from a 
+    hardware stack.
+</tbody>
+</table>
+
+
+
+<!-- Stack Application: RPN and Stacks -->
+
+<a name="StackApplication"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>A Stack Application: RPN and Stacks</b></td>
+<td width ="80%">
+  We should now all masters of writing formulas as expressions in Java, and
+    analyzing such expressions: we know about the precedence of operators,
+    parentheses to override precedence, and left to right (or right to left)
+    associativity.
+  But now we ask the question, "Is that the simplest way to write expressions".
+  The answer is no.
+  In this section we shall discuss a simpler notation for writing expressions,
+    and its relationship to stacks (which we use to evaluate such expressions
+    easily).
+  <p>
+  The notation that we will learn to write expressions is called Reverse Polish
+     Notation (RPN).
+  The original Polish Notation was invented by a group of famous Polish
+    logicians in the late 1930s.
+  They wanted to prove things about expressions, and therefore wanted to invent
+    the simplest rules possible to write arbitrary expressions.
+  This group was wiped out in World War II, and the notation was rediscovered
+    in the 1960s and used in the LISP programming language; many calculators
+    also use RPN (as well as the programming language Forth).
+  In Polish Notation, operators always appear before their operands; in RPN,
+    operators always appear after their operands.
+  <p>
+  RPN is very simple: it has no operator precedence, no associativity rules,
+    and no parentheses to override precedence and associativity rules!
+  We evaluate an RPN expression (using oval diagrams) in a very straighforward
+    manner, scanning it from left to right (we will ignore types here, and
+    concetrate on values).
+  <ol>
+    <li>If the next token is a number, circle it, and write its value below.
+    <li>If the next token is an operator, use one big circle to enclose the
+          operator and its operands (for binary operators, the two previous 
+          circles, however big they are), apply the operator to these operands,
+          and write the resulting value below the big circle.
+  </ol>
+  Here are some examples that illustrate Java expressions and their equivalent
+     RPN.
+  <p>
+  <table cellspacing="0" cellpadding="5" border="1" rules="all">
+  <thead>
+  <tr align="left">
+  <th>Java</th><th>RPN</th>
+  </thead>
+  <tbody>
+  <tr align="left"><td><pre><b>1 + 2 * 3</b></pre></td><td><pre><b>1 2 3 * +</b></pre></td>
+  <tr align="left"><td><pre><b>(1 + 2) * 3</b></pre></td><td><pre><b>1 2 + 3 *</b></pre></td>
+  <tr align="left"><td><pre><b>(1 + 2) * ((3 + 4) * (5 + 6))</b></pre></td><td><pre><b>1 2 + 3 4 + 5 6 + * *</b></pre></td>
+  </td>
+  </tbody>
+  </table>
+  <p>
+  Note that one property of Java and RPN expressions is that the
+    <i>operands</i> appear in the same order; the earlier an <i>operator</i> is
+    applied in the Java expression (using all the complicated rules) the
+    earlier it appears in RPN.
+  Here is a picture illustrating the evaluation process for expressions written
+     in RPN.
+<p>
+</table>
+   <img src="images/circling.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  We can use a stack to evaluate an expression written in RPN simply.
+  We translate the circling rules into 
+  <ol>
+    <li>If the next token is a number, push it on the stack.
+    <li>If the next token is an operator, pop the top two numbers off the
+          stack, apply the operator to these values, and push the result value
+          back on the stack.
+  </ol>
+  We can translate this algorithm to use a <b>StringTokenizer</b> to get
+    all the tokens and a <b>SimpleStack</b> (always containing objects from
+    the <b>Integer</b> wrapper class) to perform the computation.
+  For example, if the operator were a plus, then we translate the second
+   rule into the following code (note the casting).
+  <b><pre>  Integer operand2 = (Integer)x.pop();
+  Integer operand1 = (Integer)x.pop();
+  x.push ( new Integer (operand1.intValue() * operand2.intValue()) );</pre></b>
+  For non-commutative operators (<b>-</b> and <b>/</b>) we must realize the
+    the second/right operand is on the top of the stack and the first/left
+    operand is underneath it.
+  <p>
+  Here is a picture illustrating the evaluation process of the largest
+    expression.
+<p>
+</table>
+   <img src="images/stacking.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  The <a href="../../programs/rpncalculator.zip">RPN Calculator</a>
+    project uses the <b>StringTokenizer</b> and <b>SimpleStack</b> classes
+    to implement the calculator.
+  In fact, this project also contains two other application programs.
+  The first uses the <b>BigInteger</b> class instead of the <b>Integer</b>
+     wrapper class
+  The second allows relational and logical operators as well, pushing/popping
+    references to both the <b>Integer</b> and <b>Boolean</b> wrapper classes.
+  The operator determines how to cast the references popped off: <b>Boolean</b>
+   for the operators <b>!</b>, <b>&&</b>, and <b>||</b>; <b>Integer</b> for the
+   arithmetic and relation operators.
+</tbody>
+</table>
+
+
+
+<!-- Queues and FIFO -->
+
+<a name="Queue"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Queues and FIFO </b></td>
+<td width ="80%">
+  We can visualize a queue as a horizontal array, whose indexes increase as the
+     array goes rightward.
+  The biggest index that stores a non-<b>null</b> reference is known as the
+     <b>rear</b> of the queue.
+  Each <b>SimpleQueue</b> object stores two instance variables: a reference to
+     such an array and a value <b>rear</b>.
+  References are added (enqueued) at the rear of the queue and removed
+    (dequeued) from the front of the queue (always index <b>0</b>); this means
+    that we characterize a queue as First-In/First-Out: the first reference
+    added to the queue is also the first one removed.
+  <p>
+  Thus, a queue implements a "fair" line, where the first person getting into
+    the line is the first person leaving the line to be served (with the others
+    getting in line behind him/her).
+  In fact, in England, people "queue up" to stand in a "queue" (just as we
+    "line up" to stand in a "line").
+  Such a queue is declared and initialized simply by
+     <b>SimpleQueue x = new SimpleQueue();</b>
+  The following picture shows a queue into which three strings have been
+    enqueued.
+</table>
+   <img src="images/queue.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  Notice that <b>q</b> is declared to be of type <b>Object[]</b>
+    so each indexed member can store a reference to any object.
+  Also, we represent <b>null</b> by a slash (<b>/</b>), as appears in array
+    index 3 in the picture above; we will continue to use this graphically
+    notation throughout the rest of the course.
+  <p>
+  If we call <b>dequeue</b> to return and remove the first value, the new
+    picture becomes
+</table>
+   <img src="images/queue2.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+
+  The <b>SimpleQueue</b> collection class consists of definitions (elided here,
+     but fully shown in the discussion below) for the following constructors,
+     methods and fields.
+  <pre><b>  public SimpleQueue (int initialSize) throws IllegalArgumentException {...}
+  public SimpleQueue () {...}
+
+  //Mutators/Commands
+  public void    makeEmpty () {...}
+  public void    enqueue   (Object o) {...}
+  public Object  dequeue   () throws IllegalStateException {...}
+  
+  //Accessors/Queries
+  public Object  peek      () throws IllegalStateException {...}
+  public boolean isEmpty   () {...}
+  public int     getSize   () {...}
+  public String  toString  () {...}
+ 
+  //Private (helper) methods
+  private void doubleLength() {...}
+  
+  //Fields (instance variables)
+  private Object[] q;
+  private int      rear = -1;</b></pre>
+  Let's explore in detail the implementation of each constructor and method,
+    in terms of how they manipulate the instance variables.
+  The <b>doubleLength</b> method in this class is almost identical to the
+    one we discussed in <b>SimpleStack</b>, but it refers to the instance
+    variable <b>q</b>.
+  Again, this method is called only when the array object that <b>q</b> refers
+    to is filled with non-<b>null</b> references.
+
+  <b><pre>  private void doubleLength ()
+  {
+    Object[] temp = new Object[q.length*2];
+    for (int i=0; i&lt;q.length; i++)
+      temp[i] = q[i];
+    q = temp;
+  }</b></pre>
+</tbody>
+</table>
+
+
+
+<!-- Queue Implementation -->
+
+<a name="QueueImplementation"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Queue Implementation</b></td>
+<td width ="80%">
+  We now will explore all the <b>public</b> constructors and methods in this
+    class.
+  You are invited to hand simulate this code and draw the relevant pictures
+    to help you better understand it.
+  Most of these definitions are similar to those in the <b>SimpleStack</b>
+    class; <b>pop</b> and <b>dequeue</b> are most different, implementing
+    the last-in/first-out and first-in/first-out difference.
+  So, make sure you read the description of this method carefully.
+  We start with the definition of the general constructor.
+  <b><pre>  public SimpleQueue (int initialSize)
+    throws IllegalArgumentException
+  {
+    if (initialSize < 1)
+      throw new IllegalArgumentException
+         ("SimpleQueue Constructor: initialSize("+initialSize+") < 1");
+
+    q = new Object[initialSize];
+  }</pre></b>
+  Basically, this constructor verifies the <b>initialSize</b> parameter
+    and then uses it to construct an array that can contain that many
+    references.
+  Recall that when arrays of references are constructed, all indexed members
+    store <b>null</b>.
+  Observe that <b>rear</b> is declared to store <b>-1</b> initially, and no
+    change is made to it here.
+  We say that the queue is empty if it is in this state.
+  In fact, it is a class invariant that there are always <b>rear+1</b> values
+    stored in the queue; so at constuction there are <b>0</b> values stored.
+  Another explanation for this intial value will emerge when
+    we study the code for the <b>enqueue</b> method.
+  <p>
+  The second constructor has no parameter and constructs an array with
+    enough room for just one value.
+  It is written simply as
+  <b><pre>  public SimpleQueue ()
+  {this(1);}</pre></b>
+  Unless we know  something special about how many values we will enequeue in
+    a queue, we will often use this simpler constructor.
+  <p>
+  <p>
+  The <b>makeEmpty</b> method removes all references from the queue and 
+    reinitializes <b>rear</b> to <b>-1</b>; so, after this method call the
+    queue is again empty.
+  We define this method, a mutator/command, by
+  <b><pre>  public void makeEmpty ()
+  {
+    for (int i=0; i&lt;=rear; i++)
+      q[i] = null;
+    rear = -1;
+  }</pre></b>
+  To understand this method, hand simulate it in the state illustrated in the
+    picture above.
+  Note that all indexed members greater than <b>rear</b> already store
+    <b>null</b>.
+  <p>
+  The <b>enqueue</b> method, a mutator/command, adds a reference to the rear of
+    the queue; the reference in its parameter <b>o</b> is stored one beyond the
+    old rear of the queue, and becomes the new rear of the queue.
+  It first checks to see if there is no more room in the array; if so, it
+    doubles the length of the array as described above.
+  Then it always increments <b>rear</b> and stores the reference <b>o</b> at
+    this new index in the array (there will always be room to store it).
+<b><pre>  public void enqueue (Object o)
+  {
+    if ( getSize() == q.length)
+      doubleLength();
+        
+    rear++;
+    q[rear] = o;        //or just q[++rear] = o;
+  }</pre></b>
+  Notice that a newly constructed <b>SimpleQueue</b> stores <b>-1</b> in 
+    <b>rear</b>; the first time that this method is called it increments that
+    value to <b>0</b> and then stores the parameter into the array at index
+    <b>0</b>.
+  Notice that the <b>if</b> calls <b>getSize</b> to check whether there is 
+    not enough room for the new reference in the queue (we can worry about the
+    details of this method later).
+  Finally, notice that the semantics of the prefix operator <b>++</b> allows
+    us to perform both state changes in a single statements:
+    <b>q[++rear] = o;</b>
+  <p>
+  Because its parameter type is <b>Object</b>, we can call
+    <b>enqueue</b> with any argument that refers to an object.
+  <p>
+  The <b>dequeue</b> method, a mutator/command and accessor/queury, returns a
+    reference to the object currently at the front of the queue, and it also
+    removes that reference from the queue by shifting all remaining values
+    in the array left (towards the front) by one index position; this leaves
+    duplicate references in <b>q[rear-1]</b> and <b>q[rear]</b>, so the last
+    one is replaced by <b>null</b>).
+  Of course, if the queue is empty when this method is called, it throws
+    <b>IllegalStateException</b> (the queuen is in an illegal state to perform
+    the <b>dequeue</b> operation).
+  This code is written as
+  <b><pre>    public Object dequeue () throws IllegalStateException
+  {
+    if ( isEmpty() )
+      throw new IllegalStateException
+        ("SimpleQueue dequeue: queue is empty");
+    
+    Object answer = q[0];
+    
+    //Shift all remaining values (q[1..rear]) left by 1 index, into
+    //  positions  q[0..rear-1]
+    for (int i=0; i&lt;rear; i++)
+      q[i] = q[i+1];
+   
+    //Remove duplicate in q[rear]; it has been copied into
+    //  q[rear-1] too 
+    q[rear] = null;
+    rear--;                 //or just q[rear--] = null;
+    return answer;
+  }</b></pre>
+  Notice that the <b>if</b> calls <b>isEmpty</b> to check whether there is no
+    value on the queue to be dequeued (we can worry about the details of this
+    method later).
+  Finally, note that the semantics of the postfix operator <b>--</b> allows us
+    to perform both state changes in a single statement:
+    <b>q[rear--] = null;</b>
+  <p>
+  This method is much different than the <b>pop</b> method for stacks, because
+    it requires a <b>for</b> loo to examine every value in the array (as do the
+    <b>makeEmpty</b> and <b>toString</b> methods in both classes).
+  Thus, the amount of time that it takes to <b>dequeue</b> a value is
+    dependent on the number of values already stored in the queue.
+  This inefficiency can be eliminated by a more complicated class that 
+    implements a queue: we will discuss it later in the semester.
+  <p>
+  Similarly, the <b>peek</b>, an accessor/query, returns the reference
+     currently at the front of the queue (like <b>dequeue</b>) but it DOES NOT
+     remove it (unlike <b>dequeue</b>).
+  <b><pre>  public Object peek ()
+    throws IllegalStateException
+  {
+    if ( isEmpty() )
+      throw new IllegalStateException
+        ("SimpleQueue peek: queue is empty");
+    
+    return q[0];  
+  }</b></pre>
+  The <b>isEmpty</b> accessory/query, used in <b>dequeue</b> and <b>peek</b>, 
+    returns whether or not the queue is empty.
+  It is written simply as
+  <b><pre>  public boolean isEmpty ()
+  {return rear == -1;}</pre></b>
+  Recall that in an empty queue, <b>rear</b> stores <b>-1</b>.
+  Another way to implement this method would be <b>return getSize() == 0</b>.
+  <p>
+  The <b>getSize</b> accessory/query, returns the number of references on the
+    queue.
+  It is written simply as
+  <b><pre>  public int getSize ()
+  {return rear+1;}</pre></b>
+  Recall that in an empty queue, <b>rear</b> stores <b>-1</b>; in this case
+    the value <b>getSize</b> returns is <b>0</b>.
+  Recall that there is a class invariant that states there are always
+    <b>rear+1</b> values stored in the queue.
+  <p>
+  Finally, the <b>toString</b> method returns the value of <b>rear</b>, the
+    <b>length</b> of the <b>q</b> array, and the <b>String</b> values
+    of all the references in the queue.
+  It uses lots of catenation to get the job done.
+  <b><pre>  public String toString ()
+  {
+    String answer = "SimpleQueue[rear="+rear+"/length="+q.length;
+    for (int i=0; i<=rear; i++)
+      answer += ";q["+i+"]="+q[i];
+    answer +=  "]";
+    
+    return answer;
+  }</pre></b>
+  <p>
+  In summary:
+  Each <b>SimpleQueue</b> stores the <b>q</b> array (storing the references
+    in the queue) and <b>rear</b> (storing the index of the last reference).
+  Generally, <b>enequeue</b> increments <b>rear</b> by 1 and <b>dequeue</b>
+     decrements <b>rear</b> by 1.
+  So that the first <b>enqueue</b> (or any <b>enqueue</b> on an empty queue)
+     stores its reference in index <b>0</b>.
+  The number of references in the queue is always <b>rear+1</b>; an empty queue
+    stores <b>0</b> references so <b>rear</b> in an empty queue must be
+    <b>-1</b>.
+  The size of the array is doubled when necessary (and it never shrinks).
+  <p>
+  A typical use of queues is in simulating systems where entities move from one
+    part of the system to another, in a fixed order.
+  For example, we might want to simulate a supermarket by getting data on when
+    a customer enters, how long the customer shops in the store, how many items
+    the customer buys, and how long it takes the customer to checkout (once
+    he/she reaches the front of the checkout line).
+  The only remaining piece of information missing is how long the customer
+    waits in the checkout line.
+  We can use queues (operating on this data) to simulate a variety of cash
+    register configurations: some registers may restrict the number of items
+    checked through.
+  Then we can determine whether certain configurations are better than others
+    (in terms of customer throughput). 
+</tbody>
+</table>
+
+
+
+<!-- Length Doubling Performance  -->
+
+<a name="Performance"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Length Doubling: Performance Analysis</b></td>
+<td width ="80%">
+  Before finishing this lecture, we should do a short performance analysis of
+    why doubling the length of an expanding stack/queue is a good strategy
+    (say, compared to expanding it by increasing its length just by one).
+  If we always expand the length of the array by one -the amount needed to
+    store the new value, we would still be required to copy all the values
+    each time we construct a new array.
+  But, if we double the length of the array, we can put many new values into it
+     without having to expand it and copy values.
+  <p>
+  For the analysis below, assume that a program reads from a file and pushes
+    each value onto the top of a stack.
+  For example, if we are reading 1,024 (2<sup>10</sup>) values from a file and
+    pushing them onto the top of a stack; further assume that the stack is 
+    initially constructed to refer to an array of length 1.
+  <p>
+  If we expand the length by just one, we will have to call the expand method
+    999 times.
+  The first time requires copying 1 value, the next time 2 values, the next 
+    time 3 values, ... and the final time 1023 values.
+  The total amount of copying is 1+2+...+1023 which is 523,776 copying
+    operations!
+  The general formula for 1+2+...+n is n(n+1)/2; os the number of copying
+    operations grows as the square of the number of values we push.
+  <p>
+  Now let's analyze the doubling approach. 
+  The first time requires copying 1 value, the next time 2 values, the next
+    time 4 values, and the final time 512 values (when increasing the array
+    from length 512 to length 1024).
+  The total amount of copying is 1+2+4+8+16+32+64+128+256+512 which is only
+    1,023 copying operations (over 500 times fewer than the previous method):
+    so, if this method takes .1 second, the previous method almost takes a
+    minute!
+  If n is some power of 2, the formula for 1+2+4+...+n is 2n-1.
+  <p>
+  Thus, to push n values onto the top of a stack we must double the array only
+    about Log<sub>2</sub>(n) times; note that logarithm (base 2) is a very
+    slowly growing function: Log<sub>2</sub>(1,000) is 10;
+    Log<sub>2</sub>(1,000,000) is 20; and Log<sub>2</sub>(1,000,000,000) is 30.
+  <p>
+  Of course, in the first approach, the array is always exactly the right size.
+  With the second approach, we would have to call some kind of <b>trim</b>
+    method to reduce it to exactly the right size.
+  This would require copying every value again.
+  In the previous example, it would require a total of 2,047 copy operations
+    (still over 250 times faster than the first method).
+  The exact formula is n+2<sup>Log<sub>2</sub>(n)+1</sup> -1.
+  <p>
+  The bigger the data file, the more efficient the doubling method is.
+  For 1,000,000 values, the first method requires about 500,000,000,000
+   (500 billion) copy operations; the doubling method requires only about
+    3,000,000 (three millon) copy operations: that makes it 166,666 times
+    faster).
+  <p>
+  When we formally study the Analysis of Algorithms we will perform more
+    analyses like these for methods defined in collection classes.
+ </tbody>
+</table>
+
+
+
+<!-- Problem Set -->
+
+<a name="ProblemSet"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Problem Set</b></td>
+<td width ="80%">
+  To ensure that you understand all the material in this lecture, please solve
+    the the announced problems after you read the lecture.
+  <p>
+  If you get stumped on any problem, go back and read the relevant part of the
+     lecture.
+  If you still have questions, please get help from the Instructor, a CA,
+    or any other student.
+
+<ol> 
+<li>Write a method namd <b>countOccurence</b> that counts and returns how
+      often a value (specified by an <b>int</b> parameter) occurs in an array
+      (specified by an <b>int[]</b> parameter).
+<p>
+<li>Explain why the following code does not always compute the correct result;
+    under what circumstances does it compute the correct result?
+<pre><b>  public static boolean all0(int[] a)
+{
+  for (int i=0; i&lt;a.length; i++)
+    if (a[i] != 0)
+      return false;
+    else
+      return true;
+}</b></pre>
+
+<p>
+<li>What happens to array <b>a</b> if <b>swap</b> is called with the same value
+      for <b>i</b> and <b>j</b>: e.g.,<b>swap(3,3,a);</b>?
+<p>
+<li>Write a method name <b>reverse</b> which reverses the order of it
+      <b>int</b> array parameter (calling <b>reverse</b> twice results in the
+      original array ordering).
+<p>
+<li>Write a method name <b>circularShiftLeft</b> which shifts every value in
+     its <b>int[]</b> parameter to the left by one index, placing the value at
+     index <b>0</b> into the last index.
+<p>
+<li>Write a method name <b>circularShiftRight</b> which shifts every value in
+     its <b>int[]</b> parameter to the right by one index, placing the value at
+     the last index into index <b>0</b>.
+<p>
+<li>Write a <b>swap</b> method for arrays of <b>String</b>.
+    Draw a method call and its call frame to illustrate what happens when the
+     first and last index values are swapped (<b>swap(0,s.length-1,s)</b>).
+<p>
+<li>After class one day, a very clever student <!--, (Avi Gavlovski)--->
+      showed me the following code as an alternative to the <b>increasing</b>
+      method discussed above.
+    He asserted that it worked correctly.
+    Note that this code inverts the loop continuation and <b>if</b> test.
+    I blanched, because the <b>for</b> loop looks very different from the ones
+      that I am used to analyzing; but then I went ahead and analyzed the code
+      (by rapidly doing some hand simulations in my brain).
+    Does this code always, sometimes, or never work correctly?
+    Hint, try some hand simulation on normal and boundary cases. 
+    If it only works sometimes, for which arrays does it produce correct and
+      incorrect answers.
+   <pre><b>  public static boolean increasing(int[] a)
+  {
+    for (int i=0; a[i]<=a[i+1]; i++)
+      if (i+1 == a.length-1)
+        return true;
+
+    return false;
+  }</b></pre>
+<p>
+<li>Assume we declare <b>SimpleStack s = new SimpleStack();</b>.
+    Does Java allow us to write, <b>s.push(null);</b>
+    If it is not allowed, explain why not; if it is allowed, explain what
+      happens.
+<p>
+<li>Assume we declare <b>SimpleStack s = new SimpleStack();</b> and push some
+      values onto the stack.
+    Does Java allow us to write, <b>System.out.println( s.pop() );</b>
+    If it is not allowed, explain why not; if it is allowed, explain what
+      happens.
+<p>
+<li>Assume we declare <b>SimpleStack s = new SimpleStack();</b> and push some
+      values onto the stack.
+    <ul>
+    <li> Explain why we cannot use the following cascaded method calls to
+           empty the stack and push two values onto it:
+           <b>s.makeEmpty().push("a").push("b");</b>
+         What changes could we make to these methods to allow such a cascaded
+           method call.
+    <li> Explain why we cannot use the following cascaded method calls to
+           retrieve the value under the top of the stack:
+           <b>Object o = s.pop().pop();</b>
+    </ul>
+<p>
+<li>Explain why the following implementation of the <b>pop</b> method
+    works correctly; notice that it use a <b>try</b>-<b>finally</b>
+    combination with no local variable <b>answer</b>.
+
+  <b><pre>  public Object pop () throws IllegalStateException
+  {
+    if ( isEmpty() )
+      throw new IllegalStateException
+        ("SimpleStack pop: Stack is empty");
+    
+    try{
+      return stack[top];
+    }finally{
+      stack[top] = null;
+      top--;                       //or just stack[top--] = null;
+    }
+  }</b></pre>
+<p>
+<li>Copying the form of the <b>equals</b> method in the <b>Rational</b> class
+      (see the bottom of the <a href="#Casting">Reference Casting</a> section),
+    write an <b>equals</b> method for <b>SimpleStack</b> or <b>SimpleQueue</b>
+    Include all state criteria that you think is relevant.
+<p>
+<li>How could we change the <b>SimpleQueue</b> class to disallow enqueueing
+     <b>null</b> references, either by not modifying the array and returning
+     immediately, or by throwing an <b>IllegalArgumentException</b>.
+</ol>
+</td>
+</tbody>
+</table>
+
+
+</body>
+</html>

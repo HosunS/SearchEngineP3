@@ -1,0 +1,141 @@
+<html><head><title>
+ECHT'94:Chimera:Implementation Architecture</title>
+</head><p>
+
+<BODY TEXT="#000000" LINK="#0000FF" VLINK="#FF0000" ALINK="#00BB00" BGCOLOR="#FFFFFF">
+<TABLE WIDTH=100%>
+<TR ALIGN=CENTER VALIGN=MIDDLE>
+<TD ALIGN=CENTER><A HREF="index.html#TOC">Table of Contents</A></TD>
+<TD ALIGN=CENTER><A HREF="conceptual.html">Conceptual Architecture</A></TD>
+<TD ALIGN=CENTER><A HREF="future.html">Future Work</A></TD>
+</TR>
+</TABLE>
+<HR>
+<H2>4. An Implementation Architecture</H2>
+We have constructed a prototype of Chimera to validate the concepts presented in <A HREF="concepts.html">Section&nbsp;2</A> and the conceptual architecture of <A HREF="conceptual.html">Section&nbsp;3</A>. This prototype has been used to support the example described in <A HREF="concepts.html">Section&nbsp;2</A> (as well as many other applications). Our prototype was constructed on Sun SPARCstations under the Unix operating system using the Ada and C programming languages. In this section, we describe the design choices that we made in mapping the conceptual architecture into a working prototype and discuss other issues concerning the prototype such as performance and size statistics.
+<H3><A NAME="ChimeraServer">4.1 Chimera Server</A></H3>
+The Chimera server realizes and in some cases exceeds the goals set out for it in <A HREF="conceptual.html#ChimeraServer">Section&nbsp;3.1</A>. We discuss each goal in roughly the order they were presented in <A HREF="conceptual.html#ChimeraServer">Section&nbsp;3.1</A> in the paragraphs below.<p>
+
+At the heart of the Chimera server lies a set of Ada packages which implement Chimera's hypertext concepts as ADTs. The Chimera server coordinates access to this set of ADTs by responding to remote procedure calls made by Chimera clients. These clients are invoked by end-users (or the process-invoker) and typically contain one viewer (although multiple viewers per client is allowable). The Chimera server can handle multiple clients run by multiple users at the same time.<p>
+
+Filtering information is maintained for each viewer connected to the Chimera server. Anchors and links can be filtered such that different sets of these concepts can be provided to different users for the same view. Users can select the level of filtering received if the viewer provides an interface to do so<A HREF="footnotes.html#Footnote9"><SUP>9</SUP></A>. The default filtering level is none, i.e., all anchors and links for a particular view are accessible. The other filtering level is user_only, such that only those anchors and links created by a user on a particular view are accessible. This functionality allows Chimera to provide support for multiple contexts in a single hyperweb. Eventually we plan to implement a system of ownership and permissions modeled after Unix's file permissions. Thus, only those anchors and links which are readable by a user will be accessible for a particular view. We will then extend Chimera's support for multiple contexts by allowing a user to have different roles and thus gain access to different sets of anchors and links.<p>
+
+An active link is maintained for each user connected to the Chimera server. An active link is a mechanism provided by the Chimera server to allow modeless link creation. In typical hypertext systems, link creation occurs as a mode.  The user indicates that a new link is desired, adds (typically two) anchors to this link and then continues working. In Chimera, a user can create several empty links, select one of these links to be active, and then add anchors to this active link at any time thereafter. The user can also at any time select another link to be the active link. Note that viewers are not required to use the active link mechanism. It is provided only as a convenience function in an attempt to foster common interaction styles between Chimera viewers.  A viewer can forgo the active link mechanism, register its own links, and modify them independent of other viewers.<p>
+
+Hyperwebs are mapped into Unix directories where the Chimera server stores temporary run-time files along with the persistent state of its ADTs. The ADTs save their state information with the Pleiades object management system. Users select which hyperweb they want to access through a resource file (.chimerarc) located in their home directories which the Chimera server reads on start-up.<p>
+
+The Chimera server currently supports fourteen hypertext events and clients can register or deregister interest in any of them<A HREF="footnotes.html#Footnote10"><SUP>10</SUP></A> (See Figure&nbsp;3). The events range from reporting changes to the hyperweb, such as the addition or deletion of hypertext concepts, to link traversal events and active link events.<p>
+
+<TABLE BORDER="1" WIDTH="100%">
+<TR>
+<TH>Event Name</TH><TH>Associated Information</TH>
+</TR>
+<TR>
+	<TD>Server Disconnect</TD>	<TD>None</TD>
+</TR>
+<TR>
+	<TD>New Viewer</TD>	<TD>Viewer Identifier</TD>
+</TR>
+<TR>
+	<TD>Delete Viewer</TD>	<TD>Viewer Identifier</TD>
+</TR>
+<TR>
+	<TD>New Object</TD>	<TD>Object Identifier</TD>
+</TR>
+<TR>
+	<TD>Delete Object</TD>	<TD>Object Identifier</TD>
+</TR>
+<TR>
+	<TD>New View</TD>	<TD>View Identifier</TD>
+</TR>
+<TR>
+	<TD>Delete View</TD>	<TD>View Identifier</TD>
+</TR>
+<TR>
+	<TD>New Anchor</TD>	<TD>Anchor Identifier</TD>
+</TR>
+<TR>
+	<TD>Delete Anchor</TD>	<TD>Anchor Identifier</TD>
+</TR>
+<TR>
+	<TD>New Link</TD>	<TD>Link Identifier</TD>
+</TR>
+<TR>
+	<TD>Delete Link</TD>	<TD>Link Identifier</TD>
+</TR>
+<TR>
+	<TD>Modify Link</TD>	<TD>Link Identifier</TD>
+</TR>
+<TR>
+	<TD>Link Traversal</TD>	<TD>Anchor Identifier</TD>
+</TR>
+<TR>
+	<TD>Active Link</TD>	<TD>Link Identifier</TD>
+</TR>
+<TR>
+	<TD COLSPAN=2 ALIGN=CENTER>Figure 3: <B>Chimera's Hypertext Events</B></TD>
+</TR>
+</TABLE><p>
+
+Finally, clients provide a variety of information about themselves to the server.  This information includes whether each viewer in each client is ready to receive hypertext events, what hypertext events each viewer is interested in, and what view(s) each viewer is in. The server also knows how each viewer would like to be invoked via an invocation policy attribute associated with each viewer. This policy is used when the server must send a link traversal event to a view not currently displayed by any connected viewer. A viewer with an invocation policy of "Once_Only" is only invoked once and all subsequent link traversal events are sent to it. This is for viewers which can display multiple views, perhaps by opening a new window for each one or by closing the previous view before opening the new one. An alternative invocation policy is "Every_Time" which causes the server to invoke (via the process invoker) a new instance of a viewer each time a link traversal occurs to an undisplayed view.
+<H3><A NAME="ProcessInvoker">4.2 Process Invoker</A></H3>
+The process invoker is an RPC server to which the Chimera server sends messages when it wants a particular viewer invoked. The Chimera server sends a viewer name which the process invoker maps into an executable program or shell script which it then invokes. This invocation is currently handled by having the process invoker use the Unix fork command to start a child process. This child process calls the Unix execvp command which replaces the child process with the specified executable program which then begins to run. The map that the process invoker uses to determine which executable program to run is read in once at start-up and is stored in the hyperweb that the user is accessing. The information in the map file must be entered manually via a text editor in the current implementation. (The limitations implicit in this will be fixed in future implementations. They can be overcome by providing tools to manage a process invoker's map file and altering the process invoker to detect changes to its map file at run-time.)
+<H3><A NAME="ChimeraClient">4.3 Chimera Client</A></H3>
+A major benefit of the client-server architecture of Chimera is that its clients may be written in more than one language.  An API to the Chimera server for a particular language is required before that language can be used to construct Chimera clients. An advantage of the API approach is that low-level RPC details of passing messages to the Chimera server are completely hidden from the clients which use the API. Instead clients invoke subprograms like register_anchor or traverse_link and the API converts these subprograms calls (and their parameters) into the appropriate RPC messages and ships them to the Chimera server. The API also passes back any return values from the server to the calling client. This conversion is straight forward and includes creating a new RPC buffer, marshaling the parameters into the buffer, making the actual RPC call, retrieving any return values from the buffer, and deallocating the RPC buffer.<p>
+
+Chimera supports clients written in Ada and C with APIs for both languages. Several clients have been written using each of these APIs. A C++ API is in the works but, as of this writing, is not yet complete. In addition, engineers at IBM Owego, New York, developed tcl bindings to Q with the result being that they can send RPC messages to the Chimera server. These tcl bindings do not represent a complete API to Chimera, however, since they cannot yet receive hypertext events from the Chimera server. Work is now in progress to develop a tcl API which is built on top of the C API.<p>
+
+The Ada API creates two Ada tasks per viewer. One task handles sending messages to the Chimera server; the second task handles receiving hypertext events from the server. These tasks operate independently and maintain separate Unix sockets.  This allows multiple connections to the Chimera server within a single Unix process.  The Ada API has proven to work successfully with other client-server systems, the most notable being a simultaneous connection by one viewer to a Chimera server, a Chiron server, and a sound server.<p>
+
+The C API allows C programs to use Chimera services within a single Unix process.  Two sockets are maintained by the C API, requiring application writers to take responsibility for the scheduling of message transmission and event reception.  Since many programs using the C API will also use X Windows to produce their user interface, support was added to receive Chimera events from within an Xt event loop.  Chimera events are handled using a callback mechanism.  To date, four separate C programs have been written which are simultaneously Chimera and X clients within a single Unix process.
+<H3><A NAME="ExternalSystems">4.4 External Systems</A></H3>
+As of this writing, seven viewers for several media types have been integrated with the Chimera system.  These viewers are briefly described below.<p>
+
+
+<TABLE WIDTH="100%"><p>
+
+<TR VALIGN=MIDDLE>
+	<TD VALIGN=TOP><B>FrameMaker</B></TD>	<TD VALIGN=TOP>The FrameMaker program was integrated into the Chimera system without modifying its executable image.  A wrapper program translates between Chimera hypertext concepts and FrameMaker's built-in hypertext concepts. Custom FrameMaker macros were written for anchor creation so link traversal messages could be received by the wrapper.</TD>
+</TR>
+<TR VALIGN=MIDDLE>
+	<TD VALIGN=TOP><B>xvi</B></TD>	<TD VALIGN=TOP>The public-domain vi-clone <I>xvi</I> was integrated with Chimera by a group of senior students as a class project for a software engineering project course.  All existing vi editing functions work normally, with hypertext functionality accessed through a graphical control panel written using the Motif toolkit.  Chimera services are accessed through the C API.  Link traversals to xvi cause a different buffer to be opened for each new file referenced in the link.</TD>
+</TR>
+<TR VALIGN=MIDDLE>
+	<TD VALIGN=TOP><B>Flight Simulator</B></TD>	<TD VALIGN=TOP>As described earlier, the flight simulator is a simulation of an aircraft.  Written in Ada using Chiron, the flight simulator features each gauge in a separate thread of control.  The Ada API easily allows multiple threads of hypertext functionality to operate independently within a single Unix process.</TD>
+</TR>
+<TR VALIGN=MIDDLE>
+	<TD VALIGN=TOP><B>mpeg</B></TD>	<TD VALIGN=TOP>An ambitious term project for the software engineering project course, the mpeg viewer allows anchors to be defined on mpeg movies.  Anchors may be defined on sections of each frame, and may have a duration from one frame to the entire movie.  Authoring support allows anchors to be defined on a frame, then copied from frame to frame.  Authors may then single-step through the movie and adjust anchors on individual frames for the best fit.  Anchors may be added to the active link from any frame.  The mpeg viewer was created by extending a public-domain mpeg player using the C API.</TD>
+</TR>
+<TR VALIGN=MIDDLE>
+	<TD VALIGN=TOP><B>xgif</B></TD>	<TD VALIGN=TOP>Another result of the same course, the xgif viewer allows anchors to be defined on sections of a GIF<A HREF="footnotes.html#Footnote11"><SUP>11</SUP></A> image. A public-domain GIF viewer was augmented using the C API to display a hypertext control panel written using the Motif toolkit. The control panel varies depending on whether the GIF viewer is in author mode or view mode.  Link traversals to xgif cause a new xgif process to be invoked to view the linked-to GIF file.</TD>
+</TR>
+<TR VALIGN=MIDDLE>
+	<TD VALIGN=TOP><B>Sound Player</B></TD>	<TD VALIGN=TOP>The sound player presents a list of sounds to which anchors are attached.  Link traversals to a particular anchor causes the sound player to play the associated sound. The Sound Player uses Chiron for its user interface, the Ada API for its hypertext functionality, and a Sun sound server for sound capability, making it simultaneously a client of three separate servers.</TD>
+</TR>
+<TR VALIGN=MIDDLE>
+	<TD VALIGN=TOP><B>Button</B></TD>	<TD VALIGN=TOP>The button is a simple viewer which displays a window containing only a button.  An anchor is then associated with this button. This anchor may be a member of only one link (a restriction enforced by this particular viewer), and can be used as a placeholder for a section of a document. This viewer is noteworthy since its view is not associated with any underlying object, yet it can participate in a Chimera hyperweb.</TD>
+</TR>
+</TABLE><p>
+
+<H3><A NAME="Metrics">4.5 Metrics</A></H3>
+The Chimera API consists of approximately 90 entry points. The Ada API library is 296 kilobytes (K) in size. The C API library is 62 K. The Chimera server is 2.3 megabytes in size and uses approximately 5 megabytes of memory when executing.<p>
+
+Our metrics for the performance of Chimera is anecdotal. From a user's perspective, a link traversal between two running viewers occurs instantaneously. If a link traversal leads to a non-running viewer, there is a noticeable delay while Unix spins up the new process. After the newly invoked viewer has initialized the completion of the link traversal occurs quickly.
+We conducted one performance experiment with the integrated FrameMaker client.  We set up a link traversal between two FrameMaker documents using Chimera and FrameMaker's own internal hypertext functionality. The user noticed no difference between the time it took to complete either traversal despite the fact that the Chimera link traversal involved the passing of RPC messages across four Unix processes while the FrameMaker link traversal was handled completely within FrameMaker.
+<HR>
+<TABLE WIDTH=100%>
+<TR ALIGN=CENTER VALIGN=MIDDLE>
+<TD ALIGN=CENTER><A HREF="index.html#TOC">Table of Contents</A></TD>
+<TD ALIGN=CENTER><A HREF="conceptual.html">Conceptual Architecture</A></TD>
+<TD ALIGN=CENTER><A HREF="future.html">Future Work</A></TD>
+</TR>
+</TABLE><p>
+
+
+<h4>
+<hr size=1 noshade>
+This page is part of the <A HREF="http://www.ics.uci.edu/pub/chimera/">Chimera</A> web site.<BR>
+Send feedback and questions to <A HREF="mailto:kanderso@ics.uci.edu">Ken Anderson</A>.<BR>
+Last updated on Thu, Sep 19, 1996 at 12:34:24 PM. 
+</h4>
+</body></html>

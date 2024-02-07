@@ -1,0 +1,242 @@
+<HTML><HEAD>
+<TITLE>Mesh Generation: Open Problems</TITLE>
+<META name="Owner" value="eppstein">
+<META name="Reply-To" value="eppstein@ics.uci.edu">
+</HEAD><BODY>
+
+<A HREF="/~theory/">
+<IMG src="/~theory/logo/shortTheory.gif"
+WIDTH=521 HEIGHT=82 BORDER=0 ALT="ICS Theory Group"></A>
+
+<A HREF="/~eppstein/280g/">
+<H1>ICS 280G, Spring 1997:<BR>
+Mesh Generation for Graphics and Scientific Computation</H1></A>
+<!--#config timefmt="%d %h %Y, %T %Z" -->
+
+<H2>Open Problems</H2>
+
+<OL>
+<LI>We proved (<I>4/3/97</I>) the existence of triangulations of any
+polygon or straight line graph, and of convex quadrilateralizations of
+any orthogonal polygon.  What about curved objects?  <A HREF="/~eppstein/projects/splinegon/">Do spline-polygons have spline-triangulations?</A>
+An example formed by connecting four quarter-ellipses shows Steiner
+points may be needed, even for quadratic splines, but maybe they only
+need to be added in the interior of the splinegon.
+
+<P><LI>On <I>4/8/97</I> we went over dynamic programming techniques for
+optimal triangulation (e.g. minimum total edge length) of simple
+polygons, in O(n<sup>3</sup>) time or O(E<sup>3/2</sup>) if the
+visibility graph has E edges. So the slowest case is seemingly the most
+simple, when the polygon is convex. Can we find the minimum length
+triangulation of convex polygons in o(n<sup>3</sup>) time?
+Steve S. suggested Frances Yao's generalization of Knuth's speedup to
+optimal binary search tree construction (which has the same general
+dynamic programming form) but it doesn't seem to work.
+
+<P><LI>The same dynamic programming methods also work for optimal
+quadrilateralization, in time O(n<sup>4</sup>). There is sometimes a
+possible speedup: we can break quadrilaterals into pairs of triangles
+and reduce the time to O(n<sup>3</sup>), but only for those quality
+functions which can be computed by adding separately the qualities of
+the two triangles (e.g. total edge length, allowing concave
+quadrilaterals). The speedup doesn't seem to
+work when we want to use angle-based quality measures, e.g. even as
+simple a problem as testing whether there exists a partition of a simple
+polygon into convex quadrilaterals.  Can we test for the existence of
+such a partition in time o(n^4)?  What about convex quadrilateralization
+of non-simple polygons?
+
+<P><LI>Non-simple polygons with h holes can be reduced to simple ones by
+choosing h edges, one going leftwards from the leftmost vertex of each
+hole boundary.  In this way we can find optimal triangulations of them
+in time O(n<sup>3+h</sup>).  It is a famous open problem whether minimum
+length triangulation is polynomial time (so that we can get rid of the
+exponent of h).  Also, can we use e.g. separator-based divide and
+conquer to reduce the time bound to n<sup>O(sqrt h)</sup>?  If so, can
+the constants be made small enough for this to actually be more
+practical than the O(n<sup>3+h</sup>) bound?
+
+<P><LI>O'Rourke's art gallery book mentions an
+O(n<sup>7</sup>&nbsp;log&nbsp;n) time bound for a dynamic programming-based
+method for partitioning simple polygons into the minimum number of
+star-shaped regions. Can this be improved? What about dynamic
+programming for partitioning into the minimum number of convex pieces,
+presumably this works but is it O(n<sup>3</sup>), O(n<sup>4</sup>), or worse?
+<P>[<I>Note added later: <A HREF="convex-decomp.html">Jeff Erickson tells
+me</A> the best known bound for convex partition is
+O(r<sup>2</sup>n&nbsp;</I>log<I>&nbsp;n) where r is the
+number of reflex vertices, which might be as large as n. We haven't
+gotten to Steiner problems yet but the minimum Steiner partition into
+convex pieces can also be solved in time O(n&nbsp;+&nbsp;r<sup>3</sup>)
+by an algorithm of Chazelle.</I>]
+
+<P><LI>Can we find the triangulation of a planar straight line graph (PSLG)
+that minimizes the maximum edge length in polynomial time?
+Edelsbrunner and Tan [FOCS '91] solved this for point sets.  Extending
+their results to PSLGs would also solve the problem they left open of
+minimizing the lexicographically-ordered vector of edge lengths
+(at least for point sets in general position).
+
+<P><LI>A much more famous optimal triangulation problem: can we find the
+triangulation minimizing the sum of edge lengths in polynomial time?
+There has been a lot of work on this for point sets, but less for PSLGs,
+so perhaps the extra complexity of a PSLG would make it easier for an
+NP-completeness proof to go through.
+
+<P><LI>If we are given a set of three-dimensional points, can we find a
+continuous piecewise linear interpolating function (i.e. a surface
+formed by projecting the points onto the xy-plane, triangulating, and lifting
+the triangles back up into 3D) that minimizes the total surface area, in
+polynomial time?  What about a function that maximizes the minimum
+dihedral angle? Note that examples based on a regular octahedron
+(oriented with two faces parallel to the xy-plane, so its vertices
+project to a regular hexagon) show that edge
+insertion does not work for these problems.
+
+<P><LI>What if anything can we prove about optimal quadrilateralization
+of point sets and/or planar straight line graphs?
+
+<P><LI>Does every point set, polygon, or planar straight line graph have
+a well-defined minimum weight Steiner triangulation?  (The minimum
+weight itself is well defined, but the other possibility is that adding more
+and more Steiner points might be needed to get closer and closer to some
+limiting weight.)
+
+<P><LI>We showed (<I>4/22/97</I>) that the number of elements required
+for no-small-angle triangulation could be bounded above and below by
+integral(1/(local feature size)<sup>2</sup>), and used this to prove the
+optimality of quadtree triangulation and Ruppert's incremental Delaunay method.
+In my paper "<A HREF="/~eppstein/pubs/p-mwst.html">Approximating the
+minimum weight Steiner triangulation</A>" I showed that quadtree
+triangulation also approximately minimizes the total edge length among
+all Steiner triangulations of a point set, but left open the problem of
+extending this result to polygons.  For quadtree triangulations, the
+total edge length is proportional to integral(1/(local feature size)).
+Is this a general lower bound on the length of all triangulations?
+If so this would simplify my results and lead to the polygon extension.
+It would also be of interest to find a polynomial-time approximation
+to minimum edge length (quadtrees may be nonpolynomial), but perhaps
+this could be done with the same shortcutting technique used in my paper.
+
+<P><LI>Another open question from the same approximate minimum weight
+paper: there exist convex polygons for which the min weight
+triangulation requires Steiner points on the boundary. But are Steiner
+points ever required in the interior of the polygon?  If not, one might
+be able to compute the optimal triangulation by dynamic programming,
+interesting since no optimal Steiner triangulation result is currently known.
+
+<P><LI>We went over the circle-packing method of Bern, Mitchell, and
+Ruppert (<I>4/24/97</I>), which nonobtusely triangulates any
+polygon without cracks, using
+only O(<I>n</I>) triangles.  But it produces lots of right triangles.
+Can it be modified to produce only acute triangles?
+
+<P><LI>Bern, Mitchell, and Ruppert's method works by dividing the
+polygon into kite-shaped regions which are then split into two or four
+right triangles each.
+<A HREF="/~eppstein/pubs/p-qpack.html">Can we say anything about the
+quality of the quadrilateral mesh obtained by not splitting the kites?</A>
+
+<P><LI>Sometimes, it may be possible to pack more circles into the
+region bounded by four tangent circles, in such a way that all remaining
+regions are bounded by only three circles.  In general position,
+however, this doesn't happen.  How easily can we tell whether the
+circles are in a special position that allows this kind of packing?
+
+<P><LI>Is there a polynomial time algorithm for nonobtusely
+triangulating polygons with cracks, or arbitrary planar straight line graphs?
+There is a lower bound of Omega(<I>n</I><sup>2</sup>) on the required
+output complexity. The only known upper bound is
+O(<I>n</I><sup>4</sup>), on the very special case in which the PSLG is
+itself a triangulation of a simple polygon
+("<A HREF="/~eppstein/pubs/p-nonobtuse.html">Polynomial size non-obtuse
+triangulation of polygons</A>").
+
+<P><LI>Edelsbrunner and Tan gave an O(<I>n</I><sup>3</sup>) algorithm
+for <I>conforming Delaunay triangulation</I>, a relaxation of nonobtuse
+triangulation to which the same Omega(<I>n</I><sup>2</sup>) lower bound
+applies. Can the problem be solved in O(<I>n</I><sup>2</sup>) complexity?
+
+<P><LI><A HREF="/~eppstein/projects/tetra/">How many tetrahedra or
+simplices are needed to triangulate a given polyhedron or polytope?</A>
+This is also closely related to the problem of computing the number of
+flips required to convert one planar triangulation into another.
+The worst-case version of the question in 3d (what is the maximum number
+of tetrahedra required, as a function of <I>n</I>) was answered by Sleator,
+Tarjan, and Thurston.  The algorithmic question (how many are required
+for this particular polyhedron) remains open.  
+Also open: how many simplices are required to triangulate a
+<I>d</I>-dimensional hypercube, as a function of <I>d</I>.
+Do Steiner points ever help reduce the number of tetrahedra or simplices?
+
+<P><LI>Is it always possible to tetrahedralize (without Steiner points)
+the shape formed by forming a convex-polyhedron void inside the kernel
+of a star-shaped polyhedron?
+
+<P><LI>For any point set in <B>R</B><SUP>3</SUP>, one can form a <I>flip
+graph</I> of the different tetrahedralizations of the point set
+(partitions of its convex hull into tetrahedra meeting face to face and
+having the points as vertices), in which two tetrahedralizations are
+connected by an edge if they differ by a <I>flip</I> (if two
+face-to-face tetrahedra together form a convex 5-vertex polyhedron,
+replace them by a three-tetrahedron subdivision of the same polyhedron
+or vice versa).  This graph is bipartite. Can it be disconnected?
+Or worse, can it have isolated vertices (tetrahedralizations in which no
+flips are possible)?
+
+<P><LI><A HREF="http://www.cs.duke.edu/~jeffe/open/comb.html#traversal">Does
+every line through a 3-dimensional Delaunay triangulation intersect at
+most O(<I>n</I>) tetrahedra?</A>
+<P>[<I>Note added October 1999: 
+<A HREF="http://www.cs.berkeley.edu/~jrs/stab.html">Jonathan Shewchuk has
+found a 3d DT in which a line can stab Omega(n<sup>2</sup>) tetrahedra.</A></I>]
+
+<P><LI>Can we efficiently construct the triangulation of a 3d point set
+maximizing the minimum solid angle?  (Note that unlike its planar analog,
+this is not optimized by the Delaunay triangulation, due to the fact that,
+if three of four vertices of a tetrahedron are fixed,
+and the solid angle at the fourth point is also fixed,
+the locus of possible locations for that point is non-spherical.
+<A HREF="/~eppstein/pubs/p-meshsmooth.html">I can prove that this locus
+is convex</A>, but the proof is messy and algebraic -- is there
+a simple conceptual proof?)
+
+<P><LI>If we are given <I>n</I> points in space, the Delaunay
+triangulation of which has <I>t</I> tetrahedra, how quickly can we find
+that triangulation?
+<A HREF="http://www.cs.miami.edu/~tchan/pub.html">Chan, Snoeyink and Yap
+have an algorithm with running time
+O((<I>n</I>&nbsp;+&nbsp;<I>t</I>)&nbsp;log<SUP>2</SUP>&nbsp;<I>t</I>)</A>, but this does
+not quite match the known lower bound of
+Omega(<I>n</I>&nbsp;log&nbsp<I>t</I>&nbsp;+&nbsp;<I>t</I>).
+</UL>
+
+<P>Some more practical problems from Mac
+(meaning, a solution would likely involve an actual working system,
+although one might imagine theoretical results in these areas):
+<OL>
+<LI>Hex meshing with quality approaching that which is
+producable by hand - i.e., by region decomposition 
+controlled by an expert.
+<LI>Intelligent meshing of features (if you tell the CAD
+system to put a certain type of feature on your object, that information
+should be used by the mesher).
+<LI>Fast remeshing after a local change.
+<LI>Mesh smoothing for high order elements with curved boundaries.
+<LI>Problem dependent, black box meshing, in which the whole process of
+selecting a mesh type, performing mesh generation, applying a numerical
+algorithm, etc is automatically performed given some specification of
+the problem to be solved.
+<LI>Decomposition into "nice" 2-1/2D regions (generalized cylinders,
+meeting parallel to each other; one could then apply a planar mesh
+algorithm to the cylinder cross-section and cut horizontally to get a
+good 3D mesh).
+</OL>
+
+<HR><P>
+<A HREF="/~eppstein/">David Eppstein</A>,
+<A HREF="/~theory/">Theory Group</A>,
+<A HREF="/">Dept. Information & Computer Science</A>,
+<A HREF="http://www.uci.edu/">UC Irvine</A>.<BR>
+<SMALL>Last update: <!--#flastmod file="open.html" --></SMALL>
+</BODY></HTML>

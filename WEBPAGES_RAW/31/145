@@ -1,0 +1,67 @@
+dyn.load("npmle.so")
+
+mix=function(X, iter=10000, alg=4){
+  ## compute MLE of mixture proportions
+  ## maximize sum_i log(sum_j X_ij*theta_j)
+  ## required input: 
+  ##   X: matrix of mixture components (nonnegative; no row identically zero)
+  ##   X_ij: density of component j evaluated at observation i 
+  ## optional input:
+  ##   iter: maximum number of iterations (default=10000)
+  ##   alg: choice of algorithm (default=4, cocktail algorithm)
+  ## output: a list of 
+  ##   (i) MLE of mixture proportions; (ii) iteration count
+  n=as.integer(dim(X)[1]); 
+  p=as.integer(dim(X)[2]); 
+  Xvec=as.double(c(t(X)));
+  theta=as.double(rep(1/p, p));
+  .C("alg_mix", n, p, Xvec, as.double(rep(1, n)), theta, as.integer(iter), as.integer(alg))[5:6]
+}
+
+## toy example
+n=100;
+p=20;
+X=matrix(nrow=n, ncol=p);
+for(i in 1:p)
+  X[,i]=runif(n, 0, 1);
+# X=read.table("galaxy.X")
+print("cocktail algorithm for computing the MLE of mixture proportions");
+output=mix(X);
+print("MLE:");
+print(output[[1]]);
+print("number of iterations:");
+print(output[[2]]); 
+
+npmle=function(p, l, u, iter=10000, alg=4){
+  ## compute NPMLE of the distribution function for censored data 
+  ## maximize sum_i log(sum_j X_ij*theta_j)
+  ##   X_ij=1 if l_i<=j<=u_i, and X_ij=0 otherwise
+  ## required input: 
+  ##   p: number of time points
+  ##   (l, u): vectors of integers (ranks) 
+  ##     [l_i, u_i]: censoring interval for subject i
+  ## optional input: 
+  ##   iter: maximum number of iterations (default=10000)
+  ##   alg: choice of algorithm (default=4, cocktail algorithm)
+  ## output: a list of 
+  ##   (i) NPMLE; (ii) iteration count
+  n=as.integer(length(l));
+  p=as.integer(p);
+  #shift from R indexing to C indexing
+  l=as.integer(l-1)
+  u=as.integer(u-1)
+  theta=as.double(rep(1/p, p));
+  .C("alg_npmle", n, p, l, u, as.double(rep(1, n)), theta, as.integer(iter), as.integer(alg))[6:7]
+}
+
+## toy example
+p=5  
+l=c(2, 1, 3, 4, 2)
+u=c(3, 3, 4, 4, 5) 
+print("cocktail algorithm for computing the NPMLE of the distribution function with censored data");
+output=npmle(p, l, u);
+print("NPMLE:");
+print(output[[1]]);
+print("number of iterations:");
+print(output[[2]]);
+ 

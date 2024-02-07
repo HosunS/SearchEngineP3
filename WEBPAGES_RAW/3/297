@@ -1,0 +1,640 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+  <title>Program Constuction and Debugging</title>
+</head>
+
+<body BGCOLOR="white">
+
+<center>
+<h1>Program Construction and Debugging</h1>
+<p>
+<h2>Introduction to Computer Science I-III<br>
+ICS-21/-22/-23<br>
+</h2>
+<p>
+</center>
+
+
+<!-- Introduction -->
+
+<a name="Introduction"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Introduction</b></td>
+<td width ="80%">
+  In this lecture we will learn some general information about
+    iterative-enhancement as as technique for designing, coding, testing,
+    and debugging programs.
+  Then, we will discuss debugging both syntax/complation errors and
+    execution/runtime errors in Java.
+  Debugging is a skill that you will become more adept at as the quarter
+    progresses (because you will be doing so much of it).
+  This lecture will be coupled with a handout that includes practical
+    information (is a tutorial and reference) about using the
+    <a href="../../../common/handouts/debugger.doc">Eclipse Debugger</a>; 
+    please read it and follow its instructions.
+  <p>
+  This tool is not only useful for debugging programs, but it is also useful
+    for understanding Java control structures, method calls (and their
+    parameters and local variables), and objects (and their instance
+    variables).
+  So, we shall use it in the classroom repeated during the quarter (and
+    you should use it to explore these topics, even if you don't use it to
+    debug your programs).
+  <p>
+  As a warmup for debugging, please read the
+    <a href="../../../common/handouts/bugs.html">Bugs in Programming</a>
+    web page.
+  Most programmers write code that is about 80% correct.
+  The mark of a good programmer is that he/she systematically locates and
+    corrects each bug in the program until it is 100% correct; in contrast, a
+    poor programmer randomly changes the program (without knowing the cause of
+    the bug or the implications of the changes) and will actually REDUCE the
+    correctness of the code.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Iterative Enhancement -->
+
+<a name="IterativeEnhancement"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Program Construction via Iterative Enhancement (Design for Debugging)</b></td>
+<td width ="80%">
+  Application programs are almost always written based on some <i>divide and
+    conquer</i>  approach to problem solving.
+  Such approaches rely on the belief that it is harder to solve one large
+    problem than to solve a sequence of smaller subproblems (which lead to the
+    solution of the large problem).
+  So, in designing a program, we must determine how to divide the larger
+    problem into a sequence of smaller subproblems, and then conquer/solve each
+    one individually.
+  In industry, a team of programmers working on the same project may solve
+    these problems in parallel.
+  <p>
+  The divide and conquer approach that we will use mostly is 
+    <b>Iterative-Enhancement</b>.
+  Given a problem (a specification of a program to write)
+  <ul>
+    <li>We start by writing a <b>kernel</b> program that meets some
+          dramatically simplified version of the specification.
+    <li>We extend the kernel by writing a sequence of programs, each an 
+          enhancement to the previous one (each is called a <i>phase</i>),
+          which includes more and more of the specification.
+    <li>We eventually reach the final phase, which is the last program in the
+          sequence; it meets the entire specification and solves the entire
+          problem.
+  </ul>
+  By analogy, think of trying to cross a river; we could try to jump it in a
+   single bound, or we could try to find a path of stones in the river bed,
+    and jump from stone to stone, getting closer and closer to our destination,
+    until we reach the other side.
+  Each phase in the enhancement is like a stepping stone.
+  <p>
+  In addition, this approach allows us to gauge our progress, with each
+    finished phase acting as a milestone.
+  If it has taken us 3 hours to finish the first 4 phases of a project, and
+    there are 4 more phases to go (and we assume each phase takes about the 
+    same amount of work), we can predict that it will take us about another 3
+    hours to finish.
+  Such an estimate is crude, but it is better than no estimate at all.
+  <p>
+  Pictorially, we can look at the process as follows.
+</td>
+</tbody>
+</table>
+<img src="images/iterative.gif"></mage>
+<p>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  We have already practiced this method, on a small scale, in our early
+    programming assignments.
+  It requires some perspective (and experience) to take a complicated program
+    specification and identify a good kernel and design a good sequence of
+    enhancements.
+  <ul>
+    <li>The kernel should capture something essential about the problem,
+          without getting bogged down in details.
+        Often the kernel captures the information needed to construct the main
+          loop in a program.
+    <li>Each phase should be a reasonable amount of work, focusing on one
+          different aspect of the problem, adding in more details.
+  </ul> 
+ The phases involve designing, coding, testing, and debugging a small amount of
+    related code to create an enhanced program.
+  It is critical that each such program is testable, so that we can verify that
+    it meets its enhanced specification and that we are truly making progress
+    towards our ultimate goal.
+  If any design element or its code fails to work, we will discover it quickly
+    and fix it immediately; we won't spend lots of time building other parts of
+    the code that depend on a wrong decision.
+  <p>
+  To start on a program, we need a good -but not perfect- understanding of the
+    problem being solved.
+  So, we should try to understand as much as we can before starting, but we 
+    don't need to  understand everything; don't be afraid to begin.
+  During the process of writing our program, we will learn more and more
+    details about the problem, as we tackle more and more details in the
+    enhancements.
+  Our "understanding" of the problem willl increase, the more we work on
+    writing a program to solve it.
+  Eventually we will acquire an understanding of every detail of the problem,
+    because we have implemented every detail in our program.
+  <p>
+  When we learn how to write our own methods, we will be able to associate
+    an action (some code) with a name.
+  Then, by just referring to the name, we can execute the code.
+  Sometimes the discovery of methods is bottom-up: we realize that we
+    are performing the same computation over and over again, so we write a
+    method for it.
+  Sometimes the discovery is top-down: before we even write any code we
+    realize that certain methods can act as useful building blocks, so we write
+    them.
+  <p>
+  When we learn how to write our own classes, we will apply the same
+    bottom-up and top-down process, but on a larger scale.
+  Now we can identify useful classes and all the methods they define.
+  We can test each class by independently, by testing its individual methods.
+  Once each class is working, we can test combinations as we use them to build
+    the entire application program.
+  Thus, we are always employing some kind of divide-and-conquer approach to
+    solve our programming problems.
+  <p>
+  Another key feature of iterative enhancement is <b>focus</b>.
+  Each enhancement focuses on designing and coding a small number of additions
+    or modifications to an already working program.
+  When debugging a phase, we typically need to focus on only the small amount
+    of code that we recently added/changed.
+  In this way, we can effectively build large programs by focussing on one
+     piece at a time.
+  The biggest problem is making sure the pieces all fit together.
+  <p>
+  The human brain can only keep track of so many details at a time; if we wrote
+    a huge amount of code and tried to debug it all, it could easily overload
+    our mental capacity.
+  Often engineers talk about the KISS principle: Keep It Simple, Stupid.
+  Iterative-enhancement lets us keep each task simple.
+  <p>
+  Finally, at the end of each phase we should <b>simplify</b> our code
+    as much as possible: step back and try to come up with equivalent code
+    that is easier to understand (and often smaller).
+  Because we are building on our code, and making it more complicated by
+    further enhancing it, we want to always start each enhancement with the
+    simplest code possible.
+  Simplifying during iterative enhancement will be much more effective
+    (because of focus) than trying to simplify an entire program after
+    it is written.
+  Time spent simplifying code will pay for itself with time saved in later
+    enhancements.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Testing -->
+
+<a name="Testing">
+<hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Testing Software</b></td>
+<td width ="80%">
+  Testing is the process of running software looking for errors (meaning 
+    actively trying to make the program fail): failure of the program to
+    produce correct output from some correct input.
+  Once testing shows the presence of a bug, debugging begins (the process of
+    fixing errors found during testing).
+  Before discussing the process of debugging, let's look a bit at the process
+    of testing.
+  <p>
+  Professional software testers acquire great skill and intuition at thinking
+    up"good" inputs  on which to test programs.
+  They are valued members of a product team.
+  For example, Microsoft employs about one tester for each programmer.
+  Sometimes these testers work in teams separate from the programmers; at other
+    times a tester will pair up with a programmer.
+  When the programmer finishes some part of the code, the tester begins testing
+    it while the programmer proceeds to the next part of the code.
+  If the tester finds any bugs, the programmer must fix them before continuing.
+  As you can imagine, programmers often dislike testers because the latter are
+    always pointing out mistakes made by the former!
+  <p>
+  But, it is better to have the mistake pointed out by your coworker than by
+    your boss (or a customer).
+  No programmer wants to believe that his/her code contains errors; but they
+    all do contain errors.
+  Some would argue that the programmer, intimiate with the code he/she has
+    written, is the best person to test it.
+  But, having a programmer test his/her own code might be bad from a
+    psychological point of view:  he/she might not test the code as rigorously,
+    because he/she doesn't really want to find any errors.
+  Having a separate tester addresses this problem.
+  <p>
+  But even this approach can cause problems: if a programmer knows an
+    independent tester will be examining his/her code after it is written,
+    the programmer may write code carelessly, knowing it is someone else's
+    job to spot problems.
+  Thus, there is a real tangle of incentives when writing and testing code.
+  How Microsoft produces software (an overview accessible to students in this
+    course) is discussed in Cusumano and Shelby
+    <a href="http://www.amazon.com/exec/obidos/tg/detail/-/0684855313/qid=1031956797/sr=1-4/ref=sr_1_4/002-9542912-5644017?v=glance&s=books" target="_blank">
+    Microsoft Secrets: How the World's Most Powerful Software Company Creates
+      Technology, Shapes Markets, and Manages People</a>, Free Press, 1995.
+  <p>
+  In <b>Agile</b> programming methods (which includes Extreme Programming,
+    which includes Pair Programming) programming is test-driven.
+  Before doing any coding, a programmer or tester develops an extensive suite
+    of tests that the code must pass.
+  Only then is the code written: and the programmer's progress is judged by
+    the number of tests in the suite that it passes (which is a bit like
+    using iterative enhancment to judge the progress of programming).
+  If the code is modified later, it must repass all these tests.
+  We will discuss JUnit testing towards the end of the quarter, which helps
+    automate test-driven programming.
+  <p>
+  There are two general categories of testing.
+  In <b>black-box</b> testing, testers write test-cases based only on the
+    specifications for what the code is supposed to accomplish; they are not
+    allowed to look at the code itself.
+  In <b>white-box</b> testing, testers write test-cases based both on knowledge
+    of the specifications and the code itself: certain kinds of tests migh
+    suggest themselves if the tester examines the code.
+  Of course, black-box tests can be developed before or while the code is
+    written, but white-box tests can be developed only after the code is
+    written.
+  <p>
+  Industry testers often write/use long scripts when they
+    <b>regression test</b> programs.
+  Each time a program is changed, the tester executes the script to ensure that
+    no bugs were introduced in old features (it still works as it always has).
+  Then the script is extended for the new features being tested.
+  Much of the work in regression testing can be automated: often the result of
+     such tools is either a message confirming that all tests were passed, or
+     a list of outputs (and their inputs) that differed between the original
+     program and the one now being tested.
+  <p>
+  Finally, <b>integration tests</b> determine whether software components,
+    written and tested separately (in <b>component</b> or <b>unit</b> tests),
+    work together correctly in a program.
+  It is much easier to test/debug each component by itself, than in a system
+     comprising many components.
+  In systems, even simple bugs can manifest themselves in hard to understand
+    situations.
+  Many features added to programming languages at the end of the 1990s were
+    designed to simplify software integration
+  <p>
+  We will discuss many of these aspects of testing in more detail in a later
+    lecture, focusing on Java's ability to write unit tests inside the classes
+    they are testing.
+  When we cover JUnit, we will discuss this kind of automated testing in more
+    detail.
+</td>
+</tbody>
+</table>
+
+
+<!-- Debugging -->
+
+<a name="Debugging"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Debugging</b></td>
+<td width ="80%">
+  Once testing has found a problem, we can begin debugging: trying to locate
+    the source of the error and fix it.
+  Debugging is also a task suited to solution by divide-and-conquer techniques.
+  We don't need to remove all the bugs from a program at once; instead, if we
+    can remove one bug, then another, etc. we will eventually remove them all.
+  Also, when we are looking for the location of a bug in a program, we can
+    divide the program into regions and search for the bug in smaller and
+    smaller regions until we find it.
+  The key idea is to continually make progress, never getting stuck for too
+    long on one problem (maybe switching to solve another).
+  <p>
+  We will divide debugging into syntax/compilation bugs and execution/runtime
+     bugs.
+  Syntax bugs are diagnosed and reported by the Java compiler, which shows
+    their location (or a close approximation) and a description of the error
+    (or a close approximation).
+  Execution/runtime bugs are much more difficult to fix, primarily because WE
+    must first find where they occur.
+  The hardest part of debugging is tracking down the location of an error: once
+    we have accomplished this task, actually fixing the bug is often much
+    simple.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Syntax Errors -->
+
+<a name="SyntaxErrors">
+<hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Syntax Bugs</b></td>
+<td width ="80%">
+  As we learned in our first lecture, the earlier a problem is discovered,
+    the less time/money it will take to fix it.
+  Syntax/compilation errors are discovered very early.
+  The Java compiler detects and reports these before running the program; so
+    they are much easier to fix than execution/runtime errors.
+  In fact, languages with strict compilers help spot at compile time errors
+    that become apparent only at runtime in languages with less strict
+    compilers.
+  Paradoxically, we should be happy whenever Java reports a compile-time bug:
+    given that the program has an error, the compiler saves us from having to
+    locate the error later, at runtime (a more complicated process).
+  <p>
+  Never say that a program is correct until it contains neither kinds of
+     errors.
+  Many introductory programming students say, "My program has no errors but it
+    is not working correctly", when they should be saying, "My program has no
+     syntax errors (it is compiling correctly), but it still has
+     execution/runtime errors".
+  Although no one likes to be told of syntax errors in their programs, Java
+    forces us to fix these errors before running our programs, and thus
+    eliminates many harder-to-debug execution/runtime errors that would
+    otherwise occur.
+  A well designed programming language is one that allows errors to be
+    detected as early a possible, by the compiler.
+  <p>
+  Technically, the Java compiler detects and reports a syntax error when it
+    examines a token that cannot legally appear next in the code.
+  Thus, either that token is wrong, or some recent one that preceded it was.
+  So, first check the token itself, and then those immediately preceding it.
+  Understand what you are trying to accomplish with these tokens and use this
+    knowledge to help determine what is wrong with what you wrote.
+  A great help in fixing subtle syntax errors is working code (in some other
+    program) that uses the same language features correctly; compare the two 
+    to find the problem.
+  <p>
+  Common errors include missing semi-colons, mismatched separators
+    (parentheses and braces), misspelled names (for variables, methods, and
+     classes; remember that case is important), and the wrong number/type of
+     arguments to operators and methods (prototype/signature mismatches).
+  Java does a relatively good job of explaining the syntax errors that it
+    finds, but sometimes its messages are cryptic (or even just plain wrong);
+    it takes a bit of intuition to interpret these messages (a skill that we
+    will continue to acquire as we debug more and more of our programs; in
+    fact, we can acquire this skill while helping to debug other people's
+    programs too: that is why teachers are so good at debugging).
+  <p>
+  The Java compiler is a multi-pass compiler (it scans the source code from top
+    to bottom multiple times), so sometimes the first syntax error reported is
+    not the first syntax error in the program.
+  Still, the best strategy is to try to fix the first syntax error reported.
+  Sometimes you might scan the first few syntax errors and be able to fix more
+    than one at a time; other times you may be confused by the first syntax
+    error but be able to fix a later one.
+  In fact, sometimes fixing one syntax error eliminates others, because they
+    all have the same root cause.
+  So I recommend fixing just one syntax error for each compilation.
+  If you can always fix at least one error each time that you compile a
+    program, you will eventually remove all its syntax errors; and often fixing
+    three syntax errors can eliminate a dozen syntax error messages.
+  <p>
+  If you cannot fix a syntax error, seek help; when you understand what you
+    did wrong, write down the problem, the error message, and the solution in
+    an error log, which you can consult whenever you have hard-to-fix syntax
+    errors.
+  <p>
+  Incorrectly matching braces can cause very many syntax error messages that
+    are not indicative  of the real problem.
+  For this reason, whenever you type an opening brace, Eclipse will
+    automatically type a matching closing brace and position the cursor
+    inbetween the two for you to continue typing the statements in the block.
+  Eclipse also supports a special "brace matching" operation.
+  <ul>
+    <li>If we double-click immediately after an opening brace
+         <!-, or immediately before a closing brace,->
+         the editor view will highlight all the lines between the selected
+         opening brace and the closing brace that matches it.
+   </ul>
+  Experiment with this excellent debugging tool immediately, so it will make
+    it into your long term memory as soon as possible!
+  <p>
+  If we don't have a fancy IDE that treats braces so nicely, we have to be
+    more proactive about brace matching.
+  Whenever we type an open brace in a program, we should immediately type its
+    closing brace (then come back and write whatever statements we need inside
+    these matching braces).
+  If you type an opening brace, and tell yourself, "I'll type the statements
+    first, and then I'll type the closing brace" most of the time you'll
+    forget: your mind gets preoccupied with the statements in-between, and
+    it is such a relief to finish writing a block, it is easy to forget about
+    the required closing brace.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Execution/Runtime Errors -->
+
+<a name="ExecutionErrors"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Execution Bugs</b></td>
+<td width ="80%">
+  If the Java compiler finds no syntax errors in a program, it can run the
+    program.
+  The program may or may not behave as it should: a simple program may not
+    compute and display the correct results; a more complicated one may not
+    do the right thing when you click its buttons.
+  If either case, it has an execution/runtime error.
+  Technically, an execution/runtime error is something that Java detects (like
+    throwing an exception when dividing by 0); an intent error is when the
+    program finishes without an execution/runtime error, but nevertheless
+    computes an incorrect result.
+  In the discussion below, we will refer to both kinds of errors as execution
+    errors.
+  <p>
+  Debugging execution errors is hard: we have to leave our ego at the door,
+    admit that WE put an error in our program, and then systematically locate
+     and fix the problem.
+  The golden rule of debugging is to find the <b>simplest</b> input on which
+    a program consistently produces an error (this makes debugging much
+    easier).
+  We can apply the techniques described below most effectively when debugging
+    the program on the simplest input causing an error.
+  So, if we find an input that causes the program to fail, we should keep
+    trying simpler inputs (fewer values, smaller values, etc.) until we find
+    the simplest one on which it fails.
+  Only then do we start debubugging.
+  <p>
+  Job #1 in debugging is finding the location of the error.
+  Once we know which statement contains a wrong instruction (wrong not
+    because of syntax, but because it is not the right statement for the
+    program to execute), finding how to fix it is often much simpler.
+  The typical way to find the problem is to <b>instrument</b> the program with
+    <b>System.out.println</b> statements that display the current state of the
+    "relevant" variables.
+  We can build complicated programs that trace themselves: we can use an
+    <b>if</b> statement testing a <b>trace</b> variable to determine whether
+    to print information (for a <b>boolean</b>) or what level of information
+    (for an <b>int</b> trace level) to print as the program executes.
+  Eventually, we will find that some variable goes from storing the right value
+    to storing the wrong one: between the statements that displayed the right
+    and wrong value is the location of the error.
+  <p>
+  When we write programs using iterative enhancement, each phase should display
+    the variables that it creates and/or changes, so we can see if the new
+    parts of the program are making the right state changes.
+  <!---
+  See the <a href="../../programs/crapsstatisticsinstrumented.zip">
+    Craps Statistics - Instrumented</a> program for an example of building in
+    these kinds of tracing/debugging print statements.
+  --->
+  <p>
+  Sometimes a program gets into an infinite loop: the test controling
+    termination of the loop is never <b>true</b>.
+  If we put a <b>System.out.println</b> statement inside the body of the loop,
+    and the loop becomes infinite, that information will print out over and
+    over and over again, indicating an infinite loop.
+  <pre><b>  for (;;) {
+    System.out.println("at start of for loop");
+    real statements in loop
+  }</b></pre>
+  Sometimes <b>System.out.println</b> statements involve no variables:
+   <b>System.out.println("About to execute critical statement");</b>
+    but more frequently, they do
+    <b>System.out.println("After update: x = " + x);</b>
+  Always uniquely label your output statements so you know from where in the
+    program each piece of information is printed.
+  The amount of time you spend typing-in such statements is dwarfed by the
+    amount of time you spend studying them; so make the output clear the
+    first time.
+  <p>
+  Always remember to use an <b>println</b> (not <b>print</b>) for debugging
+     purposes.
+  This has to do with console buffers, which are like file buffers.
+  If you use <b>print</b>, it is possible that the program could execute the
+    <b>print</b> first and then terminate abnormally without the printed
+    information being displayed; this can be very confusing!
+  With a <b>println</b>, the information will always be fully displayed before
+    the program executes subsequent statements, so the output is an accurate
+    log of the program.
+  <p>
+  Once we find a bug (the hard part), it is often takes much less work to fix
+    it.
+  Often, we do some hand-simulation to more closely see the problem.
+  Whenever we fix a bug, we should immediately hand simulate (or rerun) the
+     new code to ensure that it now works correctly.
+  If it does not perform as expected, undo the change and go back to the old
+    code to look for a different fix.
+  We should not keep any change in our code unless we observe that the change
+    improves the code: one change may not completely correct the code, but it
+    should improve it.
+  If we make lots of changes that don't improve the code, we will degrade the
+    code and make it harder to fix it.
+  <p>
+  Again, the first effort of a programmer is often 80% correct.
+  Students have a tendancy to make unsupported changes in code they are
+    debugging, often taking code from being close to correct to being further
+    away.
+  Good programmers verify that each change improves their code; if a
+    change does not improve things, remove it and go back to the original code.
+  They keep making improvements until the code is correct.
+  The measure of a good programmer is not necessarily how many bugs are
+    initially present in his/her code, but how quickly he/she removes those
+    bugs.
+  <p>
+  Here are a few simple debugging tips:
+  <ul>
+    <li>Eliminate obvious errors first: make sure the data is being read
+          correctly from a file before trying to debug the code that processes
+          it (if the data is not being read correctly, of course the processing
+          code will produce incorrect results).
+    <li>Ensure that every variable contains a reasonable value before its value
+          is used the first time.
+        Variables can be initialized when they are declared, or in subsequent
+          statements involving the <b>=</b> operator: most other state change
+          operators (e.g., <b>++</b>) update the state, so they depend on the
+          value already stored.
+    <li>If an expression is computing an incorrect value, display the values of
+           all the variables used in the expression (one of them may be wrong).
+    <li>If you are unsure which part of an <b>if/else</b> is executing, put
+          something like the following at the top of a block containing the
+           statements the <b>if/else</b> controls:
+<pre><b>  if (test) {
+    System.out.println("if (test): test was true");
+    real statements for true test
+  }else{
+    System.out.println("if (test): test was false");
+    real statements for false test
+  }</b></pre>
+  </ul>
+</td>
+</tbody>
+</table>
+
+
+<!-- The Eclipse Debugger -->
+
+<a name="EclipseDebugger"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>The Eclipse Debug Perspective</b></td>
+<td width ="80%">
+  The Eclipse Debug perspective can help automate some of the hand simulation
+    and program instrumentation needed to debug programs.
+  It allows us to do the equivalent of these without entering more code and
+    then recompiling our programs.
+  Debuggers contain many powerful features allowing us to monitor the
+    execution of a program: both the location of the statement that it is
+    being executing, and the values stored in any variables declared in the
+    program.
+  <p>
+  Some programmers prefer to avoid using a debugger and instead instrument
+    their code carefully as they write it.
+  Others prefer to master the debugger, which they can use quickly to locate
+     many kinds  of errors.
+  A blend of the two approaches is probably best (but it takes some experience
+     to do that well).
+  To this end, we will examine the
+    <a href="../../../common/handouts/debugger.doc">Eclipse Debugger</a>
+    handout and practice using it.
+</td>
+</tbody>
+</table>
+
+
+
+
+<!-- Problem Set -->
+
+<a name="ProblemSet"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Problem Set</b></td>
+<td width ="80%">
+  No problems for this lecture.
+  See the 
+    <a href="../../../common/handouts/debugger.doc">Eclipse Debugger</a>
+    handout for problems (the last page).
+</td>
+</tbody>
+</table>
+
+
+</body>
+</html>

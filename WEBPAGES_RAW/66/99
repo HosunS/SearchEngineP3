@@ -1,0 +1,23 @@
+// Game of Fanorona
+// David Eppstein, UC Irvine, 11 Jun 1997
+//
+// Keep track of the results of searching
+// We just store text and reset it when the game is reset; the search engine
+// is responsible for determining what to put here.
+
+import java.util.*;
+import java.awt.*;
+import gui.*;
+
+class SearchLog extends TextPane implements Observer {
+	// initialize, tell game to update us when it changes
+	SearchLog(Game g) { g.addObserver(this); }
+		
+	// whenever game is reset, clear the log
+	public void update(Observable g, Object o) {
+		if (g instanceof Game) {
+			Game game = (Game) g;
+			if (game.getBoard().previousPosition == null) clear();
+		}
+	}
+}

@@ -1,0 +1,76 @@
+//    Processing educational code
+//    Copyright (C) 2013  Lee Martie
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+class Ballon {
+
+  PVector location;
+  PVector velocity;
+  PVector acceleration;
+  float mass;
+
+  float tx, ty;
+
+  int gustCount = 0;
+
+  Ballon(int tx, int ty) {
+    location = new PVector(width/2, height);
+    velocity = new PVector(0, -1);
+    acceleration = new PVector(0, 0);
+    mass = 1;
+
+    this.tx = tx;
+    this.ty = ty;
+  }
+
+  void applyForce(PVector force) {
+    PVector f = PVector.div(force, mass);
+    acceleration.add(f);
+  }
+
+  void step() {
+
+    if (gustCount %  3 == 0 && gustCount != 0) {
+      float x =  noise(tx);
+      float y = noise(ty);
+
+      PVector wind = new PVector(x, y);
+      applyForce(wind);
+
+      System.out.println(acceleration.x+" "+acceleration.y);
+      tx += 0.01;
+      ty += 0.01;
+
+      velocity.add(acceleration);
+      location.add(velocity);
+
+      acceleration.mult(0);
+    }
+    else {
+      velocity = new PVector(0, -1);
+      location.add(velocity);
+      // acceleration.mult(0);
+    }
+
+    gustCount++;
+  }
+
+  void display() {
+    fill(255, 0, 0);
+    ellipse(location.x, location.y, 20, 20);
+  }
+}
+

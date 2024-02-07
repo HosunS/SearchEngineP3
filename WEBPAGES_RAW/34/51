@@ -1,0 +1,450 @@
+## Chapter 10: Correlated data
+
+
+
+## Variability of IL-1beta in healthy patients
+Salivadata <- read.table (file="H:\\MyDocuments\\BAYES\\CorrelatedNormalData\\IL1beta\\IL1bData.txt", header=T, sep="\t")
+attach(Salivadata)
+Salivadata
+options(contrasts=c("contr.treatment","contr.poly"))
+
+
+#### Original Variables
+#ID	y
+####
+
+#### Created Variables
+logy <- log(y)
+####
+
+
+#### Libraries
+library(lattice)
+library(R2WinBUGS)
+####
+
+
+
+
+################################
+## Sample correlation matrix  ##
+## for the IL-1beta data      ##
+## that appears in  Sect 10.1 ##
+################################
+Time <- rep(c(1,2,3,4,5,6),30)
+round(cor(matrix(c(logy[Time==1],logy[Time==2],logy[Time==3],logy[Time==4],logy[Time==5],logy[Time==6]),30,6)),2)
+
+
+
+
+
+
+################################
+## FIGURE 10.1                ##               
+## Trellis plot               ##
+## for the IL-1beta data      ##
+## that appears in  Sect 10.1 ##
+################################
+Time <- rep(c(1,2,3,4,5,6),30)
+xyplot(logy~Time | ID, layout=c(6,5), as.table=T, xlab="Day", ylab=expression(paste("log IL-1", beta)), strip=FALSE,
+               panel=function(x,y){panel.xyplot(x,y,col=1); panel.loess(x,y, span=0.80,col=1)})
+        
+
+
+
+################################
+## FIGURE 10.2                ##               
+## Boxplots and Percentiles   ##
+## for the IL-1beta data      ##
+################################
+
+## Boxplots and Percentiles
+round(quantile(y,c(0.01,0.02,0.05,0.10,0.50,0.90,0.95,0.98,0.99)),2)
+
+Time <- rep(c(1,2,3,4,5,6),30)
+Time2 <- factor(Time,labels=c("1","2","3","4","5","6")) 
+
+boxplot(logy~Time2,range=0,style.bxp="old",boxwex = 0.5, ylab="", xlab="",xlim=c(.5,6.5))
+lines(rep(1.35,30),   logy[Time==1],type="p")
+lines(rep(2.35,30), logy[Time==2],type="p")
+lines(rep(3.35,30),   logy[Time==3],type="p")
+lines(rep(4.35,30), logy[Time==4],type="p")
+lines(rep(5.35,30),  logy[Time==5],type="p")
+lines(rep(6.35,30),logy[Time==6],type="p")
+mtext("Day",line=2.5,side=1)
+mtext("log IL-1",line=2.5,at=1, side=2)
+mtext(expression(beta),line=2.5,at=1.58,side=2)
+
+
+
+
+
+
+################################
+## FIGURE 10.3                ##               
+## Spaghetti plot             ##
+## for the IL-1beta data      ##
+################################
+Time <- rep(c(1,2,3,4,5,6),30)
+T <- c(1,2,3,4,5,6)
+plot(T,c(mean(logy[Time==1]),mean(logy[Time==2]),mean(logy[Time==3]),mean(logy[Time==4]),
+         mean(logy[Time==5]),mean(logy[Time==6])),xlab="Day", ylab="", type='o', cex=2, lwd=3, ylim=c(-2.5,5))
+for(i in 1:30){lines(T,logy[ID==i], lty=2)}
+mtext("log IL-1",line=2.5,at=1, side=2)
+mtext(expression(beta),line=2.5,at=1.58,side=2)
+
+
+
+
+
+
+###########################################
+## Example 10.2.1 and Exercise 10.3      ##
+## One way random effects model          ##
+## FIGURE 10.4 and TABLE 10.1            ##
+## IL-1beta data                         ##
+###########################################
+library(R2WinBUGS)
+
+ILdata <- list("y","ID")
+parameters <- c("mu","sigma","sigmab","tau","taub","rho","b","bf","muf","L","U","yf","logyf") 
+inits <- list( list(mu=0,sigma=1,sigmab=1))
+IL.fit <- bugs(ILdata, inits, parameters,"CSModel.txt", 
+                 working.directory = "F:\\MyDocuments\\BAYES\\CorrelatedNormalData\\IL1beta", 
+                 n.chains=1, n.iter=60000, n.thin=1, n.burnin=10000)
+
+print(IL.fit,digits=3)
+attach.bugs(IL.fit)
+
+### Plot distribution of muf
+plot(density(muf), type='l', xlab=expression(mu[f]), main="", ylab="Predictive density", lwd=3)
+
+### Plot predictive distribution of yf. 
+### FIGURE 10.4.
+plot(density(yf, n=2500, from=0, bw=0.5), type='l', xlab="", xlim=c(0,45), main="", ylab="Predictive density", lwd=3)
+lines(c(0,0),c(0,  4.789715e-02),lwd=3,lty=1)
+rug(quantile(yf, c(0.90,0.95)))
+mtext("23.65",side=1,at=24)
+mtext("37.77",side=1,at=37)
+
+### TABLE 10.1
+quantile(sigma, c(0.025,0.50,0.975))
+quantile(sigmab, c(0.025,0.50,0.975))
+quantile(rho, c(0.025,0.50,0.975))
+quantile(mu, c(0.025,0.50,0.975))
+quantile(logyf, c(0.025,0.50,0.975))
+quantile(muf, c(0.025,0.50,0.975))
+quantile(L, c(0.025,0.50,0.975))
+quantile(U, c(0.025,0.50,0.975))
+quantile(exp(mu), c(0.025,0.50,0.975))
+quantile(yf, c(0.025,0.50,0.975))
+quantile(exp(muf), c(0.025,0.50,0.975))
+quantile(exp(L), c(0.025,0.50,0.975))
+quantile(exp(U), c(0.025,0.50,0.975))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###########################################
+## Example 10.2.2                        ##
+## Randomized block design               ##
+## Dog data from Rice book 1st ed P 479  ##
+## Dog is a fixed effect (ch 9 methods)  ##
+###########################################
+options(contrasts=c("contr.treatment","contr.poly"))
+Dog <- c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7,8,8,8,9,9,9,10,10,10)
+Treatment <- c(1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3)
+Concentration <- c(0.28,0.3,1.07,0.51,0.39,1.35,1,0.63,0.69,0.39,0.68,0.28,0.29,0.38,1.24,
+  0.36,0.21,1.53,0.32,0.88,0.49,0.69,0.39,0.5,0.17,0.51,1.02,0.33,0.32,0.3)
+c(mean(Concentration[Treatment==1]), mean(Concentration[Treatment==2]), mean(Concentration[Treatment==3]))
+g <- factor(Dog)
+Trt <- factor(Treatment)
+fit <- aov(Concentration~Trt+g) 
+summary(fit)
+TukeyHSD(fit)
+
+
+Dog <- read.table("H:\\MyDocuments\\BAYES\\CorrelatedNormalData\\DogExample\\DogDataLinRegVersion.txt", header=T, sep="\t")
+attach(Dog)
+Dog
+
+library(R2WinBUGS)
+
+Dogdata <- list("D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "I", "H", "Concentration")
+parameters <- c("beta","tau","diff12","diff13","diff23") 
+inits <- list( list(beta=c(0,0,0,0,0,0,0,0,0,0,0,0), tau=1))
+Dog.fit <- bugs(Dogdata, inits, parameters,"DogCode.txt", 
+                 working.directory = "H:\\MyDocuments\\BAYES\\CorrelatedNormalData\\DogExample", 
+                 n.chains=1, n.iter=60000, n.thin=1, n.burnin=10000)
+print(Dog.fit,digits=3)
+attach.bugs(Dog.fit)
+
+
+
+
+
+###########################################
+## Exercise 10.7                         ##
+## Randomized block design               ##
+## Dog data from Rice book 1st ed P 479  ##
+## Dog is a random effect                ##
+###########################################
+I <- c(1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0)
+H <- c(0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0)
+C <- c(0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1)
+Dog <- c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7,8,8,8,9,9,9,10,10,10)
+Treatment <- c(1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3)  #Treatment 1 is I; Treatment 2 is H; Treatment 3 is C
+Conc <- c(0.28,0.3,1.07,0.51,0.39,1.35,1,0.63,0.69,0.39,0.68,0.28,0.29,0.38,1.24,
+          0.36,0.21,1.53,0.32,0.88,0.49,0.69,0.39,0.5,0.17,0.51,1.02,0.33,0.32,0.3)
+library(nlme)
+m1 <- lme(Conc ~ -1 + I + H + C , random=~1|Dog)
+summary(m1)
+intervals(m1)
+
+
+
+library(R2WinBUGS)
+Dogdata1 <- list("Dog", "Treatment", "Conc")
+parameters1 <- c("b","tau","taub", "sigmab", "sigma", "beta", "diff12","diff13","diff23") 
+inits1 <- list( list(b=c(0,0,0,0,0,0,0,0,0,0), tau=1, sigmab=1, beta=c(0,0,0)))
+Dog.fit1 <- bugs(Dogdata1, inits1, parameters1,"DogMixedModel.txt", 
+                 working.directory = "F:\\MyDocuments\\BAYES\\CorrelatedNormalData\\DogExample", 
+                 n.chains=1, n.iter=60000, n.thin=1, n.burnin=10000)
+print(Dog.fit1,digits=3)
+attach.bugs(Dog.fit1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###########################################
+## Exercise 10.8.  Fuel flow rate data.  ##
+## Randomized block design               ##
+## Data from Scheffe book P. 289         ##
+###########################################
+
+Operator <- c(rep(1,9), rep(2,9), rep(3,9), rep(4,9), rep(5,9))
+Nozzle <- rep(c(1,1,1,2,2,2,3,3,3), 5) 
+Rate <- c(6,6,-15,13,6,13,10,10,-11,  26,12,5,4,4,11,-35,0,-14,   11,4,4,17,10,17,11,-10,-17,    21,14,7,-5,2,-5,12,-2,-16,   25,18,25,15,8,1,-4,10,24)
+cbind(Operator,Nozzle,Rate)
+
+
+
+
+
+
+
+
+########################################
+## Hierarchical models: Meta-analysis ##
+## Example 10.2.3 and Exercise 10.10  ##
+## See WinBUGS code for Ch 10         ##
+########################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###########################################
+## Example 10.2.4                        ##
+## Table 10.4                            ##
+## Figures 10.5 and 10.6                 ##
+## Exercise 10.11                        ##
+## Dental data                           ##
+## Random slopes and intercepts          ##
+###########################################
+
+Dentaldata<- read.table("H:\\MyDocuments\\BAYES\\CorrelatedNormalData\\Dental\\DentalData.txt",header=T,sep="\t")
+attach(Dentaldata)
+Dentaldata
+options(contrasts=c("contr.treatment","contr.poly"))
+
+
+#### Original Variables
+# Distance 	Age	ID	Male	ID1
+####
+
+#### Libraries
+library(lattice)
+####
+
+
+## Correlation matrix
+round(cor(matrix(c(Distance[Age==8],Distance[Age==10],Distance[Age==12],Distance[Age==14]),27,4)),2)
+
+
+## Trellis plot
+xyplot(Distance~Age | ID1, layout=c(4,4), as.table=T, type='o', col=1, cex=1, strip=FALSE)
+xyplot(Distance~Age | ID1, layout=c(4,4), as.table=T, type='o', col=1, cex=1, strip=FALSE, subset=Male==1)
+xyplot(Distance~Age | ID1, layout=c(4,3), as.table=T, type='o', col=1, cex=1, strip=FALSE, subset=Male==0)
+
+
+## FIGURE 10.5.  Spaghetti plot
+T <- c(8,10,12,14)
+plot(T,c(mean(Distance[Age==8  & Male==1]),mean(Distance[Age==10 & Male==1]),
+         mean(Distance[Age==14 & Male==1]),mean(Distance[Age==14 & Male==1])),
+         xlab="Age (years)", ylab="Distance (mm)", type='o', cex=2, lwd=3, ylim=c(15,35))
+lines(T,c(mean(Distance[Age==8  & Male==0]),mean(Distance[Age==10 & Male==0]),
+         mean(Distance[Age==14 & Male==0]),mean(Distance[Age==14 & Male==0])), type="o", lty=2, lwd=3, cex=2)
+for(i in 1:16){lines(T,Distance[ID1==i], lty=1)}
+for(i in 17:27){lines(T,Distance[ID1==i], lty=2)}
+legend("bottomright",c("Boys","Girls"),lty=1:2)
+
+
+
+
+
+
+
+
+
+
+## Example 10.2.4.  Bayesian random intercept, random slope mixed model
+Distance1 <- matrix(Distance,27,4,byrow=T)
+R <- matrix(c(.001,0,0,.001),2,2)
+mu0 <- c(0,0)
+Male1 <- c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0)
+Age1 <- c(8,10,12,14)
+
+library(R2WinBUGS)
+
+DenData <- list("Distance1", "R", "mu0", "Male1", "Age1")
+parameters <- c("beta","tau","sigma","m") 
+inits <- list( list(beta=c(0,0,0), tau=1, prec=structure(.Data=c(.001,0,0,.001),.Dim=c(2,2))))
+Dental.fit <- bugs(DenData, inits, parameters,"DentalWBcode.txt", 
+                 working.directory = "F:\\MyDocuments\\BAYES\\CorrelatedNormalData\\Dental", 
+                 n.chains=1, n.iter=60000, n.thin=1, n.burnin=10000)
+print(Dental.fit,digits=3)
+attach.bugs(Dental.fit)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Ventilation data.  Exercise 10.15
+
+Temperature=c(-10,25,37,50,65,80)
+vent <- c(
+74.5,	81.5,	83.6,	68.6,	73.1,	79.4,
+75.5,	84.6,	70.6,	87.3,	73.0,	75.0,
+68.9,	71.6,	55.9,	61.9,	60.5,	61.8,
+57.0,	61.3,	54.1,	59.2,	56.6,	58.8,
+78.3,	84.9,	64.0,	62.2,	60.1,	78.7,
+54.0,	62.8,	63.0,	58.0,	56.0,	51.5,
+72.5,	68.3,	67.8,	71.5,	65.0,	67.7,
+80.8,	89.9,	83.2,	83.0,	85.7,	79.6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,2308 @@
+
+
+
+
+
+       INTERNET-DRAFT                         Christopher Kaler,
+       draft-webdav-versioning-00.txt         Microsoft
+                                               Editor
+
+       Expires March 28, 1999
+                                               September 28, 1998
+
+
+                 Versioning and Variant Extensions to WebDAV
+
+  Status of this Memo
+
+       This document is an Internet draft. Internet drafts are working
+       documents of the Internet Engineering Task Force (IETF), its areas
+       and its working groups. Note that other groups may also distribute
+       working information as Internet drafts.
+
+       Internet Drafts are draft documents valid for a maximum of six
+       months and can be updated, replaced or obsoleted by other documents
+       at any time.  It is inappropriate to use Internet drafts as
+       reference material or to cite them as other than as "work in
+       progress".
+
+       To learn the current status of any Internet draft please check the
+       "lid-abstracts.txt" listing contained in the Internet drafts shadow
+       directories on ftp.is.co.za (Africa), nic.nordu.net (Europe),
+       munnari.oz.au (Pacific Rim), ftp.isi.edu (US East coast) or
+       ftp.isi.edu (US West coast).  Further information about the IETF
+       can be found at URL: http://www.ietf.org/
+
+       Distribution of this document is unlimited.  Please send comments
+       to the mailing list at <www-webdav-dasl@w3.org>, which may be
+       joined by sending a message with subject "subscribe" to <www-
+       webdav-dasl-request@w3.org>.
+
+       Discussions of the list are archived at
+       <URL:http://www.w3.org/pub/WWW/Archives/Public/www-webdav-dasl>.
+
+  Abstract
+
+       This document specifies a set of methods, headers, and content-
+       types composing DAV Versioning and Variant extensions, an
+       application of the HTTP/1.1 protocol to version DAV resources.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Kaler, ed.                                          [Page 1]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+                              Table of Contents
+
+
+  VERSIONING AND VARIANT EXTENSIONS TO WEBDAV...............1
+
+  TABLE OF CONTENTS.........................................2
+
+  1.INTRODUCTION...........................................4
+  1.1. DAV Versioning and Variant Authoring................4
+  1.2. Relationship to DAV.................................4
+  1.3. Terms...............................................4
+  1.4. Notational Conventions..............................4
+
+  2.INTRINSIC VERSIONING...................................5
+  2.1. Overview............................................5
+  2.2. Discovery...........................................5
+   2.2.1.The OPTIONS Method................................5
+   2.2.2.Example: Options Discovery........................5
+  2.3. Automatic Versioning................................6
+  2.4. Collection Versioning...............................6
+  2.5. Mutable Properties..................................6
+  2.6. Resource Properties.................................6
+
+  3.BASIC VERSIONING.......................................7
+  3.1. Discovery...........................................8
+  3.2. Basic Versioning Headers............................8
+   3.2.1.New-Version.......................................9
+   3.2.2.Version-Id........................................9
+   3.2.3.Base-Version......................................9
+   3.2.4.Comment...........................................9
+   3.2.5.Checkin-Token....................................10
+  3.3. CHECKINOUT Method..................................11
+   3.3.1.Discovery........................................11
+   3.3.2.Checkout.........................................11
+   3.3.3.Checkin..........................................12
+   3.3.4.Undo Checkout....................................12
+   3.3.5.Enumeration......................................13
+  3.4. Default Version....................................13
+  3.5. Sharing............................................14
+  3.6. Resource History...................................14
+   3.6.1.Example..........................................14
+   3.6.2.Linear History...................................15
+   3.6.3.Full History.....................................15
+
+  4.RESOURCE BRANCHING....................................15
+  4.1. Discovery..........................................16
+  4.2. Branching Resources................................16
+  4.3. Derivation.........................................17
+
+  5.CONFIGURATIONS........................................17
+  5.1. Discovery..........................................18
+  5.2. Configuration Namespace............................18
+  5.3. Creating Configurations............................18
+  5.4. Configuration Properties...........................20
+
+
+
+  Kaler, ed.                                          [Page 2]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+  5.5. Headers............................................21
+   5.5.1.GET Example......................................21
+   5.5.2.COPY Example.....................................21
+  5.6. Deleting Configurations............................22
+  5.7. Default Configurations.............................22
+  5.8. Managing Configurations............................22
+   5.8.1.Adding Resources to a Configuration..............22
+   5.8.2.Removing Resources from a Configuration..........23
+   5.8.3.Synchronizing Configurations.....................23
+   5.8.4.Purging Configurations...........................24
+  5.9. Configuration Graphs...............................25
+   5.9.1.Example..........................................25
+   5.9.2.Configuration Derivation.........................25
+   5.9.3.Configuration Merge Graph........................26
+  5.10.Resolution Queues..................................26
+   5.10.1...........................................Discovery     26
+   5.10.2...............................Obtaining Resolutions     27
+   5.10.3.........................Processing Resolution Items     27
+
+  6.VERSION MAPPING.......................................28
+  6.1. Discovery..........................................28
+  6.2. Mapping Configurations.............................28
+  6.3. Mapping Resource Versions..........................29
+
+  7.MISCELLANEOUS FUNCTIONS...............................30
+  7.1. Destroy............................................30
+   7.1.1.Discovery........................................30
+   7.1.2.Usage............................................30
+   7.1.3.Headers..........................................30
+   7.1.4.Properties.......................................30
+  7.2. Keyword Expansion..................................31
+   7.2.1.Properties.......................................31
+
+  8.VARIANT AUTHORING.....................................31
+  8.1. Discovery..........................................31
+  8.2. Resource Properties................................32
+  8.3. Header Extensions..................................32
+  8.4. Default Variant....................................32
+
+  9.THE DAV VERSIONING GRAMMAR............................33
+
+  10. INTERNATIONALIZATION CONSIDERATIONS..................33
+
+  11. SECURITY CONSIDERATIONS..............................33
+
+  12. SCALABILITY..........................................33
+
+  13. AUTHENTICATION.......................................33
+
+  14. IANA CONSIDERATIONS..................................33
+
+  15. COPYRIGHT............................................33
+
+  16. INTELLECTUAL PROPERTY................................33
+
+
+  Kaler, ed.                                          [Page 3]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+  17. REFERENCES...........................................34
+
+  18. AUTHOR'S ADDRESSES...................................34
+
+  19. CHANGE HISTORY.......................................34
+
+
+  1.      INTRODUCTION
+
+
+  1.1. DAV Versioning and Variant Authoring
+
+       This document defines DAV Versioning and Variant Authoring
+       extensions, an application of HTTP/1.1 for handling resource
+       versioning in a DAV environment.  [DAVVERREQ] describes the
+       motivation and requirements for DAV Versioning.
+
+       DAV Versioning will minimize the complexity of clients so as to
+       facilitate widespread deployment of applications capable of
+       utilizing the DAV services.  As well, DAV Versioning supports a
+       rich level of versioning options and support for variant authoring.
+
+       DAV Versioning consists of:
+
+       - Automatic versioning support for HTTP/1.1-based clients,
+
+       - Basic versioning for DAV Versioning-aware clients,
+
+       - File branching for basic parallel development,
+
+       - Configuration support for sophisticated  parallel development,
+          and
+
+       - Variant support for mixed language environments.
+
+
+  1.2. Relationship to DAV
+
+       DAV Versioning relies on the resource and property model defined by
+       [WebDAV].  DAV Versioning does not alter this model.  Instead, DAV
+       Versioning allows clients to version and access DAV-modeled
+       resources and histories.
+
+
+  1.3. Terms
+
+       This draft uses the terms defined in [RFC2068], [WebDAV], and
+       [DAVVERREQ].
+
+
+  1.4. Notational Conventions
+
+       The augmented BNF used by this document to describe protocol
+       elements is exactly the same as the one described in Section 2.1 of
+       [RFC2068]. Because this augmented BNF uses the basic production
+       rules provided in Section 2.2 of [RFC2068], those rules apply to
+       this document as well.
+
+
+
+
+  Kaler, ed.                                          [Page 4]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+       "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in
+       this document are to be interpreted as described in [RFC2119].
+
+
+  2.      INTRINSIC VERSIONING
+
+
+  2.1. Overview
+
+       The base level of versioning support defined by this specification
+       (intrinsic versioning) includes both automatic versioning and the
+       basic versioning properties defined for all resources.  To support
+       intrinsic versioning, servers MUST allow for versioning to occur
+       automatically whenever a resource is changed in any way and support
+       the properties defined in this section.
+
+
+  2.2. Discovery
+
+
+  2.2.1.    The OPTIONS Method
+
+       The OPTIONS method allows the client to discover if a resource
+       supports versioning.
+
+       The client issues the OPTIONS method against a resource named by
+       the Request-URI. This is a normal invocation of OPTIONS defined in
+       [RFC2068].
+
+       If a resource supports versioning, then the server MUST list
+       DAV:versioning in the OPTIONS response as defined by [RFC2068].
+
+
+  2.2.2.    Example: Options Discovery
+
+       This example shows that the server supports versioning on the
+       /somefolder resource.
+
+       >> Request
+
+       OPTIONS /somefolder/ HTTP/1.1
+       Connection: Close
+       Host: foobar.com
+       Content-Length: 0
+
+
+       >> Response
+
+       HTTP/1.1 200 OK
+       Date: Tue, 20 Jan 1998 20:52:29 GMT
+       Connection: close
+       Accept-Ranges: none
+       Allow: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE,
+       MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK
+       Public: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE,
+       MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK
+       Allow-Extension: DAV:versioning
+
+
+
+  Kaler, ed.                                          [Page 5]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       Public-Extension: DAV:versioning
+       Content-Length: 0
+
+  2.3. Automatic Versioning
+
+       The DAV:autoversion property indicates if a resource is
+       automatically versioned when modified for any reason.  Resources
+       with automatic versioning allow HTTP/1.1 clients to have changes
+       versioned without explicit versioning commands.
+
+       Automatic versioning includes the following methods:
+
+       - Updates via PUT, MKCOL, COPY, MOVE, or DELETE
+
+       - Properties updates via PROPPATCH
+
+
+  2.4. Collection Versioning
+
+       Collections are versioned just like non-collection resources.
+
+       The DAV:autoversion property applies to methods on collections as
+       well.  However, this doesn�t specify if a collection is versioned
+       when a contained resource changes.  The DAV:autocollectionversion
+       resource is used to indicate if a collection should be versioned
+       when a contained resource is versioned.
+
+
+  2.5. Mutable Properties
+
+       In general, all properties on a resource are immutable with respect
+       to versioning.  That is, when the property is changed, a new
+       version of the resource is created.  However, there are some
+       properties that MUST be immutable.  For example, security settings,
+       if stored as a property, MUST be mutable without creating a new
+       version.  To discover the mutable properties on a resource, the
+       DAV:mutableproperties property returns a comma-separated list of
+       properties that, if altered, will not create a new version.
+
+
+  2.6. Resource Properties
+
+       For resources that support versioning, the server MUST support the
+       following properties using the "DAV:" namespace.  Note that 0/1 is
+       used as a FALSE (0) / TRUE (1) indicator.
+
+       DAV:isversioned - 0/1 to indicate if the resource is versionable.
+       Note that servers can implement this as a read-only property.
+
+       DAV:autoversion - 0/1 to indicate if the resource is automatically
+       versioned when modified.  Note that servers can implement this as a
+       read-only property.
+
+       DAV:versionid - This is a read-only property that returns a URI for
+       this specific version of the resource.  Every version of a resource
+       will have a separate DAV:versionid.
+
+
+
+
+
+  Kaler, ed.                                          [Page 6]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       DAV:resourceid - This is a read-only property that returns a URI
+       for every unique resource independent of versions.  That is, all
+       versions of the resource have the same DAV:resourceid.
+
+       DAV:previousversionids - This is a read-only property that returns
+       the URI for the previous version of the resource.  An empty value
+       indicates that there are no previous versions.  Note that there
+       could be multiple previous versions.  If there are multiple
+       versions, they are returned as a comma-separated list.
+
+       DAV:nextversionids - This is a read-only property that returns the
+       URI for the next version of the resource.  An empty value indicates
+       that there is no next version.  Note that there could be multiple
+       next versions.  If there are multiple versions, they are returned
+       as a comma-separated list.
+
+       DAV:versionname - This property allows the specification of textual
+       names that refer to this version of the resource. If there are
+       multiple versions, each is returned in a separate DAV:versionname
+       tag.  The name MUST be unique for the resource.  That is, no two
+       versions of the same resource can have the same DAV:versionname.
+
+       DAV:autocollectionversion - This property�s value (0/1) specifies
+       if a collection is automatically versioned when its contents
+       change.  That is, if /foo/bar.htm is versioned, is /foo/ versioned
+       as well.  Servers MAY implement this as a read-only property.
+
+       DAV:canautocollectionversion - This property�s value (0/1)
+       specifies if the resource supports the ability to automatically
+       version collections when a contained resource changes.  This is a
+       read-only property.
+
+       DAV:mutableproperties - This property returns a comma-separated
+       list of properties that, if changed on this resource, will not
+       cause a new version to be created.
+
+       DAV:checkinid - This read-only property returns the checkin Id
+       associated with this version of the resource.
+
+
+  3.      BASIC VERSIONING
+
+       Servers that support DAV:versioning MUST also provide additional
+       versioning semantics for versioning-aware clients.  This section
+       describes these new semantics which include enhancements to
+       existing DAV methods, new headers, and a new versioning-specific
+       method.
+
+       Although the semantics can vary, most versioning systems support
+       the notion of indicating intent to modify a document and then
+       submission of the modified version.  Typically this involves some
+       form of locking (either shared or exclusive).  As well, many
+       systems support the ability to cancel a check-out or undo a recent
+       check-in.  These options are available to the owner or to the
+       Administrator.
+
+       Users can generally enumerate the current check-outs although they
+       may not be able to determine the user in all cases.  Likewise,
+       users can review check-ins to see the change history.  Most systems
+
+
+  Kaler, ed.                                          [Page 7]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       allow users to select different versions from the change history
+       and present a comparison of the versions.  Some systems allow the
+       user to track related files that are logically "checked in"
+       together.
+
+       It is important to note that everything is versioned.  For example,
+       when a property on a resource is changed, a new version of the
+       resource is created.
+
+       However, some clients may not wish to have new versions
+       automatically created.  For example, they are working on a version
+       and want to write the changes to the store and update them.  New
+       versions are created on request, not automatically (note that the
+       default behavior is actually up to the store).
+
+       Note that locks are not covered in this specification as they are
+       addressed by [WebDAV].
+
+
+  3.1. Discovery
+
+       Discovers of basic versioning support is as described above.
+       However, support for the CHECKINOUT method is discovered by
+       examining the support methods returned by the OPTIONs methos.
+
+       This example shows that the server supports versioning and the
+       CHECKINOUT method on the /somefolder resource.
+
+       >> Request
+
+       OPTIONS /somefolder/ HTTP/1.1
+       Connection: Close
+       Host: foobar.com
+       Content-Length: 0
+
+
+       >> Response
+
+       HTTP/1.1 200 OK
+       Date: Tue, 20 Jan 1998 20:52:29 GMT
+       Connection: close
+       Accept-Ranges: none
+       Allow: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE,
+       MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, CHECKINOUT
+       Public: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE,
+       MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, CHECKINOUT
+       Allow-Extension: DAV:versioning
+       Public-Extension: DAV:versioning
+       Content-Length: 0
+
+  3.2. Basic Versioning Headers
+
+       The following sub-sections describe the new version headers that
+       MUST be supported for resources that support DAV:versioning.
+
+
+
+
+
+
+
+  Kaler, ed.                                          [Page 8]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+  3.2.1.    New-Version
+
+       It is possible that clients may wish to overwrite a versioned
+       resource rather than create a new version.  To indicate this,
+       clients specify the New-Version header with a T or F where T
+       indicates creation of a new version and F indicates overwrite.
+
+            New-Version = "New-Version" ":" ("F" | "T")
+
+       Note that servers are not required to honor overwrite requests and
+       MUST return failure if they do not.  Servers MUST not allow non-tip
+       versions to be overwritten.
+
+
+  3.2.2.    Version-Id
+
+       The Version-Id header is used to identify a specific version of a
+       resource.  This header can be specified on all methods and
+       qualifiers the resource named in the method.  As well, this header
+       is included in all replies to indicate the version of the resource
+       used or created.
+
+       The URI specified MUST be a valid version URI for the resource.
+
+            Version-Id = "Version-Id" ":" URI
+
+       This header can be used with collection resources when accessing
+       properties on the collection, however, servers are not required to
+       honor (or allow) this header when accessing the contents of a
+       collection resource.
+
+
+  3.2.3.    Base-Version
+
+       The Base-Version header is used to indicate the version of a
+       resource on which a change request is based. This can be included
+       with the following methods: PUT, PROPPATCH, MKCOL, COPY, MOVE, and
+       DELETE.
+
+       The Base-Version header is used to track merge history as well as
+       verification.  If the base version specified is not the latest
+       version, servers SHOULD fail the PUT request.  That is, clients can
+       not create a new version based on an older version (clients need to
+       branch the resource - refer to the chapter on resource branching).
+
+       The URI specified MUST be a valid version URI for the resource.
+
+            Base-Version = "Base-Version" ":" URI
+
+  3.2.4.    Comment
+
+       The Comment header is used to indicate a user-specified comment for
+       the operation being requested.  Servers SHOULD track this
+       information.
+
+            Comment = "Comment" ":" Text
+
+
+
+
+
+  Kaler, ed.                                          [Page 9]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+  3.2.5.    Checkin-Token
+
+       Clients may desire the ability to track a set of changes as a unit.
+       This header allows semantic grouping changes as well as the ability
+       operate on the entire collection of changes.
+
+       When a client modifies a resource (e.g. PROPPATCH, PUT, COPY, MOVE,
+       ...), the return header includes a resource for the change.  Clients
+       can use this identifier to refer to the change.  As well, clients
+       can also use the id on subsequent changes (e.g. PROPPATCH, PUT,
+       COPY, MOVE, ...) to allow the server to correlate the changes.
+
+       By default, a change operation will automatically "close" a checkin
+       id.  That is, no further changes are allowed using that checkin id.
+       Clients can request that the checkin id be kept alive using a
+       special header.
+
+       If a client specifies a correlation identifier using Checkin-Token
+       that was not returned by the server, the server MAY fail with 412.
+
+            Checkin-Token      = "Checkin-Token" ":" URI
+            Keep-Checkin-Alive = "Keep-Checkin-Alive" ":" ("T" | "F")
+
+       The correlation resource can then be used with PROPFIND, PROPPATCH,
+       DELETE, MOVE, and COPY.
+
+       The Checkin-Token URI is a resource in the checkin token
+       collection.  This URI can be obtained by accessing the
+       DAV:checkinroot property on a resource.
+
+       >>Request
+
+       PUT /foo/bar.htm HTTP/1.1
+       Host: www.foobar.com
+       Keep-Checkin-Alive: T
+       Content-Type: text/html
+       Content-Length: xxxx
+       ...
+
+       >>Response
+
+       HTTP/1.1 200 OK
+       Checkin-Token: http://www.foobar.com/ci/DFDF3293289
+       Content-Length: 0
+
+       >>Request
+
+       PUT /foo/bing.htm HTTP/1.1
+       Host: www.foobar.com
+       Checkin-Token: http://www.foobar.com/ci/DFDF3293289
+       Content-Type: text/html
+       Content-Length: xxxx
+       ...
+
+       >>Response
+
+       HTTP/1.1 200 OK
+       Checkin-Token: http://www.foobar.com/ci/DFDF3293289
+       Content-Length: 0
+
+
+  Kaler, ed.                                         [Page 10]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+
+       Clients can enumerate all checkins using PROPFIND to obtain the
+       contents of the checkin root (DAV:checkinroot) collection.  Using
+       PROPFIND with the Checkin-Token URI, clients can enumerate the
+       resources in the checkin collection.
+
+
+  3.3. CHECKINOUT Method
+
+       For versioning-aware clients, the CHECKINOUT method allows them to
+       perform specific versioning operations.  The CHECKINOUT method is
+       directed at a specific URI and the body contains XML indicating the
+       action to take.
+
+       Note that the headers described above for GET and PUT can be used
+       with the CHECKINOUT method.
+
+
+  3.3.1.    Discovery
+
+       Discovery of this feature is determined by seeing if the resource
+       options include the CHECKINOUT method.
+
+
+  3.3.2.    Checkout
+
+       Using the CHECKINOUT method, clients can request resources to be
+       "checked out".  This involves creating a new version of a resource
+       that is not automatically versioned.  Checked out resources must be
+       checked in or aborted. The diagram below illustrates this process:
+
+           Versions of foo.htm:   V1
+
+           Checkout is performed: V1
+                                   |
+                                   +-> ChkOut
+
+           Checkin is performed:  V1 -> V2
+
+       The body XML indicates an optional checkout comment, an optional
+       user token, and an optional local resource value.  The server
+       returns a URI for the resource and a URI for the version
+       identifier.  PUTs should include these references.
+
+       >>Request
+
+       CHECKINOUT /foo/bar HTTP/1.1
+       Host: www.foobar.com
+       Content-Type: text/xml
+       Content-Length: xxxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:checkout>
+          <D:comment>checkout comment</D:comment>
+          <D:usertoken>client-defined token</D:usertoken>
+          <D:localresource>file:c:\foo\bar</D:localresource>
+
+
+
+  Kaler, ed.                                         [Page 11]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       </D:checkout>
+
+       >>Response
+
+       HTTP/1.1 200 OK
+       Content-Type: text/xml
+       Content-Length: 0
+       Location: /foo/bar
+       Version-Id: VER:REEN4855
+
+  3.3.3.    Checkin
+
+       When the client has completed changes to a resource and wishes it
+       to become part of the version history, the client must check in the
+       resource.  This is performed using the CHECKINOUT method with
+       special body tags.
+
+       >>Request
+
+       CHECKINOUT /foo/bar HTTP/1.1
+       Host: www.foobar.com
+       Versoin-Id: VER:REEN4855
+       Comment: "..."
+       Content-Type: text/xml
+       Content-Length: xxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:checkin/>
+
+       >>Response
+
+       HTTP/1.1 204 CREATED
+       Content-Length: 0
+
+  3.3.4.    Undo Checkout
+
+       If a client chooses to cancel a checkout request, the CHECKINOUT
+       method is used with special body tags.
+
+       >>Request
+
+       DELETE /foo/bar HTTP/1.1
+       Host: www.foobar.com
+       Version-Id: VER:REEN4855
+       Content-Type: text/xml
+       Content-Length: 0
+
+       >>Response
+
+       HTTP/1.1 204 OK
+       Content-Length: 0
+
+
+
+
+
+
+
+
+  Kaler, ed.                                         [Page 12]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+  3.3.5.    Enumeration
+
+       Clients can enumerate the current checkouts to a resource using the
+       CHECKINOUT method.  The depth header indicates that number of
+       levels to include in the response.
+
+       The following tags can be used in the body request to limit
+       discovery:
+
+       - DAV:before - only select items before the specified date
+
+       - DAV:after - only select items after the specified date
+
+       - DAV:usertoken - only select items from the specified user
+
+       - DAV:localresource - only select items with the specified local
+          resource
+
+       The <DAV:enumcheckouts> tag is used to request enumeration of
+       checkouts.
+
+       >>Request
+
+       CHECKINOUT /foo/bar HTTP/1.1
+       Host: www.foobar.com
+       Content-Type: text/html
+       Content-Length: xxxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:enumcheckouts/>
+
+       >>Response
+
+       HTTP/1.1 200 OK
+       Content-Length: 0
+
+       TBD - need to fill in response (usertoken, localresource, ...)
+
+  3.4. Default Version
+
+       If a Version-Id header is not specified when referring to a
+       resource, then the tip (latest) version is used, unless a default
+       version has been identified.  To mark a specified version as the
+       default version, clients set the DAV:defaultversion property on the
+       resource to the specific version.  Note that servers MUST treat
+       this property special in that it doesn�t create a new version of
+       the resource and it can be applied to older immutable versions.
+
+       >>Request
+
+       PROPPATCH /foo/bar HTTP/1.1
+       Host: www.foobar.com
+       Content-Type: text/html
+       Content-Length: xxxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:propertyset>
+
+
+
+  Kaler, ed.                                         [Page 13]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+          <D:set>
+            <D:defaultversion>VER:HT58GHDW49</D:defaultversion>
+          </D:set>
+       </D:propertyset>
+
+       >>Response
+
+       HTTP/1.1 200 OK
+       Content-Length: 0
+
+       Note that when this property is set to a blank value, the default
+       version is the tip (latest) version.
+
+       Collection resources CANNOT be set to a default version.
+
+       It should be noted that setting a default version may impact
+       automatic versioning.  If a client performs a PUT operation and
+       doesn�t specify a Version-Id header, then servers MUST fail the PUT
+       operation if a default version exists.  This is because the client
+       may not be able to obtain the version that was PUT because of the
+       default version being in place.
+
+
+  3.5. Sharing
+
+       Many versioning systems today provide the ability to have a given
+       resource visible in multiple parts of the namespace.  In these
+       situations, a resource is shared.  That is, changes to the resource
+       are visible to all versions.
+
+       Sharing is handled by use of referential members.
+
+       Note that default versions (described above) are per namespace
+       share.  That is, separate shares can have different default
+       versions.
+
+
+  3.6. Resource History
+
+       Version history graphs of a resource are accessed via PROPFIND.
+       Note that servers MAY support multiple styles of history.  To
+       enumerate the supported history graphs, clients use PROPFIND and
+       the <DAV:enumgraphs> property.  The results indicate the different
+       graphs which can, themselves, be requested via PROPFIND.
+
+
+  3.6.1.    Example
+
+       >>Request
+
+       PROPFIND /foo/bar.htm HTTP/1.1
+       Host: www.foobar.com
+       Content-Type: text/xml
+       Content-Length: xxxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:propfind>
+
+
+
+  Kaler, ed.                                         [Page 14]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+          <D:enumgraphs/>
+       </D:propfind>
+
+       >>Response
+
+       TBD - need to fill in the response
+
+  3.6.2.    Linear History
+
+       Servers MUST support the <DAV:linearhistory> property.  This
+       enumerates the direct parent version history for a resource.
+
+       >>Request
+
+       PROPFIND /foo/bar.htm HTTP/1.1
+       Host: www.foobar.com
+       Version-Id: VER:FHJRH3994
+       Content-Type: text/xml
+       Content-Length: xxxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:propfind>
+          <D:linearhistory/>
+       </D:propfind>
+
+       >>Response
+
+       TBD - need to fill in the response
+
+  3.6.3.    Full History
+
+       Servers MUST support the <DAV:fullhistory> property.  This
+       enumerates the full DAG history of a resource.
+
+       >>Request
+
+       PROPFIND /foo/bar.htm HTTP/1.1
+       Host: www.foobar.com
+       Content-Type: text/xml
+       Content-Length: xxxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:propfind>
+          <D:fullhistory/>
+       </D:propfind>
+
+       >>Response
+
+       TBD - need to fill in the response
+
+  4.      RESOURCE BRANCHING
+
+       For more sophisticated clients, basic resource branching is
+       required.  This section describes the basic branching support
+       defined by the versioning extensions.
+
+
+
+  Kaler, ed.                                         [Page 15]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       Resource branching means that for a given resource, the history is
+       not linear.  That is, there are different lines of decent.  The
+       diagram below illustrates this.
+
+           Version history     V1 -> V2 -> V3
+           Of foo.htm:          |
+                                +-> V1.1 -> V1.2
+                                      |
+                                      +-> V1.1.1
+
+       Individual resource branching is common in many versioning systems
+       today.  Project branching (configurations) are described in the
+       next section.  The version history for a resource MUST be a
+       directed acyclic graph (DAG).  Note that when a collection is
+       branched, the depth of the branch is infinity.  There is no way to
+       change this.
+
+
+  4.1. Discovery
+
+       Resource branching is optional for servers.  This example shows
+       that the server supports resource branching on the /somefolder
+       resource.
+
+       >> Request
+
+       OPTIONS /somefolder/ HTTP/1.1
+       Connection: Close
+       Host: foobar.com
+       Content-Length: 0
+
+
+       >> Response
+
+       HTTP/1.1 200 OK
+       Date: Tue, 20 Jan 1998 20:52:29 GMT
+       Connection: close
+       Accept-Ranges: none
+       Allow: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE,
+       MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, MKBRANCH
+       Public: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE,
+       MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, MKBRANCH
+       Allow-Extension: DAV:versioning, DAV:branching
+       Public-Extension: DAV:versioning, DAV:branching
+       Content-Length: 0
+
+  4.2. Branching Resources
+
+       A resource is branched using the MKBRANCH method.  The resource to
+       be branched is specified as the target URI for the method.  The
+       reply includes a URI for the resource and a URI for the version
+       identifier.
+
+       >>Request
+
+       MKBRANCH /foo/bar.htm HTTP/1.1
+       Host: www.foobar.com
+       Content-Type: text/html
+
+
+  Kaler, ed.                                         [Page 16]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       Content-Length: 0
+
+       >>Response
+
+       HTTP/1.1 201 CREATED
+       Location: /foo/bar.htm
+       Version-Id: VER:DHFH558689
+       Content-Length: 0
+
+  4.3. Derivation
+
+       When clients use resource branching, they will likely need to
+       perform merge operations.  A merge is the process by which changes
+       from different versions are combined to produce a new version.  It
+       is likely that clients will want to track this semantic
+       information.  When the Derived-From header is specified on a PUT,
+       CHECKINOUT, or PROPPATCH method, it indicates the version (or
+       versions) from which the change is derived.
+
+            Derived-Item = URI
+            Derived-List = Derived-Item | (Derived-List "," Derived-Item)
+            Derived-From = "Derived-From" ":" Derived-List
+
+       >>Request
+
+       PUT /foo/bar HTTP/1.1
+       Host: www.foobar.com
+       Derived-From: VER:FDHJ43058
+       Content-Type: text/html
+       Content-Length: xxxx
+
+       ...
+
+       >>Response
+
+       HTTP/1.1 200 OK
+       Content-Length: 0
+
+  5.      CONFIGURATIONS
+
+       Many clients require more sophisticated management and organization
+       of their versioned data.  For this reason, configuration support is
+       defined as part of this specification.
+
+       This specification defines two types of configurations:  static and
+       dynamic.  A static configuration is a named collection of specific
+       versions of selected resources.  A dynamic configuration is a
+       collection resources and their associated versions where the
+       contents changes as new versions are created.  Dynamic
+       configurations can also track all versions that have been part of
+       the configuration.
+
+       A configuration can be derived from another configuration.  That
+       is, the new configuration is based on the versions in the "parent"
+       configuration.  Optionally, derived configurations can
+       automatically inherit new versions in the parent configuration
+
+
+
+  Kaler, ed.                                         [Page 17]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       (assuming there are no conflicts).  However, a configuration can be
+       derived from at most one other configuration.
+
+
+  5.1. Discovery
+
+       Configuration support is optional for servers.  This example shows
+       that the server supports configurations on the /somefolder
+       resource.
+
+       >> Request
+
+       OPTIONS /somefolder/ HTTP/1.1
+       Connection: Close
+       Host: foobar.com
+       Content-Length: 0
+
+
+       >> Response
+
+       HTTP/1.1 200 OK
+       Date: Tue, 20 Jan 1998 20:52:29 GMT
+       Connection: close
+       Accept-Ranges: none
+       Allow: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE,
+       MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, CHECKINOUT
+       Public: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE,
+       MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, CHECKINOUT
+       Allow-Extension: DAV:versioning, DAV:branching, DAV:configurations
+       Public-Extension: DAV:versioning, DAV:branching, DAV:configurations
+       Content-Length: 0
+
+  5.2. Configuration Namespace
+
+       Servers maintain configurations in a private portion of the
+       namespace.  The root of this namespace is determined by examining
+       the read-only DAV:configurationnamespace property.  All
+       configurations names MUST be unique on a server.  Using the
+       configuration namespace, clients can organize configurations
+       hierarchically, however, this is for discovery only.  That is, the
+       namespace path is NOT required to identify the configuration, only
+       its leaf name.  Note that positioning in the namespace DOES NOT
+       imply configuration derivation.
+
+       Each configuration can have a client-specified configuration name.
+       This is defined by the DAV:configurationname property on the
+       configuration resource. Note that the DAV:configurationname MUST be
+       unique.  That is, no other configuration can have the same
+       DAV:configurationname.
+
+
+  5.3. Creating Configurations
+
+       Clients create new configurations by issuing the MKCOL method
+       against the configuration namespace.  This requests the server to
+       create a new configuration.
+
+
+
+
+  Kaler, ed.                                         [Page 18]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       When a configuration is created, special tags can be used to define
+       the characteristics and relationships (e.g. derivations) for the
+       configuration.  The following table enumerates these tags.
+
+                 Tag                 Description
+
+            <DAV:configurationt This tag defines the type
+            ype>                of configuration:
+                xxx             DAV:Static or DAV:Dynamic.
+            </DAV:configuration
+            type>
+
+            <DAV:derivedfrom>"x This tag allows the client
+            xx"                 to specify a URI to
+            </DAV:derivedfrom>  identify another
+                                 configuration from which
+                                 this new configuration is
+                                 to be derived.
+
+            <DAV:inheritancetyp The configuration
+            e>                  automatically inherits
+                DAV:Auto        changes from its derived-
+            </DAV:inheritancety from configuration.
+            pe>                 Conflicts are recorded in
+                                 resolution queues (see
+                                 later section).
+
+            <DAV:inheritancetyp The configuration inherits
+            e>                  changes from its derived-
+                DAV:Manual      from configuration, but
+            </DAV:inheritancety they are not automatically
+            pe>                 inserted into the
+                                 configuration. Instead
+                                 they are recorded in
+                                 resolution queues (see
+                                 later section).
+
+            <DAV:inheritancetyp The configuration is a
+            e>                  snapshot of the current
+                DAV:None        versions in the derived-
+            </DAV:inheritancety from configuration.  There
+            pe>                 is no inheritance of
+                                 changes.  This is the
+                                 default type if no type is
+                                 specified.
+
+            <DAV:basetime>"xxx" The configuration is based
+            </DAV:basetime>     on the current versions in
+                                 the derived-from
+                                 configuration at the
+                                 indicated time.  Note that
+                                 use of this tag is
+                                 incompatible with DAV:Auto
+                                 inheritance types and
+                                 servers MUST return an
+                                 error.
+
+
+
+  Kaler, ed.                                         [Page 19]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+
+       The example below illustrates creating a new configuration that is
+       derived from, and auto-inherits another configuration.  For this
+       example, the root of the configuration namespace has been
+       determined to be /cfgs.
+
+       >>Request
+
+       MKCOL /cfgs/ HTTP/1.1
+       Host: www.foobar.com
+       Content-Type: text/xml
+       Content-Length: xxxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:createconfiguration>
+          <D:configurationtype>Dynamic</D:configurationtype>
+
+       <D:derivedfrom>http://www.foobar.com/cfgs/DDEJRJ445</D:derivedfrom>
+          <D:inherit>Auto</D:inherit>
+       </D:createconfiguration>
+
+       >>Response
+
+       HTTP/1.1 201 Created
+       Location: http://www.foobar.com/cfgs/RYURUS99009
+       Content-Length: 0
+
+  5.4. Configuration Properties
+
+       The standard PROPFIND and PROPPATCH methods can be used on the
+       configuration resource to get and set properties on a
+       configuration.  Servers MUST provide configuration properties if
+       configurations are supported.  The following list identifies pre-
+       defined properties that MUST be supported:
+
+       DAV:configurationnamespace - The URI for the base of the
+       configuration namespace. This is a read-only property.
+
+       DAV:configurationtype - The type of the configuration.  Servers can
+       choose to make this a read-only property.
+
+       DAV:derivedfrom - The configuration from which the configuration is
+       derived.  Servers can choose to make this a read-only property.
+
+       DAV:inheritancetype - The type of inheritance for the
+       configuration.  Servers can choose to make this a read-only
+       property.
+
+       DAV:basetime - The base time used to create the configuration.
+       Servers can choose to make this a read-only property.
+
+       DAV:configurationame - A user-defined name for the configuration.
+       This name MUST be unique for all configurations.
+
+       DAV:configurationroots - This property returns a comma-separated
+       list of URL roots that should be checked (using PROPFIND) for
+       contents within this configuration.  Note this property is needed
+
+
+
+  Kaler, ed.                                         [Page 20]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       in case the server implements DAV support at various points in the
+       server namespace.
+
+
+  5.5. Headers
+
+       To support configurations, two new headers are introduced that can
+       be used with a variety of the DAV and HTTP methods.  The following
+       list identifies these headers:
+
+       Configuration-Id - This header is used to identify the
+       configuration that is to be used when referencing a resource.  This
+       header is generally used in combination with Version-Id to identify
+       the versioning collection to use.  This header can be combined to
+       set default versions per-configuration, enumeration of
+       checkouts/checkins against a specific configuration, etc.
+
+            Configuration-Id = "Configuration-Id" ":" URI
+
+       Target-Configuration - This header is used to specify a target
+       configuration when dealing with cross-configuration operations.
+       For example, resources can be copied from one configuration to
+       another using the Configuration-Id and Target-Configuration headers
+       with the COPY method.
+
+            Target-Configuration = "Target-Configuration" ":" URI
+
+       Derived-From - When configurations are support, the Derived-From
+       header is extended.  This header is used to identify the derivation
+       for changes (generally as part of a client-based merge operation).
+       Clients can include configuration names in the event that a change
+       is derived from resources in a different configuration.  In this
+       case, clients include a derivation pair (configuration, version)
+       instead of just a version.  If no configuration is specified, the
+       configuration of the target resource is used.
+
+            Derived-Item = URI | ("(" URI "," URI ")")
+            Derived-List = Derived-Item | (Derived-List "," Derived-Item)
+            Derived-From = "Derived-From" ":" Derived-List
+
+  5.5.1.    GET Example
+
+       >>Request
+
+       GET /foo/bar.htm HTTP/1.1
+       Host: www.foobar.com
+       Configuration-Id: /cfgs/DFEE2034
+       Version-Id: VER:JKGRKJ9094
+       Content-Length: 0
+
+  5.5.2.    COPY Example
+
+       >>Request
+
+       COPY /foo/bar.htm HTTP/1.1
+       Host: www.foobar.com
+       Destination: http://www.foobar.com/foo/bar.htm
+
+
+
+  Kaler, ed.                                         [Page 21]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       Depth: infinity
+       Configuration-Id: /cfgs/DFEE2034
+       Target-Configuration: /cfgs/FKJLE3454
+       Content-Type: text/xml
+       Content-Length: xxx
+
+  5.6. Deleting Configurations
+
+       To delete a configuration, use the location returned from the
+       configuration creation.  Note that servers SHOULD NOT delete a
+       configuration if other configurations are derived from it.
+
+       >>Request
+
+       DELETE /cfgs/RYURUS99009 HTTP/1.1
+       Host: www.foobar.com
+       Content-Length: 0
+
+  5.7. Default Configurations
+
+       Clients can establish a default configuration that is to be used if
+       clients do not specify a configuration.  To do this, clients set a
+       property on the configuration namespace root collection identifying
+       the default configuration.
+
+       >>Request
+
+       PROPPATCH /cfgs/ HTTP/1.1
+       Host: www.foobar.com
+       Content-Type: text/xml
+       Content-Length: xxxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:propertyupdate>
+          <D:set>
+            <D:prop>
+
+          <D:defaultconfiguration>/cfgs/RYURUS99009</D:defaultconfiguration
+       >
+            </D:prop>
+          </D:set>
+       </D:propertyupdate>
+
+  5.8. Managing Configurations
+
+       In order to manage a configuration, clients need to be able to
+       populate, synchronize, merge, and purge the contents of a
+       configuration.
+
+
+  5.8.1.    Adding Resources to a Configuration
+
+       Resources are added to a configuration using the COPY method.
+
+       >>Request
+
+
+
+  Kaler, ed.                                         [Page 22]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       COPY /foo/bar.htm HTTP/1.1
+       Host: www.foobar.com
+       Depth: infinity
+       Configuration-Id: /cfgs/DFEE2034
+       Target-Configuration: /cfgs/ERRJ3440
+       Content-Type: text/xml
+       Content-Length: xxx
+
+  5.8.2.    Removing Resources from a Configuration
+
+       Resources are removed from a configuration using the DELETE.  The
+       target URI indicates the resource to delete and the Configuration-
+       Id header to identify the configuration.  The Depth header can be
+       used to remove collection contents.
+
+       >>Request
+
+       DELETE /foo/bar.htm HTTP/1.1
+       Host: www.foobar.com
+       Depth: infinity
+       Configuration-Id: /cfgs/DFEE2034
+       Content-Type: text/xml
+       Content-Length: 0
+
+  5.8.3.    Synchronizing Configurations
+
+       In some scenarios, clients are working on separate configurations
+       to keep themselves isolated from other team members.  However, they
+       occasionally need to synchronize their configuration with the
+       derived-from configuration so that they don�t get too far out of
+       synchronization.  As well, changes (or entire configurations) can
+       be copied from one configuration to another.  Both operations are
+       performed using the COPY method and special body tags.
+
+       Clients can request that specific resources are copied by including
+       the resource tag.  If no resources are specified, then all
+       resources are copied.
+
+       The example below shows the synchronization of one configuration
+       against another.  All resources are synchronized.
+
+       >>Request
+
+       COPY /cfgs/DHFHR99392 HTTP/1.1
+       Host: www.foobar.com
+       Destination: http://www.foobar.com/cfgs/RRURU329049
+       Content-Type: text/xml
+       Content-Length: xxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:configurationsync/>
+
+       The example below shows the synchronization of one configuration
+       against another.  The specified resources are synchronized to the
+       indicated time.
+
+
+
+  Kaler, ed.                                         [Page 23]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       >>Request
+
+       COPY /cfgs/DHFHR99392 HTTP/1.1
+       Host: www.foobar.com
+       Destination: http://www.foobar.com/cfgs/RRURU329049
+       Content-Type: text/xml
+       Content-Length: xxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:configurationsync>
+          <D:resource>/foo/bar.htm</resource>
+          <D:resource>/bing/bop.htm</resource>
+          <D:basetime>...</D:basetime>
+       </D:configurationsync>
+
+       A synchronization request could result in conflicts.  By default,
+       if conflicts exist, the synchronization fails and the conflicts are
+       returned (as shown below). To override, clients should include the
+       <DAV:override/> tag.  This tag indicates that the synchronization
+       should do as much as possible and return any conflicts.
+
+       >>Response
+
+       TBD - show failure response
+       ...
+       <D:multistatus>
+          <D:response>
+            <D:href> http://www.foobar.com/foo/bar.htm</D:href>
+            <D:conflict>
+               <D:conflictid>VER:DJHFH443</D:conflictid>
+               <D:baseversion>VER:DJHFH443</D:baseversion>
+               <D:newversion>VER:FDFEE55544</D:newversion>
+            </D:conflict>
+          <D:response>
+          ...
+       </D:multistatus>
+       ...
+
+       The sample response above shows that each conflict includes and ID
+       and a reference to the resource in conflict.  Servers MAY choose to
+       restrict configurations until conflicts have been resolved.  To
+       inform the server that a conflict has been resolved, clients should
+       include a Conflict-ID header on PUT, PROPPATCH, etc. methods
+       specifying the ID returned in the synchronization response.
+
+            Conflict-ID = "Conflict-ID" ":" URI
+
+  5.8.4.    Purging Configurations
+
+       Purging a configuration means to reduce the number of versions in a
+       dynamic configuration.  This is performed by extending the DELETE
+       method.  In the example below, all but the latest three versions
+       are purged from a dynamic configuration.
+
+       >>Request
+
+
+
+  Kaler, ed.                                         [Page 24]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       DELETE /cfgs/BHFR59593 HTTP/1.1
+       Host: www.foobar.com
+       Content-Type: text/xml
+       Content-Length: xxxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:purgeset>
+          <D:purge>
+            <D:resource>/foo/bar.htm<D:keep>3</D:keep></D:resource>
+          </D:purge>
+       </D:purgeset>
+
+  5.9. Configuration Graphs
+
+       Version history and configuration dependency graphs are accessed
+       via PROPFIND.  Note that servers MAY support multiple styles of
+       history and dependency.  To enumerate the supported history graphs,
+       clients use PROPFIND and the <DAV:enumgraphs> property.  The result
+       indicate the different graphs which can, themselves, be requested
+       via PROPFIND.
+
+
+  5.9.1.    Example
+
+       >>Request
+
+       PROPFIND /cfgs/FHJRH3994 HTTP/1.1
+       Host: www.foobar.com
+       Content-Type: text/xml
+       Content-Length: xxxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:propfind>
+          <D:enumgraphs/>
+       </D:propfind>
+
+       >>Response
+
+       TBD - need to fill in the response
+
+  5.9.2.    Configuration Derivation
+
+       Servers MUST support the <DAV:configurationderivation> property.
+       This enumerates the full derivation of a resource.
+
+       >>Request
+
+       PROPFIND /cfgs/BHFR59593 HTTP/1.1
+       Host: www.foobar.com
+       Content-Type: text/xml
+       Content-Length: xxxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+
+
+
+  Kaler, ed.                                         [Page 25]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       <D:propfind>
+          <D:configurationderivation/>
+       </D:propfind>
+
+       >>Response
+
+       TBD - need to fill in the response
+
+  5.9.3.    Configuration Merge Graph
+
+       Servers SHOULD support the <DAV:configurationmerge> property.  This
+       enumerates the derivation of a configuration including merges from
+       one configuration to another.
+
+       >>Request
+
+       PROPFIND /cfgs/BHFR59593 HTTP/1.1
+       Host: www.foobar.com
+       Content-Type: text/xml
+       Content-Length: xxxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:propfind>
+          <D:configurationmerge/>
+       </D:propfind>
+
+       >>Response
+
+       TBD - need to fill in the response
+
+  5.10.     Resolution Queues
+
+       When configurations inherit, there is the potential for conflicts.
+       Servers have the option to help clients manage these conflicts.
+       However, if they do not, then servers MUST return an error if the
+       result of the operation would result in a conflict.
+
+       Servers that help resolve conflicts track and maintain lists of
+       issues that need to be resolved as a result of actions.  These
+       lists are referred to as resolution queues.  Clients can request
+       the resolution issues and react accordingly.  Note that the server
+       only manages the list.  That is, the client is responsible for
+       resolving the issue (or deciding not to) and then removing the
+       resolution item.
+
+
+  5.10.1.   Discovery
+
+       Resolution queue support is optional for servers.  This example
+       shows that the server supports resolution queues on the
+       /cfgs/DFEE2034 configuration.
+
+       >> Request
+
+       OPTIONS /cfgs/DFEE2034 HTTP/1.1
+       Connection: Close
+       Host: foobar.com
+
+
+  Kaler, ed.                                         [Page 26]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       Content-Length: 0
+
+
+       >> Response
+
+       HTTP/1.1 200 OK
+       Date: Tue, 20 Jan 1998 20:52:29 GMT
+       Connection: close
+       Accept-Ranges: none
+       Allow: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE,
+       MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, CHECKINOUT
+       Public: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE,
+       MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, CHECKINOUT
+       Allow-Extension: DAV:versioning, DAV:configurations, DAV:resolution
+       Public-Extension: DAV:versioning, DAV:configurations,
+       DAV:resolution
+       Content-Length: 0
+
+  5.10.2.   Obtaining Resolutions
+
+       Conflicts can arise against any resource, however, they are always
+       associated with a configuration.  Pending resolutions items are
+       obtained by examining the resolution queue for a configuration.
+       The resolution queue is actually a configuration-specific
+       collection in the DAV namespace.  The collection resource
+       identifying the resolution queue for a configuration is obtained
+       via the DAV:resolutionqueue property on the configuration.  To
+       enumerate the pending resolutions, clients use PROPFIND to obtain
+       the resources within the collection.
+
+       Each resource within the collection represents a separate
+       resolution queue item and are named such that a standard ANSI sort
+       on the resource name will ensure correct temporal ordering.
+
+
+  5.10.3.   Processing Resolution Items
+
+       Clients can GET the contents of a resolution item.  This is an XML
+       document that describes the action that caused the resolution item
+       to be created.  For example:
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:resolutionitem>
+          <D:resolutionid>http://foobar.com/reso/ZZZZ3493</D:resolutionid>
+          <D:resource>http:/foo/bar.htm</D:resource>
+          <D:newversion>DAV:FDFEE55544</D:newversion>
+       </D:resolutionitem>
+
+
+       Once a client has resolved an issue (or decided to ignore it), the
+       client is responsible for canceling the resolution item.  This is
+       done using the DELETE method on the resolution item.
+
+       >>Request
+
+       DELETE http://foobar.com/reso/ZZZZ3493 HTTP/1.1
+       Host: www.foobar.com
+
+
+  Kaler, ed.                                         [Page 27]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       Content-Type: text/xml
+       Content-Length: 0
+
+  6.      VERSION MAPPING
+
+       This specification defines headers to specify configurations and
+       resource versions.  However, there are times when clients require a
+       single URI for when working against configurations or versions.
+       Version mapping support allows servers to create namespaces that
+       map to configurations and versions.
+
+       Note that mappings are dynamic.  That is, as resources are added,
+       removed, and modified, the changes are reflected in any active
+       maps.
+
+       TBD - Should maps have timeouts like locks?
+
+
+  6.1. Discovery
+
+       Version mapping support is optional for servers.  This example
+       shows that the server supports version mapping on the
+       /cfgs/DFEE2034 configuration.
+
+       >> Request
+
+       OPTIONS /cfgs/DFEE2034 HTTP/1.1
+       Connection: Close
+       Host: foobar.com
+       Content-Length: 0
+
+
+       >> Response
+
+       HTTP/1.1 200 OK
+       Date: Tue, 20 Jan 1998 20:52:29 GMT
+       Connection: close
+       Accept-Ranges: none
+       Allow: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE,
+       MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, MAP
+       Public: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE,
+       MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, MAP
+       Allow-Extension: DAV:mapping
+       Public-Extension: DAV:mapping
+       Content-Length: 0
+
+  6.2. Mapping Configurations
+
+       The MAP method is used to create server namespaces based on a
+       configuration.  When a configuration is mapped to a new namespace,
+       all elements within the configuration can be directly accessed
+       within the namespace without requiring the configuration to be
+       identified in the header.
+
+       In the example below, a new namespace is created for accessing the
+       contents of the /cfgs/DFEE2034 configuration.
+
+       >> Request
+
+
+
+  Kaler, ed.                                         [Page 28]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       MAP /cfgs/DFEE2034 HTTP/1.1
+       Connection: Close
+       Host: foobar.com
+       Content-Length: 0
+
+
+       >> Response
+
+       HTTP/1.1 201 CREATED
+       Location: http://foobar.com/map/DFEE2034/
+       Context-Length: 0
+
+  6.3. Mapping Resource Versions
+
+       The MAP method is also used to create server namespaces based on a
+       resource�s versions.  When a resource is mapped, its version
+       history within the configuration is made available without
+       requiring the Version-Id header.  Within the mapped namespace, a
+       hierarchy is created for the versions.  A collection is created for
+       each version which contains the document and collections for
+       derived from versions.  The diagrams below illustrate two possible
+       hierarchies.  The left diagram illustrates basic linear versioning.
+       The right diagram illustrates a hierarchy with branched resources.
+
+                  V1                  V1
+                  |                   |
+                  +----+              +----+--------+
+                  |    |              |    |        |
+                  V2   bar.htm        V2   bar.htm  V1.1
+                  |                   |             |
+                  +----+              +----+        +-----+
+                  |    |              |    |        |     |
+                  V3   bar.htm        V3   bar.htm  V1.2  bar.htm
+                  |                   |             |
+                  bar.htm             bar.htm       bar.htm
+
+
+       In the example below, a new namespace is created for accessing the
+       versions of the /foo/bar.htm resource in the /cfgs/DFEE2034
+       configuration.
+
+       >> Request
+
+       MAP /foo/bar.htm HTTP/1.1
+       Connection: Close
+       Host: foobar.com
+       Configuration-Id: /cfgs/DFEE2034
+       Content-Type: text/xml
+       Content-Length: xxx
+
+
+       >> Response
+
+       HTTP/1.1 201 CREATED
+       Location: http://foobar.com/map/DFEE2034/
+       Context-Length: 0
+
+
+
+
+  Kaler, ed.                                         [Page 29]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+  7.      MISCELLANEOUS FUNCTIONS
+
+       The following sub-sections detail miscellaneous versioning
+       functions.
+
+
+  7.1. Destroy
+
+       Many version management systems use tombstones to note deleted
+       items.  These systems also support the ability to permanently
+       destroy tombstones for an object.  The DESTROY method provides this
+       functionality and servers SHOULD support it, but servers are not
+       required to implement it.  Servers MUST return an error for DESTROY
+       requests that are not honored.
+
+
+  7.1.1.    Discovery
+
+       Discovery of this feature is determined by seeing if the resource
+       options include the DESTROY method.
+
+
+  7.1.2.    Usage
+
+       The DESTROY method is used against a specific resource to
+       permanently remove it from the server.  This is a namespace level-
+       operation.  That is, all resources matching the specified URI are
+       destroyed.
+
+       >>Request
+
+       DESTROY /foo/bar/x.cpp HTTP/1.1
+       Host: www.foobar.com
+       Content-Type: text/xml
+       Content-Length: xxxx
+
+  7.1.3.    Headers
+
+       Clients may chose to display deleted but not destroyed objects
+       however they choose.  The header keyword Show-Deleted is used to
+       indicate if deleted items should be included in the GET request.
+       By default, they are not.  Inclusion of "Show-Deleted: Y" indicates
+       that deleted resources should be included.  Using "Show-Deleted: O"
+       indicates that only resources that have been deleted should be
+       returned.  Using "Show-Deleted: N" indicates that deleted resources
+       shouldn�t be returned.
+
+            Show-Deleted = "Show-Deleted" ":" ("Y" | "N" | "O")
+
+  7.1.4.    Properties
+
+       DAV:isdeleted - A 0/1 property where 1 indicates that the resource
+       has been deleted.
+
+
+
+
+
+
+  Kaler, ed.                                         [Page 30]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+  7.2. Keyword Expansion
+
+       A common feature of version control systems is to allow keyword
+       expansion.  That is, the resource is automatically annotated with
+       specific information by the server.  Servers SHOULD implement this
+       functionality, but are not required to do so.
+
+       There currently exist a number of version control systems that
+       support keyword expansion in a unique fashion.  Consequently it is
+       unlikely that a unified definition of the expansions and expansion
+       symbols can be defined.  This protocol provides a mechanism for
+       discovering the supported expansions for a resource and the
+       associated expansion symbols.
+
+       This protocol does not specify if keyword expansion occurs on GET
+       or PUT - that is up to each server.  Nor is there a requirement for
+       the keywords that must be supported.  This is a per-resource list.
+
+       TBD - give example
+
+
+  7.2.1.    Properties
+
+       DAV:expansionavailable -indicates if a resource supports expansion
+       (1) or doesn�t (0)
+
+       DAV:expansionsymbols - a read-only property indicating a comma-
+       separated list of the expansion symbols available for a resource
+
+       DAV:expansionsused - a read-only property indicating a comma-
+       separated list of the keyword expansions in use by a specific
+       resource
+
+
+  8.      VARIANT AUTHORING
+
+       For sites that maintain multi-language variations of resources,
+       variant authoring is important. Servers SHOULD support language
+       variants, but are not required to do so.
+
+       Language variants are treated as different "versions" of a
+       resource.  That is, clients request a resource and indicate which
+       language variant is desired.  Servers take the request and map it
+       to the closest match.
+
+       TBD - need to address accept-type and what else?
+
+
+  8.1. Discovery
+
+       Variant authoring support is optional for servers.  This example
+       shows that the server supports variant authoring on the /somefolder
+       resource.
+
+       >> Request
+
+       OPTIONS /somefolder/ HTTP/1.1
+       Connection: Close
+       Host: foobar.com
+       Content-Length: 0
+
+
+  Kaler, ed.                                         [Page 31]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+
+       >> Response
+
+       HTTP/1.1 200 OK
+       Date: Tue, 20 Jan 1998 20:52:29 GMT
+       Connection: close
+       Accept-Ranges: none
+       Allow: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE,
+       MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, CHECKINOUT
+       Public: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE,
+       MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, CHECKINOUT
+       Allow-Extension: DAV:variants
+       Public-Extension: DAV:variants
+       Content-Length: 0
+
+  8.2. Resource Properties
+
+       Every resource has the following read-only property:
+
+       DAV:language-variant - This specifies the language variant
+       associated with the resource.
+
+
+  8.3. Header Extensions
+
+       The header qualifier Accept-Language allows clients to specify
+       language variants they desire.  When this qualifier is present on a
+       GET request, the client specifies the desired variants.  Servers
+       take this under advisement, but are not required to return a
+       variant of the requested type.
+
+
+       GET /foo.htm HTTP/1.1
+       Host: www.foobar.com
+       Accept-Language: de, en
+       Content-Type: text/xml
+       Content-Length: xxxx
+
+       When resources are sent to the server in a PUT request, the client
+       specifies the language variant of the resource using the header tag
+       Content-Language.
+
+
+       PUT /foo.htm HTTP/1.1
+       Host: www.foobar.com
+       Content-Language: de
+       Content-Type: text/xml
+       Content-Length: xxxx
+       ...
+
+  8.4. Default Variant
+
+       For a given resource, clients can establish the default language
+       variant that is to be used if clients do not request a specific
+       language variant.
+
+
+
+  Kaler, ed.                                         [Page 32]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+       In the example below, the default variant for /foo/bar.htm is set
+       to German.
+
+
+       PROPPATCH /foo/bar.htm HTTP/1.1
+       Host: www.foobar.com
+       Content-Type: text/xml
+       Content-Length: xxxx
+
+       <?xml version="1.0" ?>
+       <?xml:namespace ns="DAV:" prefix="D" ?>
+       <D:propertyset>
+          <D:set>
+            <D:defaultlanguage>de</D:defaultlanguage>
+          </D:set>
+       </D:propertyset>
+
+  9.      THE DAV VERSIONING GRAMMAR
+
+       To be supplied - Describe and detail the DTDs
+
+
+  10.  INTERNATIONALIZATION CONSIDERATIONS
+
+       To be supplied.
+
+
+  11.  SECURITY CONSIDERATIONS
+
+       To be supplied.
+
+
+  12.  SCALABILITY
+
+       To be supplied.
+
+
+  13.  AUTHENTICATION
+
+       Authentication mechanisms defined in WebDAV will also apply to DAV
+       Versioning.
+
+
+  14.  IANA CONSIDERATIONS
+
+       This document uses the namespace defined by [WebDAV] for XML
+       elements.  All other IANA considerations mentioned in [WebDAV] also
+       applicable to DAV Versioning.
+
+
+  15.  COPYRIGHT
+
+       To be supplied.
+
+
+  16.  INTELLECTUAL PROPERTY
+
+       To be supplied.
+
+
+  Kaler, ed.                                         [Page 33]
+
+
+
+  INTERNET-DRAFT       WebDAV Versioning   September 28, 1998
+
+
+
+  17.  REFERENCES
+
+       [DAVVERREQ] TBD, "Requirements for DAV Versioning and Variant
+       Authoring", TBD, internet-draft, work-in-progress, draft-webdav-
+       versioning-requirements-##.txt
+
+       [Kaler] C. Kaler, "Versioning Extensions for WebDAV", September
+       1998, internet-draft, work-in-progress, draft-kaler-webdav-
+       versioning-00.
+
+        [RFC2068] R. Fielding, J. Gettys, J. C. Mogul, H. Frystyk, and T.
+       Berners-Lee, "Hypertext Transfer Protocol -- HTTP/1.1", RFC 2068,
+       U.C. Irvine, DEC, MIT/LCS, January 1997.
+
+       [RFC2119] S. Bradner, "Key words for use in RFCs to Indicate
+       Requirement Levels." RFC 2119, BCP 14. Harvard University. March,
+       1997.
+
+        [WebDAV] Y. Goland, E.J. Whitehead, A. Faizi, S.R. Carter, D.
+       Jenson, "Extensions for Distributed Authoring on the World Wide
+       Web", April. 1998, internet-draft, work-in-progress, draft-ietf-
+       webdav-protocol-08.
+
+       [White] E.J. Whitehead, "A Web Versioning Protocol", June 1998,
+       internet-draft, work-in-progress, draft-whitehead-webdav-
+       versioning-00.
+
+
+  18.  AUTHOR'S ADDRESSES
+
+       Christopher Kaler, Editor
+       Microsoft
+       One Microsoft Way
+       Redmond WA, 9085-6933
+       Email:ckaler@microsoft.com
+
+       E. James Whitehead, Jr.
+       Dept. of Information and Computer Science
+       University of California, Irvine
+       Irvine, CA 92697-3425
+       Email: ejw@ics.uci.edu
+
+       TBD - list all members of the working group
+
+  19.  CHANGE HISTORY
+
+
+       Sep 28, 1998
+
+       Initial Draft based on [White] and [Kaler].
+
+
+
+
+
+
+
+
+
+  Kaler, ed.                                         [Page 34]
+

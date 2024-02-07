@@ -1,0 +1,874 @@
+			Hashing and Hash Tables
+
+
+Introduction:
+
+Hash tables are a data structure for storing and retrieving unordered
+information, whose primary operations are in complexity class O(1) -
+independent of the number of items stored in the hash table. We saw that
+digital trees had this same property, but only for special keys (that were
+digital: meaning we could decompose them into a first part of the key, a second
+part of the key, etc. as we can with digits in a number and characters in a
+String). Hash tables work with any kind of key. The most commonly used
+implementations of sets and maps (which are unordered) are implemented by hash
+tables. We will also implement a map via a hash table (including iterators) in
+Program #4.
+
+Here are some terms that we need to become familiar with to understand (and
+talk about) hash tables: hash codes, compression function, bins/buckets, 
+overflow-chaining, probing, load factor, and open-addressing. We will discuss
+each below.
+
+
+Our Approach:
+
+We will start by discussing linear searching (using a linked list) of a
+collection of names. If we instead used an array of 26 indexes and put in
+index 0 a linked list of all names starting with "a", and in index 1 a linked
+list of all names starting with "b", ... and in index 25 a linked list of all
+names starting with "z", we could search for a name about 26 times faster by
+looking just in the correct index for any name (according to its first letter).
+This speed increase assumes each letter is equally likely to start a last name,
+which is not a realistic assumption. Even if the assumption is true, the
+complexity class for searching is still O(N), but with a constant 1/26th less
+than the original constant. Meaning, however long it takes to search among N
+names, it would take 1,000 times as long to search among 1,000 names: each of
+the linked lists's length would grow by a factor of 1,000.
+
+In fact, if we used an array of 26x26 (676) indexes, storing in index 0 a
+linked list of all names starting with "aa", and in index 1 a linked list of
+all names starting with "ab", ... and in index 676 a linked list of all names
+starting with "zz", we could search for a name 676 times faster by looking
+just in the correct index for any name (according to its first two letters).
+This speed increase assumes each letter pair is equally likely to start a last
+name, which is an even less realistic assumption. Even if the assumption is
+true, the complexity class for searching is still O(N), but with a constant of
+1/676th less than the original constant.
+
+Of course, this speedup isn't achieved unless we have many names, and each box
+is equally likely to have a name (which isn't true: few names start with
+combinations like "bb", etc). And what about looking-up information that
+aren't strings: for example, we might want a set storing queues or a map whose
+keys are priority queues. So while this approach seems promising, we need to
+modify it to be truly useful.
+
+
+------------------------------------------------------------------------------
+
+Hash Codes:
+
+Hashing is that modification. We declare an array with any number of "bins or
+buckets" and use a "hash code function" to compute an integer index for any
+piece of data that can go into the hash table - indicating in which bin/bucket
+it belongs. A hash code function must always compute the same hash code for the
+same value, so it cannot use random numbers. We should design such a hash code
+function to generate the widest variety of numbers (over the range of all
+integers), with as small a probability as possible of two different values
+hashing to the same integer.
+
+Of course, in the case of using strings as values, there are more strings than
+integer values. For 32-bit ints, there are only about 4 billion different
+values -actually, exactly 4,294,967,296- but an infinite number of strings,
+which can be of any length, meaning any number of characters: even if we
+consider only strings with lower-case letters, there are 26^N different strings
+with N chacters; 26^7 is 8,031,810,176 so there are already more 7-letter
+strings than 32-bit ints.
+
+Once we have a hash code function, we use a "compression function" to convert
+the hash code into a legal index in our hash table. One simple compression
+function computes the absolute value of the hash code (hash codes should cover
+both negative and positive values but array indexes are always non-negative)
+and then computes the remainder (using the % operator) using the hash table
+size/length as the 2nd operand, producing a number between 0 and length-1 of the
+hash table. Other compression functions use-bitwise operations to compute a bit
+pattern in the correct range (doing so is faster than computing a remainder,
+but it typically works only for hash table sizes/lengths that are a perfect
+power of 2: of course we can arrange hash table to start at length/size 1 and
+always double their size to meet this constraint).
+
+Here is one example of a hash code function for strings.
+
+  int hash(std:string s) {
+    int hash_code = 0;
+    for (int i = 0; i < s.size(); ++i)
+      hash_code = 31*hash_code + s[i];//promotion: char -> int: its ASCII value
+    return hash_code;
+  }   
+
+Here, hash("a") returns 97 ('a' has an ASCII value of 97) and hash("aa")
+returns 3104 (31*97 + 97). Generally, if s.size() is n (the chars array
+contains n values), then its hash value is given by the formula
+
+   chars[0]*31^(n-1) + chars[1]*31^(n-2) + ... + chars[n-2]*31^1 + chars[n-1]
+
+So, hash("ICS46") returns 69,494,459, and hash("Richard Pattis")
+returns -125,886,044! Yes, because of arithmetic overflow and the standard
+properties of binary numbers, the result might be negative (and overflow of
+negative numbers can go positive again). Recall that C++ does not throw any
+exceptions when arithmetic operators produce values outside of the range of
+int: hashing is one of the few places where this behavior produces results
+that are still useful. 
+
+Generally the hash function for all the numeric types is an int value with
+the same bit pattern (just interpret those bits as an int). Characters hash to
+their ASCII values. We can build hash functions for other types in C++ from
+from these: for examples strings, are an ORDERED sequence of chars and we can
+compute the hash code of the string by looking at every char in it. Note
+that generally hash("ab") != hash("ba"). When hashing strings, the order of the
+letters is important. In fact, a good hash code function for any ordered data
+type (say a queue or a stack) will produce different values for different
+orders of the same values.
+
+In C++ we can use the following to compute the hash codes. Here
+std::hash<std::string> is a class whose default constructor initializes
+str_hash, which overloads call -the () operator- to compute a hash value for
+std::string.
+
+  std::hash<std::string> str_hash;
+  std::cout << str_hash("ICS46") << std::endl;
+
+Interestingly, str_hash("a") returns 2,167,009,006. So it is using a hash code
+function different from the one shown above. I have not been able to find much
+on the web about how C++ actually computes the hash code for strings.
+
+Java uses a simpler approach: every class in Java overloads the hash_code
+method: it is parameterless, and returns an object's hash code. If we used this
+style in C++, here is an example of how we could compute the hash code for a
+queue: it uses an iterator to compute the hash code for every value in the
+queue. Computing the hash code for a sequence of values in a queue is similar
+to computing the hash code for a sequence of characters in a string, because
+the order is important. 
+
+We can define this same hash_code function in every class implementing a Queue,
+because it is the same for every queue implementation.
+
+  int hash_code() {
+    int hash = 0;
+    for (auto e : *this)
+      hash = 31*hash + e.hash_code();
+    return hash;
+  }
+
+It is critical that the operator== and hash_code methods for a class are
+compatible. The key property is: if  a == b then a.hash_code() == b.hash_code().
+Of course the opposite is NOT true, because many different strings have equal
+hash codes, because there are more strings than 32-bit ints: of course it is
+unlikely that many different strings actually used in some problem will have
+the same hash code (although it is likely that some will; we will look at
+empirical results to get a better understanding of the actual numbers).
+
+This compatibility requirement is very important for UNORDERED collections like
+sets. Typically we iterate through the values of a set to compute the hash code.
+But, values in the set can be stored in (and iterated through in) any order.
+Regardless of the order these values are processed, they must compute the
+same hash code each time hash_code is called (because set implementations that
+happen to store their values in different order are still ==).
+
+So, hash codes are different, but only slightly, for unordered collections
+(like a set). Since no matter what order the values are stored, the hash codes
+should be the same, we cannot use the hash code method above, but instead must
+use something that accumulates the hash code values of its elements without
+regard to their order. Here we just add together (without the weighting of 31*)
+all the values.
+
+  public int hash_code() {
+    int hash = 0;
+    for (auto e : *this)
+       hash += e.hash_code();   //or we could use hash *= e.hash_code()
+     return hash;
+   }
+
+Thus, if we add or multiply together all the hash codes, it doesn't make a
+difference what order we do the addition or multiplication: a+b+c, b+a+c,
+c+b+a, etc. all compute the same value (as does a*b*c, b*a*c, c*b*a, etc.)
+
+Finally, here is something that I found interesting, when I came across it when
+I was reading the Java String class. The real hashCode method in string looks
+like the following, with cachedHash being an instance variable for all objects
+in the String class, which is initially set to 0. The first time hashCode is
+called, cachedHash is 0 so it computes the hash value and stores it in
+cachedHash before returning it. For every other time it is called, it
+immediately returns cachedHash, doing no further computation. Note that in
+Java, Strings are immutable, so once they are constructed their contents do not
+change, so once the hashCode is computed for a String object, that String
+object will always return the same result for its hashCode, so we don't have to
+recompute it. Here is how this method looks in Java.
+
+  public int hashCode() {
+    if (cachedHash != 0)
+      return cachedHash;
+
+    int hash = 0;
+    for (int i = 0; i < chars.length; i++) {
+      hash = 31*hash + chars[i];   //promotion of char -> int
+    return cachedHash = hash;
+  }   
+
+If a String's computed hashCode is 0, even after its hashCode is computed and
+cached, it will be recomputed (because with the != 0 test, Java cannot tell
+the difference between a hash code that has not been computed and a hash code
+that has been computed with value 0). Typically, the only String whose hash
+code is 0 is ""; most other Strings will have a non-0 hashCode. Recomputing the
+hash code of "" is very quick, because it stores no values (chars.length is 0,
+so the loop immediately exits). We could include an extra boolean instance
+variable named hashCached, initialized to false and set it to true after
+caching. So we would have
+
+  public int hashCode() {
+    if (hashCached)
+      return cachedHash;
+
+    int hash = 0;
+    for (int i = 0; i < chars.length; i++) {
+      hash = 31*hash + chars[i];   //promotion of char -> int
+
+    hashCached = true;
+    return cachedHash = hash;
+  }   
+
+...but that extra instance variables is a bit overkill. 
+
+Of course, we also could compute the hashCode of every String WHEN IT IS
+CONSTRUCTED, storing it in cachedHash, and never checking this value, always
+returning the cached value. The upside is that the hashCode function would
+always just return this cached value; the downside is that we would have to
+compute the hash code for every String when it was created, even if we were
+never are going to call hashCode on it. The approach above, actually used in
+Java, caches a hash code only if asked to compute it at least once.
+
+------------------------------------------------------------------------------
+
+Hash Tables with Overflow-Chaining
+
+Hash Tables are used frequently in practice, so there has been a lot of
+studies, both theoretical and empirical, of hash code methods, which are
+at the heart of Hash Tables working efficiently. The best methods are quick
+to compute and return results scattered all over the range of int. Given such
+a hash code, the rest of the code to implement a Hash Table (see below) is
+straightforward.
+
+Accompanying this lecture is a program and an example of the results produced
+by running the program, which empirically examines the hash code function shown
+early in this lecture for strings (and you can write your own hash code to test
+too). The program itself was originally written in Java and I converted it to
+C++. It allows students to posit various hash code functions and test them
+by generating random strings (which is an easy way to test a hash function, but
+may not accruately model the strings used in a real application), putting them
+in the hash table, and counting the collisions: when two different values
+Hash/Compress to the same bin. We will look at this data briefly.
+
+Now let's look at how to insert a value into a hash table. We will assume that
+as in sets and map keys, the values are distinct. Recall the basic structure
+used in a hash table is an array of bins/buckets with each referring to a
+linked list of values that hash/compress to that index. The basic picture looks
+like the following (here with 5 bins/buckets, 0-4).
+
+   Bin/Bucket     Collisions (handled through chaining, using a linked list)
+
+     +---+
+     |   |    +----+---+    +----+---+
+  0  | ------>| v1 | --+--->| v2 | / |
+     |   |    +--------+    +--------+
+     +---+
+     |   |
+  1  | / |
+     |   |
+     +---+
+     |   |    +----+---+
+  2  | ------>| v3 | / |
+     |   |    +--------+
+     +---+
+     |   |    +----+---+    +----+---+
+  3  | ------>| v4 | --+--->| v5 | / |
+     |   |    +--------+    +--------+
+     +---+
+     |   |    +----+---+
+  4  | ------>| v6 | / |
+     |   |    +--------+
+     +---+
+
+Generally, bins can have zero, one, or many values. We say that values v1 and
+v2 COLLIDED in bin 0, because these two different values both hashed/compressed
+to the same bin in the hash table. And we have used "overflow chaining" (using a
+linked list) to keep track of all the "collisions"/"overflows. With good hash
+and compression functions, the values stored in a hash tabled should be
+approximately equally distributed throughout the bins. Of course, there will
+typically be some bins with fewer values (many may store none) and some bins
+with more because hash codes aren't perfect.
+
+------------------------------------------------------------------------------
+
+Hash Table Algorithms:
+
+3 Important Algorithms manipulating Hash Tables
+
+1) insert(for Set)/put or setting with [] and = (for Map):
+   Use hash_code/compression to compute a bin index (for the value/key).
+   Search all the collisions to see if the information is there
+      (sets have unique values/maps have unique keys).
+    If it is there: for a Sets don't change anything; for Maps change the value
+       associated with the key in the ics::pair.
+    If it is not there: add the information anywhere convenient in that
+      bin: in a list node at the front, rear, wherever: there is no required
+      ordering of information in the bins for sets and maps.
+
+2) contains(for Set)/has_key or lookup with [] (for Map):
+   Use hash_code/compression to compute a bin index.
+   Search through the linked list (all the collisions) to see if the
+     information is there.
+
+3) erase(for Set/Map)
+   Use hash_code/compression to compute a bin index.
+   Search through the linked list (all the collisions) to see if the
+     information is there, and if it is, remove it from the linked list
+
+------------------------------
+
+2 more Important Algorithms
+
+The "Load Factor" of a hash table is the ratio of values it contains divided
+by the number of bins in the hash table. It computes the expected number of the
+values that will hash/compress to each bin. Generally classes using hash tables
+try to keep the load factor below 1 (more bins than values, so each bin
+contains zero or very few values -hopefully just 1, but this is typically not
+achieved: see empirical analysis).
+
+When the insert/put method is called for a Set/Map, if a new value is to be put
+in the hash table, the load factor is checked; if adding the new value will make
+the hash table exceed the load factor, we increase the size/length of the hash
+table to ensure that it is always below the specified threshold. Typically we
+double the size of the hash table, when we must increase its size.
+
+4) Double Size/Length of Hash table
+   Remember the old hash table array and allocate a new/empty one 2 times as big
+   Traverse the old hash table (you can do it directly or use the Iterator
+     if one is available, but that will be slower), adding each value to the
+     new hash table, but NOT NECESSARILY IN THE SAME BIN! Instead, add it by
+     applying the same hashing/compression again (compression will be DIFFERENT,
+     because the size of the new hash table is doubled, so we may compute the
+     same hash value, but compute the remainder using the DIFFERENT TABLE SIZE).
+   By being clever, we can re-use the entire LN (list node), so we don't have
+     to allocate any new objects when doubling the hash table size; but this
+     makes the code harder to write.
+
+5) Iterator: Uses a combination of index and cursor instance variables.
+   (a) Constructor:
+     Loop to find the first bin with a list of values (not nullptr):
+       Succeed: set index to the bin number, cursor to the first LN in the bin
+       Fail   : set cursor to nullptr
+
+   (b) ++:
+     Advance cursor = cursor.next; if it becomes nullptr, loop to advance the
+       index to later bins, stopping at the first non-nullptr bin
+         Succeed: set index to bin number, cursor to the first LN in the bin
+         Fail   : set cursor to nullptr
+
+   (c) Erase in Iterator
+     Store previous cursor (in extra instance variable) to help do removal.
+       or
+     Store no extra information but use a trailer node in every bin (which
+       makes removal easier; we will do this in Programming Assignment #4)
+
+Note that iterators for data types implemented by hash tables return their
+values in a "strange" order (based on their hash values and collisions). In
+fact, adding one value to a hash table can cause it to exceed its load factor,
+and thus it will double the number of bins (doubling the size/length of the hash
+table) which causes rehashing. Now, the iterator order might be completely
+different. So, we should never assume any special ordering for these iterators,
+since data types might be implemented by hash table data structures. If we want
+to ensure they are processed in a specific order, we should put the values
+produced by iterators into a PriorityQueue and iterate through it.
+
+----------
+Note that in the STL there are maps and unordered maps. Regular maps are
+typically implemented by BST (or self-balancing trees) whereas unordred maps
+are typically implemented by hash tables. Generally hash table operations are
+faster than trees: O(1) vs O(Log N). But if we must iterate over the data in
+a specific key order frequently, using regular maps might be better; of course
+we can always iterate over an unordered map in an ordred way by putting all its
+values in a priority queue and then iterate over the priority queue in any
+specified (by a function) order, not just the order of the keys in a BST.
+---------
+
+Implementing Overflows: Linked Lists and Beyond
+
+Note that we can store in each bin an array of values, a linked list of values,
+a binary search tree of values, etc.(in fact, we can use anything that
+implements a Set data type). The reason that linked lists, and not more exotic
+data structures, are used, is that with a load factor <= 1 we expect to find
+few values in each bin, so more exotic data structures just make the coding
+more difficult with little gain in speed for searching a small number of values.
+But if we are going to use a load factor >> 1, using more complicated data
+structures to handle overflows might be a good idea.
+
+We can even use another Hash Table (with a different hashing function) to
+store the overflows.
+
+------------------------------------------------------------------------------
+
+Why are hash tables O(1) with good hash functions:
+
+In the worst case, a hash-code will produce exactly the same value for
+everything it hashes (not likely, but possible) so no matter how big the hash
+table is, we would go to the same bin and put/search for all N values there.
+Such a process would be O(N). But let's assume that we are using a hash_code
+that does a pretty good job (as most do: review the empirical data).
+
+For such a good hash code, if the table size/length is M, we would expect to
+have to search for N/M values in each bin. Thus, for any given M the method is
+O(N/M), but that is just O(N) because M is "a constant" so we remove it from our
+big-O notation.
+
+But, we are doing something a bit more subtle. By keeping the load factor <= 1,
+for example, we ensure that M >= N (say M is always at least N, and sometimes
+as much as 2*N, right when the load factor exceeds 1 and we double the
+size/length of the hash table). So, M IS NOT A CONSTANT, but it grows linearly
+with N. In fact, we know that M >= N. In the "worst case" M = N. That is, since
+M >= N
+
+  N/M < N/N = 1
+
+Therefore the complexity class of O(N/M) is reallyO(N/N) or O(1). In fact, for
+any constant load factor the complexity class is O(1). For a load factor of
+10, the complexity is O(N / N/10) or O(10) which is the same as O(1). Certainly
+with this bigger load factor, we'd expect to spend 10 times longer searching
+but on average we'd still examine some fixed number of values in each bin, no
+matter how big N grows.
+
+So the magic here is that while O(N/M) for a constant M is O(N), when M is 
+linearly related to N, growing as N grows, O(N/M) is O(1).
+
+------------------------------------------------------------------------------
+
+Security via Hashing as a 1-way function: A Digression
+
+Given a string, it is very easy to compute the hash code of it; but it is
+typically not very easy, given a hash code, to determine what string(s) will
+hash to that value. In mathematics, such functions are called 1-way (or
+non-invertible) functions. There are many kinds of 1-way functions beyond
+hashing functions. We can use any 1-way function to provide security: let's
+look at one example, supplying password security, using hashing.
+
+Have you ever wondered how a computer system stores your password? If the
+computer stored everyone's password in a file (as a list of user-ids and their
+passwords), then anyone who could steal/read that file could compromise all the
+accounts. Here is another way to store this information: instead store a list of
+user-ids and the hash code of their password. When a user tries to log in, the
+system would hash the password they type in, and see if it matched the hashed
+entry in the password table.
+
+Assume the hashing method is public (if it wasn't, someone could steal it
+anyway), but it would be a 1-way function. So, even knowing the algorithm
+wouldn't allow you to easily compute a password from its hash code (but would
+allow you to easily compute a hash code from a password).
+
+Now, if someone could read the password file, they would see only the hash code
+of the passwords, but not the passwords themselves. So they wouldn't know what
+password to use. Of course, they could write a program that generated all
+possible strings, hash each, and look for one that had the same hash code. Then
+they could log into the system with the userid and that password (which would
+hash to the one stored in the password file, even if it wasn't the same
+password: getting the right hash code is all that is important).
+
+That is why you are encouraged to have passwords that are long, and have upper
+AND lower case letters (and maybe even symbols in them). It increases the size
+of the alphabet, so makes it harder to search for passwords that hash to the
+right value, when searching over all symbols in that alphabet harder.
+
+(although, hackers have lots of information about the passwords structures
+that are used, and can search more efficiently than generating all possible
+passwords)
+
+Assume that a computer could compute 10^9 (a billion) hash codes per second.
+There are 1.4 x 10^17 different strings of length 10 (52^10, using upper- and
+lower-case letters). If we tried to generate all these strings, and hash each,
+and compare it to the one we are looking for, it would take  about 1.4 x 10^8
+seconds, or about 4.5 years. This is another reason to change your password
+frequently (say, every 4.5 years!). Of course, such a search doesn't really need
+to find your password: it just needs to find a password that has the same hash
+code as your password. Often such hash codes generate integers that are 2^62
+bits, allowing for ~ (2^10)^6 ~ 10^18 different hash values. So with an optimal
+hash code, every 10 letter string would have its own different hash code (not
+really an easy thing to do).
+
+Actual password systems are more complicated these days, and use advanced
+cryptographic methods. But these methods themselves are typically based on the
+general theory of 1-way/non-invertible functions: the functions are just much
+more interesting than the ones we have seen for computing the hash codes of
+strings.
+
+------------------------------------------------------------------------------
+
+The Complexity of Doubling Arrays:
+
+We have seen that array data structures are used to store all kinds of data
+types: I have supplied array implementations of all the templated classes, and
+some advanced implementations that we will write, like HeapPriorityQueue and
+HashMap, also are based on arrays. In all these implementations, when adding
+values we must determine whether to double the size/length of the array. Most
+times we add a value, we don't double the size/length of the array: in all the
+code we've seen before, we just put the value in the next unused index in the
+array (or in a hash table, chain it in a linked list in its bin). But, as the
+size/length grows, eventually we double it, which means we must copy all the
+values currently in the array to a new array. So most additions are O(1) but
+some adds are O(N). 
+
+So, if we are talking about upper bounds, we might say at worst each addition is
+O(N) and we do N adds, so the process of doubling and copying to get N values
+into an array is O(N^2). But, we can derive a better (smaller) upper bound.
+We will talk about "amortized complexity" to analyze this case.
+
+At worst, we allocate a collection to have 1 array cell. Adding the 1st value
+stores it in the array and requires no copying. Adding a 2nd value doubles the
+size of the array, copying the 1st value (so 1 copy). Adding a 3rd value
+doubles the size of the array, copying the 1st-2nd values (so 2 more copies)
+Adding a 4th value stores it in the array and requires no copying. Adding a
+5th value doubles the size of the array, copying the 1st-4th  values (so 4 more
+copies). Adding the 6th-8th value stores them in the array and requires no
+copying. Adding a 9th value doubles the size of the array, copying the 1st-8th
+ values (so 8 more copies). Adding the 10th-16th value stores them in the array
+and requires no copying. Etc.
+
+Each time we double the length, we copy twice as many values as before, but we
+can add twice as many values before having to double again. If we end up with
+N values in the array, what is the total number of copies that we have to make?
+We will see below it is O(N) -actually bounded by 2N.
+
+When we double the array size from 1 to 2, we have copied 1 value in total.
+When we double the array size from 2 to 4, and copy 2 more values for a total
+of 1+2=3 copies. When we double the array size from 4 to 8, and copy 4 more
+values for a total of 1+2+4=7 copies.
+
+Notice that the sum 2^0 + 2^1 + 2^2 + ... + 2^N = 2^(N+1) - 1. We used this
+formula before to compute the maximum number of nodes in a binary tree of
+height h: 2^(h+1) - 1 (which has 1 node at depth 0, 2 nodes at depth 1, 4
+nodes at depth 2, etc).
+
+Here is a table. On the left, N is the number of values in the array, and
+on the right is the total number of values we need to copy.
+
+  N    Movements/Copying
+--------------------------
+  1      0
+  2      1
+ 3- 4    3 = 1 (1->2) + 2 (2->4)
+ 5- 8    7 = 1 (1->2) + 2 (2->4) + 4 (4->8)
+ 9-16   15 = 1 (1->2) + 2 (2->4) + 4 (4->8) + 8 (8->16)
+17-32   31 = 1 (1->2) + 2 (2->4) + 4 (4->8) + 8 (8->16) + 16 (16->32)
+33-64   63 = ....
+
+Notice that for N a perfect power of 2, there are N-1 copies. When N is 1 bigger
+than a power of two, there are at most 2*N-3 copies. So, the number of times
+that we must copy a piece of data as an array grows linearly and is O(N).
+ 
+Rather than thinking about "adding" sometimes doing very little work and
+sometime doing lots, we can think about "adding" doing a bit of extra work (a
+constant amount) every time that we call it: really, most of the time we don't
+do the work, but every so often we have to do a lot of work, not just for the
+new value, but for all the ones before it. This is called amortized complexity.
+Still, the total work done for adding N values is just O(N) -it cannot be less
+because N*O(1) is O(N). You will study this more in ICS-161.
+
+Another way to think of this is just how much extra work is there to double
+the number of values in an array. If the original length is N (say it is a
+power of 2), then when we add N more values, we will have to first copy
+each of the N values originally in the array into the new array, and then copy
+each of the new N values into the array. Thus, overall, adding N more values
+into the array requires copying N values and then adding N values without
+copying, for a total of 2N operations. The total complexity is still just O(N),
+since every add required the actual add and a total of N adds also required
+copying a total of N values originally in the array. Think about every add as
+counting for itself and one of the copying operations.
+
+------------------------------------------------------------------------------
+
+Mutating a Value in A Hash Table (or BST):
+
+If we are using a BST or hash table to store an object in a Set or a key to a
+Map, we should not mutate that object inside the Set/Map. This is because the
+place it is stored depends on the value/key: when we put a value into a tree,
+we use comparisons to determine in which subtree(s) it belongs in; when we put a
+value into a hash table, we compute its hash code to determine which array
+index it belongs in.
+
+So, if we mutate a key in a tree or hash table, it probably will not belong
+where it currently is: it would be in a different location in a tree or
+different bin in a hash table. That is, the code to locate and store a value in
+Set/key in a Map is based on using its state (for comparison or hashing). If we
+store a value in  a Set/key in a Map, and then mutate it (change its state)
+then we may never be able to locate that value/key again.
+
+So, it is a good idea to use immutable classes for keys, or at least be extra
+careful not to mutate a value INSIDE a tree/key INSIDE a Map. Instead, we can
+remove it, change the key, and then add it back. For a hash table, both removal
+and addition are O(1) operations, so although awkward, changing a value in this
+way (remove it, change it, add it) only requires a constant amount of work to
+update it in the hash table.
+
+
+------------------------------------------------------------------------------
+
+Hashing with Open Addressing Instead of Chaining:
+
+The final big topic on hashing is collision/overflow resolution without overflow
+chaining. By far the most useful way to handle different values that hash to
+the same bin is to store all these results in a linear linked list that the
+bin points to. Hash table operations will do a linear search of such a list,
+which, by having a good hash code and low load factor, will generally not be
+long. But this approaches leaves some bins empty (about 1/3 from our empirical
+analysis) and linked lists require extra space that must be dynamically created
+and deallocated.
+
+There is an alternative way to deal with collisions. While it takes up no extra
+space (compared to chaining, which constructs new LN objects) it can cause an
+increase in the time needed to search for a value in a hash table, unless the
+load factor is kept low (< 70%). A load factor > 1 is not possible: we need a
+bin for each value.
+
+The method is called Probing via Open Addressing. We will discuss 3 different
+forms of probing: linear, quadratic, and double hashing.
+
+In linear probing, we compute the bin for storing a value; if the table already
+contains a value at that bin (we must be able to distinguish indexes with and
+without values: often we can use an array of pointers to objects and use
+nullptr to detect the absence of data), we increment the index by 1 circularly
+(incrementing the last array index brings us back to index 0) and keep probing 
+bins until we find an empty bin, and then put the value there.
+
+The find method likewise hashes to a bin and checks of the value is there; if
+not, it continues from the original bin, linearly looking through other bins,
+until we (a) find the value we are looking for, or (b) reach an empty bin
+(meaning the value is not in the hash table; if it were there we would have
+reached it before an empty bin). Note that many values can be searched,
+including many that have different hash codes that happen to be a bit bigger
+than the hash code of the value we are looking for. For example, let's use
+linear probing via open addressing for the following hash table.
+
+   0     1     2     3     4    5      6     7     8     9
++-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+|     |     |     |     |     |     |     |     |     |     |
++-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+
+Thus, if "a" hashes to bin 4, we put it there because it is empty.
+
+   0     1     2     3     4    5      6     7     8     9
++-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+|     |     |     |     | "a" |     |     |     |     |     |
++-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+
+Likewise, if "b" hashes to bin 5 we put it there because it is empty.
+
+   0     1     2     3     4     5     6     7     8     9
++-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+|     |     |     |     | "a" | "b" |     |     |     |     |
++-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+
+But now, if "c" hashes to bin 4, we have to probe bin 4 and 5 until we find
+that bin 6 is the first empty one after 4, and put "c" there.
+
+   0     1     2     3     4     5     6     7     8     9
++-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+|     |     |     |     | "a" | "b" | "c" |     |     |     |
++-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+
+If we are looking to see whether "d" is in the table (say it hashes to
+bin 4) we start probing at bin 4 for d, then check bin 5, bin 6, and finally
+bin 7: it is empty, so we know "d" is not in the hash table (if it were, we
+would find it before the empty value). With chaining we would never examine
+"b" because it would be in a different bin/bucket from "a", "c", and "d".
+
+Another problem with probing via open addressing involves removing values. If
+we want to remove "b", we first try to find it by hashing to bin 5 and find it
+there. But if we actually removed it (making it empty), if we were looking
+for "c" the following problem would occur: we hash "c" (see above) and get bin
+4, then we look at the next bin (which is now empty, because we removed "b")
+and we would think that "c" is not in the hash table because we reached an
+empty bin first. But at the time "c" was added, there was a value in bin 5,
+which is why "c" had to go to bin 6 and not bin 5.
+
+So, in order to know we are done when we reach an empty bin, when we remove a
+value, we find it, and mark its bin as "available". Bins marked "available"
+had previously stored values and can store new values (if we reach them in the
+insertion algorithm), but unlike empty bins they cannot stop the probing:
+probing must continue until it reaches the value to locate or has passed
+through all occupied and "available" bins and reached a bin that has always
+been empty. We can create a special values to represent "empty" and "available".
+
+Iteration over such a structure is easy: it is just a linear traversal of the 
+array, skipping unoccupied (empty or available) positions. Likewise we can
+easily create a hash table twice as big, iterate through the original hash
+table and put (by hashing with a new compression function) each value into the
+new hash table.
+
+Instead of linear probling (where the bin number increases by 1 every time),
+we can do quadratic probing, where the bin number increases by ai+bi^2 (for
+i=0 the first time, i=1 the second time, etc. once we specify the values for
+a and b: if both are 1/2, e.g., 1/2(i+i^2) we probe hash, hash+1, hash+3,
+hash+6, hash+10, etc). Of course with the compression function handles indexes
+that get bigger than the table size/length.
+
+Likewise in double hashing, we use a second hash method h2 (hash, hash+h2(1),
+hash+h2(2), hash+h2(3), ... ) to compute a value that is continually added to
+the bin index (with the compression function) until the value is located or an
+empty bin is found.
+
+Unlike linear probing, by using quadratic probing or double hashing, the probe
+sequence "after a bin" depends on how many probes it takes to reach that bin in
+the first place. That is, in quadratic probing if we hash to a bin, the next
+probe is at hash+1; but if we reach that bin on the third probe (getting there
+as hash+6) the next probe is hash+10. This typically improves performance by
+spreading out (avoiding clustering) values in the hash table.
+
+Unless space is critical, it is typically better to probe using overflow
+chaining than any kind of probing discussed above. Often the extra overhead of
+the LN is small compared to its data, although doing chaining requires using
+storage allocation/deallocation.
+
+Hash tables using probing via open addressing get clogged up with values in a
+non-linear way: as the load factor approaches 1, the searching time approaches
+O(N). So, if this method of probing is used, we need to keep the load factor
+lower, say at .7. You can simulate such a hash table and measure the
+performance degradation by counting the average number of probes at various
+load factors.
+
+If you look on the Programs link on the course web site (or the link for this
+lecture), you will see a download that allows you to test various hashing
+functions statistically. If you want, you can write your own hashing function
+and test it compared to the one built-in to C++. There are two drivers there,
+one testing chaining and one testing open addressing. It would also be useful
+to test hash functions for the amount of time they take to compute their result.
+
+
+------------------------------------------------------------------------------
+
+Some Mathematics and Hashing: The Birthday Problem
+
+Suppose we had a hash table of size N and a perfectly random hashing function.
+How many values would we have to add before the probability of a collision is
+50%? The answer might surprise you because it is low. In mathematics, this is
+related to "The Birthday Problem": How many people (k people) must be in a room
+before there is at least a 50% chance that two have the same birthday?" Here we
+assume that each person is equally likely to be born on every day in the year
+(which is not true, but is close to true). The answer is nowhere near 365, or
+even 180: it is just 23.
+
+Think about the problem this way. We will compute the probability of k people
+having DIFFERENT birthdays: then 1 minus that number is the probability of
+at least two people sharing a birthday. For everyone to have a different
+birthday, the second person must have a birthday different than the first. The
+third person must have a birthday different than the first two. The fourth
+person must have a birthday different than the first three...
+
+We can compute the probability of k people have different birthdays exactly as
+
+   365-0     365-1      365-2      365-3      365-4             365-(k-1)
+  ------- x ------- x  ------- x  ------- x  ------- x  ... x  -----------
+    365       365        365        365        365                365
+
+Let us generalize 365 to N, so we can compute the probability of k people having
+different birthdays given N=365 days a year, or k values different bin numbers
+in a hash table of size N. This product becomes
+
+         N!
+P =  -------------
+      (N-k)! N**k
+
+If we choose N=365 and we compute this value for different values of k (say in
+Excel), we have following data.
+
+ k   |     P
+-----+---------------------------
+ 1   |  100.00%
+ 2   |   99.73%
+ 3   |   99.18%
+ 4   |   98.36%
+ 5   |   97.29%
+ 6   |   95.95%
+ 7   |   94.38%
+ 8   |   92.57%
+ 9   |   90.54%
+10   |   88.31%
+11   |   85.89%
+12   |   83.30%
+13   |   80.56%
+14   |   77.69%
+15   |   74.71%
+16   |   71.64%
+17   |   68.50%
+18   |   65.31%
+19   |   62.09%
+20   |   58.86%
+21   |   55.63%
+22   |   52.43%
+23   |   49.27%  1- >= 50%
+24   |   46.17%
+25   |   43.13%
+26   |   40.18%
+...
+
+Thus, if we had a hash table of 365 values, hashing 23 or more values into it
+is likely (>= 50% of the time) to lead to at least one collision: 2 values being
+hashed to the same bin. Using the same methodology, if if we had a hash table
+of 1,000 values, hashing 38 or more values into it is likely to lead to at least
+one collision. Finally, for a hash table with 1,000,000 bins, hashing 1,178 is
+likely to lead to at least one collision.
+
+We will prove that this number grows O(sqrt(N)) and even compute the actual
+coefficient (which we will find as sqrt(ln(4)) = 1.17741....
+
+Stirling's approximation for N! is N**N x e**-N x sqrt(2pixN).
+
+If we substitute it in the formula above we get
+
+              N   -N
+            N   e    sqrt(2piN)
+P = -------------------------------------
+          N-k   -(N-k)                k
+    (N-k)      e      sqrt(2pi(N-k)) N
+
+
+			+-	 -+  (k-N-.5)
+                     -k |      k  |
+which simplifies to e   |  1 - -  |
+                        |      N  |
+                        +-       -+
+
+
+So, ln(P) = -k + (k-N-.5)ln(1-k/N)
+
+Now, ln(1+x) = x - x**2/2 + x**3/3 - x**5/5 + ... (alternating sign)
+
+so ln(1-k/N) = -(k/N + k**2/(2N**2) + k**3/(3N**3) + ...)
+
+so ln(P) = -k + (N-k+.5)(k/N + k**2/(2N**2) + k**3/(3N**3) + ...)
+
+Next, assume k << N, so when we multiply these two sums, we ignore any terms
+like k/N, k/N**2, etc., in which k's power is less than or equal to N's power;
+but we keep terms like k**2/N (where k's power is more than N's power).
+
+so ln(P) ~ -k + k - k**2/N + k**2/(2N) (all other terms are dropped)
+
+   ln(P) ~ -k**2/(2N)
+
+and
+         -k**2/(2N)
+   P ~ e
+
+If we wanted to determine for what k the probability of unique values was P
+(the same as the probability of colisions = 1-P) we would solve k**2 ~ -2Nln(P)
+so, k ~ sqrt(-2Nln(P))
+
+If we want to know for what k the probablity is about .5 (P=.5), we have
+
+k ~ sqrt(N) x sqrt(-2ln(.5)) and sqrt(-2ln(.5)) ~ 1.177410...
+
+So k ~ 1.177410 sqrt(N)
+
+Note, for N = 365, 1,000 and 1,000,000 we get
+
+k ~ 22.5, k ~ 37.2, and k ~ 1,177 which all agree very well with the values
+computed in Excel.
+
+If we wanted to determine for what k the probability of unique hashes was 10%
+(the probability of a collision was 90%), the formula is k ~ 2.145966 sqrt(N),
+about twice as big as for a 50% chance.

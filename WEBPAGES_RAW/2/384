@@ -1,0 +1,216 @@
+Solutions to Homework 5
+
+R-6.14 
+[here change "sequence" to "node list", and use only the operations from the 
+Node List ADT (also called "List ADT" or "Position List ADT")]
+
+Let S be the node list. Using the List ADT we can move position p to front
+by doing the following:
+
+E e = S.remove(p);
+S.addFirst(e);
+
+Or, even faster:
+S.addFirst(S.remove(p));
+
+Even though you were asked to use just the List ADT methods, we accepted
+solutions which described how to perform the move-to-form from scratch, i.e.
+without using the already-programmed List ADT methods, and assuming the
+List ADT is implemented as a double-linked list of DNodes (see pages 239-241).
+Then the code could look like this:
+
+p.getPrev().setNext(p.getNext());
+p.getNext().setPrev(p.getPrev());
+header.getNext().setPrev(p);
+p.setNext(header.getNext());
+header.setNext(p);
+p.setPrev(header);
+
+
+R-6.16
+[give a pseudocode for this iterator]
+
+Some students just gave the procedure that returns a list composed of every
+other element of the initial list, or prints out every other element of the list,
+but that's not what an Iterator is.  See section 6.3.  So here is an example
+of an implementation of such iterator (compare to the code for an iterator
+of elements in a list on page 245):
+
+public class NewIterator<E> implements Iterator<E> {
+ PositionList<E> L;
+ Position<E> p;
+ 
+ public NewIterator(PositionList<E> L) {
+   this.L = L;
+   if L.isEmpty()
+       p = null
+     else p = L.first();
+ }
+  
+ public hasNext() { return (p != null); }
+ 
+ public E next() throws NoNextElementException {
+   if (p == null) throw new NoNextElementException("...");
+   E elementToReturn = p.element();
+   p = L.next(p);
+   if (p != null) 
+     p = L.next(p);
+   return elementToReturn;
+ }
+
+
+R-6.19,
+
+One student noted that the question can be solved only if the initial access
+count for every element in list L is zero (or, more generally, if these
+access counts are all the same).  That was indeed the intention of this
+question.  
+
+Let "l_i" refer to an element that sits at index i in list L at the 
+beginning.  Let n = L.size().  Assuming that all elements in L have 
+equal initial counts, the following access pattern will have the effect of 
+reversing the list if the list is maintained as ordered by decreasing 
+access counts:
+
+for i = 1 to n
+  for j = i to n
+    access element l_i in the list (wherever it currently is)
+    
+For example, if L = {A,B,C,D}, this loop encodes the following pattern
+of accesses to these elements:  A,B,C,D,B,C,D,C,D,D
+
+In general, element l_i will be accessed i times in this access pattern,
+and therefore the resulting list will look like this:
+
+{l_n, l_{n-1}, ... , l_3, l_2, l_1}
+
+Note that the number of accesses is O(n^2).
+
+
+R-6.20,
+
+Let "l_i" refer to an element that sits at index i in list L at the 
+beginning.  Let n = L.size().  The following access pattern will have 
+the effect of reversing the list if the list is maintained according
+to the move-to-front heuristic:
+
+for i = 1 to n
+  access l_i in the list (wherever it currently is)
+  
+Note that the last element accessed is l_n, therefore it'll be at the
+front of the list now.  The element accessed before that is l_{n-1},
+so it'll be second.  Etc.
+
+Note that the number of accesses is n.
+
+
+C-6.11,
+
+The list L can be implemented like this:  Whenever element l in L is
+accessed, two things happen: (1) Element l is moved to the front of
+the list, and (2) The last element of the list is removed from the list,
+unless this last element is equal to element l (in which case no
+element is removed from the list).
+
+Assuming the list is implemented with linked list of DNodes, the 
+move-to-front takes O(1) time and so does removal of the last node.
+
+Note that at any time, the list L contains then only the elements which have
+been accessed at least once among the past n = L.size() accesses.
+
+Note also, that this is a somewhat strange list, because unless you access
+the last element, the list shrinks.
+
+Some students said that you can maintain an additional queue L', on which 
+you enqueue every element that is accessed, and you dequeue elements from L'
+as long as L'.size() > n.  This has the effect that list L' contains all
+the elements in L that were accessed in the past n accesses.  We accepted
+such answer, even though the question asked you to make the *original* list
+L have this property.
+
+
+C-6.12,
+
+This was a little tricky.  The following access pattern works.  Assume
+again that "l_i" refer to an element that sits at index i in list L at the 
+beginning and that n = L.size():
+
+do the following n times:
+  for i = 1 to n
+    access element l_i (wherever it currently resides in L)
+
+Note that this pattern consists of n^2 accesses to L.
+
+Note also that whenever element l_i is accessed, it is actually still at
+position i in the list, and therefore it takes O(i) time to access this
+element (and then O(1) time to move him to the front).  Therefore the
+total time taken by the "for i = 1 to n" loop is 1+2+3+...+n = \Omega(n^2),
+and therefore the total time taken by this access pattern to process is
+\Omega(n^3).
+
+Some students gave this as an answer:
+
+for i = 1 to n
+  do the following n times:
+    access element l_i (wherever it currently resides in L)
+
+This is not correct because the first access to l_i takes i steps.
+All the subsequent accesses to l_i will take 1 step, and hence the
+total takes only O(n^2) time.
+
+
+R-8.7,
+
+The answer depends on how exactly you program Insertion Sort,
+but if the code is as on page 333, then the worst case is
+when the original list is actually in the *sorted* order.
+This is because every time you insert a new element l_i you
+have to traverse the already-sorted list, which takes time i,
+so the resulting time is 1+2+3+...+n = O(n^2).
+
+You could implement Insertion Sort so that the algorithm
+traverses the already-sorted list, searching for the place
+in which to insert the new element l_i, from the end to the
+beginning, in which case the worst case is when the original
+list is in the reverse-sorted order.
+
+
+C-8.4,
+
+Here you had to implement a Stack using a Priority Queue PQ
+and a constant integer c.  To do that, you could start up 
+with c equal to any value (e.g. 0), and an empty PQ,
+and implement the stack ADT as follows:
+
+Push(e) { PQ.insert(c,e); c--; }
+Pop() { return PQ.removeMin() }
+Top() { return PQ.min(); }
+size() { return PQ.size(); }
+isEmpty() { return PQ.isEmpty(); }
+
+You could also increment c back when popping.
+One student observed that you dont even need the constant c:
+You could use just the negative of the current system time
+instead of it, i.e.
+
+Push(e) { PQ.insert(-System.getTime(),e); }
+
+
+C-8.5
+
+Here you had to implement a Queue using a Priority Queue PQ
+and a constant integer c.  Again, you start up with c equal 
+to any value (e.g. 0), and an empty PQ, and implement the 
+stack ADT as follows:
+
+Push(e) { PQ.insert(c,e); c++; }
+Pop() { return PQ.removeMin() }
+Top() { return PQ.min(); }
+size() { return PQ.size(); }
+isEmpty() { return PQ.isEmpty(); }
+
+Again, you could also decrement c back when popping,
+and you could do away with c by using the 
+current system time instead, i.e.
+
+Push(e) { PQ.insert(System.getTime(),e); }

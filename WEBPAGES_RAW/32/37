@@ -1,0 +1,322 @@
+/**
+Name: Cameron Lewis
+Student ID: 16254966
+**/
+
+
+// Payroll.java
+//
+// ICS H22 Fall 2005
+// Lab 2: The Price You Pay
+//
+// This class should contain the majority of the code for your user interface.
+// To help you get started, I've included a little bit of code:
+//
+//   * In the constructor, I've created three objects that you'll need in
+//     various places: a Scanner to read input, a PayrollMenu (see
+//     PayrollMenu.java for more information about that), and an
+//     ArrayList<Employee> that you should use to store all of the employees.
+//
+// You should start by adding code to the go() method that displays the menu,
+// asks the user for the next command, and processes that command.  (Be aware
+// that the PayrollMenu object can do some of this work for you.  See the
+// PayrollMenu.java file for more information before you proceed.)
+
+
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.InputMismatchException;
+import java.io.FileReader;
+import java.io.PrintWriter;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+
+
+public class Payroll
+{
+	//used to look through the input file
+	private Scanner scanner;
+
+	//menu object used to access enumerated commands of PayrollCommand class taht are inputed by the user
+	private PayrollMenu menu;
+
+	//will be used to store the name of the input file specified in the main method of Company
+	private String inputFileName;
+
+	//object used to write to an output file
+	private PrintWriter out;
+
+	//used to store all the employee objects added to the database and can then be accessed to print employees and paychecks
+	private Employee[] theList;
+
+	//stores the size of theList
+	private int size;
+
+	//constant used to define size of theList
+	public static final int DEFAULT = 100;
+
+	//constant used to define the file output will be printed to
+	public static final String OUTPUT = "output.txt";
+
+	//constructs Payroll objects, assigns @param args to inputFileName
+	//initializes menu, theList and size
+	//creates an output file and establishes a scanner to read the input file
+	public Payroll(String args)
+	{
+		inputFileName = args;
+		menu = new PayrollMenu();
+		theList = new Employee[DEFAULT];
+		size = 0;
+
+		try
+		{
+			scanner = new Scanner(new FileReader(inputFileName));
+		}
+
+		catch (FileNotFoundException e)
+		{
+			System.out.println("File not found...");
+			System.exit(0);
+		}
+
+		try
+		{
+			out = new PrintWriter(OUTPUT);
+		}
+		catch (FileNotFoundException e)
+		{
+			System.out.println("File not found...");
+			System.exit(0);
+		}
+	}
+
+	//starts executing commands given to the program by the input file
+	public void go()
+	{
+		String command = scanner.nextLine();
+
+		if (command.compareToIgnoreCase("AddEmployee") == 0)
+			addEmployee();
+		else if (command.compareToIgnoreCase("RemoveEmployee") == 0)
+			removeEmployee();
+		else if (command.compareToIgnoreCase("ShowEmployees") == 0)
+			showEmployees();
+		else if (command.compareToIgnoreCase("doWeeklyPayroll") == 0)
+			doWeeklyPayroll();
+		else
+		{
+			System.out.println("Now exiting...");
+			System.exit(0);
+		}
+	}
+
+	//used to continue the program after a method is executed
+	public void goAgain()
+	{
+		if (scanner.hasNext())
+		{
+			String command = scanner.next();
+			if (command.compareToIgnoreCase("AddEmployee") == 0)
+				addEmployee();
+			else if (command.compareToIgnoreCase("RemoveEmployee") == 0)
+				removeEmployee();
+			else if (command.compareToIgnoreCase("ShowEmployees") == 0)
+				showEmployees();
+			else if (command.compareToIgnoreCase("doWeeklyPayroll") == 0)
+				doWeeklyPayroll();
+		}
+		else
+		{
+			System.out.println();
+			System.out.println("Program finished. Please examine " + OUTPUT + " to see the result of your inquiries. Now exiting...");
+			System.out.println();
+			out.close();
+			System.exit(0);
+		}
+	}
+
+	//returns true if the name is already in the list
+	public boolean isThere(String name)
+	{
+		int i = 0;
+		while ((i <= (size - 1)) && theList[i] != null)
+		{
+			if (name.compareToIgnoreCase(theList[i].getName()) == 0)
+			{
+				return true;
+			}
+			i++;
+		}return false;
+	}
+
+	//returns true if theList is full
+	public boolean isFull()
+	{
+		if (size() == DEFAULT)
+		{
+			out.println("The database is full.  Please remove an employee if you wish to add another.");
+			out.close();
+			return true;
+		}
+		else return false;
+	}
+
+	//returns class variable size
+	public int size() {return size;}
+
+
+	//adds an employee to the database
+	public void addEmployee()
+	{
+		Employee emp;
+		int i = 0;
+		if (isFull())
+		{
+			out.println("The database is full so no employees can be added.");
+			scanner.nextLine();
+			scanner.nextLine();
+
+			goAgain();
+		}
+
+		String name = scanner.next();
+		name += (" " + scanner.next());
+
+		if (isThere(name))
+		{
+			out.println("Employee " + name + " is already in the database.");
+			scanner.nextLine();
+			scanner.nextLine();
+
+			goAgain();
+		}
+
+		String type = scanner.next();
+
+		double fakeWage = scanner.nextDouble();
+		int wage = (int) (fakeWage * 100);
+
+
+		if (type.compareToIgnoreCase("hourly") == 0)
+		{
+			emp = new Hourly(name, wage);
+			out.println("Employee " + name + ", an " + type + " employee making " + CurrencyFormat.format(wage) + "/hr has been successfully added.");
+			out.println();
+		}
+
+		else if (type.compareToIgnoreCase("salaried") == 0)
+		{
+			emp = new Salaried(name, wage);
+			out.println("Employee " + name + ", a " + type + " employee with an annual salary of " + CurrencyFormat.format(wage) + " has been successfully added.");
+			out.println();
+		}
+
+		else
+		{
+			emp = new Contracted(name, wage);
+			out.println("Employee " + name + ", a " + type + " employee making " + CurrencyFormat.format(wage) + "/hr has been successfully added.");
+			out.println();
+		}
+
+		while (theList[i] != null)
+		{
+			i++;
+		}
+
+		theList[i] = emp;
+		size++;
+
+
+		goAgain();
+	}
+
+	//removes a specified employee from the database
+	public void removeEmployee()
+	{
+		int i = 0;
+		scanner.nextLine();
+		String name = scanner.nextLine();
+
+		while (i <= 99)
+		{
+			if (theList[0] == null)
+			{
+				out.println("No employees in the database to delete.");
+
+
+				goAgain();
+			}
+			else if (isThere(name) == true)
+			{
+				theList[i] = theList[size - 1];
+				theList[size - 1] = null;
+				size--;
+				out.println(name + " successfully removed.");
+				out.println();
+				goAgain();
+			}
+			else i++;
+		}
+
+		out.println("No employee named " + name + " found. Removal of " + name + " failed.");
+		out.println();
+
+		goAgain();
+	}
+
+	//prints a list of all the employees in the database
+	public void showEmployees()
+	{
+		int i = 0;
+		if (size == 0)
+		{
+			out.println("No employees in the database to show.");
+
+			goAgain();
+		}
+
+		while (i <= 99 && theList[i] != null)
+		{
+			out.println(theList[i].toString());
+			i++;
+		}
+
+		goAgain();
+	}
+
+	//calculates the weekly paycheck for each individual specified and then prints a paycheck for each employee
+	public void doWeeklyPayroll()
+	{
+		int i, j, k = 0;
+		String[] tName = new String[size];
+		int[] tHours = new int[size];
+		if (size == 0)
+		{
+			out.println("No employees in the database to construct a paycheck for.");
+
+			goAgain();
+		}
+
+		for (i = 0; i <= (size - 1); i++)
+		{
+			scanner.nextLine();
+			String name = scanner.nextLine();
+			int hours = scanner.nextInt();
+			tName[i] = name;
+			tHours[i] = hours;
+		}
+
+		for (j = 0; j <= (size - 1); j++)
+		{
+			for (k = 0; k <= (size - 1); k++)
+			{
+				if (tName[j].compareToIgnoreCase(theList[k].getName()) == 0)
+				{
+					out.println(theList[k].createWeeklyPaycheck(tHours[j]).toString());
+				}
+			}
+		}
+
+		goAgain();
+	}
+}

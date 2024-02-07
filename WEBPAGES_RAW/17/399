@@ -1,0 +1,182 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="GENERATOR" CONTENT="Globetrotter 1.1.1" />
+<META HTTP-EQUIV="AUTHOR" CONTENT="David G. Kay" />
+<META HTTP-EQUIV="UPDATED" CONTENT="Friday, October 7, 2005 6:25 PM" />
+<TITLE>Lab Assignment 2</TITLE>
+<META HTTP-EQUIV="X-GLOBETROTTERDATA" CONTENT="D2DE447E" />
+<META HTTP-EQUIV=KEYWORDS CONTENT="CS 1, CS1, assignment, Scheme" />
+<META HTTP-EQUIV="DESCRIPTION" CONTENT="An assignment for ICS H21, an honors first-quarter course in computer science in Information and Computer Science, UC Irvine, using How to Design Programs by Matthias Felleisen et al." />
+<META HTTP-EQUIV="COPYRIGHT" CONTENT="Copyright &#169; 2001-2005 by David G. Kay.  All rights reserved." />
+<link href="/~kay/courses/h21/code.css" rel="stylesheet" type="text/css" />
+<style type="text/css">
+<!--
+.style1 {font-family: "Courier New", Courier, monospace}
+.style3 {font-size: 10pt}
+-->
+</style>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+<A NAME="_top"></A>
+<P><font size="2" face="Garamond">ICS H21 &bull; UC IRVINE &bull; DAVID G. KAY  &bull; FALL 2009</font></P>
+<P><FONT FACE="Garamond" SIZE=6><B>Lab Assignment 2</B></FONT><BR />
+</P>
+<P>
+<FONT FACE="Garamond" SIZE=4>This assignment is due at the end of lab on
+Friday, October 9.</FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4>Choose a partner for this assignment, someone
+you haven&#39;t worked with already, and make sure the TA knows who your partner is.</FONT></P>
+<P><FONT FACE="Garamond" SIZE=4><B>(a)</B> Do exercise 3.3.4 (just the several-function
+  version).  Pick two of exercises 4.4.1, 4.4.2, 4.4.3, and 4.4.4.  Pick one
+  of exercises 5.1.2, 5.1.3, or 5.1.5.  Collect all of these definitions into
+  one file (with both partners&#39; names at the top) and submit it via Checkmate.</FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4><B>(b)</B>  Using the image.ss teachpack in
+DrScheme, we can write functions that process graphic images.  Here is some
+sample code:<A NAME="_14_2998"></A></FONT></P>
+
+<pre class="style1">
+;; Traffic Light example, HtDP Section 6.2, Figure 8
+;; Revised to use image.ss teachpack by Matthias Felleisen
+(define WIDTH 50)
+(define HEIGHT 160)
+(define RADIUS 20)
+(define OFFSET 50)
+
+(define RED (circle RADIUS 'solid 'red))
+(define YELLOW (circle RADIUS 'solid 'yellow))
+(define GREEN (circle RADIUS 'solid 'green))
+
+(define LIGHT-FRAME (rectangle WIDTH HEIGHT 'outline 'black))
+
+(define ALL-THREE-ON
+  (overlay/xy (overlay/xy (overlay/xy LIGHT-FRAME 0 OFFSET GREEN)
+                          0 0 YELLOW)
+              0 (- OFFSET) RED))
+
+"All three lights on:"
+ALL-THREE-ON
+</pre>
+
+<P>
+<FONT FACE="Garamond" SIZE=4>Copy this code and run it.  Don&#39;t forget
+to add the image.ss teachpack (via the Language menu).</FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4><B>(b.1)</B>  Define the images </FONT><FONT FACE="Courier New">RED-ON</FONT><FONT FACE="Garamond" SIZE=4>,
+</FONT><FONT FACE="Courier New">YELLOW-ON</FONT><FONT FACE="Garamond" SIZE=4>,
+and </FONT><FONT FACE="Courier New">GREEN-ON</FONT><FONT FACE="Garamond" SIZE=4>,
+each of which represents a traffic light with just one color light on in
+the conventional position.  Make sure you display each image to see that
+they look right.</FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4><B>(b.2)</B>  Write the function </FONT><FONT FACE="Courier New">turn-off-red</FONT><FONT FACE="Garamond" SIZE=4>
+that takes a traffic light image as its input and returns a traffic light
+image that&#39;s the same as the input, except that the red-light position
+is off (i.e., there&#39;s a white circle in the top position).  You don&#39;t
+have to check whether the red light (or any other light) is on to start
+with.</FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4>If you test this with </FONT><FONT FACE="Courier New">(turn-off-red
+ALL-THREE-ON)</FONT><FONT FACE="Garamond" SIZE=4>, you should see a traffic
+light with the yellow and green lights on.  Do that, and then just evaluate
+the symbol </FONT><FONT FACE="Courier New">ALL-THREE-ON</FONT><FONT FACE="Garamond" SIZE=4>
+again.  Its value didn&#39;t change; it still shows all three colors.  Nothing
+we&#39;ve done changes the value we associated with </FONT><FONT FACE="Courier New">ALL-THREE-ON</FONT><FONT FACE="Garamond" SIZE=4>;
+we just used that value as input to a function, which returned another image,
+another value based on that input.</FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4>If you have experience programming in other
+languages, you might have expected </FONT><FONT FACE="Courier New">ALL-THREE-ON</FONT><FONT FACE="Garamond" SIZE=4>
+to change.  That&#39;s because your previous language probably uses the
+<B>imperative programming</B> style, which generally relies on changing
+the values of variables.  But in Scheme, we&#39;re programming in the <B>functional
+programming</B> style.  This means that we&#39;re not changing the values
+of variables; instead, we&#39;re just sending values as inputs to functions,
+which return other values.  You may wonder how it&#39;s even possible to
+write programs without assigning new values to variables.  Well, just stay
+tuned, and for the moment just remember that the functions we write don&#39;t
+change the values of their inputs.</FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4><B>(b.3)</B>  Write the function </FONT><FONT FACE="Courier New">turn-off-light</FONT><FONT FACE="Garamond" SIZE=4>
+that takes a traffic light and a symbol (</FONT><FONT FACE="Courier New">&#39;red</FONT><FONT FACE="Garamond" SIZE=4>,
+</FONT><FONT FACE="Courier New">&#39;yellow</FONT><FONT FACE="Garamond" SIZE=4>,
+or </FONT><FONT FACE="Courier New">&#39;green</FONT><FONT FACE="Garamond" SIZE=4>)
+and returns the traffic light with the specified color position turned off.
+ Again, you don&#39;t have to check the status of the specified light in
+the input image.  Hint:  Chapter 5 describes how to design functions that
+take one of a list of symbols.  Design at least one test case for this function
+(by explicitly creating an expected result and displaying it alongside the
+result your function produces).</FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4><B>(b.4)</B>  Write the function </FONT><FONT FACE="Courier New">turn-on-light</FONT><FONT FACE="Garamond" SIZE=4>
+that takes a traffic light and a symbol (</FONT><FONT FACE="Courier New">&#39;red</FONT><FONT FACE="Garamond" SIZE=4>,
+</FONT><FONT FACE="Courier New">&#39;yellow</FONT><FONT FACE="Garamond" SIZE=4>,
+or </FONT><FONT FACE="Courier New">&#39;green</FONT><FONT FACE="Garamond" SIZE=4>)
+and returns the traffic light with the specified color position turned on.
+ Again, you don&#39;t have to check the input.</FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4><B>(b.5)</B>  Write the function </FONT><FONT FACE="Courier New">switch</FONT><FONT FACE="Garamond" SIZE=4>
+that takes a traffic light and two symbols (chosen from </FONT><FONT FACE="Courier New">&#39;red</FONT><FONT FACE="Garamond" SIZE=4>,
+</FONT><FONT FACE="Courier New">&#39;yellow</FONT><FONT FACE="Garamond" SIZE=4>,
+or </FONT><FONT FACE="Courier New">&#39;green</FONT><FONT FACE="Garamond" SIZE=4>);
+the function returns a traffic light with the first-specified light turned
+off and the second-specified light turned on.  You don&#39;t have to check
+the input.  Hint:  In defining new functions, it is always best to employ
+functions you&#39;ve already defined rather than re-creating the same functionality
+from scratch.</FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4><B>(b.6)</B>  Now it&#39;s time to check the
+input.  Write a predicate function called </FONT><FONT FACE="Courier New">red-on?</FONT><FONT FACE="Garamond" SIZE=4>
+that takes a traffic light as input and returns a boolean--true if the red
+light is on in the input and false if it&#39;s off.  Hint:  Use the function
+</FONT><FONT FACE="Courier New">image-inside?</FONT><FONT FACE="Garamond" SIZE=4>
+from the image.ss teachpack.</FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4><B>(b.7)</B>  Write the predicate function </FONT><FONT FACE="Courier New">traffic-light-working?</FONT><FONT FACE="Garamond" SIZE=4>
+that takes a traffic light as input and returns a boolean&mdash;true if the light
+is working correctly (i.e., just the red is on, just the yellow is on, or
+just the green is on) and false otherwise.</FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4><B>(b.8)</B>  Write the function </FONT><FONT FACE="Courier New">next</FONT><FONT FACE="Garamond" SIZE=4>
+that takes a traffic light as input.  If the image doesn&#39;t represent
+a working traffic light, just return the image unchanged.  Otherwise, return
+an image representing the next light in the conventional cycle (a green
+light becomes yellow; a yellow light becomes red; a red light becomes green).
+ Write tests that check each of these transitions.</FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4>Submit your definitions via Checkmate.<A NAME="_14_7701"></A></FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4><B>(c)</B> Do exercises 6.3.3 and 6.5.2 (on
+which you should follow the design recipe completely).  Submit your definitions
+via Checkmate.</FONT></P>
+<P><FONT FACE="Garamond" SIZE=4><B>(d)</B> Do exercise 7.2.1.</FONT></P>
+<P> <FONT FACE="Garamond" SIZE=4>For this part, clear all teachpacks and then add the universe.ss teachpack. Do these exercises
+  in section 7.4, which involve shape structures that include a shape&#39;s
+  position in a scene:  7.4.1, 7.4.2 (which places the shape&#39;s image in
+  an empty scene according to the shape&#39;s position), and 7.4.3 (which
+  returns a shape like the input, but with a new position).  Then create a
+  world (for use with universe.ss) that holds a shape, write a </FONT><FONT FACE="Courier New">world-draw</FONT><FONT FACE="Garamond" SIZE=4> function, like the one from last week, that draws this world, and write
+    a </FONT><FONT FACE="Courier New">world-next</FONT><FONT FACE="Garamond" SIZE=4> function that produces a world with the translated image your function from
+      7.4.3 creates.  Now you can test these functions with universe.ss, using code
+      similar to the code on last week&#39;s lab.  Finally, notice that exercises
+      7.4.4, 7.4.5, and 7.4.6 are unnecessary because of what universe.ss does for
+      us automatically.</FONT></P>
+<P> <FONT FACE="Garamond" SIZE=4>Do just one of the functions in exercise 7.5.2.</FONT></P>
+<P>
+<FONT FACE="Garamond" SIZE=4><B>(e)</B>  Remember that each partner must
+complete a partner evaluation form and submit it individually at </FONT><span class="style3"><FONT FACE="Courier New">eee.uci.edu</FONT></span><FONT FACE="Garamond" SIZE=4> by the end of the day on Friday.</FONT></P>
+<BR />
+<P>
+<FONT FACE="Helvetica" SIZE=1>Based in part on ICS H21 assignments by David
+G. Kay from Fall 2001.  Modified for image.ss and world.ss teachpacks by
+Angelo Pioli and David G. Kay, Fall 2005. Modified by David G. Kay in Fall 2007 and Fall 2009.</FONT></P>
+<HR />
+<address>
+<FONT FACE="Palatino"><A HREF="http://www.ics.uci.edu/~kay/">David G. Kay</A>,<em> </em></FONT><a href=mailto:kay@uci.edu>kay@uci.edu</A>
+</address>
+<P>
+<FONT FACE="Palatino" SIZE=1>Friday, October 7, 2005 -- 6:25 PM</FONT></P>
+</BODY>
+</HTML>

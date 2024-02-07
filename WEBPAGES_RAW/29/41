@@ -1,0 +1,261 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>Deterministic selection</title>
+<meta name="Owner" value="eppstein">
+<meta name="Reply-To" value="eppstein@ics.uci.edu">
+</head>
+<body>
+<h1>ICS 161: Design and Analysis of Algorithms<br>
+Lecture notes for January 30, 1996</h1>
+
+<!--#config timefmt="%d %h %Y, %T %Z" -->
+<hr>
+<p></p>
+
+<h1>Deterministic selection</h1>
+
+Last time we saw quick select, a very practical randomized linear
+expected time algorithm for selection and median finding. In
+practice, this is all you need to use. But for theoretical
+purposes, it's unsatisfying to have only a randomized algorithm,
+and in some rare circumstances it may more important to be
+predictable than to be fast. So can we get a linear worst case time
+algorithm? We'll describe a solution invented by five people: <a
+href="people.html#blum">Blum</a>, <a href="people.html#floyd">
+Floyd</a>, <a href="people.html#pratt">Pratt</a>, <a href= 
+"people.html#rivest">Rivest</a>, and <a href="people.html#tarjan">
+Tarjan</a>. 
+
+<p>Recall that quickselect chooses a random "pivot" x, partitions
+the list into elements less than and greater than x, and calls
+itself recursively in one of the two sublists. The even quicker
+selection method I outlined does something similar, but chooses the
+pivot in a complicated way, by calling itself recursively in a
+random sample of the input. Our deterministic algorithm will use
+the same idea of choosing x by performing a recursive call.</p>
+
+<p>If we could do so quickly, one good choice would simply be to
+let x be the median of the values. Then each recursive call would
+only be on a subset of half the values. But of course if we knew
+how to find the median, we'd be done, so finding the median is too
+good to hope for. Instead let's just try to get something close to
+the median (say within n/4 positions of it). Then each recursive
+call would be on a larger fraction of the input (3n/4) but this
+still might be good enough.</p>
+
+<h2>Median of medians</h2>
+
+How can we get something close to the median, reasonably quickly?
+Just like the "quicker selection", Instead of finding the median of
+the whole set, find a median of a sample. How do we choose the
+sample? Medians again! 
+
+<p>Median-of-medians algorithm:</p>
+
+<ul>
+<li>Line up elements in groups of five (this number 5 is not
+important, it could be e.g. 7 without changing the algorithm much).
+Call each group S[i], with i ranging from 1 to n/5.</li>
+
+<li>Find the median of each group. (Call this x[i]). This takes 6
+comparisons per group, so 6n/5 total (it is linear time because we
+are taking medians of very small subsets).</li>
+
+<li>Find the median of the x[i], using a recursive call to the
+algorithm. If we write a recurrence in which T(n) is the time to
+run the algorithm on a list of n items, this step takes time
+T(n/5). Let M be this median of medians.</li>
+
+<li>Use M to partition the input and call the algorithm recursively
+on one of the partitions, just like in quickselect.</li>
+</ul>
+
+Can we say anything about how many items are included in this last
+recursive call? It's easier to talk about this in terms of the
+elements thrown away (not included in the call). 
+
+<blockquote>We always throw away either L3 (the values greater than
+M) or L1 (the values less than M). Suppose we throw away L3. 
+
+<p>Among the n/5 values x[i], n/10 are larger than M (since M was
+defined to be the median of these values).</p>
+
+<p>For each i such that x[i] is larger than M, two other values in
+S[i] are also larger than x[i] (since x[i] is the median of
+S[i]).</p>
+
+<p>So L3 has at least 3 elements in each of at least n/10 groups
+S[i], for a total of at least 3n/10 elements. By a symmetric
+argument, L1 has at least 3n/10 elements.</p>
+
+<p>Therefore the final recursive call is on a list of at most 7n/10
+elements and takes time at most T(7n/10).</p>
+</blockquote>
+
+This algorithm has the property we want, that each recursive call
+only involves a constant fraction of the input. 
+
+<h2>Deterministic selection algorithm</h2>
+
+Before we analyze our algorithm, let's write it out more carefully
+in pseudocode. Also, instead of using a special algorithm to find
+the median in each subset S[i], let's just call the method
+recursively again. To prevent infinite recursion, we have to stop
+when L is so small that there aren't enough x[i] values to find
+medians of. 
+
+<pre>
+    select(L,k)
+    {
+    if (L has 10 or fewer elements)
+    {
+        sort L
+        return the element in the kth position
+    }
+
+    partition L into subsets S[i] of five elements each
+        (there will be n/5 subsets total).
+
+    for (i = 1 to n/5) do
+        x[i] = select(S[i],3)
+
+    M = select({x[i]}, n/10)
+
+    partition L into L1&lt;M, L2=M, L3&gt;M
+    if (k &lt;= length(L1))
+        return select(L1,k)
+    else if (k &gt; length(L1)+length(L2))
+        return select(L3,k-length(L1)-length(L2))
+    else return M
+    }
+</pre>
+
+<h2>Analysis</h2>
+
+The pseudo-code above gives us a number of comparisons that can be
+found by solving the recurrence 
+
+<pre>
+    T(n) &lt;= 12n/5 + T(n/5) + T(7n/10)
+</pre>
+
+The 12n/5 term comes from two places: we can sort each of the sets
+S[i] with seven comparisons (homework 2.31), so the step in which
+we compute the x[i] values takes 7n/5 comparisons total. And then
+the step in which we partition L takes n-1 more comparisons. The
+other two terms come from the two recursive calls, in which we find
+M and then the overall return value. As we discussed earlier, the
+second recursive call is on a list of at most 7n/10 elements hence
+its T(7n/10) bound. 
+
+<p>Actually with some more care we can do a little better: we don't
+really need to sort the sets S[i], just find their medians, which
+only requires 6n/5 comparisons. The resulting information, together
+with the computation of M, should already be enough to eliminate
+3n/10 elements from L. So we could get a recurrence with 6n/5 in
+place of the 12n/5 above, and save a factor of two in the total
+comparisons. But since this result is mainly of theoretical
+interest, I've left it in the simpler and easier to understand form
+above.</p>
+
+<p>This recurrence looks like one coming from a divide and conquer
+algorithm, but one which splits the problem unequal parts. But in
+this case the important fact is that the parts add up to less than
+the whole, when this happens it doesn't matter as much how equal or
+unequal they are.</p>
+
+<p>There are two ways to analyze a problem like this. The first is
+the method I showed for quickselect, in which we try to form an
+inductive proof that something is O(n) by assuming it's cn for some
+specific c, expanding the right side of the recurrence, and working
+through the math to determine what c should be. In our case we
+have</p>
+
+<pre>
+    T(n) &lt;= 12n/5 + T(n/5) + T(7n/10)
+
+     = 12n/5 + cn/5 + 7cn/10
+
+     = n (12/5 + 9c/10)
+</pre>
+
+If this is to be at most cn, so that the induction proof goes
+through, we need it to be true that 
+
+<pre>
+    n (12/5 + 9c/10) &lt;= cn
+
+    12/5 + 9c/10 &lt;= c
+
+    12/5 &lt;= c/10
+
+    c &lt;= 24
+</pre>
+
+Which tells us that we can prove by induction that T(n) &lt;= 24n
+(or any larger constant times n). We also need to deal with the
+base case but that is easy. 
+
+<p>The second method to analyze a recurrence like this one is to
+draw a tree showing the sizes of the problems in each recursive
+call, and analyze the total size of problems on each level of the
+tree. The total number of comparisons can then be found by
+multiplying this total subproblem size by the 12/5 factor of
+comparisons per element in each call. The tree starts with a root
+problem of size n, and then each node has two subproblems, one of
+size 1/5 its parent, and the other of size 7/10 its parent.</p>
+
+<pre>
+          n
+        /   \
+       n/5        7n/10
+      /   \       /   \
+    n/25 7n/50 7n/50 49n/100
+    / \   / \   / \   / \
+</pre>
+
+Each problem on one level is replaced by two problems on the next
+level down, of sizes 1/5 and 7/10 the parent. So the total size on
+the next level is 1/5+7/10=9/10 that of the previous level
+(sometimes even less when a subproblem reaches a base case and
+doesn't make more recursive calls). 
+
+<p>Therefore the total number of comparisons is</p>
+
+<pre>
+    12/5 (n + 9n/10 + 81n/100 + ...)
+
+    = 12/5 n (1 + 9/10 + (9/10)^2 + (9/10)^3 + ...)
+
+    = 12/5 n 1/(1-(9/10))
+
+    = 24n
+</pre>
+
+<a name="geom">As a general rule, the <i>geometric series</i>
+sum(x^i) (for i from 0 to n-1) solves to (1-x^n)/(1-x), and
+whenever x is less than 1 the limit of the sum as n goes to
+infinity becomes 1/(1-x). The sum above is just a case of this
+formula in which x=9/10. The same tree-expansion method then shows
+that, more generally, if T(n) &lt;= cn + T(an) + T(bn), where
+a+b&lt;1, the total time is c(1/(1-a-b))n.</a> 
+
+<p>So our deterministic selection algorithm uses at most 24n
+comparisons and takes O(n) time.</p>
+
+<p>With a lot of work one can reduce the number of comparisons to
+2.95n [see <a href="http://www.netlib.org/confdb/soda95/DZ.html">D.
+Dor and U. Zwick, "Selecting the Median", 6th SODA, 1995</a>] which
+is a little less than twice as much as randomized selection, but
+much more complicated and less practical.</p>
+
+<hr>
+<p><a href="/~eppstein/161/">ICS 161</a> -- <a href="/">Dept.
+Information &amp; Computer Science</a> -- <a href= 
+"http://www.uci.edu/">UC Irvine</a><br>
+<small>Last update: 
+<!--#flastmod file="960130.html" --></small></p>
+</body>
+</html>
+

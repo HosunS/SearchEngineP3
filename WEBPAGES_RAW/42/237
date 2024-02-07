@@ -1,0 +1,122 @@
+<html>
+<head>
+    <title>Ucigame - Gallery - MouseTrap</title>
+<link href="../stylesheet.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+
+<center><h2>Ucigame - Gallery - MouseTrap</h2></center>
+
+<h4>
+<a href="../index.html">Home</a> |
+<a href="../getting-started.html">Getting Started</a> |
+<a href="../reference.html">Reference</a> |
+<a href="../java.html">Introduction to Java</a> |
+<a href="../gallery.html">Gallery</a>
+</h4>
+
+<p>
+<table>
+<tr>
+<td width="300" valign="top">
+<applet
+   code="MouseTrap.class"
+   codebase="."
+   archive="../ucigame.jar"
+   width="250"
+   height="250"
+   border="0"
+>
+Your browser cannot show Java applets.
+</applet>
+</td>
+<td width=600 valign="top" halign="center">
+MouseTrap illustrates some of Ucigame's mouse handling features,
+using onMouseXXX() methods and the <tt>mouse</tt> object.
+<br> <br>
+Left and right clicks rotate the mouse (more if Ctrl or Alt buttons
+are down).  The mouse wheel moves the mouse up and down.
+The mouse can be dragged (<i>x</i> and <i>y</i> are swapped if
+the right button is held down).
+</td>
+</tr>
+<tr>
+<td colspan=2>
+<br>
+<b>MouseTrap.java</b>
+<br>
+<pre>
+import ucigame.*;
+
+public class MouseTrap extends Ucigame
+{
+    Sprite maxwell;
+    double maxwellRotation = 0;
+
+    public void setup()
+    {
+        window.size(250, 250);
+        window.title("MouseTrap");
+        framerate(30);
+
+        canvas.background(200, 230, 255);
+
+        maxwell = makeSprite(getImage("images/mouse.png", 255, 0, 0));
+        maxwell.position(50, 50);
+        maxwell.motion(0, 0);
+    }
+
+    public void draw()
+    {
+        canvas.clear();
+
+        maxwell.move();
+        maxwell.rotate(maxwellRotation);
+        maxwell.draw();
+    }
+
+    public void onMousePressed()
+    {
+        double rotationDegrees = 5;
+        if (mouse.isControlDown())
+            rotationDegrees = 15;
+        if (mouse.isAltDown())
+            rotationDegrees = 30;
+        if (mouse.sprite() == maxwell)
+        {
+            if (mouse.button() == mouse.LEFT)
+                maxwellRotation = maxwellRotation - rotationDegrees;
+            else if (mouse.button() == mouse.RIGHT)
+                maxwellRotation = maxwellRotation + rotationDegrees;
+            else
+                println(mouse.button());
+        }
+    }
+
+    public void onMouseDragged()
+    {
+        if (mouse.button() == mouse.LEFT)
+        {
+            maxwell.motion(mouse.Xchange(), mouse.Ychange(), ADDONCE);
+        }
+        else // weird
+        {
+            maxwell.motion(mouse.Ychange(), mouse.Xchange(), ADDONCE);
+        }
+    }
+
+    public void onMouseWheelMoved()
+    {
+        maxwell.motion(0, mouse.wheelClicks(), ADDONCE);
+    }
+}
+</pre>
+</td>
+</tr>
+</table>
+
+<br>
+<br>
+
+</body>
+</html>

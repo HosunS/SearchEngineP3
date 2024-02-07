@@ -1,0 +1,37 @@
+#include "oechem.h"
+#include "oesystem.h"
+
+#include <iostream>
+
+using namespace OESystem;
+using namespace OEChem;
+using namespace std;
+
+class WeightGT15 : public OEUnaryPredicate<OEAtomBase>
+{
+public:
+  bool operator()(const OEAtomBase &atom) const
+  {
+    return OEGetAverageWeight(atom.GetAtomicNum()) > 15; 
+  }
+  OEUnaryFunction<OEAtomBase,bool> *CreateCopy() const
+  {
+    return new WeightGT15;
+  }
+protected:
+  bool Eval(const OEAtomBase &atom) const { return operator()(atom); }
+  bool Eval(const OEAtomBase &)           { return false; }
+};
+
+
+int main() 
+{
+  OEGraphMol mol;
+  OEParseSmiles(mol, "c1c(O)c(O)c(Cl)cc1CCCBr");
+  
+  OEIter<OEAtomBase> atom;
+  for(atom = mol.GetAtoms(WeightGT15());atom;++atom)
+    cout << atom->GetName() << " has weight > 15." << endl;
+
+  return 0;
+}

@@ -1,0 +1,50 @@
+# Program2.py
+#
+# This program finds candidate genes in a given DNA strand, and also its
+# reverse complement.  (Remember that genes can appear on either strand of
+# DNA, but that we typically only store one strand in biological databases,
+# since the other strand can be calculated easily from the one that's stored.
+#
+# The strategy is to use our solution to Problem 1 to find candidate genes
+# on the given strand, then use the reverse complement program we wrote
+# previously to find the reverse strand, then, finally, to use our solution
+# Problem 1 again to find candidate genes on the reverse strand.  In other
+# words, this program is built entirely out of pieces that we already have.
+
+dnaStrand = "CCATGCCCCCCCCCTTACCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCTAACATCCC"
+
+for i in range(0, len(dnaStrand)-2):
+    if dnaStrand[i : i+3] == 'ATG':
+        for j in range(i+3, len(dnaStrand)-2, 3):
+            if dnaStrand[j : j+3] == 'TAA' or dnaStrand[j : j+3] == 'TAG' or dnaStrand[j : j+3] == 'TGA':
+                if j+3-i >= 60:
+                    print "-----"
+                    print "Candidate gene found in given strand!"
+                    print "     Start position    :", (i+1)
+                    print "     Length (in codons):", (j+3-i)/3
+                break
+
+basePairTranslator = {}
+basePairTranslator['A'] = 'T'
+basePairTranslator['C'] = 'G'
+basePairTranslator['G'] = 'C'
+basePairTranslator['T'] = 'A'
+
+reverseStrand = ""
+
+for i in range(len(dnaStrand)-1, -1, -1):
+    c = dnaStrand[i]
+    reverseC = basePairTranslator[c]
+    reverseStrand = reverseStrand + reverseC
+
+for i in range(0, len(reverseStrand)-2):
+    if reverseStrand[i : i+3] == 'ATG':
+        for j in range(i+3, len(reverseStrand)-2, 3):
+            if reverseStrand[j : j+3] == 'TAA' or reverseStrand[j : j+3] == 'TAG' or reverseStrand[j : j+3] == 'TGA':
+                if j+3-i >= 60:
+                    print "-----"
+                    print "Candidate gene found in reverse strand!"
+                    print "     Start position    :", (i+1)
+                    print "     Length (in codons):", (j+3-i)/3
+                break
+

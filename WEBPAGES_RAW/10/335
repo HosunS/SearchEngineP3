@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC
+ "-//W3C//DTD XHTML 1.1//EN"
+ "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<link rel="stylesheet" href="../../course2.css" type="text/css" />
+
+<title>ICS 23 / CSE 23 - Project #4: Lord of the Ringbinders</title>
+</head>
+
+<body>
+
+<div class="header">
+
+<p>ICS 23 / CSE 23 - Project #4: <i>Lord of the Ringbinders</i></p>
+
+</div>
+
+<div class="section">
+
+<p class="center"><b>Due date and time:</b> <i>Friday, November 21, 6:59pm</i></p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="center">
+<i>
+Three Rings for the Elven-kings under the sky, <br>
+Seven for the Dwarf-lords in their halls of stone, <br>
+Nine for Mortal Men doomed to die, <br>
+One for the Dark Lord on his dark throne <br>
+In the Land of Mordor where the Shadows lie. <br>
+One Ring to rule them all, One Ring to find them, <br>
+One Ring to bring them all and in the darkness <b>bind</B> them <br>
+In the Land of Mordor where the Shadows lie. 
+</i>
+<p class="center">
+- from J.R.R. Tolkien, <cite>The Lord of the Rings</cite>
+</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Introduction</p>
+
+<p>Consider a major Web site, such as <a
+href="http://www.amazon.com/">Amazon.com</a>.  At any given time,
+they're storing a tremendous amount of information, e.g., book
+inventory, and making it available via the Web.  Further, the
+information is fairly fluid; every minute, many thousands of requests
+pour in, each causing information to be accessed, changed, added, or
+deleted.</p>
+
+<p>Companies like these store their information in <i>databases</i>.  A
+database is a collection of data, which can be visualized as
+a table consisting of
+rows and columns.  
+Each row corresponds to a <i>data record</i> and reach column
+corresponds to an <i>attribute</i> that the data can have.
+For example, in a database of books, each data record (row)
+would correspond to an individual book, and each attribute (column)
+would correspond to an attribute that a book can have, such as its
+author, title, or ISBN number.
+In the case of books, the ISBN is a <i>unique</i> attribute, which is
+different for each book.
+In particular, each ISBN number contains a prefix that identifies the
+originating country and publisher, and additional digits that
+uniquely identify the book.
+Thus, one could enumerate all books for a certain country or
+publisher just by reporting all the data records (rows) in a book
+database that have ISBN numbers with a certain prefix.
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Tables, rows, and columns</p>
+
+<p>For the purposes of this project, our <i>database</i> 
+is a collection of <i>records</i>, each of which corresponds to a book.  
+Each book record consists of five attributes, as shown below:
+</p>
+
+<table class="normal">
+  <tr class="top">
+    <td>ISBN Number (key)</td>
+    <td>Author(s)</td>
+    <td>Title</td>
+    <td>Publisher</td>
+    <td>Year</td>
+  </tr>
+  <tr>
+    <td>0471128457</td>
+    <td>Schneier, Bruce</td>
+    <td>Applied Cryptography</td>
+    <td>John Wiley & Sons</td>
+    <td>1996</td>
+  </tr>
+  <tr>
+    <td>0471469831</td>
+    <td>Goodrich, M., and Tamassia, R.</td>
+    <td>Data Structures and Algorithms in Java</td>
+    <td>John Wiley & Sons</td>
+    <td>2004</td>
+  </tr>
+  <tr>
+    <td>0618517650</td>
+    <td>Tolkien, J.R.R.</td>
+    <td>The Lord of the Rings</td>
+    <td>George Allen & Unwin</td>
+    <td>1954</td>
+  </tr>
+</table>
+
+<p>
+Importantly, one of the attributes (i.e., a column) 
+contains a <i>key</i> value, which
+is used to uniquely identify the record.
+No two records will
+ever have the same key.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The program</p>
+
+<p>Your program for this project is not intended to be
+anywhere near a production-quality database management system (DBMS).  
+Many of the ideas that I've
+introduced above are simply to provide you enough background to
+understand the larger context into which your work fits.  Your program
+will be a prototype of a very simple database system, capable of
+storing book data, searching that data by keys,
+updating that data, and removing it.  
+For simplicity, all of the data
+will be character strings.  
+</p>
+
+<p>Your program will read a sequence of commands from the console
+(presumably using a BufferedReader wrapped around an InputStreamReader
+wrapped around System.in) and print output to System.out as directed by
+the specification below.  Your program should <i>not</i> print out any
+prompts such as "Please enter your next command."  It should simply
+read commands blindly typed into the console, process them, and produce
+output.  Many of the commands, in fact, will produce no output.  The
+reason for this design decision is two-fold.  Firstly, this is intended
+to be a prototype, meaning that it's not intended to be used by anyone
+who is not familiar with the details of the project, so the user
+interface need not be all that friendly.  Secondly, directly reading
+commands from the console allows us to redirect input from a file into
+the program, then redirect output into another file, for ease of
+automated testing.  (I'll talk more about this aspect of the project
+later in the write-up.)</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The commands</p>
+
+<p>Your program needs to support the following commands:</p>
+
+<table class="normal">
+  <tr class="top">
+    <td>Command</td>
+  </tr>
+  <tr>
+    <td>
+      <p><b>INSERT</b> - Inserts a new book record into your database,
+      with the given ISBN key and the required data values.  
+      </p>
+
+      <p><pre>INSERT <i>ISBNKey</i> author="<i>authorName</i>" title="<i>bookTitle</i>" publisher="<i>publisherName</i>" year=<i>yearValue</i> </pre></p>
+      <p>
+      where all of the fields are character strings, even the ones
+      not in quotes (quotes cannot be used inside names or titles)
+      <p>Examples:</p>
+      <ul>
+        <li><pre>INSERT 0471469831 author="Goodrich, M., and Tamassia, R." title="Data Structures and Algorithms in Java" publisher="John Wiley & Sons" year=2004</pre>
+        <li><pre>INSERT 0618517650 author="Tolkien, J.R.R." title="The Lord of the Rings" publisher="George Allen & Unwin" year=1954</pre>
+      </ul>
+      <p>This command should generate no output.  
+      The value placed into the ISBN key attribute must be unique in the database (i.e. no book may already exist with that value for is
+      ISBN key).  
+      </p>
+
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p><b>LOOKUP</b> - Retrieves all the books in the database having
+      a specified prefix in their ISBN keys, ordered by ISBN keys.</p>
+      <p><pre>LOOKUP <i>ISBNPrefix</i></pre> </p>
+      <p>Examples:</p>
+      <ul>
+        <li><pre>LOOKUP 0471</pre></li>
+	<p>Looks up and prints the attributes of all books whose ISBN
+	key has the prefix 0471 (which corresponds to the publisher
+	John Wiley & Sons).</p>
+      <p>The above command should generate output that looks like this:</p>
+      <p> 
+<pre>
+0471128457 author="Schneier, Bruce" title="Applied Cryptography" publisher="John Wiley & Sons" year=1996
+0471469831 author="Goodrich, M., and Tamassia, R." title="Data Structures and Algorithms in Java" publisher="John Wiley & Sons" year=2004
+</pre>
+        <li><pre>LOOKUP 0618517650</pre></li>
+	<p>Looks up and prints the attributes of all books whose ISBN
+	key has the prefix 0618517650 (which corresponds to the one Tolkien
+	book).
+	</p>
+      <p>The above command should generate output that looks like this:</p>
+<pre>
+0618517650 author="Tolkien, J.R.R." title="The Lord of the Rings" publisher="George Allen & Unwin" year=1954
+</pre>
+      </ul>
+    </p>
+      <p>This command should print all the retrieved 
+      book records as space-delimited
+      lists of key-value pairs, ordered by their ISBN keys.
+      </p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p><b>DELETE</b> - Removes a book record with a particular key.</p>
+      <p><pre>DELETE <i>ISBNKey</i></pre></p>
+      <p>Examples:</p>
+      <ul>
+        <li><pre>DELETE 0471128457</pre>
+	Deletes the book record with ISBNKey 
+        equal to 0471128457, that is, the "Applied Cryptography" book.
+      </ul>
+      <p>This command should generate no output, unless the desired
+      record is not present (in which case the output should simply
+      be ERROR.</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <p><b>EXIT</b> - Exits the program.</p>
+      <p><pre>EXIT</pre></p>
+      <p>This command should generate no output, and should end the program immediately.</p>
+    </td>
+  </tr>
+</table>
+
+<p></p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Starting point</p>
+
+<p>
+You're required to write the code for this project from scratch.
+No code is provided.
+</p>
+
+</div>
+
+
+<div class="section">
+
+<hr />
+
+<p class="title">Handling erroneous commands</p>
+
+<p>Since your program is intended to be a rudimentary prototype, it
+need not report specific error messages to indicate specific problems.
+Instead, any command that is not understood or does not follow the
+rules above should cause your program to simply print the word "ERROR"
+by itself on a line.  
+</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Implementing the Database</p>
+
+<p>You can think of our database as
+a data structure that is commonly called a <i>map</i>.
+A map is a set of key/value pairs,
+where each key uniquely identifies a particular value.  In our case, we
+can conceptually think of each record in the table as a key/value pair,
+where the key is the string value of the ISBN key for that record, and the
+value is the set of values for the remaining attributes.</p>
+
+<p>Since our database may contain a very large collection of
+book records, it will be necessary for us to build an efficient implementation,
+which will provide fast insertions, lookups, and deletions.
+For this project, you <b>must</b> implement the database as a
+random <b><i>skip list</i></b>, ordered by ISBN keys.
+Because it is fundamentally necessary to have your skip list working before
+you can build any of the other pieces, you should write and test this
+part of your project before moving on to the rest.
+</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Redirection of input and output</p>
+
+<p>Recall that you can execute a Java program from the command line by using the <b>java</b> command, like this:</p>
+
+<pre>
+java MyProgram
+</pre>
+
+<p>where MyProgram is the name of the class that contains a main( ) method.  Ordinarily, a Java program reads its "standard" input from the console, and writes its "standard" output to the console.  In other words, when you use the System.out.println( ) method, the output goes to the console.</p>
+
+<p>Most operating systems -- Windows, Unix, and Linux, for example -- allow you to <i>redirect</i> the standard input and output when you execute a program.  The contents of an existing file may be redirected into the standard input, meaning that, rather than allowing the user to type input into the console, the program proceeds as though the user has typed the next line of the file each time the program requires input.  Similarly, the standard output can be redirected into a file, meaning that all of the output to System.out will be stored in a file, rather than displayed on the console.</p>
+
+<p>The typical mechanism for redirection is to use the <b>&lt;</b> and <b>&gt;</b> operator on the command line, like this:</p>
+
+<pre>
+java MyProgram &lt;my-input.txt &gt;my-output.txt
+</pre>
+
+<p>Using the command above, every time the program needs input, it will read it from the file <b>my-input.txt</b>.  Every time it writes output, it will write it to the file <b>my-output.txt</b>.  It is possible to redirect the standard input without redirecting the standard output, and vice versa.  Note that the operating system deals with the <b>&lt;my-input.txt</b> and <b>&gt;my-output.txt</b> arguments itself before executing the program, so these will not end up in the array of Strings passed to the main( ) method.  In fact, the Java program will not even be aware of the redirection!  As far as the program is concerned, it's reading input from the console and writing output to the console.  The operating system handles the redirection transparently.</p>
+
+<p>This powerful and simple technique will allow you to write test input and reuse it many times while testing this program, so that you can test your database with large sets of data.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Deliverables</p>
+
+<p>You must turn in all of the <b>.java</b> files.
+Please do not include any <b>.class</b> files or other files
+generated by your development environment.
+</p>
+
+<p>Follow <a href="../SubmittingProjects.html">this link</a> for an explanation of how to turn in your project.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Limitations and advice</p>
+
+<p>You may not use the predefined Java "collection" classes, such as java.util.TreeMap, in your solution.  (The "collection" classes are the ones that store a collection of data, and include such classes as ArrayList, LinkedList, HashMap, Vector, Hashtable, and TreeMap.)</p>
+
+<p>I can't stress enough the need to <i>start early</i>.  The previous two projects involved a lot of conceptual thinking, but not very much coding.  This project, on the other hand, will require you to write more code.  It's actually not as big as you may believe, but I would allocate plenty of time to work on it, so that you can get your questions answered early on, and still have plenty of time to write the code.</p>
+
+</div>
+
+<div class="history">
+
+<hr />
+
+<ul class="nomarker">
+  <li>Some additional explanation added and minor rewrites by Alex Thornton, Summer 2004.</li>
+  <li>Addition of the Command pattern and provided CommandParser class, along with some new explanations in the write-up, by Alex Thornton, Summer 2003.</li>
+  <li>User interface requirements adjusted and some provided source code modified by Alex Thornton, Spring 2003.</li>
+  <li>Originally written by Alex Thornton, Fall 2002.</li>
+</ul>
+
+</div>
+
+</body>
+</html>

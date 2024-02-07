@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>33.1 Atoms, Bond, Conformers, and Molecules</title>
+<META NAME="description" CONTENT="33.1 Atoms, Bond, Conformers, and Molecules">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node271.html">
+<LINK REL="previous" HREF="node269.html">
+<LINK REL="up" HREF="node269.html">
+<LINK REL="next" HREF="node271.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node269.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node269.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node271.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node269.html">33. Design Decisions</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node269.html">33. Design Decisions</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node271.html">33.2 Objects and Free-Functions</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION0036100000000000000000">
+33.1 Atoms, Bond, Conformers, and Molecules</A>
+</H1>
+
+<P>
+The most important data types in the OEChem library are OEMolBase,
+OEAtomBase and OEBondBase. These three classes describe the behaviors of
+molecules, atoms and bonds respectively.  However, these types are
+``abstract'' classes, describing the methods and semantics of molecules,
+atoms and bonds, but without defining an actual implementation.  Several
+implementations of OEMolBase are defined by the OEChem library including
+OESCMol (Single Conformer Molecule) for simple molecule processing, OETMol
+(Traversal Molecule) for fast looping, and OEDBMol (Database Molecule)
+for minimal memory usage.
+Additional OEMolBase implementations may also be provided by the user,
+which can then be used by many of the functions in the OEChem Library.
+
+<P>
+An OEMCMolBase is a multi-conformer extension of an OEMolBase.  The
+OEMCMolBase inherits from a OEMolBase and also contains OEConfBases, which
+are additional sets of coordinates to represent conformers or depictions.
+There may soon be multiple implementations of an OEMCMolBase, but
+currently the only implementation is the OEMCMol, which holds a
+3-dimensional Cartesian representation of the coordinates.  The underlying
+OEMCMolBaseT implementation is templatized on the coordinate representation,
+and is currently implemented with both float and double coordinates (although
+float coordinates are the default).
+
+<P>
+An OEMolBase representing a molecule can be thought of as containing a
+(possibly empty) set of atoms represented by OEAtomBases, and a
+(possibly empty) set of bonds represented by OEBondBases.  Each
+OEAtomBase and OEBondBase belongs to a single OEMolBase, its parent.
+It is not possible for an OEAtomBase or an OEBondBase to be
+simultaneously part of two distinct molecules.  Similarly, an OEMCMolBase,
+which inherits from an OEMolBase may contain atoms and bonds.  In addition,
+is can contain a (possibly empty) set of conformers represented by
+OEConfBases.  Each OEConfBase belongs to a single parent.  The OEAtomBases,
+OEBondBases, and OEConfBases currently implemented cannot be created
+outside of the context of a parent molecule.
+
+<P>
+An OEBondBase (typically) represents a covalent/dative bond between two
+OEAtomBases.
+
+<P>
+OEMolBase, OEAtomBase, OEBondBase, OEMCMolBases, and OEConfBases are all
+themselves derived from a more primitive class OEBase.  The methods of the
+OEBase class allow arbitrary data to be associated with an object, using a
+tag- value pair mechanism.  Thus for simple extensions of molecules, atoms,
+or bonds, one can simply use this arbitrary data method to associate
+additional data with the classes, rather than needing to derive or wrap a
+new molecule, atom, or bond class.
+
+<P>
+Since all of the classes discussed so far are abstract (<I>e.g.</I> - they
+define
+only an interface), they cannot be explicitly instantiated by a user, rather
+they can only be associated with pointers or references to objects.  For
+users who desire detailed control of their own memory, this is a
+convenience, however for ease of use we have designed some concrete wrapper
+classes.  These classes are the OEGraphMol,OEQMol and OEMol, which correspond to
+the OEMolBase and OEMCMolBase respectively.  OEGraphMols and OEMols can be
+declared by users and should be the primary molecules used in most
+high-level OEChem code.  Any OEChem function which is defined for
+OEMolBases is also defined for OEGraphMols, and an OEGraphMol can be
+passed to any function which takes an OEMolBase argument.  Similarly OEMols
+have the same API as OEMCMolBases and can be passed to any function which
+takes and OEMCMolBase or OEMolBase.  Above we spoke of several different
+implementations of OEMolBases.  The different implementations of
+OEMolBases.  The different implementations can be obtained by using an
+unsigned int argument in the OEGraphMol, OEQMol, and OEMol constructors.
+Finally, these concrete classes act as smart pointers around the
+implementations of the abstract classes, so there is no need for a user to
+clean up memory used by these versions of the molecules.
+
+<P>
+For efficiency, function parameters should never specify the concrete
+classes.  Instead, they should always be declared using the corresponding
+abstract-base classes.  For instance, rather than:
+
+<P>
+<dl><dd><pre class="verbatim">void fcn(const OEGraphMol &amp;mol)
+{
+  ...
+}
+</pre></dl>
+
+<P>
+one should use:
+<dl><dd><pre class="verbatim">void fcn(const OEMolBase &amp;mol)
+{
+ ...
+}
+</pre></dl>
+
+<P>
+Either of these functions call be called with either an instance of an
+OEGraphMol or a reference to an OEMolBase, however, the latter may be more
+efficient.
+
+<P>
+Since OEAtomBases, OEBondBases, and OEConfBases can only be accessed
+through their parent molecules, there is no need for concrete instances of
+these classes.  In OEChem, these three classes are accessed via pointers to
+the respective base classes, or through the iterator interface discussed
+elsewhere.
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node269.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node269.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node271.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node269.html">33. Design Decisions</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node269.html">33. Design Decisions</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node271.html">33.2 Objects and Free-Functions</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

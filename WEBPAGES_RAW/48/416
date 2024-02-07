@@ -1,0 +1,62 @@
+// MouseGUI.java applet for ICS21/80J
+
+// By N. Jacobson 11/02 to demonstrate event handling via a full GUI stand-alone interface
+// Minor update 3/09 by N. Jacobson to use EXIT_ON_CLOSE
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+
+public class MouseGUI
+{
+	public static void main(String[] args)
+	{
+		// Make a panel with the rectangle in it
+		RectanglePanel rectPanel = new RectanglePanel();
+
+		// Make a frame that
+		// ...closes on exit
+		// ...has rectPanel as its content pane (pane that holds all the UI components)
+		// ...pack it so the frame is just the right size to hold the rectangle panel
+		// Then display the pane
+		JFrame appFrame = new JFrame();
+		appFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		appFrame.setContentPane(rectPanel);
+		appFrame.pack();
+		appFrame.setVisible(true);
+	}
+
+}
+
+// Make and paint a panel that containsa rectangle
+class RectanglePanel extends JPanel
+{
+	private Rectangle box;
+
+	public RectanglePanel()
+	{
+		addMouseListener(
+			new MouseAdapter()
+			{
+				public void mousePressed(MouseEvent event)
+				{
+					int x = event.getX();
+					int y = event.getY();
+					box.setLocation(x,y);
+					repaint();
+				}
+			}
+		);
+		setPreferredSize(new Dimension(300,300));
+		box = new Rectangle(100,100,20,30);
+	}
+
+	// This is an overridden method from SWING to paint the panel
+	public void paintComponent(Graphics g)
+	{
+		super.paintComponent(g);		//must call to remove any previous content of panel
+		Graphics2D g2 = (Graphics2D)g;
+		g2.draw(box);
+	}
+}

@@ -1,0 +1,90 @@
+/*
+ * 4nbg - solve alternate formulation of 4/n problem.
+ * David Eppstein, UC Irvine, 26 Oct 1998
+ *
+ * 4/n = 1/x + 1/y + 1/z can be solved if we can find b and g s.t.
+ * b+g = 0 mod (-n mod 4bg): From any solution b, g,
+ * let a = (b+g)/(-n mod 4bg), f = (an+b)/g, c = (f+1)/4ab.
+ * Then 4/n = 1/abcn + 1/bcg + 1/acgn.
+ *
+ * Not all solutions to 4/n = 1/x + 1/y + 1/z look like this,
+ * even when n is prime, but this seems to work for many n.
+ *
+ * There never exist solutions b and g when n is square (apparently this
+ * is related to a 1956 paper by A. Schinzel cited in the section of
+ * Unsolved Problems in Number Theory on the 4/n problem).  But they
+ * also do not exist for certain other special values of n: 288, 336,
+ * and 4545 (and no others less than a million).  What are these numbers?
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int euclid(long long a, long long b) {
+  if (a > b) return euclid(b,a);
+  else if (a == 0) return b;
+  else return euclid(b % a, a);
+}
+
+void out4n(long long n, long long b, long long g)
+{
+  long long a,c,f,k,m;
+  m = (-n) % (4*b*g);
+  if (m <= 0) m += 4*b*g;
+  a = (b+g)/m;
+  if (euclid(a,b) != 1) return; /* filter duplicate solutions */
+  f = (a*n+b)/g;
+  c = (f+1)/(4*a*b);
+  k = a*b*c;
+  printf("4/%lld = 1/%lld + 1/%lld + 1/%lld\n", n, b*c*g, k*n, a*c*g*n);
+}
+
+void findBG(long long n)
+{
+  long long b,g;
+  for (b = 1; b*b < n; b++)
+    for (g = b; 4*g*b < 2*n; g++) {
+      long long m = (-n) % (4*b*g);
+      if (m <= 0) m += 4*b*g;
+      if ((b+g) % m == 0) out4n(n,b,g);
+    }
+}
+
+static int nout = 0;
+static long long sqroot = 1;
+
+void testBG(long long n)
+{
+  long long b,g;
+  if (sqroot * sqroot == n) {
+    sqroot++;
+    return;
+  }
+  for (b = 1; b*b < n; b++)
+    for (g = b; 4*g*b <= 2*n; g++) {
+      long long m = (-n) % (4*b*g);
+      if (m <= 0) m += 4*b*g;
+      if ((b+g) % m == 0) return;
+    }
+  printf("%lld", n);
+  if (++nout == 5) {
+    printf("\n"); nout = 0;
+  }
+  else printf(" ");
+  fflush(stdout);
+}
+
+main(int ac, char **av) {
+  long long i,n;
+
+  if (ac != 2) {
+    printf("usage: 4nbg n expands 4/n; 4nbg -n finds exceptional values up to n\n");
+    exit(0);
+  }
+  n = atoll(av[1]);
+  if (n > 0) findBG(n);
+  else {
+    for (i = 1; i <= -n; i++) testBG(i);
+    if (nout > 0) printf("\n");
+  }
+}

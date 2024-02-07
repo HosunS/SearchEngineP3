@@ -1,0 +1,87 @@
+-- BST.hs
+-- CompSci 141 / CSE 141 / Informatics 101 Spring 2013
+-- Project #3
+--
+-- An implementation of a binary search tree in Haskell.  This implementation
+-- in functional, meaning that functions like bstAdd don't change an existing
+-- tree, but instead return a new tree that is equivalent to the one given
+-- except that a new element has been added to it.
+
+module BST where
+
+
+-- This is an algebraic data type.  It says that BST is a new type
+-- of data, which comes in two forms: an EmptyBST or a BSTNode,
+-- which has four fields, listed not as names but as types (i.e.,
+-- what kinds of fields it holds, rather than names for the fields).
+-- 
+-- The "k v" that follows "data BST" is the Haskell way of specifying
+-- a generic type; in other words, we've said that different BSTs can
+-- have different kinds of keys and values.  The appearance of k and
+-- v in the rest of the data declaration is a way of saying, for
+-- example, that the first field of a BSTNode is the same type as the
+-- type of key in the BST; the second field is the same as the type
+-- of value; and the third and fourth fields are additional BSTs (the
+-- left and right subtrees) with the same kind of key and the same kind
+-- of value as this one.
+--
+data BST k v = EmptyBST
+             | BSTNode k v (BST k v) (BST k v)
+               deriving (Eq, Show)
+
+
+-- Adds a new key/value pair to a binary search tree.  Note that
+-- this function (and the others) restrict the type k to be one
+-- that is a member of the type class Ord; this is analogous to
+-- what we did in Java when we said BinarySearchTree<K extends
+-- Comparable<K>, V>.  This is what allows us to use the <, >,
+-- and == operators to compare keys.
+--
+bstAdd :: Ord k => k -> v -> (BST k v) -> (BST k v)
+bstAdd key value EmptyBST                = BSTNode key value EmptyBST EmptyBST
+bstAdd key value (BSTNode nk nv nl nr)
+	| key < nk                           = BSTNode nk nv (bstAdd key value nl) nr
+	| key > nk                           = BSTNode nk nv nl (bstAdd key value nr)
+	| key == nk                          = error "Duplicate key"
+
+
+
+-- Lookups up the value associated with a key.
+--
+bstLookup :: Ord k => k -> (BST k v) -> v
+bstLookup key EmptyBST                   = error "Key not found"
+bstLookup key (BSTNode nk nv nl nr)
+	| key < nk                           = bstLookup key nl
+	| key > nk                           = bstLookup key nr
+	| key == nk                          = nv
+
+
+-- Removes the given key and its value.
+--
+bstRemove :: (Eq v, Ord k) => k -> (BST k v) -> (BST k v)
+bstRemove key EmptyBST                   = error "Key not found"
+bstRemove key (BSTNode nk nv nl nr)
+	| key < nk                           = BSTNode nk nv (bstRemove key nl) nr
+	| key > nk                           = BSTNode nk nv nl (bstRemove key nr)
+	| nl == EmptyBST && nr == EmptyBST   = EmptyBST
+	| nl /= EmptyBST && nr == EmptyBST   = nl
+	| nl == EmptyBST && nr /= EmptyBST   = nr
+	| otherwise                          = BSTNode maxkey maxval nlWithoutMax nr
+			where (BSTNode maxkey maxval _ _)   = bstFindMax nl
+			      nlWithoutMax                  = bstRemoveMax nl
+
+
+-- Utilities for use in implementing bstRemove.
+
+bstFindMax :: (BST k v) -> (BST k v)
+bstFindMax (BSTNode nk nv nl EmptyBST)   = BSTNode nk nv nl EmptyBST
+bstFindMax (BSTNode nk nv nl nr)         = bstFindMax nr
+
+
+bstRemoveMax :: (BST k v) -> (BST k v)
+bstRemoveMax (BSTNode nk nv nl EmptyBST) = nl
+bstRemoveMax (BSTNode nk nv nl nr)       = BSTNode nk nv nl (bstRemoveMax nr)
+
+
+
+-- *** Add your implementation of bstToList and bstCount below. ***

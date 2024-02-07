@@ -1,0 +1,289 @@
+Minutes 4/13/99
+
+Attending: Judy Slein, Geoff Clemm, Jim Davis, Jim Whitehead, Tyson Chihaya, Pete Carlson
+
+ACTION ITEMS
+
+Geoff: Confirm with Yaron that he can accept the proposed semantics for MOVE.
+Geoff: Draft a definition of "binding".
+Geoff: Send a note to WebDAV discussing forests of references.
+Geoff: Send a note to WebDAV describing his MKRESOURCE proposal.
+
+Jim W: Write up rationale for not using the approach of a separate URL for the reference.
+
+Judy: Revise spec in time for review before next week's meeting.
+
+ISSUES TO REVISIT NEXT WEEK:
+
+Semantics of COPY for collections
+Semantics of MOVE
+Server-maintained orderings
+MKRESOURCE
+
+BINDINGS
+
+Poll: Geoff: bindings now (direct references eventually), Jim D: bindings, Judy: either way,
+Jim W: bindings
+Decision: We will replace direct references with bindings.
+
+SEMANTICS OF BINDINGS
+
+Semantics of bindings created with BIND are the same as for any other binding.
+
+DELETE: Just removes the one binding that was the request-URI.
+
+MOVE: Proposal to use Geoff's mailnote, which extends John Stracke's thought --
+
+A "MOVE source-URL target-URL" has the logical effect of a
+"BIND source-URL target-URL" followed by a "DELETE source-URL".
+This is logically equivalent to doing a "COPY source-URL target-URL",
+followed by a fixup stage that adjusts all the bindings to the source
+resource (except for source-URL) to be bindings to the new resource,
+followed by a "DELETE source-URL".
+
+Jim W wants to think about this.  RFC 2518 was intentionally designed to force a new 
+resource to be created on MOVE.  If you are in a repository where there is a consistent
+namespace, you could use bindings, but if part of the namespace maps to a medium with
+different characteristics, you want to create a new resource. E.g., in a Unix file system
+moving across file systems, you can't create a hard link.
+
+Geoff:  People really think of move as new name. So to implement that if you move a resource
+to another server, you will create a new resource and do fixup. But think of the cross 
+server case as a special case rather than the other way around.  There are ways that MOVE
+behaves very differently from COPY, for example, does the resource's id change, that's a key
+area where they shouldn't behave the same.
+
+Jim W: Doesn't want us to change semantics of move.  Geoff: Clarify what we are doing by 
+saying you can think of it either as BIND/DELETE or as COPY/fixup/DELETE, and describe fixup
+stage. Jim W: Saying that you can think of it as just BIND/DELETE violates the design 
+rationale for the original definition of MOVE.
+Geoff: The "logically equivalent to" clause in RFC 2518 means you don't have to create the 
+new resource, according to Yaron.  The end result just has to be as if you had done so.
+Geoff: Action item to confirm with Yaron that our proposal is ok. If Yaron is agrees, Jim W
+is ok with it.
+
+LOCK: Geoff proposes that we consider the set of bindings (segment name to resource) are 
+part of the state of the resource and so get locked when the resource gets locked.
+Jim W: Bindings are really relationships, so you can identify them at either end of the 
+relationship, and treat them as state of either object. RFC 2518 says that if you lock 
+a location in a namespace, this has side effects on the collection that contains that
+location. Geoff: Let's focus on locking the state, and assume that effects on collections 
+will be as before.  Jim W: ok for now.
+Geoff: The state of an advanced collection is just the segment names, not the absolute
+URLs. Whether there are multiple URLs for the collection above is orthogonal.
+
+CASE FOLDING
+
+Jim W: Should we address leftover issues from RFC 2518? In particular, how to handle case 
+mappings.  If a server is non-case-sensitive, the problem is how to define the collection so
+that any permutation is a member of the collection, but you don't list every permutation in
+response to a PROPFIND.  Geoff has already tried and failed, and recommends punting.  
+Case folding differs from one language to another, some letters are identical in one 
+language but not in another.  How to define delete across such cases?  Agreed: We'll punt
+on this issue.
+
+STATE OF A COLLECTION
+
+Geoff wonders:  What is the state of a collection?  What changes cause a change in
+modification date?  Can a collection have a body?  index.html. separate resource? 
+What is the response to a GET on a collection?  Is it a separate resource (gotten by a
+redirect)? Or can there be an actual body of the collection?  Jim D: GET on collection is
+usually html fabricated automatically by the server fabricates. Exactly how the body is
+implemented is irrelevant to us.  Jim W: machine-gen list is the body of the collection.
+
+Geoff wants a list of bindings to be part of the state of the collection, and any 
+add / delete /change to a binding changes the state of the collection, and changing the 
+state should affect modification date. Jim W is ok with that.  
+
+Geoff wants to differentiate between bindings, which he takes to be just the final segment
+of the URL, and collection members, which he takes to be absolute URLs.  He wants only the
+bindings to be part of the state of the collection, and the list of members (absolute URLs)
+*not* to be part of the collection's state.  So moving some
+collection above it in the hierarchy or adding a binding to a point higher in the hierarchy
+would not result in a change in the collection's state.
+
+Jim W: It was the intent that all members of a collection are relative URLs, though
+this was not explicit in RFC 2518.
+
+Jim D: The binding from a URL to a resource is never part of the state of the resource 
+itself -- the general rule subsumes this case.  Geoff: It would imply that the state of 
+a collection is not affected by a binding of that collection resource itself, but also 
+that the full URLs of immediate members are not part of the state of the collection either.
+
+Geoff; If we have a/b/c.html and b is bound to an advanced collection with just one member,
+and b contains only one binding (c.html to some resource), and if members of coll were 
+guaranteed to be just relative names, he would be happy.  But if a member is the full url 
+(a/b/c.html is the member) then he wants to be sure that mapping is not part of the
+state of b.
+
+Jim D: Members should always be relative urls -- otherwise you can't do relative pathnames,
+and can't have the same collection with 2 names.
+
+Agreed.
+
+Jim W: Thinks he sent mail last fall defining collection members as single path segments.
+
+Geoff: A problem with this approach may come with locking.  People want the absolute-URL-
+to-resource mapping to be locked, and so they tend to think of collections as having 
+absolute URLs as members.  Jim D: Don't worry about objections till someone raises them.
+
+OTHER ISSUES ABOUT BINDINGS
+
+It won't be possible to store properties on bindings. Agreed.
+
+You can't bind to a nonexistent resource. Agreed, this is true by definition.
+
+Down-level deletes make sense.  Agreed.
+
+Bindings are part of the state of collection. Agreed.
+
+Judy will make a pass through the spec converting direct references to bindings.
+
+REMAINING OPEN ISSUES
+
+DEFINITIONS
+
+We will not include a definition of reference.  We will define binding and redirect
+reference.  A binding is an association of a segment name to a resource -- Geoff will draft
+a definition and send it to the list.
+
+FORESTS OF REFERENCES
+
+Forests of references: Geoff thinks his distinction between mappings and bindings will help
+here.  He uses the term "mapping" for absolute-URL to resource relationships, and "binding"
+for relative-URL to resource relationships. The introduction of a second binding for a
+collection could produce a forest of new mappings, but no new bindings.  It certainly could
+produce no new resources.  Geoff will send out a mailnote to WebDAV discussing this.
+
+SEMANTICS OF COPY
+
+Geoff thinks COPY with Depth=0 will produce a copy of the advanced
+collection with all the same bindings as the source.
+Jim W and Judy think this is wrong.  As defined in RFC 2518, copying a collection with
+Depth=0 results in an empty collection.  Only the collection's properties get copied.
+Geoff: But if the list of bindings is part of the collection's state, it should get copied
+when the collection is copied. 
+
+Geoff: a LOCK with Depth=0 on collection prevents you from doing put into collection.  It
+affects your ability to do things to the collection members, so shouldn't COPY with Depth=0
+bring the members with it?
+
+Jim W: RFC 2518 says that collections must support COPY with Depth=0 and with Depth=infinity,
+No semantics for Depth=1 are specified.
+Geoff needs to be able to copy the bindings with the collection.  He thinks it's
+acceptable, though confusing, to use Depth=1 for this.  
+Jim W and Judy want bindings to apply to any collection, not just advanced collections.  So
+don't do anything that will break RFC 2518.  
+Geoff: It's strange just to copy a collection's properties, but it would be ok to define a
+Depth=1 COPY to use for copying members with the collection.
+
+If on Depth=0 COPY we copy bindings, but not resources, is that consistent with RFC 2518?
+
+We'll revisit this issue next week.  
+
+COPY for redirect references: 
+Geoff: If you COPY an individual redirect reference, respond with 302.  But if you COPY
+an advanced collection that contains redirects, copy the redirects.
+Judy: This is contrary to the sentiment at IETF -- keep it simple, do everything the same 
+way.  
+Geoff: People will expect a new collection with redirects where approp.  
+Jim W dosn't have a strong feeling.
+Judy: We've discussed this ad nauseam, we just need to make a decision.
+Agreed: We'll go with Geoff's proposal.
+
+PASSTHROUGH WITH BOOLEAN VALUES
+
+Judy: Now we've just defined a case (COPY on a collection with redirect references) where the
+default semantics is *not* to pass the method through.  In order to get the non-default
+behavior, you would have to identify all the redirect references and copy their targets each
+individually.  So it would be useful to have No-Passthrough=F in this case to get the non-
+default behavior in one request.
+
+Geoff: There may be other cases in the future where we want the default semantics to be
+No-Passthrough, so providing boolean values is a good idea.  It gives us the freedom to 
+choose whatever default we want.
+
+Everybody likes the idea of renaming the header Passthrough to avoid the double negative
+and giving it boolean values.
+
+SEPARATE URL TO AFFECT REFERENCE
+
+Jim has discussed this issue with Roy and will write up rationale for not accepting this
+suggestion.
+
+Decision: No.
+
+GENERIC CREATION METHOD
+
+Geoff proposes using a generic MKRESOURCE method instead of MKREF.  This would be used to
+create resources of any new types (and maybe also existing types).
+
+Jim W: You may want to do access control per type of resource, and that would be easier if
+you had a different creation method for each resource type.
+Judy: Is it that much harder to figure out the resource type from a header?
+Geoff: Prefers to include the resource type in an XML body.
+Jim W: Follow the principle of separation of concerns? Separate concerns by having a 
+separate method for each resource type.
+Geoff's product tried using separate creation methods and had to switch after the product
+was in the field.
+Jim W is willing to try it, but there was opposition in the past. Marshalling will be tricky.
+
+Geoff also wants to propose that there be an XML body, to allow a client to initialize 
+properties at the same time the resource is created.  The body would be identical to 
+PROPPATCH's body. In versioning, there are stages in the creation of some things, and to 
+insure integrity, you need to initialize properties when you create the object.
+
+Questions: Is resourcetype required? Is it part of the proppatch body?  Can the new method
+be used to create collections instead of MKCOL? Is contenttype required?
+Before, resourcetype was readonly.  This would make it writeable. 
+
+PROPPATCH is very different from resource creation. Don't blend them. 
+
+Geoff also wants overwrite to be possible.
+Jim W: Doesn't want there to be side effects of setting properties. Geoff thinks that
+creating resource and specifying its state is cleaner than letting server guess what its
+state should be and patching it later.
+
+Geoff: Would like to see us use MKRESOURCE even if the versioning team was not considering
+doing so.
+
+Jim D and Jim W: send description to webDAV, then if they are ok with it, we can do it
+
+Geoff will send out a proposal this week.
+
+The spec will continue to use MKREF for now.
+
+MKREF OVERWRITE
+
+Should we allow MKREF to overwrite an existing resource? What if the existing resource is 
+not a reference?  
+
+BIND can overwrite an existing binding, and if in doing that you destroy the last binding to
+a resource, the resource goes away.  
+
+MKREF should be similar to PUT.  With PUT, you could prevent it from overwriting an existing
+resource by including If-Match: *.  That won't work for MKREF because there is no entity
+tag to check.  We could introduce a new header to prevent an overwrite.  We could just use
+the Overwrite header defined in RFC 2518.  It has boolean values.
+
+Decision: By default MKREF does overwrite an existing resource at the request-URI.  
+Overwrite: F can be used with MKREF to prevent it from overwriting.  
+
+SERVER-MAINTAINED ORDERINGS
+
+Leave on the list a while longer.  See if they agree that DASL is the answer.
+
+RESPONSE TO GET WITH NO-PASSTHROUGH
+
+Jim W: How should a server respond to GET with No-Passthrough?  We shouldn't use 
+204 (No Content) because it was intended for use with POST.  204 gets returned if submitted 
+form content and don't want the display to update. 
+If there's no content there, can't update anyway.  
+We could specify 200 (OK) with Content-Length=0 and no Content-Type.  We could rule it out 
+of order.  
+What if a server wants to define content that it will return, similarly to GET on a 
+collection today?  
+
+Decision: Leave it undefined.  
+
+ORDERPATCH: should be atomic, just as PROPPATCH is.

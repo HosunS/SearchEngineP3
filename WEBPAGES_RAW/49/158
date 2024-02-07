@@ -1,0 +1,129 @@
+#    paper:  On a multiplicative algorithm for computing Bayesian D-optimal designs
+#  contact:  Yaming Yu, Department of Statistics, UC Irvine 
+#  
+#  w=bayesD(A, prior, maxiter, small, alpha, alg)
+#  
+#  required input
+#    A: r by n by m by m array of information matrices
+#    (r: number of support points of the prior pi(theta) 
+#    (n: number of design points)
+#    (m: dimension of parameter)
+#    prior: 1 by r, weights on the information matrices 
+#  
+#  optional input 
+#    maxiter: maximum number of iterations (default=1000)
+#    small: convergence threshold (default=1e-5)
+#    alpha: overrelaxation parameter (default=0, no overrelaxation) 
+#    alg: choice of algorithm (default=1, cocktail algorithm) 
+#  
+#  output
+#    w: optimal weights (1 by n)
+
+deri=function(d, M, diff, prior, ord=1){
+  ## calculating derivatives needed in the Newton line search 
+  r=dim(M)[1];
+  output=c(0,0); 
+  for(i in 1:r){
+    P=solve(as.matrix(M[i,,]+d*diff[i,,]));
+    mat=P%*%as.matrix(diff[i,,]);
+    output[1]=output[1] + sum(diag(mat))*prior[i]; 
+    if(ord==2)
+      output[2]=output[2] + sum(diag(mat%*%mat))*prior[i]; 
+  }
+  output; 
+} 
+
+bayesD=function(A, prior, maxiter=1000, small=1e-5, alpha=0, alg=1){
+  if(alg==0)
+    print("Using the multiplicative algorithm only");
+  if(alg==1){
+    print("Using the cocktail algorithm:"); 
+    print("VDM + nearest neighbor exchange + multiplicative algorithm"); 
+  }
+  r=dim(A)[1];
+  n=dim(A)[2];
+  m=dim(A)[3];
+  w=1:n; 
+  if(alg>=1){
+    w[]=0;
+    w[floor(runif(m*2, 0, 1)*n)+1]=1;
+  }
+  w[w>0]=1/sum(w>0); ## starting design
+  index=1:n;
+  M=array(dim=c(r, m, m));
+
+  for(k in 1:maxiter){
+    ind=index[w>0];
+    for(i in 1:r){
+      M[i,,]=0
+      for(j in 1:length(ind))  
+        M[i,,]=M[i,,]+w[ind[j]]*A[i,ind[j],,];
+    }
+    lam=rep(0, n);
+    for(i in 1:r){ 
+      P=solve(as.matrix(M[i,,])); 
+      for(j in 1:n)
+        lam[j]=lam[j]+sum(diag(P%*%as.matrix(A[i,j,,])))*prior[i]; 
+    }
+    tmp=max(lam);
+    if(tmp<m+small) ## testing convergence
+      break; 
+
+    if(alg>=1){ ## VDM step
+      j2=max(index[tmp==lam]);
+      diff=A[,j2,,]-M[,,]; 
+      out=deri(0, M, diff, prior, 2); 
+      d=out[1]/(out[2]+1e-100);
+      d=min(1, max(0, d)); 
+      while(deri(d, M, diff, prior)[1]<0)
+        d=0.5*d; 
+      w=(1-d)*w;
+      w[j2]=w[j2]+d;
+      M=M+d*diff; 
+
+      ind=index[w>0];
+      for(j in 1:(length(ind)-1)){ ## nearest neighbor exchanges
+        j1=ind[j];
+        j2=ind[j+1];
+        diff=A[,j1,,]-A[,j2,,];
+        out=deri(0, M, diff, prior, 2);
+        d=out[1]/(out[2]+1e-100);
+        d=min(w[j2], max(-w[j1], d));
+        while(d*deri(d, M, diff, prior)[1]<0)
+          d=0.5*d;
+        w[j1]=w[j1]+d;
+        w[j2]=w[j2]-d;
+        M=M+d*diff; 
+      }
+    } 
+
+    if(alg==0){ ## multiplicative step
+      a=alpha*min(lam[ind])/2;
+      w[ind]=w[ind]*(lam[ind]-a)/(m-a);
+    }
+    if(alg>=1){ ## multiplicative step
+      ind=index[w>0];
+      lam=rep(0,length(ind));
+      for(i in 1:r){ 
+        P=solve(as.matrix(M[i,,]));
+        for(j in 1:length(ind))
+          lam[j]=lam[j]+sum(diag(P%*%as.matrix(A[i,ind[j],,])))*prior[i]; 
+      }
+      a=alpha*min(lam)/2; 
+      w[ind]=w[ind]*(lam-a)/(m-a); 
+    }
+    w[ind]=w[ind]/sum(w[ind]); ## redundant (numerical safeguard)
+  } ## end for
+
+  if(k==maxiter){
+    print("No convergence in");
+    print(maxiter);
+    print("iterations");
+  }else{
+    print("Convergence in");
+    print(k);
+    print("iterations");
+  } 
+  w; ## optimal weights (output)
+} 
+

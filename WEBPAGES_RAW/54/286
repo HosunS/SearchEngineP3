@@ -1,0 +1,1155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>Untitled</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (WinNT; I) [Netscape]">
+</HEAD>
+<BODY>
+
+<PRE>WEBDAV Working Group                                            J.A. Slein
+INTERNET-DRAFT                                                  Xerox Corporation
+&lt;draft-slein-www-dist-author-00.txt&gt;                            F. Vitali
+                                                                University of Bologna 
+                                                                E.J. Whitehead, Jr.
+                                                                U.C. Irvine
+                                                                D.G. Durand
+                                                                Boston University
+                                                                February 28, 1997
+
+Expires August 28, 1997
+
+
+
+</PRE>
+
+<H2 ALIGN=CENTER>Requirements for Distributed Authoring and Versioning
+</H2>
+
+<H2 ALIGN=CENTER>on the World Wide Web<BR>
+</H2>
+
+<H3>Status of this Memo<BR>
+</H3>
+
+<P>This document is an Internet draft. Internet drafts are working documents
+of the Internet Engineering Task Force (IETF), its areas and its working
+groups. Note that other groups may also distribute working information
+as Internet drafts.<BR>
+</P>
+
+<P>Internet Drafts are draft documents valid for a maximum of six months
+and can be updated, replaced or obsoleted by other documents at any time.
+It is inappropriate to use Internet drafts as reference material or to
+cite them as other than as &quot;work in progress&quot;. <BR>
+</P>
+
+<P>To learn the current status of any Internet draft please check the &quot;lid-abstracts.txt&quot;
+listing contained in the Internet drafts shadow directories on ftp.is.co.za
+(Africa), nic.nordu.net (Europe), munnari.oz.au (Pacific Rim), ds.internic.net
+(US East coast) or ftp.isi.edu (US West coast). Further information about
+the IETF can be found at URL: http://www.ietf.org/<BR>
+</P>
+
+<P>Distribution of this document is unlimited. Please send comments to
+the WWW Distributed Authoring and Versioning (WebDAV) mailing list, &lt;w3c-dist-auth@w3.org&gt;,
+which may be joined by sending a message with subject &quot;subscribe&quot;
+to &lt;w3c-dist-auth-request@w3.org&gt;. Discussions are archived at URL:
+http://www.w3.org/pub/WWW/Archives/Public/w3c-dist-auth/. </P>
+
+<H3>Abstract<BR>
+</H3>
+
+<P>Current World Wide Web (WWW or Web) standards provide simple support
+for applications which allow remote editing of typed data. In practice,
+the existing capabilities of the WWW have proven inadequate to support
+efficient, scalable remote editing free of overwriting conflicts. This
+document presents a list of features in the form of requirements </P>
+
+<P>which, if implemented, would improve the efficiency of common remote
+editing operations, provide a locking mechanism to prevent overwrite conflicts,
+improve relationship management support between non-HTML data types, provide
+a simple attribute-value metadata facility, provide for the creation and
+reading of container data types, and integrate versioning into the WWW.</P>
+
+<H3>1. Introduction<BR>
+</H3>
+
+<P>This document describes functionality which, if standardized in the
+context of the WWW, would allow tools for remote loading, editing and saving
+(publishing) of various media types on the WWW to interoperate with any
+compliant Web server. As much as possible, this functionality is described
+without suggesting a proposed implementation, since there </P>
+
+<P>are many ways to perform the functionality within the WWW framework.
+It could be implemented in extensions to HTTP, in a new protocol to be
+layered on top of HTTP, in additional MIME types, or some combination of
+these and other approaches. It is also possible that a single mechanism
+could simultaneously satisfy several requirements. <BR>
+</P>
+
+<P>This document is intended to reflect the consensus of the WWW Distributed
+Authoring and Versioning working group (WebDAV) as to the functionality
+that needs to be standardized to support distributed authoring and versioning
+on the Web. However, this version still has some elements that are being
+debated in the working group. The following elements are still under discussion:
+<BR>
+</P>
+
+<UL>
+<LI>Whether attribute search should be in scope </LI>
+
+<LI>Whether support for partial-resource locking is needed </LI>
+
+<LI>Whether other lock types besides write locks are needed </LI>
+
+<LI>Semantics of locking </LI>
+
+<LI>Semantics of copy / move for resources with attributes or relationships,
+as well as for collections and version graphs </LI>
+
+<LI>Implications of attributes, relationships, collections, and versioning
+for the HTTP DELETE method </LI>
+
+<LI>Semantics of removing resources from collections </LI>
+
+<LI>How to balance the goal of simplicity for clients against the wish
+to allow versioning servers to implement a variety of versioning policies
+</LI>
+
+<LI>Whether reservations are apart from versioning, or whether they make
+sense only in versioning systems </LI>
+
+<LI>Whether diff / merge are needed </LI>
+
+<LI>Which requirements are mandatory, and which are optional for a server
+to implement in order to be WebDAV-compliant </LI>
+</UL>
+
+<H3>2. Rationale<BR>
+</H3>
+
+<P>Current Web standards contain functionality which enables the editing
+of Web content at a remote location, without direct access to the storage
+media via an operating system. This capability is exploited by several
+existing HTML distributed authoring tools, and by a growing number of mainstream
+applications (e.g., word processors) which allow users to </P>
+
+<P>write (publish) their work to an HTTP server. To date, experience from
+the HTML authoring tools has shown they are unable to meet their users'
+needs using the facilities of Web standards. The consequence of this is
+either postponed introduction of distributed authoring capability, or the
+addition of nonstandard extensions to the HTTP protocol [4] or other Web
+standards. These extensions, developed in isolation, are not interoperable.<BR>
+</P>
+
+<P>Other authoring applications have wanted to access document repositories
+or version control systems through Web gateways, and have been similarly
+frustrated. Where this access is available at all, it is through nonstandard
+extensions to HTTP or other standards that force clients to use a different
+interface for each vendor's service. <BR>
+</P>
+
+<P>This document describes requirements for a set of standard extensions
+to the Web that would allow distributed Web authoring tools to provide
+the functionality their users need by means of the same standard syntax
+across all compliant servers. The broad categories of functionality that
+need to be standardized are:<BR>
+</P>
+
+<UL>
+<LI>Attributes </LI>
+
+<LI>Relationships </LI>
+
+<LI>Locking </LI>
+
+<LI>Reservations </LI>
+
+<LI>Retrieval of Unprocessed Source </LI>
+
+<LI>Partial Write </LI>
+
+<LI>Name Space Manipulation </LI>
+
+<LI>Collections </LI>
+
+<LI>Versioning </LI>
+</UL>
+
+<H3>3. Terminology<BR>
+</H3>
+
+<P>Where there is overlap, usage is intended to be consistent with that
+in the HTTP 1.1 specification [4].<BR>
+</P>
+
+<DL>
+<DT>Attribute </DT>
+
+<DD><DFN>Named descriptive information about a resource.</DFN> </DD>
+
+<DT>Client </DT>
+
+<DD><DFN>A program which issues HTTP requests and accepts responses.</DFN>
+</DD>
+
+<DT>Collection </DT>
+
+<DD><DFN>A collection is a resource that contains other resources,either
+directly or by reference.</DFN> </DD>
+
+<DT>Distributed Authoring Tool </DT>
+
+<DD><DFN>A program which can retrieve a source entity via HTTP, allow editing
+of this entity, and then save/publish this entity to a server using HTTP.</DFN>
+</DD>
+
+<DT>Entity </DT>
+
+<DD><DFN>The information transferred in a request or response.</DFN> </DD>
+
+<DT>Hierarchical Collection </DT>
+
+<DD><DFN>A hierarchical organization of resources. A hierarchical collection
+is a resource that contains other resources, including collections, either
+directly or by reference.</DFN> </DD>
+
+<DT>Lock </DT>
+
+<DD><DFN>A mechanism for preventing anyone other than the owner of the
+lock from accessing a resource.</DFN> </DD>
+
+<DT>Member of Version Graph </DT>
+
+<DD><DFN>A resource that is a node in a version graph, and so is derived
+from the resources that precede it in the graph, and is the basis of those
+that succeed it.</DFN> </DD>
+
+<DT>Relationship </DT>
+
+<DD><DFN>A typed connection between two or more resources.</DFN> </DD>
+
+<DT>Reservation </DT>
+
+<DD><DFN>A declaration to the server that one intends to edit a resource.</DFN>
+</DD>
+
+<DT>Resource </DT>
+
+<DD><DFN>A network data object or service that can be identified by a URI.</DFN>
+</DD>
+
+<DT>Server </DT>
+
+<DD><DFN>A program which receives and responds to HTTP requests.</DFN>
+</DD>
+
+<DT>Server Attribute </DT>
+
+<DD><DFN>An attribute whose value is generated by the server.</DFN> </DD>
+
+<DT>User Agent </DT>
+
+<DD><DFN>The client that initiates a request.</DFN> </DD>
+
+<DT>User Attribute </DT>
+
+<DD><DFN>An attribute whose value is provided by a user or a user agent.
+</DFN></DD>
+
+<DT>Version Graph </DT>
+
+<DD><DFN>A directed acyclic graph with resources as its nodes, where each
+node is derived from its predecessor(s).</DFN> </DD>
+
+<DT>Write Lock </DT>
+
+<DD><DFN>A lock that prevents anyone except its owner from modifying the
+resource it applies to.</DFN> </DD>
+</DL>
+
+<H3>4. General Principles<BR>
+</H3>
+
+<P>This section describes a set of general principles that the WebDAV extensions
+should follow. These principles cut across categories of functionality.</P>
+
+<H4>4.1. User Agent Interoperability<BR>
+</H4>
+
+<P>All WebDAV clients should be able to work with any WebDAV-compliant
+HTTP server. It is acceptable for some client/server combinations to provide
+special features that are not universally available, but the protocol should
+be sufficient that a basic level of functionality will be universal. </P>
+
+<H4>4.2. Client Simplicity<BR>
+</H4>
+
+<P>The WebDAV extensions should be designed to allow client implementations
+to be simple. </P>
+
+<H4>4.3. Legacy Client Support<BR>
+</H4>
+
+<P>It should be possible to implement a WebDAV-compliant server in such
+a way that it can interoperate with non-WebDAV clients. Such a server would
+be able to understand any valid HTTP 1.1 request from an ordinary Web client
+without WebDAV extensions, and to provide a valid HTTP 1.1 response that
+does not require the client to understand the extensions. </P>
+
+<H4>4.4. Data Format Compatibility<BR>
+</H4>
+
+<P>WebDAV-compliant servers should be able to work with existing resources
+and URIs [2]. Special additional information should not become a mandatory
+part of document formats. </P>
+
+<H4>4.5. Replicated, Distributed Systems<BR>
+</H4>
+
+<P>Distribution and replication are at the heart of the Internet. All WebDAV
+extensions should be designed to allow for distribution and replication.
+Version trees should be able to be split across multiple servers. Collections
+may have members on different servers. Resources may have attributes on
+different servers. Any resources may be cached or replicated for mobile
+computing or other reasons. Consequently, the WebDAV extensions must be
+able to operate in a distributed, replicated environment. </P>
+
+<H4>4.6 Parsimony in Client-Server Interactions <BR>
+</H4>
+
+<P>The WebDAV extensions should keep to a minimum the number of interactions
+between the client and the server needed to perform common functions. For
+example, publishing a document to the Web will often mean publishing content
+together with related metadata. A client may often need to find out what
+version graph a particular resource belongs to, or to find out which resource
+in a version graph is the published one. The extensions should make it
+possible to do these things efficiently. </P>
+
+<H4>4.7. Alternate Transport Mechanisms<BR>
+</H4>
+
+<P>It may be desirable to transport WebDAV requests and responses by other
+mechanisms, particularly EMail, in addition to HTTP. The design of the
+WebDAV extensions should take alternative transports into account. </P>
+
+<H3>5. Requirements<BR>
+</H3>
+
+<P>In the requirement descriptions below, the requirement will be stated,
+followed by its rationale. </P>
+
+<H4>5.1. Attributes </H4>
+
+<H4>5.1.1. Functional Requirements<BR>
+</H4>
+
+<P>It must be possible to create, modify, query, read and delete arbitrary
+attributes on resources of any media type.<BR>
+</P>
+
+<P>Attributes are resources that may have attributes of their own, may
+be subject to content negotiation, etc.<BR>
+</P>
+
+<P>Attributes have implications for the semantics of move, copy, and delete
+operations. See &quot;5.7. Name Space Manipulation&quot; below. </P>
+
+<H4>5.1.2. Rationale <BR>
+</H4>
+
+<P>Attributes describe resources of any media type. They may include bibliographic
+information such as author, title, publisher, and subject, constraints
+on usage, PICS ratings, etc. These attributes have many uses, such as supporting
+searches on attribute values, enforcing copyrights, and the creation of
+catalog entries as placeholders for objects which are not available in
+electronic form, or which will be available later. </P>
+
+<H4>5.2. Relationships </H4>
+
+<H4>5.2.1. Functional Requirements<BR>
+</H4>
+
+<P>It must be possible to create, modify, query, read and delete typed
+relationships between resources of any media type.<BR>
+</P>
+
+<P>Relationships have implications for the semantics of move, copy, and
+delete operations. See &quot;5.7. Name Space Manipulation&quot; below.</P>
+
+<H4>5.2.2. Rationale <BR>
+</H4>
+
+<P>One type of relationship between resources is the hypertext link, which
+is browsable using a hypertext style point-and-click user interface. Relationships,
+whether they are browsable hypertext links, or simply a means of capturing
+a connection between resources, have many purposes. Relationships can support
+pushbutton printing of a multi-resource document in a prescribed order,
+jumping to the access control page for a resource, and quick browsing of
+related information, such as a table of contents, an index, a glossary,
+help pages, etc. While relationship support is provided by the HTML &quot;LINK&quot;
+element, this is limited only to HTML resources [1]. Similar support is
+needed for bitmap image types, and other non-HTML media types. </P>
+
+<H4>5.3. Locking </H4>
+
+<H4>5.3.1. General Principles<BR>
+</H4>
+
+<P><B>5.3.1.1. Independence of locks.</B> It must be possible to lock a
+resource without re-reading the resource, and without committing to editing
+the resource.<BR>
+</P>
+
+<P><B>5.3.1.2. Multi-Resource Locking.</B> It must be possible to take
+out a lock on multiple resources in the same action, and this locking operation
+must be atomic across these resources. <BR>
+</P>
+
+<P><B>5.3.1.3. Partial-Resource Locking.</B> It must be possible to take
+out a lock on a subsection of a resource.<BR>
+</P>
+
+<P><B>5.3.1.4. Optional Server Support for Locking.</B> Some systems use
+other mechanisms besides locking to ensure consistency in environments
+where several users may wish to edit a resource at once. These other strategies
+must be permitted. </P>
+
+<H4>5.3.2. Functional Requirements<BR>
+</H4>
+
+<P><B>5.3.2.1. Write Locks. </B>It must be possible to restrict modification
+of a resource to a specific person.<BR>
+</P>
+
+<P><B>5.3.2.2. Lock Query.</B> It must be possible to find out whether
+a given resource has any active modification restrictions, and if so, who
+currently has modification permission.<BR>
+</P>
+
+<P><B>5.3.2.3. Unlock.</B> It must be possible to remove a lock. Only the
+owner of a lock or a principal with appropriate access rights may remove
+the lock. </P>
+
+<H4>5.3.3. Rationale<BR>
+</H4>
+
+<P>At present, the Web provides limited support for preventing two or more
+people from overwriting each other's modifications when they save to a
+given URI. Furthermore, there is no way to discover whether someone else
+is currently making modifications to a resource. This is known as the &quot;lost
+update problem,&quot; or the &quot;overwrite problem.&quot; Since there
+can be significant cost associated with discovering and repairing lost
+modifications, preventing this problem is crucial for supporting distributed
+authoring. A write lock ensures that only one person may modify a resource,
+preventing overwrites. Furthermore, locking support is a key component
+of many versioning schemes, a desirable capability for distributed authoring.<BR>
+</P>
+
+<P>An author may wish to lock an entire web of resources even though he
+is editing just a single resource, to keep the other resources from changing.
+In this way, an author can ensure that if a local hypertext web is consistent
+in his distributed authoring tool, it will then be consistent when he writes
+it to the server. Because of this, it should be possible to take out a
+lock without also causing transmission of the contents of a resource.<BR>
+</P>
+
+<P>It is often necessary to guarantee that a lock or unlock operation occurs
+at the same time across multiple resources, a feature which is supported
+by the multiple-resource locking requirement. This is useful for preventing
+a collision between two people trying to establish locks on the same set
+of resources, since with multi-resource locking, one of the two people
+will get a lock. If this same multiple-resource locking scenario was repeated
+by using atomic lock operations iterated across the resources, the result
+would be a splitting of the locks between the two people, based on resource
+ordering and race conditions.<BR>
+</P>
+
+<P>Partial resource locking provides support for collaborative editing
+applications, where multiple users may be editing the same resource simultaneously.
+Partial resource locking also allows multiple people to simultaneously
+work on a database type resource. </P>
+
+<H4>5.4. Reservations </H4>
+
+<H4>5.4.1. Functional Requirements <BR>
+</H4>
+
+<P><B>5.4.1.1. Reserve.</B> It must be possible to notify the server that
+a resource is about to be edited by a given person.<BR>
+</P>
+
+<P><B>5.4.1.2. Reservation Query.</B> It must be possible to find out whether
+a given resource has any active reservations, and if so, who currently
+holds reservations.<BR>
+</P>
+
+<P><B>5.4.1.3. Release Reservation.</B> It must be possible to release
+the reservation. Only the owner of a reservation or a principal with appropriate
+access rights may release the reservation. </P>
+
+<H4>5.4.2. Rationale<BR>
+</H4>
+
+<P>Experience from configuration management systems has shown that people
+need to know when they are about to enter a parallel editing situation.
+Once notified, they either decide not to edit in parallel with the other
+authors, or they use out-of-band communication (face-to-face, telephone,
+etc.) to coordinate their editing to minimize the difficulty of merging
+their results. Reservations are separate from locking, since a write lock
+does not necessarily imply a resource will be edited, and a reservation
+does not carry with it any access restrictions. This capability supports
+versioning, since a check-out typically involves taking out a write lock,
+making a reservation, and getting the resource to be edited. </P>
+
+<H4>5.5. Retrieval of Unprocessed Source for Editing </H4>
+
+<H4>5.5.1. Functional Requirement<BR>
+</H4>
+
+<P>The source of any given resource must be retrievable. </P>
+
+<H4>5.5.2. Rationale<BR>
+</H4>
+
+<P>There are many cases where the source stored on a server does not correspond
+to the actual entity transmitted in response to an HTTP GET. Current known
+cases are server side include directives, and Standard Generalized Markup
+Language (SGML) source which is converted on the fly to HyperText Markup
+Language (HTML) [1] output entities. There are many possible cases, such
+as automatic conversion of bitmap images into several variant bitmap media
+types (e.g. GIF, JPEG), and automatic conversion of an application's native
+media type into HTML. As an example of this last case, a word processor
+could store its native media type on a server which automatically converts
+it to HTML. A GET of this resource would retrieve the HTML. Retrieving
+the source would retrieve the word processor native format.<BR>
+</P>
+
+<P>This requirement should be met by a general mechanism which can handle
+both the &quot;single-step&quot; source processing described above, where
+the source is converted into the transmission entity via a single conversion
+step, as well as &quot;multi-step&quot; source processing, where there
+are one or more intermediate processing steps and outputs. An example of
+multi-step source processing is the relationship between an executable
+binary image, its object files, and its source language files. It should
+be noted that the relationship between source and transmission entity could
+be expressed using the relationship functionality described above in &quot;5.2.
+Relationships.&quot; </P>
+
+<H4>5.6. Partial Write. </H4>
+
+<H4>5.6.1. Functional Requirement <BR>
+</H4>
+
+<P>After editing a resource, it must be possible to write only the changes
+to the resource, rather than retransmitting the entire resource. </P>
+
+<H4>5.6.2. Rationale<BR>
+</H4>
+
+<P>During distributed editing which occurs over wide geographic separations
+and/or over low bandwidth connections, it is extremely inefficient and
+frustrating to rewrite a large resource after minor changes, such as a
+one-character spelling correction. Support is needed for transmitting &quot;insert&quot;
+(e.g., add this sentence in the middle of a document) and &quot;delete&quot;
+(e.g. remove this paragraph from the middle of a document) style updates.
+Support for partial resource updates will make small edits more efficient,
+and allow distributed authoring tools to scale up for editing large documents.</P>
+
+<H4>5.7. Name Space Manipulation </H4>
+
+<H4>5.7.1. Copy </H4>
+
+<H4>5.7.1.1. Functional Requirements <BR>
+</H4>
+
+<P>It must be possible to duplicate a resource without a client loading,
+then resaving the resource. After the copy operation, the content of the
+destination resource must be octet for octet identical to the content of
+the source resource. A modification to either resource must not cause a
+modification to the other. The copy operation should leave an audit trail.<BR>
+</P>
+
+<P>It must be possible for a client to specify whether a resource's user
+attributes and relationships are to be copied with it, although the server
+may decline to copy them. It may decline to copy user attributes if the
+destination namespace supports different attributes from the source namespace,
+for example. The server may follow whatever policy it likes for copying
+server attributes.<BR>
+</P>
+
+<P>Copying a collection causes all of the resources that belong to it directly
+to be copied as well. For resources that belong to it by reference, the
+reference is copied. It must be possible for a client to specify whether
+subcollections should be copied with the collection. <BR>
+</P>
+
+<P>If a version graph is copied, all relationships between nodes in the
+graph must be changed in the new copy to reflect its new location. </P>
+
+<H4>5.7.1.2. Rationale<BR>
+</H4>
+
+<P>There are many reasons why a resource might need to be duplicated, such
+as changing ownership, preparing for major modifications, or making a backup.
+Due to network costs associated with loading and saving a resource, it
+is far preferable to have a server perform a resource copy than a client.
+If a copied resource records which resource it is a copy of, then it would
+be possible for a cache to avoid loading the copied resource if it already
+locally stores the original. </P>
+
+<H4>5.7.2. Move/Rename </H4>
+
+<H4>5.7.2.1. Functional Requirements <BR>
+</H4>
+
+<P>It must be possible to change the location of a resource without a client
+loading, then resaving the resource under a different name. After the move
+operation, the content of the resource at its new location must be octet
+for octet identical to the content of the prior resource. It must no longer
+be possible to access the resource at its original location. The move operation
+should leave an audit trail. <BR>
+</P>
+
+<P>It must be possible for a client to specify whether a resource's user
+attributes and relationships are to be moved with it, although the server
+may decline to move them. It may decline to move user attributes if the
+destination namespace supports different attributes from the source namespace,
+for example. The server may follow whatever policy it likes for server
+attributes.<BR>
+</P>
+
+<P>Moving a collection causes all of the resources that belong to it directly
+to be moved as well. For resources that belong to it by reference, the
+reference is moved. It must be possible for a client to specify whether
+subcollections should be moved with the collection. If not, subcollections
+that belong to the collection directly should be deleted from the source
+location.<BR>
+</P>
+
+<P>If a version graph is moved, all relationships between nodes in the
+graph must be changed in the destination resource to reflect its new location.</P>
+
+<H4>5.7.2.2. Rationale<BR>
+</H4>
+
+<P>It is often necessary to change the name of a resource, for example
+due to adoption of a new naming convention, or if a typing error was made
+entering the name originally. Due to network costs, it is undesirable to
+perform this operation by loading, then resaving the resource, followed
+by a delete of the old resource. Similarly, a single rename operation is
+more efficient than a copy followed by a delete operation. Note that moving
+a resource is considered the same function as renaming a resource. The
+audit trail makes it possible for the server to redirect client requests
+for the resource at its old location, perhaps with a &quot;301 Moved Permanently&quot;
+status code. </P>
+
+<H4>5.7.3. Delete<BR>
+</H4>
+
+<P>HTTP already provides a DELETE method, but the semantics of DELETE must
+be reconsidered once attributes, relations, collections, and versions are
+introduced.<BR>
+</P>
+
+<P>When a resource is deleted, it must be possible for a client to specify
+whether a its attributes are to be deleted with it. In an environment where
+resources may share the same attributes, the server may decline to delete
+the attributes.<BR>
+</P>
+
+<P>When a resource is deleted, the relationships in which it participates
+should also be deleted.<BR>
+</P>
+
+<P>If the resource being deleted is a collection, all resources that belong
+to it directly will be deleted as well. Resources that belong to it by
+reference are unaffected.<BR>
+</P>
+
+<P>If the resource being deleted is a member of a version graph, the predecessor
+and successor relationships in the graph must be updated, and any metadata
+required by the versioning server must be supplied. The versioning server
+may, for example, require a comment explaining the reason for the deletion.</P>
+
+<H4>5.8. Collections<BR>
+</H4>
+
+<P>A collection is a resource that is a container for other resources,
+including other collections. A resource may belong to a collection
+either directly or by reference. If a resource belongs to a collection
+directly, namespace operations like copy, move, and delete applied to
+the collection also apply to the resource. If a resource belongs to a
+collection by reference, namespace operations applied to the
+collection affect only the reference, not the resource itself. </P>
+
+<H4>5.8.1. Functional Requirements<BR>
+</H4>
+
+<P><B>5.8.1.1. List Collection.</B> A listing of all resources in a specific
+collection must be accessible.<BR>
+</P>
+
+<P><B>5.8.1.2. Make Collection.</B> It must be possible to create a new
+collection.<BR>
+</P>
+
+<P><B>5.8.1.3. Add to Collection.</B> It must be possible to add a resource
+to a collection directly or by reference.<BR>
+</P>
+
+<P><B>5.8.1.4. Remove from Collection.</B> It must be possible to remove
+a resource from a collection. In the case of a resource that belongs to
+the collection directly, this results in the resource being deleted. In
+the case of a resource that is merely referenced by the collection, only
+the reference is removed.<BR>
+</P>
+
+<P><B>5.8.1.5. </B>Collections have implications for the semantics of move,
+copy, and delete operations. See &quot;5.7. Name Space Manipulation&quot;
+above. </P>
+
+<H4>5.8.2. Rationale<BR>
+</H4>
+
+<P>In [2] it states that, &quot;some URL schemes (such as the ftp, http,
+and file schemes) contain names that can be considered hierarchical.&quot;
+Especially for HTTP servers which directly map all or part of their URL
+name space into a filesystem, it is very useful to get a listing of all
+resources located at a particular hierarchy level. This functionality supports
+&quot;Save As...&quot; dialog boxes, which provide a listing of the entities
+at a current hierarchy level, and allow navigation through the hierarchy.
+It also supports the creation of graphical visualizations (typically as
+a network) of the hypertext structure among the entities at a hierarchy
+level, or set of levels. It also supports a tree visualization of the entities
+and their hierarchy levels.<BR>
+</P>
+
+<P>In addition, document management systems may want to make their documents
+accessible through the Web. They typically allow the organization of documents
+into collections, and so also want their users to be able to view the collection
+hierarchy through the Web.<BR>
+</P>
+
+<P>There are many instances where there is not a strong correlation between
+a URL hierarchy level and the notion of a collection. One example is a
+server in which the URL hierarchy level maps to a computational process
+which performs some resolution on the name. In this case, the contents
+of the URL hierarchy level can vary depending on the input to the computation,
+and the number of resources accessible via the computation can be very
+large. It does not make sense to implement a directory feature for such
+a namespace. However, the utility of listing the contents of those URL
+hierarchy levels which do correspond to collections, such as the large
+number of HTTP servers which map their namespace to a filesystem, argue
+for the inclusion of this capability, despite not being meaningful in all
+cases. If listing the contents of a URL hierarchy level does not makes
+sense for a particular URL, then a &quot;405 Method Not Allowed&quot; status
+code could be issued. <BR>
+</P>
+
+<P>The ability to create collections to hold related resources supports
+management of a name space by packaging its members into small, related
+clusters. The utility of this capability is demonstrated by the broad implementation
+of directories in recent operating systems. The ability to create a collection
+also supports the creation of &quot;Save As...&quot; dialog boxes with
+&quot;New Level/Folder/Directory&quot; capability, common in many applications.</P>
+
+<H4>5.9. Versioning </H4>
+
+<H4>5.9.1. Background and General Principles<BR>
+</H4>
+
+<P><B>5.9.1.1. Stability of versions.</B> Most versioning systems are intended
+to provide an accurate record of the history of evolution of a document.
+This accuracy is ensured by the fact that a version eventually becomes
+&quot;frozen&quot; and immutable. Once a version is frozen, further changes
+will create new versions rather than modifying the original. In order for
+caching and persistent references to be properly maintained, a client must
+be able to determine that a version has been frozen. Any successful attempt
+to retrieve a frozen version of a resource will always retrieve exactly
+the same content, or return an error if that version (or the resource itself)
+is no longer available. </P>
+
+<H4>5.9.1.2. Operations for Creating New Versions<BR>
+</H4>
+
+<P>Version management systems vary greatly in the operations they require,
+the order of the operations, and how they are combined into atomic functions.
+In the most complete cases, the logical operations involved are: </P>
+
+<UL>
+<LI>Reserve existing version </LI>
+
+<LI>Lock existing version </LI>
+
+<LI>Retrieve existing version </LI>
+
+<LI>Request or suggest identifier for new version </LI>
+
+<LI>Write new version </LI>
+
+<LI>Release lock </LI>
+
+<LI>Release reservation </LI>
+</UL>
+
+<P>With the exception of requesting a new version identifier, all of these
+operations have applications outside of versioning and are either already
+part of HTTP or are discussed in earlier sections of these requirements.
+Typically, versioning systems combine reservation, locking, and retrieval
+-- or some subset of these -- into an atomic checkout function. They combine
+writing, releasing the lock, and releasing the reservation -- or some subset
+of these -- into an atomic checkin function. The new version identifier
+may be assigned either at checkout or at checkin.<BR>
+</P>
+
+<P>The WebDAV extensions must find some balance between allowing versioning
+servers to adopt whatever policies they wish with regard to these operations
+and enforcing enough uniformity to keep client implementations simple.</P>
+
+<H4>5.9.1.3. The Versioning Model<BR>
+</H4>
+
+<P>Each version typically stands in a &quot;derived from&quot; relationship
+to its predecessor(s). It is possible to derive several different versions
+from a single version (branching), and to derive a single version from
+several versions (merging). Consequently, the collection of related versions
+forms a directed acyclic graph. In the following discussion, this graph
+will be called a &quot;version graph&quot;. Each node of this graph is
+a &quot;version&quot; or &quot;member of the version graph&quot;. The arcs
+of the graph capture the &quot;derived from&quot; relationships.<BR>
+</P>
+
+<P>It is also possible for a single resource to participate in multiple
+version graphs.<BR>
+</P>
+
+<P>The WebDAV extensions must support this versioning model, though particular
+servers may restrict it in various ways.<BR>
+</P>
+
+<P><B>5.9.1.4. Versioning Policies.</B> Many writers, including Feiler
+[3] and Haake and Hicks [5], have discussed the notion of versioning styles
+(referred to here as versioning policies, to reflect the nature of client/server
+interaction) as one way to think about the different policies that versioning
+systems implement. Versioning policies include decisions on the shape of
+version histories (linear or branched), the granularity of change tracking,
+locking requirements made by a server, etc. The protocol should clearly
+identify the policies that it dictates and the policies that are left up
+to versioning system implementors or administrators.<BR>
+</P>
+
+<P><B>5.9.1.5.</B> It is possible to version resources of any media type.</P>
+
+<H4>5.9.2. Functional Requirements<BR>
+</H4>
+
+<P><B>5.9.2.1. Referring to a version graph.</B> There must be a way to
+refer to a version graph as a whole. <BR>
+</P>
+
+<P>Some queries and operations apply, not to any one member of a version
+graph, but to the version graph as a whole. For example, a client may request
+that an entire graph be moved, or may ask for a version history. In these
+cases, a way to refer to the whole version graph is required.<BR>
+</P>
+
+<P><B>5.9.2.2. Referring to a specific member of a version graph.</B> There
+must be a way to refer to each member of a version graph. This means that
+each member of the graph is itself a resource. <BR>
+</P>
+
+<P>Each member of a version graph must be a resource if it is to be possible
+for a hypertext link to refer to specific version of a page, or for a client
+to request a specific version of a document for editing.<BR>
+</P>
+
+<P><B>5.9.2.3.</B> A client must be able to determine whether a resource
+is a version graph, or whether a resource is itself a member of a version
+graph.<BR>
+</P>
+
+<P>A resource may be a simple, non-versioned resource, or it may be a version
+graph, or it may be a member of a version graph. A client needs to be able
+to tell which sort of resource it is accessing.<BR>
+</P>
+
+<P><B>5.9.2.4.</B> There must be a way to refer to a server-defined default
+member of a version graph.<BR>
+</P>
+
+<P>The server should return a default version of a resource for requests
+that ask for the default version, as well as for requests where no specific
+version information is provided. This is one of the simplest ways to guarantee
+non-versioning client compatibility. This does not rule out the possibility
+of a server returning an error when no sensible default exists.<BR>
+</P>
+
+<P>It may also be desirable to be able to refer to other special members
+of a version graph. For example, there may be a current version for editing
+that is different from the default version. For a graph with several branches,
+it may be useful to be able to request the tip version of any branch.<BR>
+</P>
+
+<P><B>5.9.2.5.</B> It must be possible, given a reference to a member of
+a version graph, to find out which version graph(s) that resource belongs
+to.<BR>
+</P>
+
+<P>This makes it possible to understand the versioning context of the resource.
+It makes it possible to retrieve a version history for the graphs to which
+it belongs, and to browse the version graph. It also supports some comparison
+operations: It makes it possible to determine whether two references designate
+members of the same version graph. <BR>
+</P>
+
+<P><B>5.9.2.6. Navigation of a version graph.</B> Given a reference to
+a member of a version graph, it must be possible to discover and access
+the following related members of the version graph. </P>
+
+<UL>
+<LI>root member of the graph </LI>
+
+<LI>predecessor member(s) </LI>
+
+<LI>successor member(s) </LI>
+
+<LI>default member of the graph </LI>
+</UL>
+
+<P>It must be possible in some way for a versioning client to access versions
+related to a resource currently being exhamined.<BR>
+</P>
+
+<P><B>5.9.2.7. Version Topology. </B>There must be a way to retrieve the
+complete version topology for a version graph, including information about
+all members of the version graph. The format for this information must
+be standardized so that the basic information can be used by all clients.
+Other specialized formats should be accomodated, for servers and clients
+that require information that cannot be included in the standard topology.<BR>
+</P>
+
+<P><B>5.9.2.8.</B> A client must be able to request that the server generate
+a version identifier for a new member of a version graph. Such an identifier
+will not be used by any other client in the meantime. The server may refuse
+the request.<BR>
+</P>
+
+<P><B>5.9.2.9.</B> A client must be able to propose a version identifier
+to be used for a new member of a version graph. The server may refuse to
+use the client's suggested version identifier.<BR>
+</P>
+
+<P><B>5.9.2.10.</B> A version identifier must be unique across a version
+graph.<BR>
+</P>
+
+<P><B>5.9.2.11.</B> A client must be able to supply version-specific metadata
+to be associated with a new member of a version graph. (See Section 5.1
+&quot;Attributes&quot; above.) At a minimum, it must be possible to associate
+comments with the new member, explaining what changes were made. <BR>
+</P>
+
+<P><B>5.9.2.12.</B> A client must be able to query the server for information
+about a version tree, including which versions are locked, which are reserved
+for editing, and by whom (Session Tracking). <BR>
+</P>
+
+<P><B>5.9.2.13.</B> It must be possible for a client to get from the server
+a list of the differences between two or more resources of the same media
+type.<BR>
+</P>
+
+<P><B>5.9.2.14.</B> A client must be able to request that the server merge
+two or more resources, and return the result of the merge to the client
+or store the result as a resource. Server support for this functionality
+is optional.<BR>
+</P>
+
+<P><B>5.9.2.15.</B> Versioning has implications for the semantics of move,
+copy, and delete operations. See &quot;5.7. Name Space Manipulation&quot;
+above. In addition, if the WebDAV extensions allow versioning servers to
+PUT or POST new members into a version graph, the semantics of those methods
+must be extended to encompass the new functionality. </P>
+
+<H4>5.9.3. Rationale<BR>
+</H4>
+
+<P>Versioning in the context of the world-wide web offers a variety of
+benefits:<BR>
+</P>
+
+<P>It provides infrastructure for efficient and controlled management of
+large evolving web sites. Modern configuration management systems are built
+on some form of repository that can track the revision history of individual
+resources, and provide the higher-level tools to manage those saved versions.
+Basic versioning capabilities are required to support such systems.<BR>
+</P>
+
+<P>It allows parallel development and update of single resources. Since
+versioning systems register change by creating new objects, they enable
+simultaneous write access by allowing the creation of variant versions.
+Many also provide merge support to ease the reverse operation.<BR>
+</P>
+
+<P>It provides a framework for coordinating changes to resources. While
+specifics vary, most systems provide some method of controlling or tracking
+access to enable collaborative resource development. <BR>
+</P>
+
+<P>It allows browsing through past and alternative versions of a resource.
+Frequently the modification and authorship history of a resource is critical
+information in itself.<BR>
+</P>
+
+<P>It provides stable names that can support externally stored links for
+annotation and link-server support. Both annotation and link servers frequently
+need to store stable references to portions of resources that are not under
+their direct control. By providing stable states of resources, version
+control systems allow not only stable pointers into those resources, but
+also well-defined methods to determine the relationships of those states
+of a resource. <BR>
+</P>
+
+<P>It allows explicit semantic representation of single resources with
+multiple states. A versioning system directly represents the fact that
+a resource has an explicit history, and a persistent identity across the
+various states it has had during the course of that history. </P>
+
+<H4>5.10. Authentication and Security<BR>
+</H4>
+
+<P>The WebDAV extensions should make use of existing authentication and
+security protocols. The WebDAV specification must state how the WebDAV
+extensions interoperate with existing authentication and security schemes.</P>
+
+<H3>6. Acknowledgements<BR>
+</H3>
+
+<P>Our understanding of these issues has emerged as the result of much
+thoughtful discussion, email, and assistance by many people, who deserve
+recognition for their effort.<BR>
+</P>
+
+<UL>
+<LI>Martin Cagan, Continuus Software, Marty_Cagan@continuus.com </LI>
+
+<LI>Steve Carter, Novell, srcarter@novell.com </LI>
+
+<LI>Dan Connolly, World Wide Web Consortium, connolly@w3.org </LI>
+
+<LI>Jim Cunningham, Netscape, jfc@netscape.com </LI>
+
+<LI>Mark Day, Lotus, Mark_Day@lotus.com </LI>
+
+<LI>Assad Faizi, Netscape, asad@netscape.com </LI>
+
+<LI>Ron Fein, Microsoft, ronfe@microsoft.com </LI>
+
+<LI>David Fiander, Mortice Kern Systems, davidf@mks.com </LI>
+
+<LI>Roy Fielding, U.C. Irvine, fielding@ics.uci.edu </LI>
+
+<LI>Yaron Goland, Microsoft, yarong@microsoft.com </LI>
+
+<LI>Phill Hallam-Baker, MIT, hallam@ai.mit.edu </LI>
+
+<LI>Dennis Hamilton, Xerox PARC, hamilton@parc.xerox.com </LI>
+
+<LI>Andre van der Hoek, University of Colorado, Boulder, andre@bigtime.cs.colorado.edu
+</LI>
+
+<LI>Del Jensen, Novell, dcjensen@novell.com </LI>
+
+<LI>Gail Kaiser, Columbia University, kaiser@cs.columbia.edu </LI>
+
+<LI>Rohit Khare, World Wide Web Consortium, khare@w3.org </LI>
+
+<LI>Dave Long, America Online, dave@sb.aol.com </LI>
+
+<LI>Henrik Frystyk Nielsen, World Wide Web Consortium, frystyk@w3.org </LI>
+
+<LI>Ora Lassila, Nokia Research Center, ora.lassila@research.nokia.com
+</LI>
+
+<LI>Larry Masinter, Xerox PARC, masinter@parc.xerox.com </LI>
+
+<LI>Murray Maloney, SoftQuad, murray@sq.com </LI>
+
+<LI>Jim Miller, World Wide Web Consortium, jmiller@w3.org </LI>
+
+<LI>Keith Moore, University of Tennessee, Knoxville, moore@cs.utk.edu </LI>
+
+<LI>Andrew Schulert, Microsoft, andyschu@microsoft.com </LI>
+
+<LI>Christopher Seiwald, Perforce Software, seiwald@perforce.com </LI>
+
+<LI>Einar Stefferud, stef@nma.com </LI>
+
+<LI>Richard Taylor, U.C. Irvine, taylor@ics.uci.edu </LI>
+
+<LI>Robert Thau, MIT, rst@ai.mit.edu </LI>
+</UL>
+
+<H3>7. References</H3>
+
+<P>[1] T. Berners-Lee, D. Connolly, &quot;HyperText Markup Language Specification
+- 2.0&quot;, RFC 1866, MIT/LCS, November 1995.</P>
+
+<P>[2] T. Berners-Lee, L. Masinter, M. McCahill. &quot;Uniform Resource
+Locators (URL)&quot;, RFC 1738, CERN, Xerox PARC, University of Minnesota,
+December 1994.</P>
+
+<P>[3] P. Feiler, &quot;Configuration Management Models in Commercial Environments&quot;,
+Software Engineering Institute Technical Report CMU/SEI-91-TR-7, &lt;http://www.sei.cmu.edu/products/publications/91.reports/91.tr.007.html&gt;
+</P>
+
+<P>[4] R. Fielding, J. Gettys, J. C. Mogul, H. Frystyk, and T. Berners-Lee,
+&quot;Hypertext Transfer Protocol -- HTTP/1.1&quot;, RFC 2068, U.C. Irvine,
+DEC, MIT/LCS, January 1997.</P>
+
+<P>[5] A. Haake, D. Hicks, &quot;VerSE: Towards Hypertext Versioning Styles&quot;,
+Proc. Hypertext'96, The Seventh ACM Conference on Hypertext, 1996, pages
+224-234. </P>
+
+<H3>8. Authors' Addresses</H3>
+
+<PRE>Judith Slein
+Xerox Corporation
+800 Phillips Road 128-29E
+Webster, NY 14580
+
+EMail: slein@wrc.xerox.com
+
+Fabio Vitali
+Department of Computer Science
+University of Bologna
+ITALY
+
+EMail: fabio@cs.unibo.it
+
+E. James Whitehead, Jr.
+Department of Information and Computer Science
+University of California
+Irvine, CA 92697-3425
+
+Fax: 714-824-4056
+EMail: ejw@ics.uci.edu
+
+David G. Durand
+Department of Computer Science
+Boston University
+Boston, MA
+
+EMail: dgd@cs.bu.edu
+
+</PRE>
+
+<P>Expires August 28, 1997 </P>
+
+<P><BR>
+</P>
+
+</BODY>
+</HTML>
+

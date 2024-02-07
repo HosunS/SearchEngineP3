@@ -1,0 +1,109 @@
+<!-- received="Tue Sep  3 16:42:00 1996 PDT" -->
+<!-- sent="Tue, 3 Sep 1996 16:38:20 -0700" -->
+<!-- name="Christopher Seiwald" -->
+<!-- email="seiwald@perforce.com" -->
+<!-- subject="Re: Seiwald Q &amp; A -- "GET for EDIT" cookies" -->
+<!-- id="199609032338.QAA04312@spice.perforce.com" -->
+<!-- inreplyto="Seiwald Q &amp; A -- "GET for EDIT" cookies" -->
+<title>Archive of Working Group on Versioning and Configuration Management of World Wide Web Content: Re: Seiwald Q &amp; A -- "GET for EDIT" cookies</title>
+<h1>Re: Seiwald Q &amp; A -- "GET for EDIT" cookies</h1>
+<b>Christopher Seiwald</b> (<a href="mailto:seiwald@perforce.com"><i>seiwald@perforce.com</i></a>)<br>
+<i>Tue, 3 Sep 1996 16:38:20 -0700</i>
+<p>
+<ul>
+<li> <b>Messages sorted by:</b> <a href="index.html#150">[ date ]</a><a href="thread.html#150">[ thread ]</a><a href="subject.html#150">[ subject ]</a><a href="author.html#150">[ author ]</a>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0151.html">Robert S. Thau: "Re: Seiwald Q &amp; A -- "GET for EDIT" cookies"</a>
+<li> <b>Previous message:</b> <a href="0149.html">Roy T. Fielding: "Re: Seiwald Q &amp; A -- "GET for EDIT" cookies"</a>
+<!-- nextthread="start" -->
+<!-- reply="end" -->
+</ul>
+<hr>
+<!-- body="start" -->
+<pre>
+| From: "Roy T. Fielding" &lt;<a href="mailto:fielding@liege.ICS.UCI.EDU">fielding@liege.ICS.UCI.EDU</a>&gt;
+|
+| &gt; 	Now Roy Fielding says that Content-Version is opaque and could
+| &gt; 	be used exactly for this purpose, 'cause no one would be the wiser
+| &gt; 	if the Content-Version were different for each checkout of the
+| &gt; 	same document.  This is true, but now the names of these fields
+| &gt; 	are losing their meaning, no?  If it's checkout context, call it
+| &gt; 	"Checkout-Context" (or "Checkout-Cookie").
+|
+| Checkout does not have meaning on all systems, whereas version has a generic
+| meaning (at times, too generic). It is intended to be as flexible as possible.
+| The "Content-" prefix is a requirement of MIME for what HTTP calls
+| entity-header field names.
+
+Not to beat a dead horse (but this one's still kicking):
+
+I'm pushing for us to recognise "checkout" as a meaningful act for the
+version abstraction we are trying to support, whether or not the underlying
+system can make real use of it.  It means "GET the SOURCE for EDIT".
+"GET" because the document has to be fetched (or via existing methods
+determined that the user has the requested copy), "the SOURCE" because
+the user needs the document as it is prior to any server-side
+interpretation, and "for EDIT" so that the VC backend is aware of the
+user's activity.
+
+All VC systems can cook up a checkout cookie; some VC system will have
+difficulty without one.  The simpler systems - RCS, SCCS, and CVS may
+well be wrapped with some layer that provides the context.
+
+Here's how I see them being used, again with Perforce thrown into the
+mix because it has fairly modern VC semantics:
+
+		CHECKOUT		LOCK			CHECKIN
+----------------------------------------------------------------------------
+
+RCS		Probably just		Verifies that		Verifies
+SCCS		emits URL+version,	the cookie		that cookie
+		so that the		represents		represents
+		subsequent		the head rev.		LOCKed rev.
+		LOCK or SUBMIT		May be a no-op
+		can make sure user 	if the SCCS/RCS
+		has the head rev.	wrapper does
+		May imply LOCK,		LOCK on CHECKOUT.
+		since RCS/SCCS don't
+		normally support
+		unlocked checkout.
+
+CVS		Emits the line		Throws up its		Verifies
+		from the CVS/Entries	hands because		that cookie
+		file that reflects	CVS doesn't		represents
+		the file+rev being	support locking.	head rev.
+		edited.
+
+ClearCase	Emits view-extended	Verifies that		Verifies
+		pathname and rev of	cookie represents	that cookie
+		file being checked out.	checked-out file	represents
+		Because of CC's auto-	and does a CC		LOCKed rev.
+		branching, the rev may	reserved checkout.
+		be different that what
+		was requested.
+
+Perforce	Emits client pathname	Verifies that		Verfies
+		and rev of file		cookie represents	that cookie
+		being checked out.	checked out file.	represents
+								head rev.
+
+There is use for the checkout cookie for all these systems, even if the
+cookied degrades into being little more than "Content-Version".  Since
+All VC systems can make use of the cookies, and some need them for sane
+operation (checkin without checkout under clearcase is a no-go), it makes
+sense to use a single tag across all underlying VC systems.
+
+IMHO, of course.
+
+Christopher
+</pre>
+<!-- body="end" -->
+<hr>
+<p>
+<ul>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0151.html">Robert S. Thau: "Re: Seiwald Q &amp; A -- "GET for EDIT" cookies"</a>
+<li> <b>Previous message:</b> <a href="0149.html">Roy T. Fielding: "Re: Seiwald Q &amp; A -- "GET for EDIT" cookies"</a>
+<!-- nextthread="start" -->
+<!-- reply="end" -->
+</ul>

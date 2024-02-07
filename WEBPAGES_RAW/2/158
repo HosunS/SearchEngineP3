@@ -1,0 +1,967 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+  <title>Model Classes in the MVC Pattern</title>
+</head>
+
+<body BGCOLOR="white">
+
+<center>
+<h1>Model Classes in the MVC Pattern</h1>
+<p>
+<h2>Introduction to Computer Science I-III<br>
+ICS-21/-22/-23<br>
+</h2>
+<p>
+</center>
+
+
+<!-- Introduction -->
+
+<a name="Introduction"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Introduction</b></td>
+<td width ="80%">
+  In this lecture we will learn little new Java, but we will explore the
+    various classes that make up a pattern for writing applications controlled
+    by Graphic User Interfaces (GUIs).
+  The pattern is named Model-View-Controller (MVC), and it consists of writing
+    an application as three main classes, with each implementing one aspect of
+    the GUI.
+  Objects constructed from these three classes coordinate their behavior to
+    accomplish the goal of the application.
+  <p>
+  In this lecture we will focus on writing Model classes and discuss two simple
+    GUI applications: the first allows the user to experiment with combining
+    various strengths of the colors Red, Green, and Blue, when designing
+    backgrounds for HTML pages; the second uses an array to simulate any
+    number of balls bouncing in a bounded box.
+  You can download the <a href="../../programs/colorcalculator.zip">
+     Color Calculator</a> and
+     <a href="../../programs/bouncingballs.zip">
+     BouncingBalls</a>
+     GUI applications, unzip and run them, and examine any or all of their
+     classes; again, we will focus on ther Model classes in these
+     applications.
+  <p>
+  In upcoming programming assignments, I will supply the View and Controller
+    classes, and you will write a Model class that interacts with them.
+  Later in the semester, we will return to these programs to examine their
+    View and Controller classes in detail. 
+  In the last assignment for the semester, I will supply the Model class and
+    you will write the View and Controller classes for a program.
+</td>
+</tbody>
+</table>
+
+
+<!-- The MVC Patterns -->
+
+<a name="mvcPattern"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>The MVC Pattern</b></td>
+<td width ="80%">
+  Programming patterns are good ideas (something bigger than code) that can be
+     used over and over again in programming projects.
+  The MVC pattern is a good way to think about writing all GUI applications:
+    it separates the application into three main classes that interact with 
+    each other to coordinate the entire application.
+  <ul>
+    <li><b>Model</b>: This class is the bridge between the control and the
+          view.
+        The user activates a control, which calls a method in the model to tell
+           it to change state; after it does so, it notifies the view that its
+           state has changed (at which point the view calls other methods in
+           the model that supply it with the information it displays).
+        The model initiates no actions: it accepts commands from the controller
+           and processes them.
+        One can use the same model with many different view/controller classes:
+          one might allow the user a much easier way to interact with the
+          application.
+    <p>
+    <li><b>View</b>: This class coordinates the appearance of the GUI.
+        It decides where all the controls and displays go (labels, text fields,
+           buttons, etc.)
+        When notified by the model that the model has changed its state, the
+          view redisplays itself by calling methods in the model that return
+          all the information that the view must display.
+        A view class is typically long and boring from a programming
+           perspective, because it contains lots of specifics about how the GUI
+           looks (things like fonts, sizes, foreground/background colors, and
+           the placement of its components requires lots of details).
+        Writing one involves understanding lots of classes from the standard
+          Java library and inheritance.
+    <p>
+    <li><b>Controller</b>: This class collects together all the controls in the
+          GUI.
+        Whenever the user activates a control, it calls a method in the Model
+          to tell it to change its state appropriately.
+        The <i>listeners</i> specified in the Controller are complicated (but
+          small) chunks of Java code that detect an action by the user and call
+          the method in the Model that takes care of that action.
+        Writing controllers involves understanding lots of classes from the
+          standard Java library and inheritance.
+  </ul>
+  Using the MVC pattern for a tiny GUI application is overkill: it would
+    probably be harder to understand a GUI written this way, compared to
+     writing it as one big class that has all the necessary code.
+  But as GUI applications get even a bit bigger, partitioning their code into
+    these three classes allows us to keep the complexity of each class small
+    enough to manage easily (remember: divide and conquer).
+  Such a division also makes testing and debugging easier, as well as adding
+    new features: to do so, we typically edit just one of these classes, or
+    make small related changes in all three.
+  These classes each encapsulate a different aspect of the GUI; when
+    modifying code we start by asking ourselves what aspect do we need to
+    change.
+  Even relatively small GUI applications, like the ones that we will study this
+    semester, will be easier to understand if they follow the MVC pattern
+    (once you get some experience using this pattern).
+  <p>
+  Finally, a tiny <b>main</b> method in the <b>Application</b> class
+    coordinates this pattern by creating objects from each of these three
+    classes, and then calling some special methods in each object to allow it
+    to access the other objects it needs to call methods on.
+  The <b>main</b> method then starts the GUI and disappears: the GUI stays
+    around even after the <b>main</b> method has terminated.
+  The <b>main</b> body is typically under a dozen lines of code, and every
+    <b>main</b> method controlling an application written via the MVC pattern
+    looks similar to every other one.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Color Calculator -->
+
+<a name="ColorCalculator"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>The Color Calculator</b></td>
+<td width ="80%">
+  The Color Calculator application is implemented using the
+    Model-View-Controller pattern.
+  It allows us to see a color (and its hexadecimal value) as we change its red,
+    green, and blue components in the range [0..255].
+  We can change each component by directly entering a legal value into its
+    text field (each is labeled above by the name of a color), or by pressing a
+    button to increment or decrement its current value.
+  It shows a swatch of the resulting color, along with its hex value (which we
+    can use directly in HTML to specify a background or foreground color).
+  For a swatch to be shown, each color component must store/display a legal
+    value in the range [0..255].
+  <p>
+  The view is split: on the left are some labels (Red, Green, and Blue), some
+    text fields that display the current value for the intensity of each color
+    (they are editable: the user can also type a value directly into them), and
+    increment/decrement buttons (labeled +10 and -10).
+  On the right is a color swatch (used when all the intensity values for the
+    colors display a legal value), and a hex value of the color currently being
+    shown (or the word <b>unknown</b>, if there is no swatch being displayed.
+  <p>
+  Here is a screen shot of this application running.
+  You should download and run the <a href="../../programs/colorcalculator.zip">
+     Color Calculator</a> now, experimenting with it by entering text and
+    pressing its buttons.
+  <p>
+  <img src="images/colorcalculator.gif"></image>
+  <p>
+  The controller has three editable text fields (one for each color) and six
+    buttons (two to the right of each color: one to increment the color's
+    value by 10 and one to decrement its value by 10).
+  <p>
+  The model stores (in instance variables) the intensity of each of the colors
+    as references to <b>ModularCounter</b> values.
+  If an instance variable stores <b>null</b>, it denotes that the intensity of
+    that color has not yet been entered correctly.
+  It also stores a reference to the view, so it can call its <b>update</b>
+    method (see the <b>changeColorViaTextField</b> and
+    <b>changeColorViaButton</b> methods) whenever the user changes the state of
+    the model by entering a new intensity or incrementing/decrementing the
+    intensity by pressing one of the buttons.
+  <p>
+  When a textfield conrol is activated (either because the user presses
+    "enter" after entering text there, or because the user moves to another
+    control after entering text there) it calls the
+    <b>changeColorViaTextField</b> method in the Model class.
+  This method is passed, as <b>String</b>s, both the color that was activated
+    and the information that was entered in the box (it is supposed to be
+    an intensity in the range [0..255]): if the intensity </b>String</b> can be
+    parsed as an <b>int</b> in this range, the instance variables storing that
+    color's intensity is reset to  that value; otherwise it is reset to
+    <b>null</b>. 
+  In either case, the model tells the view to update itself afterwards.
+  <p>
+  When a button control is activated (because it is pressed), it calls the
+    <b>changeColorViaButton</b> method in the Model class.
+  This method is passed, as a <b>String</b>, the color that was activated, and
+   as an <b>int</b>, the change (either <b>+10</b> or <b>-10</b>, depending on
+   which button was pressed): if the instance variable storing the intensity of
+   this color is non-<b>null</b>, it is incremented (or decremented)
+   appropriately; otherwise it remains <b>null</b>.
+  In either case, the model tells the view to update itself afterwards.
+  <p>
+  Whenever a button is pressed, the cursor is moved to a new textfield, or a
+    "enter" is pressed in a textfield, the controller displays a trace message
+    inside the console window; the console is NOT used for input/output in 
+    GUIs, but is often used to help debug GUIs.
+  The message includes a description of what happens and the parameters to be
+    sent to the model method that is subsequently called.
+  <p>
+  Whenever the view's <b>update</b> method is called, it calls the
+    <b>getRed</b>, <b>getGreen</b>, and  <b>getBlue</b> accessor/query
+    methods in the model: it then displays these values in each textbox.
+  If all are legal values, it also displays a swatch of color and calls
+    the <b>getHex</b> accessor/query method in the model: it then displays
+    this value beneath the swatch.
+</td>
+</tbody>
+</table>
+
+
+<!-- Package -->
+
+<a name="Package"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Package Access</b></td>
+<td width ="80%">
+  Before we explore the actual definitions in the <b>Model</b> class in the
+    <b>colorCalculator</b> package, we will learn another access modifier
+   (which is frequently used there).
+  Recall that the EBNF for access modifiers (so far, we will add more later)
+    is
+  <pre>  <i>access-modifiers</i> <= [<b>public</b>|<b>private</b>] [<b>static</b>] [<b>final</b>]</pre>
+  We have always specified either <b>public</b> or <b>private</b>, but in fact
+    these alternatives appear in an option, so we can discard them.
+  If we do discard the option, writing neither <b>public</b> nor
+    <b>private</b>, we say that the resulting access is <b>package-friendly</b>
+    or just <b>package</b>.
+  When access is package-friendly, Java considers it to be <b>public</b> to all
+    classes defined in its package, but <b>private</b> to all classes defined
+    in other packages.
+  So, it is a bit more restrictive than making the memember <b>public</b> (it
+    isn't <b>public</b> in other classes), but less restrictive than making it
+    <b>private</b> (it isn't <b>private</b> in classes defined in the same
+    package).
+  <p>
+  The application being described contains the classes <b>Model</b>,
+    <b>View</b> and <b>Controller</b>, all in the <b>colorCalculator</b>
+    package.
+  Some members are declared <b>private</b> (e.g., all instance variables and
+    helper methods), others are declared <b>public</b> (e.g., all constructors,
+    which <b>new</b> uses in the <b>Application</b> class, which is in the
+    anonymous package), and some are package-friendly (e.g., the <b>Model</b>
+    methods called by the controller and the <b>update</b> method in the
+    <b>View</b> class, called in the <b>Model</b> class.
+  <p>
+  Recall that when a class is defined in a package, it does not need to
+    import other classes from that same package: the Java compiler
+    automatically imports them.
+  It is exactly these implicitly-imported classes that can access
+    package-friendly members.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Color Definitions -->
+
+<a name="ColorDefs"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Color Calculator Model Definitions</b></td>
+<td width ="80%">
+Now we will examine in detail the <b>Model</b> class defined in the
+  <b>colorCalculator</b> package.
+It defines the following instance variables.
+<b><pre>  private View view;  
+  private ModularCounter red,green,blue;</pre></b>
+The color instance variables initially store <b>null</b>, meaning
+  they have no values yet (they are first assigned values via the
+  <b>changeColorViaTextField</b> method, described below).
+The <b>view</b> instance variable is reinitialized when the <b>main</b>
+  method in the <b>Application</b> class constructs an object from this
+  class and calls <b>addView</b> with it as an argument.
+<b><pre>  public void addView (View v)
+  {view = v;}</pre></b>
+Recall that this method must be <b>public</b>, because the <b>Application</b>
+  class calling it is defined in the anonymous package, not
+  <b>colorCalculator</b>.
+<p>
+The constructor in the <b>Model</b> class is simply
+<b><pre>  public Model ()
+  {}</pre></b>
+which does nothing: all color instance variables in this class are correctly
+  initialized when they are declared.
+<p>
+The four main accessor/query methods are
+<b><pre>
+  int getRed()
+  {return (red == null ? -1 : red.getValue());}
+    
+  int getGreen()
+  {return (green == null ? -1 : green.getValue());}
+    
+  int getBlue()
+  {return (blue == null ? -1 : blue.getValue());}
+
+  String getHex()
+  {return gh(getRed()) + gh(getGreen()) + gh(getBlue());}</pre></b>
+These methods are all defined to be package-friendy, and thus are callable only
+   by methods in other classes defined in the <b>colorCalculator</b> package
+   (in this case, by methods in the <b>View</b> class).
+The <b>View</b> class expects the first three methods to return <b>int</b>
+   values, with <b>-1</b> meaning no definition: so these methods examine the
+   appropriate instance variable to supply the correct information.
+The <b>getHex</b> method calls the <b>private gh</b> helper method three times,
+  one for each color, catenating their results together; it is called only
+  if the other three methods return non <b>-1</b> values.
+<p>
+Next, we will examine the two main mutators/commands, called from the
+  controller.
+<b><pre>  void changeColorViaTextField(String color, String intensity)
+  {
+    if (color.equals("Red"))
+      red = null;
+    else if (color.equals("Green"))
+      green = null;
+    else if (color.equals("Blue"))
+      blue = null;
+    else
+      return;  //Not a good color!
+      
+    try {
+      int i = Integer.parseInt(intensity);
+      if (color.equals("Red"))
+	red = new ModularCounter(i,256);
+      if (color.equals("Green"))
+	green = new ModularCounter(i,256);;
+      if (color.equals("Blue"))
+	blue = new ModularCounter(i,256);;
+    }catch (Exception e) {/*don't set value; use null one*/} 
+    
+    System.out.println("State: " + this +"\n");
+    if (view != null)    //In case Model's main (not Application's) is running
+      view.update();
+  }</pre></b>
+  Each call of this method updates one of the color instance variables.
+  Note that the identifier <b>Exception</b> is the name of a class that
+    matches any exception thrown in the method.
+<ul>
+  <li>The first cascaded <b>if</b> statement uses the <b>color</b> parameter
+        to store <b>null</b> into the instance variable of the color whose
+        textfield was modified.
+      In this way, if the value entered is bad (either not a number, or not
+        in the range [0..255])) the instance variable now stores the correct
+        result.
+  <li>The <b>try</b> block first tries to <b>parse</b> the <b>intensity</b>
+        parameter; if it throws the <b>NumberFormatException</b> it skips the
+        code storing into the instance variable, so it still stores
+        <b>null</b>.
+      If it doesn't throw an exception, the instance variable is assigned a new
+        <b>ModularCounter</b>; but again, if the <b>intensity</b> is not in the
+        range [0..255] this constructor throws <b>IllegalArgumentException</b>
+        and the result is that the instance variable still stores <b>null</b>;
+        but, if the values is in range, then the instance variable stores a
+        reference to a <b>ModularCounter</b> object with the correct value.
+  <li>Finally, regardless of how the instance variable was updated, this method
+        prints the state in the console window and calls <b>update</b>, which
+        updates the GUI (calling the accessors/queueris discussed above to
+        determine what to display).
+</ul> 
+Next we examine the method called when buttons are pressed in the GUI.
+<b><pre>  void changeColorViaButton(String color, int amount)
+  {
+    if (color.equals("Red")        && red   != null)
+      red.update(amount);
+    else if (color.equals("Green") && green != null)
+      green.update(amount);
+    else if (color.equals("Blue")  && blue  != null)
+      blue.update(amount);
+    else
+      return;  //Not a good color!
+
+    System.out.println("State: " + this +"\n");
+    if (view != null)    //In case Model's main (not Application's) is running
+      view.update();
+  }</pre></b>
+This method is a bit shorter, less complex, and easier to understand.
+<ul>
+  <li>The cascaded <b>if</b> statement uses the <b>color</b> parameter to
+        determine whether an instance variable can be updated: it must already
+        store a correct value.
+      If so, the value stored in the <b>ModularCounter</b> object is
+        incremented (or decremented: <b>udpate</b> does one or the other)
+        by the value stored in the parameter <b>amount</b>.
+  <li>Again, regardless of how the instance variable was updated, this method
+        prints the state in the console window and calls <b>update</b>, which
+        updates the GUI (calling the accessors/queueris discussed above to
+        determine what to display).
+</ul> 
+Finally, the <b>toString</b> method follows the standard form
+This method must be declared <b>public</b> (we will learn why when we
+  discuss inheritance).
+<b><pre>  public String toString()
+  {return "Model[red=" + red + ", green=" + green + ", blue=" + blue +"]";}</pre></b>
+Note that it is automatically called in 
+  <b>System.out.println("State: " + this +"\n");</b>, as if we had written
+  <b>System.out.println("State: " + this.toString() +"\n");</b> or just
+  <b>System.out.println("State: " + toString() +"\n");</b>
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Debugging -->
+
+<a name="Debugging"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Model Debugging</b></td>
+<td width ="80%">
+  In GUI applications, we often use the console window to display information
+    useful for debugging purposes.
+  In the <b>Controller</b> class, every user action displays itself in the
+    console window.
+  For example, pressing the <b>Red +10</b> button prints the message
+    <b>Debug-Controller: Color button +10/-10 button pressed (Red,10)</b>
+    in the console window.
+  In this way we can determine whether we are activating the controls
+    correctly.
+  <p>
+  In the <b>Model</b> class, every time one of its methods calls
+    <b>view.update();</b> it first prints the state of the model (the three
+    important instance variables) in the console window.
+  For example, if the first thing we do is to enter <b>10</b> in the <b>Red</b>
+    textfield, the model prints
+    <b>State: Model[red=10(mod 256), green=null, blue=null]</b>
+    in the console window.
+  In this way, we can display a textual representation of the state of the
+    <b>Model</b> class in a scrollable window, so we can examine the entire
+    history of our interaction with the GUI and what changes it made for each
+    one.
+  <p>
+  There is another interesting way to test a <b>Model</b> class, even without
+    having access to its <b>View</b> and <b>Controller</b> classes (which may
+    not even be written when the <b>Model</b> is finished: we'd certainly like
+    to test each class independently from the others, as soon as it is
+    written).
+  We can write a driver for it, similar to the other drivers that test classes.
+  But, in this case we will actually write the driver as a <b>main</b> method
+    in the class itself; we could also have done so in the other classes that 
+    we examined, but I delayed introducing this material until we were a bit
+    more sophisticated about writing classes.
+  <p>
+  Recall that every class is allowed to define a special <b>main</b> method.
+  In this class it appears as
+  <b><pre>
+  public static void main(String[] args)
+  {
+    Model m = new Model();
+    System.out.println("State: "+ m +"\n");
+	  
+    for (;;)
+      try {
+	System.out.println("Menu");
+        System.out.println("  t - changeColorViaTextField");
+        System.out.println("  b - changeColorViaButton");
+        System.out.println("  ? - view all accessors");
+        System.out.println("  q - quit");
+        char selection = Prompt.forChar("Enter Command","tb?q");
+
+        if (selection == 't') {
+          String color     = Prompt.forString("  Enter color    ");
+          String intensity = Prompt.forString("  Enter intensity");
+          m.changeColorViaTextField(color,intensity);
+          
+        }else if (selection == 'b') {
+          String color  = Prompt.forString("  Enter color ");
+          int    amount = Prompt.forInt   ("  Enter amount");
+          m.changeColorViaButton(color,amount);
+       
+        }else if (selection == '?') {
+           System.out.println("  getRed   = " + m.getRed());
+           System.out.println("  getGreen = " + m.getGreen());
+           System.out.println("  getBlue  = " + m.getBlue());
+           if (m.getRed() == -1 || m.getGreen() == -1 || m.getBlue() == -1)
+             System.out.println("  No getHex because some colors missing");
+           else
+             System.out.println("  getHex   = " + m.getHex());
+           System.out.println();
+
+        }else if (selection == 'q')
+          break;
+        
+        else
+          System.out.println("\""+selection+"\" is unknown command");
+
+      }catch(Exception e) {
+        System.out.println("  Exception Caught/Handled: "+e.getMessage());
+      }
+  }</pre></b>
+This method first constructs an object from the <b>Model</b> class.
+Then, as with all drivers, it displays a menu of options, prompts the
+  user to call a method, prompts the user for whatever (if any) arguments are
+  needed to call that method, and calls the method (which, as you will recall,
+  prints the state of the model whenever its state changes).
+Thus, prompting for the menu entry and arguments takes the place of activating
+  a control.
+<p>
+To direct Java to execute this <b>main</b> method, instead of the one in
+  the <b>Application</b> class, change the <b>Java Target</b> so that
+  the <b>Main Class</b> text field contains <b>colorCalculator.Model</b>.
+This was discussed in more detail in the general lecture on
+    <a href="../writingclasses/lecture.html#mainMethod">
+    <b>main</b> methods</a>.
+Recall that because <b>Application</b> is in the anonymous package, it
+  is not prefaced here by any package name; but since <b>Model</b> is
+  in the <b>colorCalculator</b> package, it must be prefaced by this name.
+Here is a short session with this driver
+<b><pre>State: Model[red=null, green=null, blue=null]
+
+Menu
+  t - changeColorViaTextField
+  b - changeColorViaButton
+  ? - view all accessors
+  q - quit
+Enter Command[tb?q]: t
+  Enter color    : Red
+  Enter intensity: 100
+State: Model[red=100(mod 256), green=null, blue=null]
+
+Menu
+  t - changeColorViaTextField
+  b - changeColorViaButton
+  ? - view all accessors
+  q - quit
+Enter Command[tb?q]: b
+  Enter color : Red
+  Enter amount: -10
+State: Model[red=90(mod 256), green=null, blue=null]
+
+Menu
+  t - changeColorViaTextField
+  b - changeColorViaButton
+  ? - view all accessors
+  q - quit
+Enter Command[tb?q]: ?
+  getRed   = 90
+  getGreen = -1
+  getBlue  = -1
+  No getHex because some colors missing</pre></b>
+Finally, the reason each mutator/command includes
+<b><pre>  if (view != null)    //In case Model's main (not Application's) is running
+    view.update();
+</pre></b>
+instead of just calling <b>view.update()</b> is that in the case of running
+  <b>main</b> from the <b>Model</b> class itself, <b>view</b> is never set to
+  refer to an object: it stores its initial value, <b>null</b>.
+If <b>main</b> is run from the <b>Application</b> class, it will always first
+  call the <b>setView</b> method appropriately.
+</td>
+</tbody>
+</table>
+
+
+<!-- Bouncing Balls -->
+
+<a name="Balls"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Bouncing Balls</b></td>
+<td width ="80%">
+  The Bouncing Balls application is also implemented using the
+    Model-View-Controller pattern.
+  In addition, its <b>Model</b> class uses arrays (and length doubling).
+  We can create any number of balls by clicking on its window's screen
+   (the array stores them all).
+  A ball appears at each clicked location, initialized by a random color (which
+   does not change) and a random velocity.
+  When balls reach the boundaries of the window, they bounce back into the
+    interior.
+  <p>
+  There is a panel of buttons at the top of the application: there are buttons
+    to start and stop the simulation, and there is a button to reset it:
+    stop it and remove all the balls (clearing the screen).
+  <p>
+  Here is a screen shot of this application running.
+  You should download and run <a href="../../programs/bouncingballs.zip">
+    Bouncing Balls</a> now, experimenting with it by clicking in the window
+    and pressing its buttons.
+  <p>
+  <img src="images/bouncingballs.gif"></image>
+  <p>
+  The application runs mainly by defining a timer (a kind of control) that
+    automatically fires every 100 milliseconds.
+  When it fires, it first calls the <b>updateAll</b> method in the <b>Model</b>
+    class, which calls the <b>update</b> method on every <b>Ball</b> object in
+    the array that <b>Model</b> stores; each <b>Ball</b> object computes its
+    new x,y coordinate (based on its current x,y coordinate and it horizontal
+    and vertical velocities) including whether it bounces off a wall (if it
+    does, it changes its  horizontal or vertical velocity too -to move in the
+    opposite direction).
+  <p>
+  Next the timer calls the <b>displayAll</b> method in the <b>Model</b> class,
+    which clears the window and calls the <b>display</b> method on every 
+    <b>Ball</b> object in the array that <b>Model</b> stores; each <b>Ball</b>
+    object  displays itself in the window at its current x,y coordinate.
+  The update and display actions happen so quickly that it looks like the
+    balls are moving smoothly.
+  <p>
+  Methods in the <b>Model</b> class are also called whenever the user presses
+    the <b>Start</b>, <b>Stop</b>, or <b>Reset</b> button.
+  The first two buttons toggle an instance variable that determines if the
+    simulation is running: actually, <b>updateAll</b> does nothing if the
+    simulation is stopped.
+  If <b>Reset</b> is pressed, all current <b>Ball</b> objects are removed from
+    the array.
+  <p>
+</td>
+</tbody>
+</table>
+
+
+<!-- Bouncing Balls Model -->
+
+<a name="BBDefs"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Bouncing Balls Model Definitions</b></td>
+<td width ="80%">
+Now we will examine in detail the <b>Model</b> class defined in the
+  <b>bouncingBalls</b> package.
+It defines the following instance variables.
+<b><pre> private View view;
+    
+  private Ball[]     balls;       //Refer to each ball
+  private int        used;        //How much of the balls array is used
+  private boolean    running;     //Whether updateAll should update balls
+  private int        cycleCount;  //Times updateAll called since reset
+}</pre></b>
+Here <b>used</b> is similar to <b>top</b>/<b>rear</b> when storing the
+  <b>stack</b>/<b>queue</b> collections: it stores the number of indexed
+  members that are stored in <b>balls</b> (in locations <b>0</b> to
+  <b>used-1</b>).
+The <b>Ball</b> class, used to declare the array, is very small.
+It defines just one constructor and three methods
+<b><pre>  Ball (int x, int y, int vx, int vy){...}
+
+  void          update  (Dimension box) {...}
+  void          display (Graphics  g)   {...}
+  public String toSTring()              {...}</pre></b>
+which we will be used in the methods defined in the <b>Model</b> class.
+Notice that these methods are all defined to be package-friendly (except
+  <b>toString</b>, which always must be declared <b>public</b>).
+<b>Dimension</b> and <b>Graphics</b> are two classes declared in the standard
+  Java library.
+<p>
+The <b>view</b> instance variable is reinitialized when the <b>main</b>
+  method in the <b>Application</b> class constructs an object from this
+  class and calls <b>addView</b> with it as an argument.
+<b><pre>  public void addView (View v)
+  {view = v;}</pre></b>
+Recall that this method must be <b>public</b>, because the <b>Application</b>
+  class calling it is defined in the anonymous package, not
+  <b>bouncingBalls</b>.
+<p>
+The constructor in the <b>Model</b> class is
+<b><pre>  public Model ()
+  {reset();}</pre></b>
+and the definition of <b>reset</b> is
+<b><pre>  void reset ()
+  {
+    running    = false;
+    cycleCount = 0;
+    used       = 0;
+    balls      = new Ball[1];
+  }</pre></b>
+Whenever a <b>Model</b> object is constructed, it calls <b>reset</b>; also,
+  whenever the <b>Reset</b> button is pressed, the controller calls this
+  same method, reinitializing these instance variables.
+These methods, and all the others to be discussed in this section, are
+  defined to be package-friendy, callable only by methods in other classes
+   defined in the <b>bouncingBalls</b> package.
+<p>
+The two accessor/query methods are also very simple
+<b><pre>  int getCycleCount()
+  {return cycleCount;}  
+
+  int getBallCount()
+  {return used;}</pre></b>
+Likewise, two more methods (besides <b>reset</b>) that the controller calls
+  are very simple.
+<b><pre>  void start ()
+  {running = true;}
+    
+  void stop ()
+  {running = false;}</pre></b>
+Each sets the <b>running</b> instance variables, which is examined only in
+  the <b>updateAll</b> method (see below).
+<p>
+The first interesting method is called by the controller whenever the user
+  clicks somewhere in the window.
+It receives as arguments the x,y coordinate of the click in the window and a
+  click count (e.g., 2 means a double click) although this last parameter is
+  ignored here.
+<b><pre>  void mouseClick(int x, int y, int clickCount)
+  { 
+    if (used == balls.length)
+      doubleLength();
+    balls[used++] = new Ball(x,y,
+                             randomInRange(-10,10), randomInRange(-10,10),
+                             randomColor());
+  }</pre></b>
+This method puts a new <b>Ball</b> object at the rear of the array,
+  doubling its length if there is not enough room.
+(We don't discuss this helper method here; it is defined similarly to what we
+  have seen.)
+The <b>Ball</b> object is constructed to have a state that is initially the
+  same x,y coordinate of the click, horiztontal and vertical velocities that
+  are random values in the range [-10..10], and a random color (we will not
+  examine these "random" helper methods: read them in the actual class
+  definition).
+<p>
+We have now seen every method called by a user interaction with the controller:
+  <b>reset</b>, <b>start</b>, <b>stop</b>, and <b>mouseClick</b>.
+Now we focus on the two methods automatically called every 100 milliseconds
+  by the controller: <b>updateAll</b> and <b>displayAll</b>
+<b><pre>  void updateAll()
+  {
+    if (!running)
+      return;
+      
+    cycleCount++;
+    for (int i=0; i&lt;used; i++)
+      balls[i].update(view.getEnclosingBox());
+      
+    //System.out.println("State: " + this +"\n");
+  }</pre></b>
+Note that if the instance variable <b>running</b> is <b>false</b>, this
+  method returns immediately; otherwise it increments <b>cycleCount</b> and
+  just calls the <b>update</b> method on each <b>Ball</b> object it stores
+  (telling it the dimensions of the box in which the balls are bouncing:
+  information the <b>View</b> class provides).
+I have "commented-out" the output statement, because it would generate
+  too much data in normal circumstances, although at the end of this
+  section I show the results of using this output in a very simple simulation.
+<p>
+So, this method mostly acts as a dispatcher: when the controller says that it
+  is time for the <b>Model</b> to change its state, it iterates over all the
+  <b>Ball</b> objects that it stores and instructs each to update its state.
+In this way we have distributed complexity: the <b>Model</b> manages a
+  collection of <b>Ball</b> objects; when we do something to the <b>Model</b>,
+  it just does it to all the <b>Ball</b>s.
+<p>
+Likewise for the <b>displayAll</b> method.
+<b><pre>  void displayAll(Graphics g)
+  {
+    for (int i=0; i&lt;used; i++)
+      balls[i].display(g);
+  }</pre></b>
+When the controller says that it is time for the <b>Model</b> to (re)display
+  itself on a blank window, it iterates over all <b>Ball</b> objects that it
+  stores and instructs each to display itself.
+Even if we don't understand the details about how a <b>Ball</b> object
+  updates/displays itself, we can write code that manages a collection of
+   <b>Ball</b> objects.
+The result is that the bodies of all the methods in this model, which produces
+  an interesting simulation, are simple.
+<p>
+Note that there are no calls to <b>view.update()</b> in this class.
+That is because when the timer fires, it automatically calls this
+  method, which then calls <b>displayAll</b>.
+Technically then, when a new <b>Ball</b> object is added to the simulation, it
+  can take up to 100 milliseconds before it appears in the window.
+<p>
+Finally, the <b>toString</b> method follows the standard form (with a
+  <b>for</b> loop looking much the same as the <b>toString</b> methods in
+  collection classes).
+<b><pre>  public String toString()
+  {
+    String answer = "Model[used="+used+",running="+running+
+                           ",cycleCount="+cycleCount;
+    for (int i=0; i&lt;used; i++)
+      answer+=",\n  balls["+i+"]="+balls[i];
+    return answer+"\n]";
+  }</pre></b>
+If I uncommented the output statement in <b>updateAll</b>, it could trace
+  two <b>Ball</b> objects as follows.
+Notice for example, that after the 1st cycle, the x,y coordinate of the first
+  <b>Ball</b> object has moved from its initial value <b>(76,84)</b> to
+  <b>(79,91)</b>, which is what we would expect given <b>vx=3</b> and
+  <b>vy=7</b>.
+
+</td>
+</td>
+</tbody>
+</table>
+<b><pre>  Debug-Controller: Mouse clicked (1) at (76,84)
+  Debug-Controller: Mouse clicked (1) at (251,193)
+  Debug-Controller: Start button pressed
+  State: Model[used=2,running=true,cycleCount=1,
+    balls[0]=Ball[x=79,y=91,vx=3,vy=7,color=java.awt.Color[r=39,g=37,b=151]],
+    balls[1]=Ball[x=257,y=203,vx=6,vy=10,color=java.awt.Color[r=102,g=10,b=174]]
+  ]
+
+  State: Model[used=2,running=true,cycleCount=2,
+    balls[0]=Ball[x=82,y=98,vx=3,vy=7,color=java.awt.Color[r=39,g=37,b=151]],
+    balls[1]=Ball[x=263,y=213,vx=6,vy=10,color=java.awt.Color[r=102,g=10,b=174]]
+  ]
+
+  State: Model[used=2,running=true,cycleCount=3,
+    balls[0]=Ball[x=85,y=105,vx=3,vy=7,color=java.awt.Color[r=39,g=37,b=151]],
+    balls[1]=Ball[x=269,y=223,vx=6,vy=10,color=java.awt.Color[r=102,g=10,b=174]]
+  ]
+
+  State: Model[used=2,running=true,cycleCount=4,
+    balls[0]=Ball[x=88,y=112,vx=3,vy=7,color=java.awt.Color[r=39,g=37,b=151]],
+    balls[1]=Ball[x=275,y=233,vx=6,vy=10,color=java.awt.Color[r=102,g=10,b=174]]
+  ]</pre></b>
+
+
+<!-- Writing Models -->
+
+<a name="WritingModels"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Writing Models</b></td>
+<td width ="80%">
+  How does one generally think about writing a model class (given a  matching
+    controller and view class)?
+  As the model, think of yourself sitting at a desk with various telephones:
+    one for each method that the controller or viewer might call you on.
+  You also have various note-cards on your desk; on which each is written the
+    value of one of your instance variables.
+  The model's job is to take calls on the phones and update information
+    appropriately on the cards.
+  <p>
+  In the <b>colorCalculator</b> model, you will have a telephone labelled
+    <b>changeColorViaButton</b>  (called by the controller when the user
+     presses an increment/decrement button) and a telephone labelled
+     <b>changeColorViaTextField</b> (called by the controller when the user
+     enters text into one of  the color fields).
+  When called on the <b>changeColorViaButton</b> phone, you are told the color
+    and the amount of the increment/decrement (its parameters); when called on
+    the <b>changeColorViaTextField</b> phone, you are told the color and the
+    amount (this time the amount is a <b>String</b> that may or may not contain
+    a legal integer value: the model has to figure that out).
+  In this model, we need three note cards: one each for the amount of red,
+     green, and blue in the current color: by using <b>ModularCounter</b>s,
+     these values are always in the range [0..255], and we use <b>null</b> to
+     mean that the amount of this color has not yet been set.
+  Each method call (potentially) changes one of these cards.
+  <p>
+  There are also phones called by the view, asking for information.
+  The <b>getRed</b>, <b>getGreen</b>, <b>getBlue</b> methods are all
+    accessors/queries; when called on one of these phones, we tell the caller
+    some <b>int</b> value representing the intensity of that color.
+  There is also a <b>getHex</b> phone; when called on it, we must compute and
+    return a <b>String</b> that stores one integer, written in base 16, that
+    represents the red, green, and blue components.
+  This value does not need to be stored in its own instance variable: it is
+    just computed, as necessary, from the red, green, and blue instance
+    variables.
+  <p>
+  So, model classes don't really initiate their own actions.
+  They respond to requests: either requests that originate in the controller
+    to change state, or requiests that originate in the view to examine the
+    current state.
+  Of course, the model does notify the view when its state is changed, causing
+    it to call back methods in the model to examine the new state that it
+    must redisplay.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Problem Set -->
+
+<a name="ProblemSet"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Problem Set</b></td>
+<td width ="80%">
+To ensure that you understand all the material in this lecture, please solve
+  the the announced problems after you read the lecture.
+<p>
+If you get stumped on any problem, go back and read the relevant part of the
+   lecture.
+If you still have questions, please get help from the Instructor, a CA, a 
+  Tutor, or any other student.
+
+<ol> 
+<li>Suppose that a color field contains a legal value, but the user enters a
+      bad one.
+    Rewrite the model to redisplay/store the old value that was 
+      there (right before the wrong one was entered), instead of redisplaying
+      the message <b>"Enter [0,255]</b>, 
+<p>
+<li>What happens if you comment out the call to <b>view.update</b> in the
+      <b>changeColorViaButton</b> and/or <b>changeColorViaTextField</b>
+       methods.
+<p>
+<li>Instead of initializing all the colors in the model to <b>null</b>,
+      rewrite the model to initialize them all to 0, or all to random numbers
+      in the 0 to 255 range.
+<p>
+<li>In the bouncing balls application, can we eliminate the <b>reset</b> method
+       by initializing all the instance variables when they are declared?
+<p>
+<li>Why are the "random" helper methods in <b>bouncingBalls.Model</b> defined
+      to be <b>static</b>? Could they be defined non-<b>static</b>?
+   Why is the <b>doubleLength</b> helper method defined
+      to be non-<b>static</b>? Could it be defined <b>static</b>?
+<p>
+<li>If we uncomment the output statement in the <b>updateAll</b> method
+      in the bouncing ball simulation, why will we never see
+      <b>running=false</b>?
+<p>
+<li>Examine the Javadoc of the <b>Color</b> class in the standard Java library.
+    Assume we defined <b>Color a = randomColor(), b = randomColor, c;</b>
+    Write code that stores into <b>c</b> a reference to a <b>Color</b> object
+      whose red, green, and blue components are the average of <b>a</b>'s
+      and <b>b</b>'s color components.
+<p>
+<li>Rewrite the <b>bouncingBalls.Model</b> class to remove any <b>Ball</b>
+      object that is displayed within a distance of 2 from any other
+      <b>Ball</b> object.
+    Rewrite the <b>bouncingBalls.Model</b> class to fuse any <b>Ball</b>
+      object that is displayed within a distance of 2 from any other
+      <b>Ball</b> object: fusing means average their velocities and color.
+<p>
+<li>Rewrite the <b>colorCalculator.Model</b> class to be simpler by using
+      use a 3-value array to store the color components.
+    Other arrays might be helpful too (try to simplify the code as much
+      as possible).
+<p>
+<li>Why is the <b>public</b> access modifier used for the constructor in the
+       <b>Model</b> class?
+    Why can't it be package-friendly?
+    What change (in another class) would allow it to be defined to be
+      package friendly?
+</ol>
+</td>
+</tbody>
+</table>
+
+
+</body>
+</html>

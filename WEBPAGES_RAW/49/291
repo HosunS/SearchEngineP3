@@ -1,0 +1,125 @@
+<!-- This document automatically created using nb2html -->
+<!--         nb2html is Copyright T.D.Robb 1994        -->
+<H1><CENTER>
+Algorithms for Egyptian Fractions
+</CENTER></H1>
+<P>
+<HR><H2><IMG SRC="mmaSection.gif" ALT="o">
+Methods Based on the Binary Number System
+</H2>
+<P>
+<H3><IMG SRC="mmaSubSection.gif" ALT="+">
+The Binary Method
+</H3>
+<P>
+An Egyptian fraction representation can be formed from the binary representation of a number; e.g. 27/22 = 1.0(0111010001)*.  (The star indicates that the parenthesized digits repeat in blocks of ten after these initial bits.)  The initial nonrepeating part gives fractions 1/2^a, and the repeating part gives fractions 1/(2^a (2^b - 1)), where b is the length of the repetition.  We must take some care that the a in the second type of fraction is nonnegative, so we modify the representation above so that there are as many nonrepeating terms as repeating terms:
+27/22 = 1.001110100(0101110100)*.
+<P>
+A similar technique works for some other bases than binary.  For instance the only digit that causes any trouble in a base 6 representation is 5, but 5/6 = 3/6+2/6 so we can still use this method with base 6.  On the other hand this method does not work well with decimal notation as we can not represent 4, 7, 8, or 9 as sums of distinct divisors of 10, so numbers with those digits in their decimal representation would cause a problem for a decimal version of this method.
+<P>
+To implement the binary method, we first define a function to find the binary (or other base) representation of q, returned as two lists of digits.  The first member of the first list is the integer part of q,  the rest of the first list is the nonrepeating part of the representation, and the second list is the repeating part.  It turns out to be easier to find, instead of the digits themselves, certain values mod y from which the digits can be computed.  This makes it easier to detect repeating blocks of digits, since they occur exactly when the same value mod y arises twice.
+<BLOCKQUOTE><PRE><B>
+RationalDigits[q_Integer, base_] := {{q},{0}};
+RationalDigits[Rational[a_,b_], base_Integer] :=
+    Module[{nextunit,addunit,units,
+    		reppos,breakpt,finddigit,digitize},
+    	   nextunit = (Mod[base Last[#], b]&amp;);
+    	   addunit = (Module[{c=nextunit[#]},
+    	    				   If[MemberQ[#,c],
+    	    				      #, Append[#,c]]]&amp;);
+    	   units = FixedPoint[addunit, {Mod[a,b]}];
+    	   reppos = Position[units, nextunit[units]];
+    	   breakpt = reppos[[1]][[1]]-1;
+    	   finddigit = (Floor[base # / b]&amp;);
+    	   digitize = (finddigit /@ # &amp;);
+       	   {Prepend[digitize[Take[units,breakpt]],Floor[a/b]],
+    	    digitize[Drop[units,breakpt]]}];
+</B></PRE></BLOCKQUOTE>
+<P>
+Once we have found the repeating binary representation of a fraction, it is simple to turn the nonzero digits of the representation into terms in an Egyptian fraction representation.  Most of the complication in our implementation is due to the point noted earlier, that we should have at least as many nonrepeating digits as repeating digits.
+<BLOCKQUOTE><PRE><B>
+EgyptBinary[q_Integer] := {q};
+EgyptBinary[q_Rational] :=
+    Module[{l = RationalDigits[q,2],
+            tpow = ({2 #1[[1]], #2}&amp;),
+            invprod = (#[[2]]/#[[1]]&amp;),
+            tplist,invlist,
+            firstlen,firstlist,firstpart,
+            mul,seclist,secpart,full},
+           tplist = (FoldList[tpow, {1,#[[1]]}, Drop[#,1]]&amp;);
+           invlist = (invprod /@ tplist[#])&amp;;
+           firstlen = Max[Length[l[[1]]],Length[l[[2]]]];
+           firstlist = Take[Apply[Join,l],firstlen];
+           firstpart = invlist[firstlist];
+           mul = 2^Length[l[[2]]]-1;
+           seclist = RotateRight[l[[2]], Length[l[[1]]]];
+           secpart = (#/mul&amp; /@ invlist[seclist]);
+           full = (If[#==0,{ }, #]&amp; /@
+           		Join[firstpart,secpart]);
+           Flatten[full]];
+</B></PRE></BLOCKQUOTE>
+<P>
+The correctness of this algorithm is straightforward.  The fact that it halts for input q=x/y follows from the fact that the list units computed in RationalDigits is a list of distinct values modulo y, so can have length at most y. The lists of binary digits for x/y have between them at most y elements, and the padding to make the repetition start far enough along at most doubles this.  At most y/2 elements on the list can correspond to binary ones,  so the eventual Egyption fraction has at most y terms.  All denominators are at most 2^(2y).
+<BLOCKQUOTE><PRE><B>
+EgyptBinary[27/22]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+    1  1   1    1    1     1      1      1      1
+{1, -, --, --, ---, ----, ----, -----, -----, ------}
+    8  16  32  128  2046  8184  16368  32736  130944
+</PRE></BLOCKQUOTE>
+<P>
+<A NAME="binrem"><H3><IMG SRC="mmaSubSection.gif" ALT="+">
+The Binary Remainder Method
+</H3>
+<P>
+</A>Let p be a power of two such that (xp mod y) &lt; 2p.  (In particular this is satisfied if y&lt;2p.)  By dividing xp by y we find r and s satisfying x p = s y + r.  Then we can represent r/p and s/p as sums of inverse powers of two; but x/y = s/p + r/(p y) so by concatenating the representation of s/p with 1/y times the representation of r/p we get a representation of x/y.  The division by y ensures that no overlap occurs between the fractions from the two parts of the representation.  For convenience of implementation we call EgyptBinary to find the binary representations of r/p and s/p.
+<BLOCKQUOTE><PRE><B>
+EBRPower[x_,y_,b_] :=
+    If[(x*b)~Mod~y &lt; 2*b, b,EBRPower[x,y,2*b]];
+
+EgyptBinRem[Rational[x_,y_]] :=
+    Module[{p, r, s},
+           p = EBRPower[x,y,2];
+           r = Mod[x p, y];
+           s = Quotient[x p, y];
+           Join[If[s==0,{},EgyptBinary[s/p]],
+           		If[r==0,{},(#/y&amp;) /@ EgyptBinary[r/p]]]]
+</B></PRE></BLOCKQUOTE>
+<P>
+The method produces at most Log x + Log y terms; in practice it will typically produce half that many.  Each denominator is at most y^2.
+<BLOCKQUOTE><PRE><B>
+EgyptBinRem[18/23]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+ 1  1  1   1
+{-, -, --, --}
+ 2  4  46  92
+</PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE><B>
+EgyptBinRem[31/311]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+ 1   1    1    1    1     1     1
+{--, --, ---, ---, ----, ----, ----}
+ 16  32  311  622  1244  4976  9952
+</PRE></BLOCKQUOTE>
+<P>
+The binary remainder method appears in a paper of Stewart
+<A HREF="refs.html#Ste54">[Ste54]</A>, where he uses it to find representations with all denominators even.  Similar methods that replace the term p=2^k by some other value have proven useful in many recent results about Egyptian fractions.  Breusch
+<A HREF="refs.html#Bre54">[Bre54]</A> and Stewart
+<A HREF="refs.html#Ste54">[Ste54]</A> set p to small multiples of 3^k, to show that every odd-denominator fraction has a representation with all denominators odd.  Tenenbaum and Yokota
+<A HREF="refs.html#TY90">[TY90]</A> use factorial values of p to find representations with (1+o(1))(Log y) / (Log Log y) terms having all denominators bounded by O(y (Log y)^2 / (Log Log y)).  Vose
+<A HREF="refs.html#Vos85">[Vos85]</A> uses an even more complicated value of p to show that any x/y has a representation with only O(Sqrt Log[y]) terms.  In the
+<A HREF="force.html#genrem">generalized remainder method</A>, discussed later, we show how to apply some of these ideas to find short representations.
+<P><HR><P><A HREF="http://www.ics.uci.edu/~eppstein/numth/egypt/">Egyptian Fractions,
+</A><A HREF="http://www.ics.uci.edu/~eppstein/numth/">Number Theory,
+</A><A HREF="http://www.ics.uci.edu/~eppstein/">David Eppstein,
+</A><A HREF="http://www.ics.uci.edu/">ICS,
+</A><A HREF="http://www.uci.edu/">UC Irvine
+</A><P><SMALL>Formatted by
+<A HREF="http://www.hallym.ac.kr/~physics/education/Math/tdr/nbks/sourceCode.html">nb2html</A> and
+<A HREF="http://www.ics.uci.edu/~eppstein/pubs/filter.html">filter</A>.
+<!--#config timefmt="%d %h %Y, %T %Z" -->Last update:
+<!--#flastmod file="egypt.ma" -->.
+</SMALL>

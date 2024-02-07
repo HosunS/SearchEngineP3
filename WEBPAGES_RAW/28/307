@@ -1,0 +1,919 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+  <title>Program 2</title>
+</head>
+<body BGCOLOR="white">
+
+<center>
+<h1>Program 2</h1>
+<h1>
+Classes, Overloaded Operators, and Iterators
+</h1>
+<p>
+<h2>ICS-33: Intermediate Programming<br>
+</h2>
+<p>
+</center>
+
+
+<!-- Introduction -->
+
+<a name="Introduction">
+<hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Introduction</b></td>
+<td width ="80%">
+This programming assignment is designed first to ensure that you know how to
+  write classes that overload many of the standard Python operators by defining
+  various double-underscore methods.
+It also ensures that you know how to write classes that implement iterators,
+  by defining an <b>__iter__</b> method that returns an object that we/Python
+  can call <b>__next__</b> on.
+<b>These Iterators are covered near the end of the due date for this project;
+  skip writing these functions (only in the first class) until the material is
+  covered in class, or read ahead.</b>
+<p>
+You should download the <a href="program2.zip">program2</a> project folder and
+  unzip it to produce an Eclipse project with two modules.
+You will write classes in these modules, which can be tested in the script and
+  using the standard driver using the batch self-check files that I supplied.
+Eventually you will submit each of these modules you write separately to
+  Checkmate.
+<p>
+I recommend that you work on this assignment in pairs, and I recommend that you
+  work with someone in your lab section (so that you have 4 hours each week of
+  scheduled time together).
+These are just recommendations.
+Try to find someone who lives near you, with similar programming skills,
+  and work habits/schedule: e.g., talk about whether you prefer to work
+  mornings, nights, or weekends; what kind of commitment you will make to submit
+  program early.
+<!---
+If you believe that it is impossible for you to work with someone, because of
+  some special reason(s), you should send me email stating them and asking for
+  special permission to work alone (which I do grant, but not frequently).
+--->
+<p>
+<b>Only one student should submit all parts of the the assignment</b>, but both
+  students' UCInetID and name should appear in a comment at the <b>top</b> of
+  <b>each submitted .py file</b>.
+A special grading program reads this information.
+The format is a comment starting with <b>Submitter</b> and <b>Partner</b> (when
+  working with a partner), followed by a <b>colon</b>, followed by the student's <b>UCInetID</b> (in all lower-case), followed by the student's <b>name in
+  parentheses</b> (last name, comma, first name -capitalized appropriately).
+If you omit this information, or do not follow this exact form, it will require
+  extra work for us to grade your program, so we will deduct points.
+Note: if you are submitting by yourself, and do <b>NOT</b> have a partner, you
+  should <b>OMIT</b> the partner line and the "...certify" sentence.
+<p>
+For example if Romeo Montague (whose UCInetID is romeo1) submitted a program
+  that he worked on with his partner Juliet Capulet (whose UCInetID is jcapulet)
+  the comment at the top of each .py file would appear as:
+<pre><b># Submitter: romeo1(Montague, Romeo)
+# Partner  : jcapulet(Capulet, Juliet)
+# We certify that we worked cooperatively on this programming
+#   assignment, according to the rules for pair programming</b></pre>
+If you do not know what the terms <b>cooperatively</b> and/or
+  <b>rules for pair programming</b> mean, please read about
+  <a href="../../../common/handouts/pairprogramming.html">Pair Programming</a> 
+  <b>before</b> starting this assignment.
+Please turn in each program <b>as you finish it</b>, so that I can more
+  accurately assess the progress of the class as a whole during this assignment.
+<p>
+Print this document and carefully read it, marking any parts that contain
+  important detailed information that you find (for review before you turn in
+  the files).
+The code you write should be as compact and elegant as possible, using 
+  appropriate Python idioms.
+</td>
+</tbody>
+</table>
+
+
+<!-- Problem 1 -->
+
+<a name="problem1">
+<hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Problem #1: Bag Class</b></td>
+<td width ="80%">
+<h3>Problem Summary:</h3>
+Write a class that represents and defines methods, operators, and an iterator
+  for the <b>Bag</b> class.
+Bags are similar to sets, and have similar operations (of which we will
+  implement just the most important) but unlike sets they can store multiple
+  copies of items.
+We will store the information in bags as dictionaries (I suggest using a 
+   <b>defaultdict</b>) whose keys are associated with <b>int</b> values that
+   specify the number of times the key occurs in the <b>Bag</b>.
+<b>You must store Bags using this one data structure, as specified</b>
+<h3>Details</h3>
+<ol>
+<li>Define a class named <b>Bag</b> in a module named <b>bag.py</b>
+<p>
+<li>Define an <b>__init__</b> method that has one parameter, an iterable of
+       values that initalize the bag.
+    Writing <b>Bag()</b> constructs an empty bag.
+    Writing <b>Bag(['d','a','b','d','c','b','d'])</b> construct a bag with
+      one <b>'a'</b>, two <b>'b'</b>s, one <b>'c'</b>, and three <b>'d'</b>s.
+    Objects in the <b>Bag</b> class should store only the dictionary specified
+      above: it should <b>not</b> store/manipulate any other <b>self</b>
+      variables.
+<p>
+<li>Define a <b>__repr__</b> method that returns a string, which when passed to
+       <b>eval</b> returns a newly constructed bag with the same value
+       (<b>==</b>) to the object <b>__repr__</b> was called on.
+    For example, for the <b>Bag</b> in the discussion of <b>__init__</b> the
+        <b>__repr__</b> method would print its result as
+       <b>Bag(['a', 'c', 'b', 'b', 'd', 'd', 'd'])</b>.
+    Bags like sets are not sorted, so these 7 values can appear in any order.
+    We might require that information in the list is sorted, but not all values
+      we might put in a bag may be ordered (and therefore not sortable): e.g.,
+      a bag storing both string and int values, <b>Bag(['a',1])</b> which is
+      allowed.
+    <p>
+    <b>Note</b>: This method is used to test several other methods/operators
+       in the batch self-check file; so it is critical to write it correctly.
+<p>
+<li>Define a <b>__str__</b> method that returns a string that more compactly
+      shows a bag.
+    For example, for the <b>Bag</b> in the discussion of <b>__init__</b> the
+        <b>__str__</b> method would print its result as
+       <b>Bag(a[1], c[1], b[2], d[3])</b>.
+    Bags like sets are not sorted, so these 7 values can appear in any order.
+<p>
+<li>Define a <b>__len__</b> method that returns the total number of values in
+      the <b>Bag</b>.
+    For example, for the <b>Bag</b> in the discussion of <b>__init__</b> the
+        <b>__len__</b> method would return <b>7</b>.
+<p>
+<li>Define a <b>unique</b> method that returns the number of different
+      (<b>unique</b>) values in the <b>Bag</b>.
+    For example, for the <b>Bag</b> in the discussion of <b>__init__</b> the
+        <b>unique</b> method would return <b>4</b>, because there are four
+        different values in the <b>Bag</b>; contrast this method with
+        <b>__len__</b>.
+<p>      
+<li>Define a <b>__contains__</b> method that returns whether or not its
+      argument is in the <b>Bag</b> (one or more times).
+<p>
+<li>Define a <b>count</b> method that returns the number of times its argument
+      is in the <b>Bag</b>: <b>0</b> if the argument is not in the <b>Bag</b>.
+<p>
+<li>Define an <b>add</b> method that adds its argument to the <b>Bag</b>: if
+      that value is already in the <b>Bag</b>, its count is incremented by
+      <b>1</b>; if it is not already in the <b>Bag</b>, it is added to the
+      <b>Bag</b> with a count of <b>1</b>.
+<p>
+<li>Define an <b>__add__</b> method that unions its two <b>Bag</b> operands:
+      it returns a new <b>Bag</b> with all the values in <b>Bag</b> operands.
+    For example: <b>str(Bag(['a','b']) + Bag(['b','c']))</b> should be
+      <b>'Bag(a[1],b[2],c[1])'</b>
+    Neither <b>Bag</b> operand should change.
+<p>
+<li>Define a <b>remove</b> method that removes its argument from the
+      <b>Bag</b>: if that value is already in the <b>Bag</b>, its count is
+      decremented by <b>1</b> (and if the count reduces to <b>0</b>, the value
+      is removed from the dictionary; if it is not in the <b>Bag</b>, raise a
+      <b>ValueError</b> exception, with an appropriate message that includes
+      the value that could not be removed.
+<p>
+<li>Define <b>__eq__</b>/<b>__ne__</b> methods that return whether one
+      <b>Bag</b> is equal/not equal to another: contains the same values the
+      same number of times.
+    A <b>Bag</b> is not equal to anything whose type is not a <b>Bag</b>
+    This this method should not change either <b>Bag</b>.
+<p>
+<li>Define an <b>__iter__</b> method that that returns an object on which
+      <b>next</b> can be called to produce every value in the <b>Bag</b>: all
+      <b>len</b> of them.
+    For example, for the <b>Bag</b> in the discussion of <b>__init__</b>, 
+      the following code
+<b><pre>  for i in x:
+      print(i,end='')</pre></b>
+would print
+<b><pre>  acbbddd</pre></b>
+    Bags like sets are not sorted, so these 7 values can appear in any order.
+<p>
+Ensure that the iterator produces those values in the <b>Bag</b> at the time
+      the iterator starts executing; so mutating the <b>Bag</b> afterwards,
+      or even during the iteration, will <b>not</b> affect what values it
+      produces.
+<p>
+    <b>Hint</b>: Write this method as a call to a local generator, passing a
+      copy of the dictionary (covered in Friday's lecture in Week 4).
+</ol>
+I have shown only examples of <b>Bag</b>s storing strings, because they are
+  convenient to write.
+But bags can store any type of data.
+The <b>__repr__</b>, <b>__str__</b>, and <b>__iter__/__next__</b> methods must
+  be written independently: neither should call the other to get things done.
+<p>
+<h3>Testing</h3>
+The <b>bag.py</b> module includes a script that calls <b>driver.driver()</b>.
+The project folder contains a <b>bsc1.txt</b> file (examine it) to use for
+   batch-self-checking your class.
+These are rigorous but not exhaustive tests.
+Incrementally write and test your class; check each method as you write it.
+<p>
+Note that when exceptions are raised, they are printed by the driver but the 
+  <b>Command:</b> prompt sometimes appears misplaced.
+<p>
+You can write other code at the bottom of your <b>bag.py</b> module to test the
+  <b>Bag</b> class, or type code into the driver as illustrated below.
+Notice the default for each command is the command previously entered.
+<b><pre>  Driver started
+  Command[!]: from bag import Bag
+  Command[from bag import Bag]: b = Bag(['d','a','b','d','c','b','d'])
+  Command[b = Bag(['d','a','b','d','c','b','d'])]: print(b)
+  Bag(a[1], b[2], c[1], d[3])
+  Command[len(b)]: print(len(b))
+  7
+  Command[print(len(b))]: print(b.count('d'))
+  3
+  Command[print(b.count('d'))]: quit
+  Driver stopped</pre></b>
+</td>
+</tbody>
+</table>
+
+
+<!-- Problem 2 -->
+
+<a name="problem2">
+<hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Problem #2: Graph Class (operators)</b></td>
+<td width ="80%">
+<h3>Problem Summary:</h3>
+The <b>Graph</b> class is defined in the <b>graph.py</b> module.
+The <b>Graph</b> class represents a graph consisting of <b>nodes</b> and
+  <b>edges</b>.
+Each <b>edge</b> is pictured as an <b>arrow</b> that connects its
+  <b>origin node</b> at the tail (a <b>str</b>) to its <b>destination node</b>
+  at the head (a <b>str</b>).
+Each <b>edge value</b> appears as a label on an arrow.
+<p>
+Examine the following graph.
+<p>
+<img src="images/graph.jpg">
+<p>
+Note that some nodes are <b>origin nodes</b> (<b>a</b>, <b>b</b>, and <b>d</b>),
+  some nodes are <b>destination nodes</b> (<b>a</b>, <b>b</b>, and <b>c</b>),
+  some nodes are both (<b>a</b> and <b>b</b>), 
+  and some nodes are neither (<b>e</b>: a node in the graph with no edges
+  connecting it to any other node).
+<p>
+We represent graphs as an outer-<b>dict</b> that stores as keys all the
+  <b>nodes</b> in the graph; each <b>node</b> (treated as an <b>origin node</b>)
+  is associated with an inner-<b>dict</b> that stores as keys all its
+   <b>destination nodes</b> (if any); each <b>destination node</b> in this
+  inner-<b>dict</b> is associated with an <b>edge value</b> (here an <b>int</b>)
+  between the <b>origin node</b> (key in the outer-<b>dict</b>)) and
+  <b>destination node</b> (key in in the inner-<b>dict</b>).
+So, the graph pictured above can be represented by the following
+  outer/inner-<b>dict</b> data structure
+
+<b><pre>
+  {'a': {'b': 1, 'c': 3}, 'b': {'a': 2}, 'c': {}, 'd': {'b': 2, 'c': 1}, 'e': {}}
+</pre></b>
+Of course, because the data structures are <b>dict</b>s, their keys can appear
+  in any order.
+<p>
+Note that all five nodes are in the outer-<b>dict</b>, even <b>c</b> and
+  <b>e</b>, which are not the <b>origin node</b> of any <b>edge</b>.
+Also, although this graph uses <b>int</b>s for edge values, we will allow
+  values of any type (although see the predicate parameter in <b>__init__</b>)
+  to be edge values.
+Finally, it is possible (although not shown) for an edge to go from some node
+  to the same node (called a <b>self edge</b>).
+<p>
+You will write a <b>__str__</b> method for the <b>Graph</b> class that shows
+  translates this <b>dict</b> more clearly into a string.
+If we called <b>str</b> to print this graph, it would appear as
+
+<b><pre>
+  Graph:
+    a: b(1), c(3)
+    b: a(2)
+    c: 
+    d: b(2), c(1)
+    e: </pre></b>
+Here, the line <b>a: b(1), c(3)</b> means that <b>origin node a</b> has
+  an <b>edge</b> to <b>destination node b</b> (with <b>edge value 1</b>), and
+  an <b>edge</b> to <b>destination node c</b> (with <b>edge value 3</b>).
+This <b>__str__</b> method alphabetizes the <b>origin nodes</b> (vertically,
+  one per line) and the <b>destination nodes</b> (horizontally, all on the same
+  line) for easy reading (and so each graph has a unique <b>str</b>
+  representation, independent of the iteration order of the outer- and
+  inner-dictionaries).
+<p>
+All the methods in the <b>Graph</b> class process only this
+  outer/inner-<b>dict</b> data structure, representing the graph.
+<p>
+
+<h3>Details</h3>
+Define a class named <b>Graph</b> in a module named
+      <b>graph.py</b>.
+<p>
+You may define other (helper) Python <b>methods</b> in this class (but no other
+  <b>functions</b> in its module), but you do not have to define any.
+I have included the helper methods <b>legal_tuple2</b> and <b>legal_tuple3</b>
+  in the download, which you can use to simplify checking the requirements in
+  other methods that you must write.
+<p>
+I suggest that you first write simple code to test/debug your methods, before
+  calling <b>driver()</b> to test your class in its script; later you can use
+  the driver and the large <b>bsc.txt</b> file supplied with the project.
+If you want to see the exceptions raised, and their messsages, uncomment the
+  code before the call to <b>driver.driver()</b>.
+<p>
+<ol>
+
+<li>Define an <b>__init__</b> method that has two parameters: the first matches
+    a predicate defining what types of values are legal for edge values; the
+    second matches zero or more arguments, where each argument is expected to
+    be either
+      <p>
+      <ol>
+      <li>a 3-<b>tuple</b> specifying an <b>origin node</b>,
+            <b>destination node</b>, and <b>edge value</b>:
+            e.g, <b>('a','b',1)</b>
+      <p>
+      <li> a single value specifying a node: e.g., <b>'e'</b>
+      </ol>
+    <p>
+    We can specify the original <b>Graph</b> above (whose edge values must
+      store <b>int</b> values) by
+<b><pre>  Graph( (lambda x: type(x) is int), ('a','b',1),('a','c',3),('b','a',2),('d','b',2),('d','c',1),'e')</pre></b>
+    Note <b>node e</b> appears by itself, because it is neither an
+      <b>origin node</b> nor a <b>destination node</b> of any <b>edge</b>, but
+      still must be included in the <b>Graph</b>; all other nodes are one, the
+      other, or both; finally, the 3-tuples/strings arguments can appear in ANY
+      order.
+    <p>
+    For each of these possibilities, ensure that all the specified nodes
+      (whether specifying the <b>origin</b> and <b>destination</b> nodes of an
+      <b>edge</b> or appearing as a node by itself)
+      become keys in the outer/inner-<b>dict</b>, and that the
+      outer/inner-<b>dict</b> stores the appropiate <b>edge value</b>(s).
+    <p>
+    Raise the <b>GraphError</b> exception with an appropriate message if
+    <ol>
+    <li>Any argument isn't
+          <ul>
+             <li>a 3-<b>tuple</b> whose first two values are <b>str</b>s, and
+                   whose third value satisifies the predicate passed as the
+                   first argument to <b>__init__</b>
+             <li>a single <b>str</b>
+          </ul>
+    <p>
+    <li>The specified <b>origin node</b> and <b>destination node</b> in a
+          3-<b>tuple</b> are already in the <b>Graph</b> (even if the edge
+          value is the same); or if the specified single <b>node</b> is already
+          in the <b>Graph</b> (possibly from being included in a
+          previous 3-<b>tuple</b> argument).
+    </ol>
+    <p>
+    <b>IMPORTANT</b>: You <b>must</b> use the name <b>self.edges</b> (all
+         lower-case) to store the outer/inner-<b>dict</b> constructed
+         from the arguments; you must also use <b>self.is_legal_edge_value</b>
+         to store the function that is the first argument to <b>__init__</b>.
+    The name <b>self.edges</b> is used in some tests in the batch self-check
+       file; the name <b>self.is_legal_edge_value</b> appears in the
+       <b>legal_tuple3</b> method.
+    Store <b>no</b> other <b>self</b> variables besides these two; all the
+       methods in the <b>Graph</b> class process only this information.
+<p>
+
+<li>Define a <b>__str__</b> method that returns a string representation of a
+     graph that is easier to read than the <b>str</b> of its dictionaries.
+See the <b>Problem Summary</b> above for the details of the specification of
+     this method.
+<p>
+
+<li>Define a <b>__getitem__</b> method as follows (with <b>item</b> parameter):
+      be careful to access the outer/inner-<b>dict</b> only for legal keys.
+    <p>
+    <ol>
+    <li>If the <b>item</b> parameter is a <b>str</b>, treat it as an
+           <b>origin node</b> and return the <b>dict</b> of <b>destination
+           nodes</b> and their <b>edge values</b> for that <b>origin node</b>
+           in the <b>Graph</b>;
+        if there is no such <b>origin node</b>, raise a <b>GraphError</b>
+           exception with an appropriate message.
+    <p>
+    <li>If the <b>item</b> parameter is a 2-<b>tuple</b> specifying an
+           <b>origin node</b> and <b>destination node</b> (as <b>str</b>s),
+           return the <b>edge value</b> going from that <b>origin node</b> to
+           that <b>destination node</b>;
+        if there is no such <b>edge</b>, raise a <b>GraphError</b>
+          exception with an appropriate message.
+    <p>
+    <li>If the <b>item</b> parameter is anything else, raise a <b>GraphError</b>
+           exception with an appropriate message.
+   </ol>
+   <p>
+   For example, if <b>g</b> refers to the original <b>Graph</b> above, then
+    <b>g['a']</b> returns <b>{'b': 1, 'c': 3}</b>; and
+    <b>g['a','b']</b> returns <b>1</b>.
+    But atempting <b>g['x']</b> and <b>g['a','d']</b> raise exceptions, because
+      <b>'x'</b> (in the first case) is not a node, and <b>('a','d')</b> (in
+       the second case) is not an edge in the graph.
+   <p>
+   Note that writing <b>g['a','b']</b> is the same as writing 
+     <b>g[('a','b')]</b>: Python turns the <b>'a','b'</b> in the <b>[]</b>
+     brackets into a <b>2-tuple</b>.
+<p>
+
+<li>Define a <b>__setitem__</b> method as follows (with <b>item</b> and
+   <b>value</b> parameters): be careful to access
+      the outer/inner-<b>dict</b> only for legal keys.
+    <p>
+    <ol>
+    <li>If the <b>item</b> parameter is a 2-<b>tuple</b> specifying an
+           <b>origin node</b> and <b>destination node</b> (as <b>str</b>s),
+           set the appropriate outer/inner-<b>dict</b> so that the <b>edge</b>
+           going from the <b>origin node</b> to the <b>destination node</b>
+           stores the <b>value</b> parameter.
+        If there is no such <b>edge</b>, add it; if there already is such
+           an <b>edge</b>, update its <b>edge value</b> it to the <b>value</b>
+           parameter.
+        <p>
+        <b>IMPORTANT</b>: if the <b>destination node</b> is NOT already a key
+          in the outer-<b>dict</b>, make it a key that associates with an empty
+          <b>dict</b>; doing so guarantees that ALL nodes in the <b>Graph</b>,
+          even those that are are not <b>origin nodes</b> for <b>edges</b>,
+          always appear as keys in the outer-<b>dict</b>.
+    <p>
+    <li>If the <b>item</b> parameter is anything else, or if the <b>value</b>
+           is not legal as an <b>edge value</b> in that graph, raise a
+           <b>GraphError</b> exception with an appropriate message.
+   </ol>
+   <p>
+   For example, if <b>g</b> refers to the original <b>Graph</b> above, then
+    <b>g['a','f'] = 5</b> would result in the following outer/inner-<b>dict</b>
+<b><pre>
+  {'a': {'b': 1, 'c': 3, 'f': 5}, 'b': {'a': 2}, 'c': {}, 'd': {'b': 2, 'c': 1}, 'e': {}, 'f': {}}</pre></b>
+Note the addition of <b>'f': 5</b> in <b>a</b>'s inner-<b>dict</b> and the
+  addition of <b>f: {}</b> to the outer-<b>dict</b>.
+Now, <b>str(g)</b> would print as
+<b><pre>
+  Graph:
+    a: b(1), c(3), f(5)
+    b: a(2)
+    c: 
+    d: b(2), c(1)
+    e:
+    f: </pre></b>
+<p>
+After you write <b>__setitem__</b>, I suggest that you review your
+     <b> __init__</b> method, and simplify it by making appropriate use of
+     <b>__setitem__</b>.
+<p>
+
+<li>Define a <b>node_count</b> method that returns the number of <b>nodes</b>
+      in the <b>Graph</b>.
+    For example <b>g.node_count()</b> of the original <b>Graph</b> above is
+      <b>5</b>.
+<p>
+
+<li>Define a <b>__len__</b> method that returns the number of <b>edges</b> (not
+     <b>nodes</b>) in the <b>Graph</b>.
+    For example the <b>len</b> of the original <b>Graph</b> above is <b>5</b>
+      because it has <b>5</b> edges (<b>a</b> to <b>b</b>, <b>a</b> to <b>c</b>,
+      <b>b</b> to <b>a</b>, <b>d</b> to <b>b</b>, and <b>d</b> to <b>c</b>).
+<p>
+
+<li>Define an <b>out_degree</b> method that takes a <b>node</b> as a
+      parameter: it returns the number of <b>edges</b> for which this
+      <b>node</b> is an <b>origin node</b>.
+    If the node is not a <b>str</b>, or it not in the <b>graph</b>, raise a
+      <b>GraphError</b> exception with an appropriate message.
+    <p>
+    For example, in the original <b>Graph</b> above, <b>g.out_degree('a')</b>
+      returns <b>2</b>, <b>g.out_degree('c')</b> returns <b>0</b>, and
+      <b>g.out_degree('x')</b> raises a <b>GraphError</b> exception.
+<p>
+
+<li>Define an <b>in_degree</b> method that takes a <b>node</b> as a
+      parameter: it returns the number of <b>edges</b> for which this
+      <b>node</b> is a <b>destination node</b>.
+    If the node is not a <b>str</b>, or it not in the <b>graph</b>, raise a
+      <b>GraphError</b> exception with an appropriate message.
+    <p>
+    For example, in the original <b>Graph</b> above, <b>g.in_degree('c')</b>
+      returns <b>2</b>, <b>g.in_degree('d')</b> returns <b>0</b>, and
+      <b>g.in_degree('x')</b> raises a <b>GraphError</b> exception.
+<p>
+
+<li>Define a <b>__contains__</b> method (with <b>item</b> parameter) so that
+      the <b>in</b> operator returns whether or not <b>item</b> is in the
+      <b>Graph</b>.
+    <p>
+    <ol>
+    <li>If the <b>item</b> parameter is a <b>str</b>, return <b>True</b> if it
+          is a <b>node</b> in the <b>Graph</b>, otherwise <b>False</b>;
+          remember that all nodes should be keys in the outer-<b>dict</b>.
+    <p>
+    <li>If the <b>item</b> parameter is a 2-<b>tuple</b> specifying an
+           <b>origin node</b> and <b>destination node</b>  (as <b>str</b>s),
+           return <b>True</b> if there is an edge in the <b>Graph</b> going
+           from the <b>origin node</b> to the <b>destination node</b>
+           (regardless of its <b>edge value</b>), otherwise return <b>False</b>.
+    <p>
+    <li>If the <b>item</b> parameter is a 3-<b>tuple</b> specifying an
+           <b>origin node</b>, <b>destination node</b>  (as <b>str</b>s)
+           and <b>edge value</b> (legal according to the predicate passed to
+           <b>__init__</b>, return <b>True</b> if there is an edge in the
+           <b>Graph</b> going from the <b>origin node</b> to the
+           <b>destination node</b> WITH THAT <b>edge value</b>, otherwise
+           return <b>False</b>.
+    <p>
+    <li>If the value to check is anything else, raise a <b>GraphError</b>
+          exception with an appropriate message.
+   </ol>
+    <p>
+    For example, if <b>g</b> refers to the original <b>Graph</b> above, then
+    <b>'a' in g</b> returns <b>True</b>, but
+      <b>'x' in g</b> returns <b>False</b>;
+    also, <b>('a','b') in g</b> returns <b>True</b>, but
+      <b>('e','b') in g</b> returns <b>False</b>;
+    finally, <b>('a','b',1) in g</b> returns <b>True</b> and, but
+      <b>('a','b',2) in g</b> returns <b>False</b>, and
+      <b>('e','b',1) in g</b> returns <b>False</b>.
+<p>
+
+<li>Define a <b>__delitem__</b> method as follows (with <b>item</b> parameter):
+      be careful to access the outer/inner-<b>dict</b> only for legal keys.
+    <p>
+    <ul>
+    <li>If the <b>item</b> parameter is a <b>str</b>, treat it as an
+           <b>node</b>; if this <b>str</b> is a key in the outer-<b>dict</b>
+        <p>
+        <ul>
+          <li>Delete that key <b>origin node</b> from the outer-<b>dict</b>.
+          <p>
+          <li>Delete that key from every inner-<b>dict</b> in which
+                it is a <b>destination node</b>.
+        </ul>
+        <p>
+        The result of <b>__delitem__</b> is that the <b>node</b> specified by
+           the <b>item</b> parameter does not appear anywhere in the graph: 
+           nowhere in the outer/inner-<b>dict</b>.
+        If this <b>str</b> is NOT a <b>node</b> in the <b>Graph</b>, do
+          nothing.
+        <p>
+        For example, if <b>g</b> (on the left) refers to the original
+          <b>Graph</b> above, then
+          <b>del g['x']</b> would do nothing (there is no node <b>x</b>),
+          but <b>del g['b']</b> would change the graph to the one on the right.
+<p>
+<img src="images/graph.jpg"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+<img src="images/graphdel.jpg">
+<p>
+        Now node <b>b</b> is deleted: it is not the <b>origin node</b> for any
+          edges and it is not the <b>destination node</b>  of any edges.
+        The outer/inner-<b>dict</b> of <b>g</b> would be
+<b><pre>
+  {'a': {'c': 3}, 'c': {}, 'd': {'c': 1}, 'e': {}}
+</pre></b>
+        Now <b>str(g)</b> would print as
+<b><pre>
+  Graph:
+    a: c(3)
+    c: 
+    d: c(1)
+    e: </pre></b>
+<p>
+    <li>If the <b>item</b> parameter is a 2-<b>tuple</b> specifying an
+          <b>origin node</b> and <b>destination node</b>  (as <b>str</b>s),
+          and that <b>edge</b> is in the <b>Graph</b>, delete only that one
+          <b>edge</b> from the <b>Graph</b>;
+        in this case, do NOT delete any keys from the outer-</b>dict</b>.
+        If this 2-<b>tuple</b> is NOT an <b>edge</b> in the <b>Graph</b>, do
+          nothing.
+    <p>
+        For example, if <b>g</b> (on the left) refers to the original
+          <b>Graph</b> above, then
+          <b>del g['a','e']</b> would do nothing (there is no edge from
+          <b>a</b> to <b>e</b>), but
+          <b>del g['a','b']</b> would change the graph to the one on the right.
+<p>
+<img src="images/graph.jpg"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+<img src="images/graphdel2.jpg">
+<p>
+           The <b>edge</b> going from <b>origin node a</b> to
+              <b>destination node b</b> is deleted from the <b>Graph</b>.
+        The outer/inner-<b>dict</b> of <b>g</b> would be
+<b><pre>
+  {'a': {'c': 3}, 'b': {'a': 2}, 'c': {}, 'd': {'b': 2, 'c': 1}, 'e': {}}
+</pre></b>
+        Now <b>str(g)</b> would print as
+<b><pre>
+  Graph:
+    a: c(3)
+    b: a(2)
+    c: 
+    d: b(2), c(1)
+    e: </pre></b>
+<p>
+    <li>If the <b>item</b> parameter is anything else, raise a <b>GraphError</b>
+           exception with an appropriate message.
+   </ul>
+<p>
+
+<li>Define a <b>__call__</b> method (with <b>d</b> parameter) as follows:
+    <p>
+    <ol>
+    <li>If the <b>d</b> parameter is a <b>str</b> that is a <b>node</b> in
+           the <b>Graph</b>, treat it as a <b>destination node</b> and return a
+           <b>dict</b> of all <b>origin nodes</b> and <b>edge values</b> for
+           that <b>destination node</b> in the <b>Graph</b>.
+        Note: this information is <b>not stored explicitly</b> in the
+           <b>Graph</b>, but <b>must be computed</b>.
+        <p>
+        For example, if <b>g</b> refers to the original <b>Graph</b> above, then
+           <b>g('c')</b> returns the <b>dict {'a': 3, 'd': 1}</b>, which
+           includes the two <b>edge values</b> for <b>origin nodes</b> leading
+           to <b>destination node c</b>.
+        Calling <b>g('d')</b> returns the <b>dict {}</b>, because <b>d</b> is
+           a <b>node</b> in the <b>Graph</b>, but it is not the
+           <b>destination node</b> of any <b>edge</b>.
+    <p>
+    <li>If the <b>d</b> parameter is anything else, or is a <b>str</b> that
+          is NOT a <b>node</b> in the <b>Graph</b>, raise a <b>GraphError</b>
+           exception with an appropriate message.
+        <p>
+        For example, if <b>g</b> refers to the original <b>Graph</b> above, then
+          calling <b>g(1)</b> or <b>g('x')</b> raises an exception.
+   </ol>
+   <p>
+   Note: <b>g['a']</b> returns a <b>dict</b> of all <b>destination nodes</b>
+     and the <b>edge values</b> starting at <b>origin node a</b>, while
+     <b>g('a')</b> returns a <b>dict</b> of all <b>origin nodes</b> and the
+     <b>edge values</b> ending at <b>destination node a</b>.
+<p>
+<li>Define a <b>clear</b> method that is parameterless.
+It removes all <b>node</b> and <b>edge values</b> from the graph.
+
+<p>
+<li>Define a <b>dump</b> method that has 3 parameters
+  <ul>
+    <li>a text file already open for writing information into it
+    <li>a separation string (see below), whose default value is <b>':'</b>
+    <li>a function that converts an edge value to its string equivalent, whose
+          default value is the <b>str</b> function
+  </ul>
+  <p>
+  This method prints one line for every node in the graph: on that line it
+    prints the node and all the destination nodes (and the edge value of each),
+    with the separation string between all the values.
+  The nodes that appear at the start of each line must occur in alphabetical
+    order, and the destination nodes in each line must occur in alphabetical
+    order as well.
+  For example, if <b>g</b> refers to the original <b>Graph</b> above, then
+    calling <b>g.dump(open('g.txt')</b> or <b>g.dump(open('g.txt'),':',str)</b>
+    would result in the file <b>g.txt</b> storing
+<b><pre>
+a:b:1:c:3
+b:a:2
+c
+d:b:2:c:1
+e
+</pre></b>
+Note the alphabetical ordering of the nodes at the start of each line, and of
+  the destination nodes appearing afterward in each line.
+Finally, <b>dump</b> closes the file after dumping the graph into it.
+<p>
+
+<li>Define a <b>load</b> method that has 3 parameters
+  <ul>
+    <li>a text file already open for reading information out of
+    <li>a separation string (see below), whose default value is <b>':'</b>
+    <li>a function that converts a string into its equivalant edge value, whose
+          default value is the <b>int</b> function
+  </ul>
+  <p>
+  This method is the opposite of <b>dump</b>: it reads a file in the form
+    specified by <b>dump</b> and recreates the graph <b>dump</b> was called on.
+  It closes the file after loading it.
+<p>
+
+<li>Define a <b>reverse</b> method that returns a new graph (and does not
+       mutate the argument graph) that has the same nodes and edge values, but
+       the direction of each edge reverses, by exchanging its origin and
+       destination nodes.
+    For example, if <b>g</b> refers to the original <b>Graph</b> above, then
+       <b>g.reverse()</b> would be the graph.
+<p>
+<img src="images/reversegraph.jpg">
+<p>
+And <b>str(g.reverse())</b> would print as
+<b><pre>Graph:
+  a: b(2)
+  b: a(1), d(2)
+  c: a(3), d(1)
+  d: 
+  e:</pre></b>
+<p>
+
+<li>Define a <b>natural_subgraph</b> method that takes any number of argument
+       (each of which is a string): it returns a new graph (and does not
+       mutate the argument graph) that has only the nodes specified as
+       arguments, and only the edges in the original graph that connect these
+       nodes.
+    For example, if <b>g</b> refers to the original <b>Graph</b> above, then
+       <b>g.natural_subgraph('a','b','c')</b> would be the graph.
+<p>
+<img src="images/naturalsubgraphabc.jpg">
+<p>
+And <b>str(g.natural_subgraph('a','b','c'))</b> would print as
+<b><pre>Graph:
+  a: b(1), c(3)
+  b: a(2)
+  c:</pre></b>
+If any of the arguments are not <b>str</b>s, raise a <b>GraphError</b>
+  exception with an appropriate message.
+Note that the arguments are not required to name nodes in the graph (if they
+  don't, just ignore them), but they must be strings (or else the
+  <b>GraphError</b> exception  is raised).
+<p>
+
+<li>Define an <b>__iter__</b> method so that each call to <b>next</b> produces
+      either (a) a 3-<b>tuple</b> (containing <b>origin node</b>,
+      <b>destination node</b>, <b>edge value</b> triplets) or (b) just a
+      <b>str</b>; such that the <b>origin nodes</b>/<b>str</b>s are produced in
+      ascending order, and for each <b>origin node</b> its
+      <b>destination nodes</b> are produced in ascending order.
+    Note: A <b>node</b> is produced as just a <b>str</b> if it is not the
+      <b>origin node</b> or <b>destination node</b> of any <b>edge</b>.
+    <p>
+    For example, iterating over the original <b>Graph</b> above produces the
+       3-<b>tuple</b>s in the following order: <b>('a', 'b', 1)</b>,
+       <b>('a', 'c', 3)</b>, <b>('b', 'a', 2)</b>, <b>('d', 'b', 2)</b>,
+       <b>('d', 'c', 1)</b>, and finally <b>'e'</b> (the alphabetically last
+       <b>node</b> which is not an <b>origin node</b> or <b>destination node</b>
+       for any <b>edge</b>).
+<p>
+
+<li>Define the <b>==</b> and <b>!=</b> operators (<b>__eq__</b> and
+    <b>__ne__</b> methods) for comparing two <b>Graph</b>s.
+    We define the meaning of <b>g1 == g2</b> as <b>g1</b> contains exactly the
+      same nodes and edges as <b>g2</b>.
+    The <b>!=</b> operator means the opposite of that: some nodes or edges
+      are different.
+<p>
+
+<li>Define the <b>&lt;=</b> operator (<b>__le__</b> method) for comparing two
+      <b>Graph</b>s.
+    We define the meaning of <b>g1 <= g2</b> as <b>g1 is a subgraph of
+      g2</b>, which means that
+    <ul>
+    <li>All the <b>nodes</b> in <b>g1</b> are in <b>g2</b>.
+    <li>All the <b>edge values</b> in <b>g1</b> (<b>origin node</b>,
+         <b>destination node</b>, and <b>value</b>) are in <b>g2</b>.
+    </ul>
+    <p>
+    So, for example any <b>Graph g</b>, <b>g <= g</b> evaluates to <b>True</b>.
+    <p>
+    If <b>g1</b>'s <b>dict</b> is <b>{'a': {'b': 1}, 'b': {'a': 2}}</b> and
+      <b>g2</b>'s <b>dict</b> is
+      <b>{'a': {'b': 1, 'c':3}, 'b': {'a': 2}, 'c': {}}</b> then 
+      <b>g1 <= g2</b> evaluates to <b>True</b>: both nodes in <b>g1</b> are in
+         <b>g2</b>, and both edges in <b>g1</b> are in <b>g2</b>.
+<p>
+
+<li>Define the <b>+</b> operator for adding two <b>Graph</b>s or for adding a
+      <b>Graph</b> to a <b>str</b> (a <b>node</b>) or a 3-<b>tuple</b>
+      (containing an <b>origin node</b>, <b>destination node</b>,
+       <b>edge value</b> triplet).
+    Note, adding always produces a new <b>Graph</b> without changing any operand
+      <b>Graphs</b>.
+    <b>Hint</b>: copy the left-operand <b>Graph</b>, <b>add</b> the information
+      specified below to it, and return it.
+    <p>
+    <ol>
+    <li>If both arguments are <b>Graph</b>s, then the returned <b>Graph</b>
+          should contain all the <b>nodes</b> and  <b>edge values</b> from each
+          <b>Graph</b>: if the two <b>Graph</b>s have the same <b>edge</b> with
+          a different <b>value</b>, the returned <b>Graph</b> should have the
+          <b>value</b> from the left-operand <b>Graph</b> for this <b>edge</b>.
+    <p>
+    <li>If one argument is <b>str</b>, then the returned <b>Graph</b> should
+          contain all the <b>nodes</b> and <b>edge values</b> from the
+          <b>Graph</b>, updated to include the <b>node</b> specified by the
+          <b>str</b>: if the <b>node</b> is already in the result, don't change
+          anything; if it isn't in the result, add it as a key in the
+          outer-<b>dict</b> and associate it with an empty inner-<b>dict</b>.
+    <p>
+        For example, if <b>g</b> refers to the original <b>Graph</b> above, then
+          <b>g + 'x'</b> or <b>'x' + g</b> would return the <b>Graph</b>
+<b><pre>
+  {'a': {'b': 1, 'c': 3}, 'b': {'a': 2}, 'c': {}, 'd': {'b': 2, 'c': 1}, 'e': {}, 'x': {}}
+</pre></b>
+It is almost the same, with only the new <b>node x</b> now appearing in the
+  <b>Graph</b>.
+    <p>
+    <li>If one argument is 3-<b>tuple</b>, then the returned <b>Graph</b> should
+          contain all the <b>nodes</b> and <b>edge values</b> from <b>Graph</b>,
+          updated by the 3-<b>tuple</b>: either including a new
+          <b>edge value</b> or updating an <b>edge value</b> already in the
+          graph.
+        <p>
+        For example, if <b>g</b> refers to the original <b>Graph</b> above, then
+          <b>g + ('a','c',5)</b> or <b>('a','c',5) + g</b> would return the
+          <b>Graph</b>
+<b><pre>
+  {'a': {'b': 1, 'c': 5}, 'b': {'a': 2}, 'c': {}, 'd': {'b': 2, 'c': 1}, 'e': {}}
+</pre></b>
+It is almost the same, with only the <b>edge value</b> from <b>origin node 
+  a</b> to <b>destination node c</b> changing from <b>3</b> to <b>5</b>.
+<p>
+<li>For any other arguments, raise the <b>GraphError</b> exception with an
+       appropriate message.
+</ol>
+<p>
+
+<li>Define a <b>+=</b> operator (<b>__iadd__</b> method) that works like
+      <b>+</b> but updates/mutates the graph on the left.
+    That is, <b>g+='x'</b> produces the same result as <b>g = g+'x'</b>
+      but does it without constructing a new <b>Graph</b>: it just
+      updates/mutates <b>g</b>.
+    Do not use the <b>+</b> operator (but its body will look simlar to what
+      you wrote for <b>+</b>).
+<p>
+
+<li>Define a <b>__setattr__</b> method so that it ensures objects in the
+      <b>Graph</b> class cannot store new attributes or rebind old attributes.
+    The methods you will write should never bind any instance names
+       (except in  <b>__init__</b>).
+    If an attempt is made to add new attributes to a <b>Graph</b> object (by
+      defining a new attribute or rebinding an existing attribute), raise an
+      <b>AssertionError</b> with an appropriate message.
+    <p>
+    Do not attempt to solve this part of the problem until all other parts
+      are working correctly.
+    If you fail to solve this part correctly comment out this method so that
+      the other batch self-check tests pass.
+</ol>
+<p>
+
+<h3>Testing</h3>
+The <b>graph.py</b> module includes a script that does some simple
+  <b>Graph</b> manipulations and then calls <b>driver.driver()</b>.
+The project folder contains a <b>bsc1.txt</b> file (examine it) to use for
+   batch-self-checking your class.
+These are rigorous but not exhaustive tests.
+Incrementally write and test your class: writing some methods may create a
+  pattern you can reuse for the others.
+<p>
+Note that when exceptions are raised, they are printed by the driver but the 
+  <b>Command:</b> prompt sometimes appears misplaced.
+<p>
+You can also test code you type into the driver as illustrated below; but if you
+  want to perform the same test over and over again when debugging, it is
+  better to put this code in the script before the driver is called.
+Notice the default for each command (printed in the square brackets) is the
+  command previously entered.
+<b><pre>  Driver started
+  Command[!]: Driver started
+  Command[!]: from graph import Graph
+  Command[from graph import Graph]: g = Graph( (lambda x : type(x) is int),
+                                       ('a','b',1),('a','c',3),('b','a',2),
+                                       ('d','b',2),('d','c',1),'e')
+  Command[g = Graph( (lambda x : type(x) is int), ...)]: print(g)
+  Graph:
+    a: b(1), c(3)
+    b: a(2)
+    c:
+    d: b(2), c(1)
+    e:
+  Command[print(g)]: g['a']
+  Command[g['a']]: print(g['a'])
+  {'c': 3, 'b': 1}
+  Command[print(g['a'])]: print(g('c'))
+  {'a': 3, 'd': 1}
+  Command[print(g('c'))]: print(g.reverse())
+  Graph:
+    a: b(2)
+    b: a(1), d(2)
+    c: a(3), d(1)
+    d:
+    e:
+  Command[print(g.reverse())]: quit
+  Driver stopped</pre></b>
+</td>
+</tbody>
+</table>
+
+
+</html>

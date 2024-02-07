@@ -1,0 +1,77 @@
+<html>
+<head>
+<title>
+OpenCV.js
+</title>
+<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/styles/default.min.css">
+<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/highlight.min.js"></script>
+
+</head>
+
+<body>
+The following two code snippets show how erode implementation in C++ compares to its equivalent OpenCV.js implementation.
+<div id= "ccode" style="width:700px; isplay:inline-block;">
+    <pre> <code class="c++">
+      void cpp_erode(){
+
+       Mat image, dst;
+       image = imread("image.jpg", CV_LOAD_IMAGE_COLOR);
+
+       // Create a structuring element
+       int erosion_size = 6;
+       Mat element = getStructuringElement(cv::MORPH_RECT,
+                          cv::Size(2*erosion_size+1, 2 * erosion_size + 1),
+                          cv::Point(erosion_size, erosion_size));
+
+       // Apply erosion or dilation on the image
+       erode(image,dst,element);
+
+       namedWindow("Display window", CV_WINDOW_AUTOSIZE);
+       imshow("Display window", image );
+
+       namedWindow("Result window", CV_WINDOW_AUTOSIZE);
+       imshow("Result window", dst);
+    }
+    </code> </pre>
+</div>
+<div id = "jscode" style="width:700px;isplay:inline-block;">
+    <pre> <code class="js">
+      function js_erode(){
+        var src = CV.matFromArray(getInput(), CV.8UC4);
+        var dst = new CV.Mat();
+        CV.cvtColor(src, src,
+            CV.ColorConversionCodes.COLOR_RGBA2RGB.value, 0);
+
+        // Create a structuring element
+        var erosion_type = CV.MorphShapes.MORPH_RECT.value;
+
+        var erosion_size = new CV.Size(2*Control.erosion_size+1,
+                                   2*Control.erosion_size+1);
+
+        var element = CV.getStructuringElement(erosion_type, erosion_size);
+
+        // Apply erosion or dilation on the image
+        CV.erode(src, dst, element) ;
+        show_image(dst, "canvas2");
+
+        // Clean up
+        src.delete();
+        dst.delete();
+        erosion_size.delete();
+    }
+    </code> </pre>
+</div>
+
+
+<script>
+window.onload = function() {
+    var aCodes = document.getElementsByTagName('pre');
+    for (var i=0; i < aCodes.length; i++) {
+        hljs.highlightBlock(aCodes[i]);
+    }
+};
+</script>
+
+</body>
+
+</html>

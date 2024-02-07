@@ -1,0 +1,198 @@
+<HTML><HEAD>
+<TITLE>Comp. Geom. in VLSI</TITLE>
+<META name="Owner" value="eppstein">
+<META name="Reply-To" value="eppstein@ics.uci.edu">
+</HEAD><BODY>
+<!--#config timefmt="%d %h %Y, %T %Z" -->
+<H1>
+Computational Geometry Problems in<BR>
+Integrated Circuit Design and Layout
+</H1>
+<HR><P>
+
+From an invited talk by V. T. Rajan at the
+<A HREF="http://ams.sunysb.edu/~held/proc_usb_comp_geo-95.html">
+5th MSI Worksh. on Computational Geometry</A>,
+Stony Brook, October 20, 1995.  Notes by D. Eppstein.
+
+<H2>Problems</H2>
+
+In his invited talk, Rajan discussed several geometric problems in VLSI
+layout and analysis:
+
+<UL>
+<LI>Polygon simplification.  In the specific version Rajan gave, one is
+given a polygonal input P and must output a simpler polygon C which
+covers the input, together with (the boundary representation of) the
+set-theoretic difference C-P.  C must have axis-parallel sides, although P need
+not, and the goal is to choose a C having a given number of edges and
+minimizing the area of C-P.  He didn't say what this was used for, but
+I've seen similar problems applied to PC board simulation.
+He described a greedy heuristic for this problem but
+could find no theoretical results.
+
+<LI>Design rule verification.  The usual sort of rule one wants to check
+is that objects of certain types are separated by certain distances, but
+he also talked at some length about rules requiring that e.g. every 100
+by 100 micron square region of a chip should be covered by metal at a
+density of between 30% and 50% (in order for the fabrication process to
+work well).
+
+<LI>Calculation of capacitance between pairs of polygons
+(either overlapping or adjacent to each other in the layout).
+
+<LI>Logic verification.  Interpretation of layout features as components and nets,
+and verification that the circuit matches the original logic design.
+
+<LI>Process proximity correction.  In the fabrication process, feature shapes will
+be affected by the presence or absence of nearby objects, and this needs
+to be pre-corrected for in the design.
+</UL>
+
+<H2>Assumptions and Requirements</H2>
+
+There are several factors relevant here for selection of an algorithm.
+The input coordinates come from the design process and are
+assumed to be integers.  The integer units do not necessarily
+correspond to the feature size, and sometimes one may want to round
+the input to a larger grid, but this should be done in a way
+that will avoid introducing unnecessary degeneracy.
+The results of an algorithm should be exact rather
+than approximate; in particular floating point computation is only acceptable
+as a way of speeding up exact integer arithmetic, but is not acceptable
+if it leads to round-off.  Therefore one can't in native code work with
+equations of much higher degree than quadratic.
+
+<P>
+Robustness is very important - the program must work well even for
+degenerate or somewhat malformed input.  The input polygon sides are
+likely to be mostly axis-parallel, but some diagonals can occur,
+especially at 45 degree angles.  (There appears to be little in the way
+of theoretical results on such "almost-orthogonal" inputs.  Automated
+layout typically produces axis-parallel layouts but critical regions are
+likely to have been hand optimized with sides of other angles.)  Worst
+case time complexity is important, but the program should also be
+asymptotically good in the average case, since invariably people will
+run his codes on much larger inputs than he was anticipating.  It is
+also important that the program run well on small inputs, since the
+other thing people do with his code is run it on batches of very many
+small inputs.
+
+<P>
+Any algorithms used
+must be simple enough that they can implement them quickly, and
+so that they can make changes later if necessary.
+Object oriented design is important - Rajan has found that
+imperative-style pseudo-code is a bad way of communicating with his programmers.
+
+<P>
+One particular feature of the input is problematic, and not adequately
+treated by the theory literature.  The inputs Rajan deals with often come
+from hierarchical specifications, in which an object at one level of the
+specification may
+be repeated several times at a higher level.  One can flatten this
+specification out to form the usual sort of polygonal input, but at a
+cost of multiplying the size by a large factor, typically from around 5
+for random logic to around 50 for memory.  It would be helpful
+to develop algorithms that could deal with this sort of hierarchical
+representation directly.
+
+<H2>Implementation</H2>
+
+Initially they were solving the sorts of problems listed above using a
+sweep-line technique
+that was originally written with the assumption of axis-parallel sides,
+and that had been modified to support 45 degree lines as well.
+However they were finding it inflexible and insufficiently robust.
+
+<P>
+Inspired by Sugihara's experiments showing that randomized incremental
+Voronoi diagrams could be practical for large inputs,
+Rajan then had a programmer working with him write up Mulmuley's randomized
+incremental algorithm for constructing trapezoidal decompositions of
+line segment arrangements.  Among the advantages of explicitly
+constructing a trapezoidal decomposition are that you can re-use it
+several times, and that you can choose your favorite order to traverse it.
+
+<P>The choice of a data representation turned
+out to be important; Rajan first told the programmer to do anything that
+seemed reasonable, but the project bogged down
+before he could get it working.  Rajan then tried Guibas and Stolfi's
+quad-edge data structure, which worked much better but perhaps involves
+more overhead than necessary.  At the time, the extra overhead was unimportant
+because this part of the code was still much faster than the other
+things being done to the input,
+but now those other things have been improved and he's thinking of
+trying to speed up the trapezoidal decomposition by using a more
+streamlined data structure.
+
+<P>
+Nowadays, whenever someone comes to Rajan with a geometric problem,
+he tries to fit it into his trapezoidal decomposition framework.
+For instance one can test for overlapping objects
+(or, after blowing up each object by a given amount, test for objects
+that are too close to each other) by simply keeping a count for each
+cell of the number of objects covering that cell, incrementing or decrementing
+the count as one traverses the decomposition.
+
+<P>
+Rajan also talked at some length about his implementation for
+testing density ground rules.  For the example of such a rule described earlier,
+he would first reduce the complexity of the problem by
+partitioning the input region into 10 by 10 micron squares, and computing
+the density within each square.  He then only considers 100 by 100 micron
+squares aligned with the 10 by 10 grid.  The density in each large
+square can then be found by averaging 100 small square values.
+But by using standard running total techniques one can instead use only
+O(1) operations per large square.
+To find the density in each small square, he overlays the original input
+with a grid, using his trapezoidal decomposition
+(he cited some GIS-related work here).
+
+<P>
+A question from the audience asked how he tells, with such large
+inputs (as much as 2 gigabytes) whether his algorithms really are
+correct.  The answer is of course testing, on smaller examples, and
+especially cross-comparison with previous codes for the same problem.
+When the two differ, he then has to tediously by hand try to figure out
+why.  His co-workers are very conservative about replacing working code,
+and even when he finds discrepancies caused by bugs in the old code it
+is hard to persuade them that the bugs are a problem - they would
+sometimes prefer his new code be consistent with the bugs.  The final
+test of correctness is whether the VLSI chip works - if it doesn't,
+that's a costly $100,000 mistake.  If it does, no one cares whether the
+analysis was perfect.
+
+<H2>Computational Results</H2>
+
+Rajan showed some tables of numbers showing that the trapezoidal decomposition
+(which is robust and works for inputs of all angles) is about ten times slower than
+the more specialized plane sweep method.  However it is also about ten times
+newer so the comparison is not really fair; also he pointed out that
+the factor is constant rather than polynomial.  (He also compared both methods
+with another method for one problem that was polynomially worse; as one would expect,
+the polynomial won out over the constants quickly.)
+
+<P>
+Later, we discussed these numbers in a conversation with Ken Clarkson
+and Mike Goodrich (but after Rajan had left).  Ken seemed to think that
+the factor of ten was pretty typical for plane sweep vs. randomized
+incremental techniques.  The main advantage he seems to be gaining from
+the randomized incremental technique is that Rajan has already written it
+and doesn't need to change it for each new problem he solves.
+But we wondered whether it wouldn't make sense to replace his code with
+code that constructs the same trapezoidal decomposition using a plane sweep method.
+(The difference between this and where he started was that the original
+code did not construct a trapezoidalization, instead it apparently required you
+to fit whatever else you were doing into the plane sweep.)
+
+<P><HR><P>
+Part of
+<A HREF="http://www.ics.uci.edu/~eppstein/geom.html">Geometry in Action</A>,
+a collection of applications of computational geometry.<BR>
+<A HREF="http://www.ics.uci.edu/~eppstein/">David Eppstein</A>,
+<A HREF="http://www.ics.uci.edu/~theory/">Theory Group</A>,
+<A HREF="http://www.ics.uci.edu/">ICS</A>,
+<A HREF="http://www.uci.edu/">UC Irvine</A>.<P>
+<SMALL>Last update: <!--#flastmod file="rajan.html" -->.</SMALL>
+</BODY></HTML>

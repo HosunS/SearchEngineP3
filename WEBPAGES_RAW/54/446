@@ -1,0 +1,400 @@
+
+;; InfxTunes:  A Music Manager
+;; Originally by Alex Thornton, Fall 2006.
+;; Modified by David G. Kay, Fall 2007 and Fall 2008.
+;; Use DrScheme's Intermediate Student with Lambda language.
+
+
+;                                                                        
+;         ;;  ;;                                                         
+;          ;   ;                                                         
+;          ;   ;                                                         
+;    ;;    ;   ;;;;; ;;  ;; ;; ;;; ;;;         ;;;;; ;;;;  ;; ;;;   ;;;; 
+;   ;  ;   ;   ;   ;; ;   ;  ;;  ;;  ;         ;   ;;;  ;;  ;;  ;  ;  ;  
+;   ;  ;   ;   ;    ; ;   ;  ;   ;   ;         ;   ;;    ;  ;   ;  ;  ;  
+;   ;;;; ; ;   ;    ; ;   ;  ;   ;   ;         ;;;; ;    ;  ;   ;   ;;   
+;   ;  ; ; ;   ;   ;; ;   ;  ;   ;   ;         ;  ;;;;  ;;  ;   ;  ;     
+;   ;;;;;;;;;  ;;;;;  ;;;;;;;;; ;;; ;;; ;;     ;;;;  ;;;;  ;;; ;;; ;;;;  
+;                                        ;                         ;   ; 
+;                                       ;                          ;   ; 
+;; An album is:
+;;   * a unique ID number [number]
+;;   * an artist [string]
+;;   * a title [string]
+;;   * a year of release [number]
+;;   * a list of songs [list-of-songs]
+
+;; A song is:
+;;   * a track number [number]
+;;   * a title [string]
+;;   * a length in seconds [number]
+;;   * a play count [number] - how many times have I listened to it?
+
+(define-struct album (id artist title year songs))
+(define-struct song (track-num title length play-count))
+
+(define MUSIC (list (make-album 1 "Peter Gabriel" "Up" 2002
+                              (list (make-song 1 "Darkness" 411 5)
+                                    (make-song 2 "Growing Up" 453 5)
+                                    (make-song 3 "Sky Blue" 397 2)
+                                    (make-song 4 "No Way Out" 473 2)
+                                    (make-song 5 "I Grieve" 444 2)
+                                    (make-song 6 "The Barry Williams Show" 735 1)
+                                    (make-song 7 "My Head Sounds Like That" 389 1)
+                                    (make-song 8 "More Than This" 362 1)
+                                    (make-song 9 "Signal to Noise" 456 2)
+                                    (make-song 10 "The Drop" 179 1)))
+                  (make-album 2 "Simple Minds" "Once Upon a Time" 1985
+                              (list (make-song 1 "Once Upon a Time" 345 9)
+                                    (make-song 2 "All the Things She Said" 256 10)
+                                    (make-song 3 "Ghost Dancing" 285 7)
+                                    (make-song 4 "Alive and Kicking" 326 26)
+                                    (make-song 5 "Oh Jungleland" 314 13)
+                                    (make-song 6 "I Wish You Were Here" 282 12)
+                                    (make-song 7 "Sanctify Yourself" 297 7)
+                                    (make-song 8 "Come a Long Way" 307 5)))
+                  (make-album 3 "The Postal Service" "Give Up" 2003
+                              (list (make-song 1 "The District Sleeps Alone" 284 13)
+                                    (make-song 2 "Such Great Heights" 266 13)
+                                    (make-song 3 "Sleeping In" 261 12)
+                                    (make-song 4 "Nothing Better" 226 18)
+                                    (make-song 5 "Recycled Air" 269 13)
+                                    (make-song 6 "Clark Gable" 294 12)
+                                    (make-song 7 "We Will Become Silhouettes" 300 11)
+                                    (make-song 8 "This Place is a Prison" 234 9)
+                                    (make-song 9 "Brand New Colony" 252 9)
+                                    (make-song 10 "Natural Anthem" 307 7)))
+                  (make-album 4 "Midnight Oil" "Blue Sky Mining" 1989
+                              (list (make-song 1 "Blue Sky Mine" 258 12)
+                                    (make-song 2 "Stars of Warburton" 294 11)
+                                    (make-song 3 "Bedlam Bridge" 266 11)
+                                    (make-song 4 "Forgotten Years" 266 8)
+                                    (make-song 5 "Mountains of Burma" 296 9)
+                                    (make-song 6 "King of the Mountain" 231 8)
+                                    (make-song 7 "River Runs Red" 322 9)
+                                    (make-song 8 "Shakers and Movers" 268 9)
+                                    (make-song 9 "One Country" 353 7)
+                                    (make-song 10 "Antarctica" 258 6)))
+                  (make-album 5 "The Rolling Stones" "Let It Bleed" 1969
+                              (list (make-song 1 "Gimme Shelter" 272 3)
+                                    (make-song 2 "Love In Vain" 259 2)
+                                    (make-song 3 "Country Honk" 187 0)
+                                    (make-song 4 "Live With Me" 213 2)
+                                    (make-song 5 "Let It Bleed" 327 2)
+                                    (make-song 6 "Midnight Rambler" 412 1)
+                                    (make-song 7 "You Got the Silver" 170 0)
+                                    (make-song 8 "Monkey Man" 251 13)
+                                    (make-song 9 "You Can't Always Get What You Want" 448 10)))))
+
+;; album-earlier?:  album  album  ->  boolean
+;; Return true if the first input's year is less than the second's
+(define album-earlier?
+ (lambda (a1 a2)
+   (< (album-year a1) (album-year a2))))
+
+;; Sort the collection into chronological order.
+
+;; quicksort (predefined): (listof X) (X X -> boolean) -> (listof X)
+;; Return original list in order according to comparison function.
+(check-expect (quicksort '(23 235 24 632 14 432 36 23 113) >) (list 632 432 235 113 36 24 23 23 14))
+(check-expect (quicksort '(23 235 24 632 14 432 36 23 113) <) (list 14 23 23 24 36 113 235 432 632))
+
+(check-expect
+(quicksort MUSIC album-earlier?)
+(quicksort MUSIC (lambda (a1 a2) (< (album-year a1) (album-year a2)))))
+
+;; Sort in ascending order by album title
+
+; (quicksort MUSIC (lambda (a1 a2) (string<? (album-title a1) (album-title a2))))
+
+;; Could build a make-album-comparator function 
+;; (like make-checker) to construct these functions.
+
+;  ;;;;;;;                    ;     ;;;                                      
+;     ;                      ;;    ;   ;                                     
+;     ;     ;;   ; ;;       ; ;    ;   ;     ;;;    ;;    ; ;;    ;; ;  ;;;  
+;     ;    ;  ;  ;;  ;        ;    ;   ;    ;   ;  ;  ;   ;;  ;  ;  ;; ;   ; 
+;     ;   ;    ; ;    ;       ;    ;   ;    ;     ;    ;  ;   ; ;    ; ;     
+;     ;   ;    ; ;    ;       ;    ;   ;     ;;;  ;    ;  ;   ; ;    ;  ;;;  
+;     ;   ;    ; ;    ;       ;    ;   ;        ; ;    ;  ;   ; ;    ;     ; 
+;     ;    ;  ;  ;;  ;        ;    ;   ;    ;   ;  ;  ;   ;   ;  ;  ;; ;   ; 
+;     ;     ;;   ; ;;         ;     ;;;      ;;;    ;;    ;   ;   ;; ;  ;;;  
+;                ;                                                   ;       
+;                ;                                               ;  ;        
+;                ;                                                ;;         
+
+;; Top 10 most frequently played songs.
+
+;; Collect all the songs out of all the albums.
+;; To find the MOST frequent, just use "king-of-the-hill" maximum algorithm.
+;; To find the top N, though, is tricky to code that way.
+;; Better:  Take the list of songs, sort by play count, take first 10.
+
+;; Top-down approach:
+
+;; top-10-songs:  list-of-album  ->  list-of-song
+;; Return the top ten most frequently played songs in the collection.
+(define top-10-songs
+ (lambda (AL) 
+   (first-n 10 (quicksort (all-songs AL) play-count-greater?))))
+
+;; play-count-greater?:  song  song  ->  boolean
+;; Return true if the first song's play-count is greater than the second's.
+(define play-count-greater?
+ (lambda (s1 s2)
+   (> (song-play-count s1) (song-play-count s2))))
+
+#|
+
+; We can try writing first-n by making some simplifying assumptions:
+
+;; first-n-assuming:  number  list  ->  list
+;; Return first n items on list, assuming there are at least that many
+(define first-n-assuming
+ (lambda (n L)
+   (cond
+     ((zero? n) empty)
+     (else (cons (first L) (first-n (sub1 n) (rest L)))))))
+
+;; first-n-error:  number  list  ->  list
+;; Return first n items on list, throwing error if n longer than list
+(define first-n-error
+ (lambda (n L)
+   (cond
+     ((> n (length L)) (error 'first-n-error "Asking for more items than on list"))
+     (else (first-n-assuming n L)))))
+
+; Now let's do it the way our InfxTunes application would want it:
+; If the list is shorter than n, just return the sorter list.
+
+;; first-n:  number  list  ->  list
+;; Return the first n items on the list, or the whole list if it's shorter
+
+; First, list separately the (categories of) values for each argument, L and n:
+; AFTER we consider each case separately, we can combine them to shorten the code.
+(define first-n
+ (lambda (n L)
+   (cond
+     ((and (empty? L) (zero? n)) empty)
+     ((and (cons? L)  (zero? n)) empty)
+     ((and (empty? L) (positive? n)) empty)
+     ((and (cons? L)  (positive? n)) (cons (first L) (first-n (sub1 n) (rest L)))))))
+
+; First simplification:
+(define first-n
+ (lambda (n L)
+   (cond
+     ((empty? L) empty)
+     ((zero? n) empty)
+     (else (cons (first L) (first-n (sub1 n) (rest L)))))))
+|#
+
+;; first-n:  number  list  ->  list
+;; Return the first n items on the list (assuming list is at least that long)
+;; If list is shorter than n, just return the shorter list.
+(define first-n
+ (lambda (n L)
+   (cond
+     ((or (empty? L) (zero? n)) empty)
+     (else (cons (first L) (first-n (sub1 n) (rest L)))))))
+
+
+(check-expect (first-n 5 empty) empty)
+(check-expect (first-n 3 (list 1 2 3 4 5 6)) (list 1 2 3))
+(check-expect (first-n 1 (list 17)) (list 17))
+(check-expect (first-n 5 (list 1 2 3)) (list 1 2 3))
+(check-expect (first-n 0 (list 1 2 3)) empty)
+
+;; all-songs:  list-of-album -> list-of-songs
+;; Return a list of all the songs on all the albums
+(define all-songs
+ (lambda (AL)
+   ;; (foldr append empty list-of-songlists):  ( (S1 S2 S3) (S4 S5) (S6 S7 S8 S9) )
+   (foldr append empty (map album-songs AL))))
+
+(check-expect
+(top-10-songs MUSIC)
+(list
+ (make-song 4 "Alive and Kicking" 326 26)
+ (make-song 4 "Nothing Better" 226 18)
+ (make-song 5 "Oh Jungleland" 314 13)
+ (make-song 1 "The District Sleeps Alone" 284 13)
+ (make-song 2 "Such Great Heights" 266 13)
+ (make-song 5 "Recycled Air" 269 13)
+ (make-song 8 "Monkey Man" 251 13)
+ (make-song 6 "I Wish You Were Here" 282 12)
+ (make-song 3 "Sleeping In" 261 12)
+ (make-song 6 "Clark Gable" 294 12)))
+;                                      ;  ;               ;                    
+;                                      ;                  ;                    
+;   ;;;    ;;    ; ;;    ;; ;       ;; ;  ;  ;;;  ; ;;    ;  ;;;   ;   ;  ;;;  
+;  ;   ;  ;  ;   ;;  ;  ;  ;;      ;  ;;  ; ;   ; ;;  ;   ; ;   ;  ;   ; ;   ; 
+;  ;     ;    ;  ;   ; ;    ;     ;    ;  ; ;     ;    ;  ;    ;;  ;   ; ;     
+;   ;;;  ;    ;  ;   ; ;    ; ;;; ;    ;  ;  ;;;  ;    ;  ;  ;; ;   ; ;   ;;;  
+;      ; ;    ;  ;   ; ;    ;     ;    ;  ;     ; ;    ;  ; ;   ;   ; ;      ; 
+;  ;   ;  ;  ;   ;   ;  ;  ;;      ;  ;;  ; ;   ; ;;  ;   ; ;  ;;    ;   ;   ; 
+;   ;;;    ;;    ;   ;   ;; ;       ;; ;  ;  ;;;  ; ;;    ;  ;;  ;   ;    ;;;  
+;                           ;                     ;                 ;          
+;                       ;  ;                      ;                 ;          
+;                        ;;                       ;                ;           
+
+;; But these songs don't have their album information!  That's something we'd want
+;; to see if we displayed these songs on our iPod screen.
+
+;; We could flatten out our data structure, storing a copy of the album
+;; information with each song:
+;;            (make-song 5 "Rolling Stones" "Let it Bleed" 1969  1 "Gimme Shelter" 272 3)
+;;            (make-song 5 "Rolling Stones" "Let it Bleed" 1969  2 "Love In Vain" 259 2)
+;;            (make-song 5 "Rolling Stones" "Let it Bleed" 1969  3 "Country Honk" 197 0)
+;;            ...
+;; This would work, but there's a lot of duplicate data (wasteful of storage and error-prone).
+;; So this isn't a good way to store the data permanently.
+
+;; Instead, let's just get the album info that goes with a song WHEN WE NEED IT,
+;; during the computation.  To do this, we define a structure that contains the
+;; info we need to display a song (on our iPod screen, e.g.)---song details plus
+;; the info we need from that song's album:
+
+(define-struct song-display (artist a-title year track-num s-title play-count))
+
+;; We'll create these structures as we need them during the computation,
+;; discarding them as we're done; this doesn't affect the main, permanent
+;; list of albums (like the one we defined as MUSIC above).
+
+;; top-10-songs-to-display: list-of-album -> list-of-song-display
+;; Return song-display structures for the top 10 songs by play-count
+(define top-10-songs-to-display
+ (lambda (AL)
+   (first-n 10 (quicksort (all-song-displays AL)
+                          (lambda (SD1 SD2) (> (song-display-play-count SD1)
+                                               (song-display-play-count SD2)))))))
+
+;          ;  ;                                         ;  ;               ;                    
+;          ;  ;                                         ;                  ;                    
+;   ;;;    ;  ;      ;;;    ;;    ; ;;    ;; ;       ;; ;  ;  ;;;  ; ;;    ;  ;;;   ;   ;  ;;;  
+;  ;   ;   ;  ;     ;   ;  ;  ;   ;;  ;  ;  ;;      ;  ;;  ; ;   ; ;;  ;   ; ;   ;  ;   ; ;   ; 
+;     ;;   ;  ;     ;     ;    ;  ;   ; ;    ;     ;    ;  ; ;     ;    ;  ;    ;;  ;   ; ;     
+;   ;; ;   ;  ; ;;;  ;;;  ;    ;  ;   ; ;    ; ;;; ;    ;  ;  ;;;  ;    ;  ;  ;; ;   ; ;   ;;;  
+;  ;   ;   ;  ;         ; ;    ;  ;   ; ;    ;     ;    ;  ;     ; ;    ;  ; ;   ;   ; ;      ; 
+;  ;  ;;   ;  ;     ;   ;  ;  ;   ;   ;  ;  ;;      ;  ;;  ; ;   ; ;;  ;   ; ;  ;;    ;   ;   ; 
+;   ;;  ;  ;  ;      ;;;    ;;    ;   ;   ;; ;       ;; ;  ;  ;;;  ; ;;    ;  ;;  ;   ;    ;;;  
+;                                            ;                     ;                 ;          
+;                                        ;  ;                      ;                 ;          
+;                                         ;;                       ;                ;           
+
+;; all-song-displays:  list-of-album  ->  list-of-song-display
+;; Return a list of the display-format structures for each song on the album list
+(define all-song-displays
+  (lambda (AL)
+    (foldr append empty (map (lambda (A) ;for each album in the collection
+                               ; create-song-displays-for-this-album's-songs
+                               ;(map create-a-song-display (album-songs A))                               
+                               (map 
+                                (lambda (S)
+                                  (make-song-display (album-artist A)
+                                                     (album-title A)
+                                                     (album-year A)
+                                                     (song-track-num S)
+                                                     (song-title S)
+                                                     (song-play-count S)))
+                                (album-songs A)))
+                             AL))))
+
+#|
+; Other versions of all-song-displays:
+
+; 1. Pull the song-display creation into a locally defined function
+(define all-song-displays
+ (lambda (AL)
+   (foldr append empty (map (lambda (A) 
+                              (local ((define song->song-display
+                                        (lambda (S)
+                                          (make-song-display
+                                             (album-artist A)
+                                             (album-title A)
+                                             (album-year A)
+                                             (song-track-num S)
+                                             (song-title S)
+                                             (song-play-count S)))))
+                                (map song->song-display (album-songs A))))
+                            AL))))
+
+; 2. Also pull into a local definition the function that handles one album
+(define all-song-displays
+  (lambda (AL)
+    (local (;; get-song-display-list:  album  ->  list-of-song-display
+            ;; Take each song in an album, turn it into a song-display, and collect them into a list
+            (define get-song-display-list
+              (lambda (A) 
+                (local (;; song->song-display:  song  ->  song-display
+                        ;; Take a song and create a song-display from it
+                        (define song->song-display
+                          (lambda (S)
+                            (make-song-display
+                             (album-artist A)
+                             (album-title A)
+                             (album-year A)
+                             (song-track-num S)
+                             (song-title S)
+                             (song-play-count S)))))
+                  (map song->song-display (album-songs A))))))
+      (foldr append empty (map get-song-display-list AL)))))
+
+
+; 3.  Do it without map at all, just peeling back the layers, function by function
+
+;; all-song-displays:  list-of-album  ->  list-of-song-display
+;; Return a list of the display-format structures for every song on 
+;; every album on the album list
+;; (This function goes album by album, collecting the song-display lists from each.)
+(define all-song-displays
+  (lambda (AL)
+    (cond
+      ((empty? AL) empty)
+      (else (append (get-song-display-list (first AL)) (all-song-displays (rest AL)))))))
+
+;; get-song-display-list:  album  ->  list-of-song-display
+;; Take each song in an album, turn it into a song-display, and collect them into a list
+;; (This function pulls out the song list as a separate list, for easy processing.)
+(define get-song-display-list
+  (lambda (A)
+    (construct-song-displays A (album-songs A))))
+
+;; construct-song-displays:  album  list-of-songs  ->  list-of-song-display
+;; For each song on the list, construct a song-display with the song and album info.
+(define construct-song-displays
+  (lambda (A SL)
+    (cond
+      ((empty? SL) empty)
+      (else (cons (song->song-display A (first SL)) (construct-song-displays A (rest SL)))))))
+
+;; song->song-display:  album song -> song-display
+;; Take a song and its album information and create a song-display from it.
+(define song->song-display
+(lambda (A S)
+  (make-song-display
+   (album-artist A)
+   (album-title A)
+   (album-year A)
+   (song-track-num S)
+   (song-title S)
+   (song-play-count S))))
+|#
+
+;; So now we can get our top 10 songs, with the line for each song
+;; also containing its album information.  This makes it easy to
+;; display all the info we need for each of the songs.
+
+(check-expect
+(top-10-songs-to-display MUSIC)
+(list
+ (make-song-display "Simple Minds" "Once Upon a Time" 1985 4 "Alive and Kicking" 26)
+ (make-song-display "The Postal Service" "Give Up" 2003 4 "Nothing Better" 18)
+ (make-song-display "Simple Minds" "Once Upon a Time" 1985 5 "Oh Jungleland" 13)
+ (make-song-display "The Postal Service" "Give Up" 2003 1 "The District Sleeps Alone" 13)
+ (make-song-display "The Postal Service" "Give Up" 2003 2 "Such Great Heights" 13)
+ (make-song-display "The Postal Service" "Give Up" 2003 5 "Recycled Air" 13)
+ (make-song-display "The Rolling Stones" "Let It Bleed" 1969 8 "Monkey Man" 13)
+ (make-song-display "Simple Minds" "Once Upon a Time" 1985 6 "I Wish You Were Here" 12)
+ (make-song-display "The Postal Service" "Give Up" 2003 3 "Sleeping In" 12)
+ (make-song-display "The Postal Service" "Give Up" 2003 6 "Clark Gable" 12)))

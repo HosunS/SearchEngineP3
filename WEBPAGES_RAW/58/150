@@ -1,0 +1,200 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>22.8 Composition Functors in OEChem</title>
+<META NAME="description" CONTENT="22.8 Composition Functors in OEChem">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node180.html">
+<LINK REL="previous" HREF="node178.html">
+<LINK REL="up" HREF="node171.html">
+<LINK REL="next" HREF="node180.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node178.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node171.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node180.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node178.html">22.7 Using your own</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node171.html">22. Predicate Functors</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node180.html">22.9 Predicates as a</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION0025800000000000000000">
+22.8 Composition Functors in OEChem</A>
+</H1>
+
+<P>
+Occasionally, one may want to use a logical operator to join two or more
+functors.  While it is certainly possible to write a quick functor which
+wraps two or more functors, with the "magic" of templates this is not
+necessary.  The functors <code>OEAnd</code>, <code>OEOr</code> and <code>OENot</code> are
+already defined.  The each have constructors which take the appropriate
+number of predicates as arguments and generate a single unary predicate.
+Often these functors can be constructed inline.
+
+<P>
+The following example demonstrates use of the <code>OEAnd</code> and <code>OENot</code>
+composition predicates with two of the predefined atom predicates
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include "oesystem.h"
+
+#include &lt;iostream&gt;
+
+using namespace OESystem;
+using namespace OEChem;
+using namespace std;
+
+unsigned int Count(const OEUnaryPredicate&lt;OEAtomBase&gt; &amp;fcn,
+                   const OEMolBase &amp;mol)
+{
+  unsigned int count = 0;
+  OEIter&lt;OEAtomBase&gt; atom;
+  for(atom = mol.GetAtoms();atom;++atom)
+    if(fcn(*atom))
+      ++count;
+
+  return count;
+}
+
+int main()
+{
+  OEGraphMol mol;
+  OEParseSmiles(mol, "c1c(O)c(O)c(Cl)cc1CCCBr");
+
+  cerr &lt;&#60; "Number of Aromatic Oxygens = " &lt;&#60;
+          Count(OEAnd&lt;OEAtomBase&gt;(OEIsOxygen(),OEIsAromaticAtom()),mol) &lt;&#60; endl;
+
+  cerr &lt;&#60; "Number of Non-Carbons = " &lt;&#60;
+          Count(OENot&lt;OEAtomBase&gt;(OEHasAtomicNum(6)),mol) &lt;&#60; endl;
+
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch22-3.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+The example above is an extension of listing 18.2 above.  It shows the use
+of OEChem's composition functors to build expressions from OEChem's
+predefined atom predicates.  Thought the explicit template type
+instantiation isn't strictly necessary, in practice it is required to help
+several parsers make it through the expression.
+
+<P>
+As a convenience to programmers, three related template free functions have
+been defined.  These are <code>operator &amp;&amp;</code>, <code>operator ||</code> and
+<code>operator !</code> which take one or more OEUnaryPredicates as arguments and
+return the appropriate composition predicate.  Not only do these make code much
+easier to read, but in our experience, they also make the code easier for C++
+parsers to parse.
+
+<P>
+The following example is identical to the previous composition listing except
+that the composition predicates have been replaced by the operator
+free-functions.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include "oesystem.h"
+
+#include &lt;iostream&gt;
+
+using namespace OESystem;
+using namespace OEChem;
+using namespace std;
+
+unsigned int Count(const OEUnaryPredicate&lt;OEAtomBase&gt; &amp;fcn,
+                   const OEMolBase &amp;mol)
+{
+  unsigned int count = 0;
+  OEIter&lt;OEAtomBase&gt; atom;
+  for(atom = mol.GetAtoms();atom;++atom)
+    if(fcn(*atom))
+      ++count;
+
+  return count;
+}
+
+int main()
+{
+  OEGraphMol mol;
+  OEParseSmiles(mol, "c1c(O)c(O)c(Cl)cc1CCCBr");
+
+  cerr &lt;&#60; "Number of Aromatic Oxygens = " &lt;&#60;
+          Count(OEIsOxygen() &amp;&amp; OEIsAromaticAtom(),mol) &lt;&#60; endl;
+
+  cerr &lt;&#60; "Number of Non-Carbons = " &lt;&#60;
+          Count(!OEHasAtomicNum(6),mol) &lt;&#60; endl;
+
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch22-4.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node178.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node171.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node180.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node178.html">22.7 Using your own</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node171.html">22. Predicate Functors</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node180.html">22.9 Predicates as a</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

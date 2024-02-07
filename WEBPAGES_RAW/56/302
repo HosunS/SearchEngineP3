@@ -1,0 +1,609 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>A Proposal for Web Metadata Operations</title>
+  </head>
+
+  <body>
+      <h1>A Proposal for Web Metadata Operations</h1>
+
+      <P><I>Draft v0.1, April 29, 1997</I></P>
+
+      <h2>Abstract</h2>
+      
+      <P>This document provides rationale for why metadata support for
+      Web resources is desirable, gives a model for separating
+      existing metadata into small chunk and large chunk metadata,
+      lists requirements for how to manipulate Web metadata, and
+      provides a proposal which meets these requirements for how
+      metadata can be created, deleted, and queried on Web resources
+      using a set of extensions to the HTTP (version 1.1)
+      protocol.</P>
+
+      <h2>Introduction</h2>
+
+      <P>In its most abstract form, metadata is "information about
+      information."  Information on the Web, known as Web resources,
+      have many pieces of associated descriptive information which is
+      often not explicitly represented in the resource itself.
+      Examples of metadata include the creator of a resource, its
+      subject, length, publisher, creation date, etc.  Such
+      descriptive metadata can be used to make information easier to
+      locate by improving Web searches [Weibel, 1995], rate
+      information to protect children from indecent content
+      (e.g. the Platform for Internet Content Selection (PICS) [Miller
+      et al., 1996]), capture copyright information, contain a digital
+      signature, or store cataloging data.  Many other uses are also
+      possible.</P>
+
+      <P>Another type of metadata is the relationship.  A relationship
+      captures an association between two or more resources, and can
+      be one to one, one to many, or many to many.  Relationships can
+      be used to capture navigational relationships, such as "go to
+      this resource next," or a table of content, and can also express
+      hierarchies (parent/child, successor/predecessor) [Maloney, 1996]
+      Relationships have many domain-specific uses, such as a piece of
+      software which has many "implements" relationships with a
+      requirements document.  Annotations are another use of
+      relationships in which the relationship points to commentary
+      material on the resource.  The use of relationships to capture
+      associations between data items is an old idea, stemming from
+      semantic data modeling [Abrial, 1974][Hull & King, 1987], and
+      early hypertext work on the NLS [Engelbart, 1968] and Xanadu
+      [Nelson, 1981] systems.</P>
+
+      <h2>Characteristics of Metadata</h2>
+
+      <P>To date, there have been many techniques for describing metadata
+      information.  On the Web there have been many mechanisms and
+      proposals for metadata, including PICS [Miller et al., 1996],
+      PICS-NG, the Rel/Rev draft [Maloney, 1996], Web Collections, XML
+      linking, several proposals on representing relationships within
+      HTML, digital signature manifests (DCMF), and a position paper
+      on Web metadata architecture [Berners-Lee, 1997].  Related to the
+      Web, but coming from a digital library perspective, are the
+      Dublin Core [Weibel et al., 1995] metadata set and the
+      Warwick Framework [Lagoze, 1996], a container architecture for
+      different metadata schemas.   The literature on metadata
+      includes many examples of metadata, including MARC [MARC, 1994],
+      a bibliographic metadata format, RFC 1807 [Lasher, Cohen, 1995],
+      a technical report bibliographic format employed by the Dienst
+      system, and the proceedings from the first IEEE Metadata
+      conference describe many community-specific metadata sets.</P>
+
+      <P>Participants of the 1996 Metadata II Workshop in Warwick, UK
+      [Lagoze, 1996], noted that, "new metadata sets will develop as
+      the networked infrastructure matures" and "different communities
+      will propose, design, and be responsible for different types of
+      metadata."  These observations can be corroborated by noting that
+      many community-specific sets of metadata already exist, and
+      there is significant motivation for the development of new forms
+      of metadata as many communities increasingly make their data
+      available in digital form, requiring a metadata format to assist
+      data location and cataloging.</P>
+
+      <P>Based on an examination of many Web metadata proposals, it
+      appears that Web metadata can be broadly characterized into two
+      categories, termed small chunk and large chunk.  These are
+      described below.</P>
+      
+      <h3>Small chunk metadata</h3>
+
+      <P>Small chunk metadata includes data items such as:</P>
+
+      <UL>
+	<LI>HTTP headers
+        <LI>short attribute-value pairs
+        <LI>typed links (e.g. HTTP links, or binary relationships)
+      </UL>
+
+      <P>While developing a stringent definition of "small" is most
+      likely impossible, since the definition is arbitrary, and seems
+      to be based on unstated assumptions about retrieval performance
+      (e.g., retrieval of small chunk metadata should be "trivially"
+      or "unnoticeably" fast), much metadata has a small chunk flavor
+      to it.</P>
+
+      <P>Characteristics of small chunk metadata include: fast
+      retrieval speeds, no need for content negotiation, no
+      requirements on ordering, no need for "trust" information (e.g.,
+      digital signature, author information, hash of contents, date of
+      creation), and relatively simple value information.</P>
+
+      <h3>Large chunk metadata</h3>
+
+      <P>Large chunk metadata includes data items such as instances
+	of:</P>
+
+      <UL>
+	<LI>PICS, PICS-NG collections
+	<LI>Warwick collections
+	<LI>MARC records
+	<LI>Dublin Core records
+	<LI>discipline-specific metadata records
+	<LI>Web pages (e.g., an annotation page)
+      </UL>
+
+      <P>Like the smallness of small chunk metadata, the largeness of
+      large chunk metadata is similarly difficult to define.
+      Characteristics of large chunk metadata include: requirements on
+      the ordering of fields, encoded trust information, pointers to
+      metadata schema descriptions, complex data models, and multiple
+      levels of containment.  Large chunk metadata often contains
+      several instances of small chunk metadata.  Typically large
+      chunk metadata is larger than small chunk metadata, although it
+      is easy to develop classes of both for which this assertion does
+      not hold.  As a result, there is an assumption that large chunk
+      metadata takes longer to transmit than small chunk metadata.
+      Large chunk metadata, when stored as a separate resource, has
+      the advantage that several different representations of the
+      information can be stored, such as translations into different
+      natural languages, and then used in content negotiation.</P>
+
+      <h3>Mapping of metadata to the Web data model</h3>
+
+      <P>The mapping of metadata to the various data containers
+      (resources, headers) in the Web data model varies depending on
+      whether the metadata is stored on, in, or as a resource.</P>
+
+      <P><I>On resource.</I> In this case, the metadata is stored with
+      the resource, but is not a part of the resource itself.
+      Examples include HTTP links, HTTP headers, PICS labels (using
+      the PICS-Label header).  On resource storage is typically used
+      for small chunk metadata, and on resource metadata is
+      retrievable after 1 network request (a HEAD or GET).</P>
+
+      <P><I>Within resource.</I> The metadata is embedded within the
+      resource, and is a defined part of the document type
+      description.  Examples include HTML REL/REV links, the HTML META
+      tag, various HTML metadata proposals, Microsoft Word .DOC
+      documents, and Web Collections.  Within resource metadata is
+      retrievable in 1 network request (GET).  Within resource
+      metadata has the advantage of being independent of access
+      protocol, and is portable (when the resource moves, it does
+      too).  Within resource metadata tends to be small chunk.</P>
+
+      <P><I>Is (whole) resource.</I> The metadata is itself an entire
+      resource.  When the metadata is an entire resource, there
+      usually exists a relationship (link) between the described and
+      metadata (describing) resources.  Examples include Web
+      Collections, Warwick containers, Web pages.  Typically
+      large-chunk metadata ends up as whole resource metadata, such as
+      the MIME encoding of Warwick containers described in [Knight,
+      Hamilton, 1996].  Typically retrieval of whole resource metadata
+      requires 2 network requests (one to get the links, one to get the
+      metadata).</P>
+
+      <h3>Consistency maintenance</h3>
+
+      <P>Many sources have noted that metadata can be viewed as an
+      assertion about the described data.  In this view of metadata,
+      an author attribute is viewed as an assertion that a particular
+      person is the author of the information being described.  Since
+      the Web is a client-server system, there are two points of
+      control over these assertions.  With client controlled (or user)
+      metadata, the consistency of the assertion is maintained by the
+      user.  Typically the server is unable to perform any validation
+      of client controlled (or maintained) metadata.  Alternately, the
+      server can control the consistency of metadata assertions; one
+      example is the last modified date of a resource.</P>
+      
+      <P>When metadata can be set by many different principals, as is
+      the case on the Web, it is desirable to have some way of
+      determining whether a particular assertion should be trusted.
+      Trust information is a prominent aspect of the PICS container
+      format, which contains a digital signature, contents hash,
+      author information, and a valid date range which can be used to
+      assess the trustworthiness of the assertions contained in the
+      package.</P>
+	
+      <h2>Requirements for Operations on Web Metadata</h2>
+
+      <P>The following are the relevant requirements for operations on
+      Web metadata as specified in "Requirements for Distributed
+      Authoring and Versioning" [Slein et al., 1997].
+      
+      <P>[5.1.1] It must be possible to create, modify, query, read
+      and delete arbitrary attributes on resources of any media
+      type.</P>
+
+      <P>[5.2.1] It must be possible to create, modify, query, read
+      and delete typed relationships between resources of any media
+      type.</P>
+
+      <h2>Proposal for Metadata Operations</h2>
+
+      <P>In early WebDAV proposals [Goland et. al, 1996] all metadata was
+      whole resource metadata, with the exception of the links used to
+      hold the relationship between the described resource and the
+      metadata resource.  While this approach handles large-chunk
+      metadata well, it does have significant drawbacks for
+      maintaining the referential integrity between metadata and the
+      resource(s) it describes, especially when they are controlled by
+      different principals.  To ensure that metadata could be created
+      and retrieved in one method invocation, several convenience
+      functions were proposed which created a link and the metadata
+      resource in one action.  However, this led to difficulties in
+      specifying the operations due to atomicity problems, and would
+      be difficult to implement since a partial failure (e.g. link
+      created OK, but metadata resource creation failed) would require
+      rollback capability in the server.  Another significant drawback
+      to this approach is the difficulty of providing searches on the
+      value of the metadata.  While it was easy to propose a
+      full-featured search on the type space of the links to the
+      metadata, searches of the metadata itself quickly led to a
+      consideration of the full resource searching problem, and
+      difficult issues such as handling the wide range of natural
+      languages and media types of resources being searched. </P>
+
+
+	<P>Another early draft, the Netscape proposal [Cunningham &
+	Faizi, 1996], gives operations for setting and retrieving
+	attribute-value pairs stored in an attribute sheet associated
+	with the resource. While this approach provides basic support
+	for small chunk metadata, it lacks an attribute search
+	mechanism, placing the burden of attribute searching on the
+	client.  It also has no support for large chunk metadata,
+	although this could be provided in a limited way by storing a
+	URI pointer to large chunk metadata in the value of an
+	attribute.
+      </P>
+
+      <P>Neither a pure whole resource metadata approach, nor a pure
+      on-resource approach is able to handle the range of current and
+      proposed Web metadata.  The whole resource approach has
+      referential integrity problems, and the on-resource approach
+      cannot handle the many large chunk metadata formats.  As a
+      result, the proposal in this document uses a mixed approach for
+      handling metadata, providing support for both on-resource, small
+      chunk metadata and whole resource, large chunk metadata.  This
+      mixed proposal provides operations for creating, deleting, and
+      querying attribute-value pairs stored on Web resources.  Simple
+      binary relationships are stored in "Link" metadata, which can
+      point to large chunk metadata resources.</P>
+
+      <P>The mixed proposal requires a modification to the object
+      model for HTTP/1.1 resources to provide a repository for
+      metadata state information in addition to the current
+      repositories of state within an HTTP resource: the body and
+      headers.  This new state information consists of attribute-value
+      pairs, in which the attribute's name is a URI, and the
+      attribute's value is an untyped octet stream.  URIs are used for
+      attribute names to provide a distributed, extensible name space
+      for attribute names.  URIs also have the capability, if
+      dereferenced, of providing descriptive information on the
+      syntax, semantics, and use of the attribute.</P>
+
+      <P>Disadvantages of storing metadata in the existing HTTP object
+      model lead to the desire to modify it.  While HTTP headers can and are used
+      for small chunk metadata, they have drawbacks for distributed
+      authoring.  Since users may potentially create the name of an
+      attribute, this raises the possibility of name collisions with
+      existing headers.  More importantly, since there could be
+      potentially many attributes stored on a resource, it is
+      important for network efficiency that these attributes not be
+      returned with every GET or HEAD request.  There are many
+      proposals for placing metadata inside a Web resource (e.g.,
+      placing a PICS record inside a resource), however, there is no
+      general way to define metadata in the body of resources of any
+      media type.  As a consequence, placing metadata in the body
+      would reduce metadata use to just a few specific resource media
+      types, limiting the general use of metadata.  Since metadata in
+      headers leads to network inefficiency, and metadata in bodies is
+      impossible to generalize across all media types, it is necessary
+      to add new state for attribute-value metadata to the HTTP/1.1
+      object model.</P>
+
+      <P>The sections below describe in detail new HTTP methods which
+      can be used to create (ADDMETA), delete (DELMETA), search and
+      retrieve (GETMETA) attribute-value metadata, including simple
+      bidirectional links.  All of these methods may return a message
+      body that contains a listing of attribute name/value pairs,
+      however, the syntax for how to package these name/value pairs
+      has intentionally not yet been specified.  It is hoped that one
+      of the Web metadata packaging proposals currently being
+      discussed (e.g., Web Collections or PICS-NG) will be useable as
+      the return format for WebDAV metadata methods. Until these
+      specifications have settled, it is premature to use them in a
+      specification. </P>
+
+      <h3>ADDMETA</h3>
+
+      <h4>Body</h4>
+
+<PRE>Body = *Pair
+Pair = Name HT *Value CRLF
+Name = URI
+Value = Octet-CRLF | (CRLF HT)
+Octet-CRLF = &lt;Octet excluding CRLF&gt;</PRE>
+
+      <H4>Explanation:</H4>
+
+      <P>The ADDMETA method is used to create one or more new
+      attribute-value pairs on the resource specified by the
+      Request-URI.  The body of the message MUST be of content type
+      text/tab-separated-values, containing a sequence of attribute
+      name/value pairs.  Each name/value pair consists of a URI
+      attribute name, followed by a TAB, followed by a stream of
+      octets which specify the attribute's value.  The value of the
+      attribute may extend over several lines in the body, each
+      extension line beginning with a TAB.  The name and value
+      uniquely define a metadata item; there may be multiple instances
+      of the same attribute name with different values, but only one
+      instance of a particular name/value pair.  When used as the name
+      of an attribute, the octets which comprise the URI are used to
+      determine its uniqueness; if two (or more) URIs have different
+      octet values, but are equivalent names for the same network
+      resource (e.g., http://foo.com/bar.html and
+      ftp://foo.com/bar.html), they are still considered to be
+      different attribute names.</P>
+
+      <P>The server MUST attempt to create all the included name/value
+      pairs. The return message body (TBD) will indicate which creation attempts
+      failed.</P>
+
+      <H4>Example:</H4>
+
+      <P>ADDMETA /foo.html HTTP/1.1<BR>
+Host: ics.uci.edu<BR>
+Content-Type: text/tab-separated-values<BR>
+<BR>
+http://www.purl.org/W3C/Dublin/Author<I>&lt;TAB&gt;</I>Jim Whitehead<BR>
+DAV:/LINK<I>&lt;TAB&gt;</I>Type = &quot;DAV:/VERSIONING/HISTORY&quot;<BR>
+<I>&lt;TAB&gt;</I> Source = &quot;http://ics.uci.edu/foo.html&quot;<BR>
+<I>&lt;TAB&gt;</I> Dest = &quot;http://ics.uci.edu/foo.html/version_history&quot;</P>
+
+      <H4>Response Codes</H4>
+
+      <P>200 OK indicates the server successfully created all of the
+	name/value pairs described in the request body.</P>
+      
+      <P>A server may reject entries because they are not consistent
+      with the definition of the attribute. In that case a 406 Not
+      Acceptable should be returned.</P>
+
+      <P>Error conditions: empty body? Partial success/failure
+	-- could not create one of the name/value pairs.</P>
+
+      <P>TBD: A response message body indicating which name/value
+	pairs the server was unable to create.</P>
+
+      <h3>DELMETA</h3>
+
+      <h4>Body</h4>
+
+      <P>The body may either be of content type
+      text/tab-separated-values, using the syntax defined for the
+      ADDMETA body, or of content type application/dav-meta-search,
+      using the syntax defined for the GETMETA body. </P>
+
+      <h4>Explanation</h4>
+
+      <P>The DELMETA method is used to remove a name/value pair from
+      the resource specified by the Request-URI.  When the message
+      body is of content type text/tab-separated-values, the server
+      MUST remove any attribute name/value pair defined on the
+      resource which exactly matches a name/value pair specified in
+      the message body.</P>
+
+      <P>When the message body is of content type
+      application/dav-meta-search, the server MUST remove any
+      attribute name/value pair defined on the resource which
+      satisfies the search specification in the message body. If a
+      server implements the GETMETA and the DELMETA methods, it MUST
+      provide support for search specifications of content type
+      application/dav-meta-search, and MAY accept search
+      specifications in other formats and/or content types for the
+      DELMETA method.  All search formats accepted by GETMETA SHOULD
+      be accepted by DELMETA.</P>
+
+      <h4>Response Codes</h4>
+
+      <P>TBD -- need to reuse the response format from ADDMETA to
+	return the name/value pairs which were removed.</P>
+
+      <P>Error conditions: Syntax error in search syntax.</P>
+
+      <h3>GETMETA Method</h3>
+
+      <h4>Body</h4>
+
+<PRE>Search = &quot;(&quot; &quot;OR&quot; *And-Expr&quot;)&quot;
+And-Expr = &quot;(&quot; &quot;AND&quot; Name Value &quot;)&quot;
+Name = &quot;(&quot; &quot;name&quot; search-pattern &quot;)&quot;
+Value = &quot;(&quot; &quot;value&quot; search-pattern &quot;)&quot;
+search-pattern = &lt;&quot;&gt;*(&quot;*&quot; | &quot;?&quot;
+         | SpecialOctet | escaped-octet) &lt;&quot;&gt;
+SpecialOctet = &lt;OCTET without &lt;&quot;&gt; or &quot;*&quot;
+        or &quot;?&quot;  or &quot;\&quot;&gt;
+escaped-octet  = &quot;\&quot; OCTET
+</PRE>
+
+      <h4>Explanation</h4>
+
+      <P>The GETMETA method returns all attribute name/value pairs
+      defined on the resource specified by the Request-URI which match
+      the search syntax specified in the message body. If a server
+      implements the GETMETA method, it MUST provide support for
+      search specifications of content type
+      application/dav-meta-search, and MAY accept search
+      specifications in other formats and/or content types.</P>
+
+      <h4>application/dav-meta-search media type</h4>
+
+      <P>The application/dav-meta-search media type uses a subset of
+      the s-expression syntax to specify an attribute search syntax.
+      Searches are a logical or of limited regular expression matching
+      of attribute name/value pairs.  Each name/value pair search is a
+      logical and of regular expression matching on the name and the
+      value of the attribute.  The &quot;*&quot; operator, which
+      matches any sequence of zero or more octets, and the
+      &quot;?&quot; operator, which matches a single octet, are the
+      only regular expression operators allowed.  If a search needs to
+      specify a literal &quot;*&quot; or &quot;?&quot;, these
+      characters are escaped using the slash &quot;/&quot; convention,
+      hence literal &quot;*&quot; is represented as &quot;/*&quot; and
+      literal &quot;?&quot; is represented as &quot;/?&quot;.</P>
+
+      <h4>Examples</h4>
+
+<PRE>GETMETA /foo.html HTTP/1.1
+Host: www.ics.uci.edu
+Content-Type: application/DAV-meta-search
+
+(OR (AND (name &quot;http://ydfh&quot;) (value &quot;*&quot;))
+    (AND (name &quot;foo:blah&quot;)(value &quot;*&quot;)))
+</PRE>
+
+<PRE>GETMETA /foo.html HTTP/1.1
+Host: www.ics.uci.edu
+Content-Type: application/DAV-meta-search
+
+(OR (AND (name &quot;*y?f*&quot;)(value &quot;*&quot;))
+    (AND (name &quot;f*?h&quot;)(value &quot;*&quot;))
+</PRE>
+
+      <P>Assuming that the metadata available on
+      http://www.ics.uci.edu/foo.html did not change between the requests,
+      the response to the second GETMETA request should, at a minimum,
+      include all the responses from the first GETMETA request.</P>
+
+<PRE>GETMETA /index.html HTTP/1.1
+Host: www.ics.uci.edu
+Content-Type: application/DAV-meta-search
+
+(OR (AND (name &quot;*&quot;)(value &quot;*&quot;)))
+</PRE>
+
+      <P>The server will return a list of all attribute name/value
+	pairs defined on the resource http://www.ics.uci.edu/index.html.</P>
+      
+<PRE>GETMETA /index.html HTTP/1.1
+Host: www.ics.uci.edu
+Content-Type: application/DAV-meta-search
+
+(OR (AND (name &quot;DAV:/LINK&quot;)(value &quot;*&quot;)))
+</PRE>
+
+      <P>The server will return a list of all links defined on the
+	resource http://www.ics.uci.edu/index.html.</P>
+
+      <h4>Response Codes</h4>
+
+      <P>The response format for matching name/value pairs is TBD.</P>
+
+      <P>Error conditions: syntax error in search syntax.  No matching
+      name/value pairs?</P>
+
+      <h2>Link Metadata Type</H2>
+
+<PRE>Link := linkname HT linkvalue
+linkname := &quot;DAV:/Link&quot;
+linkvalue := Type SP Source SP Destination *(SP link-extension)
+Source := &quot;Source&quot; &quot;=&quot; &lt;&quot;&gt; URI &lt;&quot;&gt;
+Destination := &quot;Dest&quot; &quot;=&quot; &lt;&quot;&gt; URI &lt;&quot;&gt;
+Type := &quot;Type&quot; &quot;=&quot; &lt;&quot;&gt; URI &lt;&quot;&gt;
+
+link-extension = token [&quot;=&quot; (token | quoted-string)]
+</PRE>
+
+      <P>A link can be viewed as a piece of metadata stored on a
+      resource, which can be stored in an attribute name/value pair.
+      The Link predefined metadata type provides a standard syntax for
+      expressing typed links with two endpoints.  By definition, the
+      name of a link attribute is &quot;DAV:/Link&quot; and the value
+      of the attribute is a triple consisting describes the link's
+      type, source, and destination, and potentially some extra
+      descriptive information.</P>
+	
+      <P>When recoding a DAV:/Link attribute, a server is only
+      required to record the Source, Destination, and Type. It may
+      drop all other information in the attribute value field if it so
+      chooses. In addition a server MUST not record two links which
+      have the same source, destination, and type but differ on other
+      attributes.  A link is uniquely identified by the
+      source/destination/type triple.</P>
+
+      <P>Please note the use of &quot;:=&quot; in the BNF productions
+      above.  This means that white space is never implicit,
+	simplifying link search specifications.</P>
+
+      <h2>References</h2>
+
+      <P>[Abrial, 1974] J. R. Abrial, "Data Semantics", in
+      J. W. Klimbie and K. L. Koffeman eds., Data Base Management,
+      Proceedings of the IFIP Working Conference on Data Base
+      Management, Cargese, Corsica, France, April 1-5, 1974,
+      p. 1-60.</P>
+
+      <P>[<A HREF="http://www.w3.org/pub/WWW/DesignIssues/Metadata.html">Berners-Lee, 1997</A>]
+	T. Berners-Lee, "Metadata Architecture."
+        Unpublished white paper, January 1997.  http://www.w3.org/pub/WWW/DesignIssues/Metadata.html</P>
+
+      <P>[<A HREF="http://www.ics.uci.edu/~ejw/authoring/ns_dav.html">Cunningham & Faizi,
+1996</A>] J. Cunningham, A. Faizi, "Distributed Authoring and
+	Versioning Protocol", version 0.1, unpublished manuscript,
+	October, 1996. http://www.ics.uci.edu/~ejw/authoring/ns_dav.html</P>
+      
+      <P>[Engelbart, 1968] D. C. Engelbart and W. K. English. "A
+      Research Center for Augmenting Human Intellect" , AFIPS
+      <I>Proceedings of the Fall Joint Computer Conference</I> ,
+      1968. Vol. 33, Part 1, p. 395-420. Thompson Book Company,
+      Washington, D.C. 1968. </P>
+
+      <P>[<A HREF="http://www.ics.uci.edu/~ejw/authoring/draft-jensen-webdav-ext-01.txt">Goland et. al, 1997</A>]  Y. Y. Goland, E. J. Whitehead,Jr.,
+	A. Faizi, S. R. Carter, D. Jensen, "Extensions for Distributed
+	Authoring and Versioning on the World Wide Web" Internet
+	draft, work-in-progress. draft-jensen-webdav-ext-01,  ftp://ds.internic.net/internet-drafts/draft-jensen-webdav-ext-01.txt, </P>
+
+      <P>[Hull & King, 1987] R. Hull and R. King, "Semantic Database
+      Modeling: Survey, Applications, and Research Issues", ACM
+      Computing Surveys, Vol. 19., No. 3, September 1987,
+      p. 201-260.</P>
+
+      <P>[<A HREF="http://www.dlib.org/dlib/july96/lagoze/07lagoze.html">Lagoze, 1996</A>]
+	C. Lagoze, "The Warwick Framework, A
+	Container Architecture for Diverse Sets of Metadata."  D-Lib
+	Magazine, July/August, 1996.  http://www.dlib.org/dlib/july96/lagoze/07lagoze.html</P>
+      
+      <P>[<A HREF="ftp://ds.internic.net/rfc/rfc1807.txt">Lasher, Cohen, 1995</A>] R. Lasher, D. Cohen, "A Format for
+	Bibliographic Records," RFC 1807.  Stanford, Myricom. June, 1995.</P>
+
+      <P>[<A HREF="http://www.ics.uci.edu/~ejw/authoring/draft-ietf-html-relrev-00.txt">Maloney, 1996</A>]  M. Maloney, "Hypertext Links in HTML." Internet draft (expired), work-in-progress, January, 1996.</P>
+
+      <P>[MARC, 1994] Network Development and MARC Standards, Office,
+      ed. 1994.  "USMARC Format for Bibliographic Data", 1994.
+      Washington, DC: Cataloging Distribution Service, Library of
+      Congress.</P>
+      
+      <P>[<A HREF="http://www.w3.org/pub/WWW/TR/REC-PICS-labels-961031.html">Miller
+      et.al., 1996</A>] J. Miller, T. Krauskopf, P. Resnick,
+      W. Treese, "PICS Label Distribution Label Syntax and
+      Communication Protocols" Version 1.1, W3C Recommendation
+      REC-PICS-labels-961031. http://www.w3.org/pub/WWW/TR/REC-PICS-labels-961031.html</P>
+
+      <P>[Nelson, 1981]  T. Nelson, "Literary Machines." Swarthmore,
+	PA, 1981.</P>
+
+      <P>[<A HREF="http://www.ics.uci.edu/~ejw/authoring/webdav-req-00.html">Slein et al., 1997</A>]
+      J. A. Slein, F. Vitali, E. J. Whitehead, Jr., D. G. Durand,
+	"Requirements for Distributed Authoring and Versioning on the
+	World Wide Web," Internet-draft, work-in-progress, draft-slein-www-dist-author-00.txt</P>
+
+      <P>[<A HREF="http://www.cnri.reston.va.us/home/dlib/July95/07weibel.html">Weibel, 1995</A>]
+	S. Weibel, "Metadata: The Foundations of
+	Resource Description."  D-Lib Magazine, July, 1995. http://www.cnri.reston.va.us/home/dlib/July95/07weibel.html</P>
+
+      <P>[<A HREF="http://purl.oclc.org/metadata/dublin_core_report">Weibel
+      et al., 1995</A>] S. Weibel, J. Godby, E. Miller, R. Daniel,
+      "OCLC/NCSA Metadata Workshop Report."
+      http://purl.oclc.org/metadata/dublin_core_report</P>
+      
+      <hr>
+      <address><a href="mailto:ejw@fdr.ics.uci.edu">Jim Whitehead</a></address>
+<!-- Created: Thu Apr 24 12:38:05 PDT 1997 -->
+<!-- hhmts start -->
+Last modified: Tue Apr 29 17:19:32 PDT 
+<!-- hhmts end -->
+  </body>
+</html>

@@ -1,0 +1,122 @@
+HW: 14.1-5, 14.3-6, 14.3-7, 14-1
+
+
+Cutting and linking trees
+
+Problem:
+    maintain a rooted forest of nodes (each non-root node -> parent, no cycles)
+    ops:
+	new node
+	set parent of node x to y (if x has no parent and y not in same tree)
+	clear parent of node x (making it a root)
+	find root of tree containing node x
+
+    application 1:
+	iterator objects -> each time you call "next", returns
+		another item from some stream
+	delegate iterator x to iterator y:
+		until connection is broken,
+		each time item from x requested,
+		get one from y and return it
+	next():
+		find root of delegation tree
+		and return item from it
+
+	e.g. inorder binary tree traversal:
+		delegate to left subtree traversal object
+		then return node itself
+		then delegate to right subtree traversal object
+
+	new iterator = new node
+	delegate = link
+	stop delegating = cut
+	next = findroot
+
+    representation:
+	choose @ most one "solid" incoming edge @ ea. node, rest "dashed"
+	so solid edges form paths
+
+	store splay tree for each path, tree order = path sequence
+	allows quickly splitting, gluing, finding top of path
+
+	also store outgoing dashed edge (if any) from root of path
+
+    expose(v): make v->root into a solid path
+	split path(v) so v is bottom vertex
+	while pathtop(v) has a dashed edge t->u:
+		split path containing u so u is bottom of path
+		glue path(v), path(u)
+
+    link(x,y): expose(x), expose(y) and merge two paths
+
+    cut(v): expose(v) and separate v from rest of its path
+
+    findroot(v): expose(v) and find top vertex of path
+
+
+    analysis:
+	all work done in expose, could make many changes to paths
+	(dynamic trees not required to be balanced)
+
+	potential function based on "heavy edges"
+
+	v->w heavy: #descs(v) > #descs(w)/2
+	     light: not heavy
+	each node has at most one incoming heavy edge
+	each tree path (solid or not) has at most log_2 n light edges
+
+        Phi = # dashed heavy edges
+
+        expose:
+		add light edge to solid path: Phi += 1
+			happens <= log_2 n times
+		add heavy edge to solid path: Phi -= 1
+			can happen more times
+			but paid for by decrease in Phi
+
+		so: amortized # steps per expose <= log_2 n
+
+	each step = splay tree op => O(log^2 n) time per operation
+
+	more careful analysis -- recall splay tree amortization involved
+		node weights
+	    let weight(v) = #descs(v) - #descs(u)
+		where descs counted in actual dynamic tree (not splay tree)
+		u->v is v's incoming solid edge (#descs(u)=0 if no such edge)
+
+	    total weight tw(v) = sum_{splay tree descs(v)} weight(desc)
+
+	    splay tree op takes time log({tw(root)}) - log({tw(v)})
+
+	    times per expose telescope to O(log n)
+
+	    have to be careful because cut/link ops change node weights
+		=> change potential function used in splay tree amortized anal.
+		but only by logarithmic amount
+
+	so: all cutting and linking operations O(log n) amortized time
+
+    application 2:
+	maintain edge costs in *undirected* tree
+	find maximum weight edge on path from v->root
+
+	directed->undirected:
+		choose arbitrary root
+		reroot @ v: expose(v), reverse its splay tree
+		(augment splay tree to store reversal bit at each node)
+
+	augment splay trees for max-edge queries (last week)
+
+	incremental minimum spanning tree:
+		maintain current minimum spanning forest
+			(w/arbitrary roots)
+		when new edge uv added:
+			reroot at u
+			expose(v)
+			if root(v) != u:
+				link(u,v)
+			else find max edge xy on exposed path
+				if weight(uv) < weight(xy):
+					cut x-y
+					link(u,v)
+

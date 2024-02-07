@@ -1,0 +1,199 @@
+// Handle tables of character translation probabilities
+
+import java.util.*;
+
+public class LetterProbability {
+	double prob[][] = new double[26][26];
+	
+	public LetterProbability() {
+		for (int i = 0; i < 26; i++)
+			for (int j = 0; j < 26; j++)
+				prob[i][j] = 1.0/26.0;
+	}
+	
+	public double probability(String code, String word, String letters) {
+		if (code.length() != word.length()) return 0.0;
+		double p = 1.0;
+		for (int i = 0; i < letters.length(); i++)
+		{
+			int pos = (int)letters.charAt(i) - (int)'A';
+			char c = code.charAt(pos);
+			char w = word.charAt(pos);
+			if (WordPatterns.letter(c) && WordPatterns.letter(w))
+				p *= prob[(int)c - (int)'A'][(int)w - (int)'A'];
+		}
+		return p;
+	}
+	
+	// the heart of the solver -- make new letter probability matrix by
+	// using weighted probabilities of matching words
+	public LetterProbability(LetterProbability old, String code, WordPatterns freq) {
+		double inc;
+		double weight;
+		double rinc[] = new double[26];
+		double cinc[] = new double[26];
+		double newProb[][] = new double[26][26];
+		int i,j;
+		double totalWeight = 0.0;
+		for (i = 0; i < 26; i++) for (j = 0; j < 26; j++) prob[i][j] = 0.0;
+		
+		// loop over all words in the code phrase
+		Enumeration codeWords = freq.words(code);
+		while (codeWords.hasMoreElements()) {
+			String codeWord = (String) codeWords.nextElement();
+			String letters = WordPatterns.letters(WordPatterns.pattern(codeWord));
+			weight = 0.0;
+			inc = 0.0;
+			for (i = 0; i < 26; i++) {
+				rinc[i] = cinc[i] = 0.0;
+				for (j = 0; j < 26; j++) newProb[i][j] = 0.0;
+			}
+			
+			// loop over all matching words in the dictionary
+			Enumeration matches = freq.matches(codeWord).elements();
+			double maxProb = 0.0;
+			while (matches.hasMoreElements()) {
+				WordPatterns.Word word = (WordPatterns.Word) matches.nextElement();
+				double wordProb = old.probability(codeWord, word.theWord, letters) * word.freq;
+				if (maxProb < wordProb) maxProb = wordProb;
+				
+				// adjust entries in newProb[][]:
+				//   increment by wordProb for matching code/decode letters
+				//   stay zero for mismatched letters
+				//   add small amount to letters not in code/decode to stay doubly stochastic
+				// we do this by adding the small amount (letterProb) to inc,
+				// subtracting it again from the row and column increments,
+				// and adding back in again where both row and column incs double-subtracted
+				double letterProb = wordProb/(double)(26 - letters.length());
+				inc += letterProb;
+				weight += wordProb;
+				for (i = 0; i < letters.length(); i++) {
+					int c = (int)codeWord.charAt((int)letters.charAt(i)-(int)'A') - (int)'A';
+					for (j = 0; j < letters.length(); j++) {
+						int w = (int)word.theWord.charAt((int)letters.charAt(j)-(int)'A') - (int)'A';
+						newProb[c][w] += letterProb;
+						if (i == j) {
+							rinc[c] -= letterProb;
+							cinc[w] -= letterProb;
+							newProb[c][w] += wordProb;
+						}
+					}
+				}
+			}
+		
+			// normalize new probabilities and incorporate into total
+//			double factor = -Math.log(maxProb);
+			double factor = 1.0;
+			if (weight > 0.0) {
+				totalWeight += factor;
+				factor /= weight;
+				for (i = 0; i < 26; i++)
+					for (j = 0; j < 26; j++)
+						prob[i][j] += factor*(newProb[i][j] + rinc[i] + cinc[j] + inc);
+			}
+		}
+		
+		// we've now added 1.0 to prob[][] for each word -- renormalize to total 1.0
+		if (totalWeight > 0) {
+			for (i = 0; i < 26; i++)
+				for (j = 0; j < 26; j++)
+					prob[i][j] /= totalWeight;
+		}
+
+		// sanitize probabilities to make matching algorithm happier
+		for (i = 0; i < 26; i++)
+			for (j = 0; j < 26; j++)
+				if (prob[i][j] < 0.0001) prob[i][j] = 0.0001;
+				else if (prob[i][j] > 0.9999) prob[i][j] = 0.9999;
+	}
+	
+	// Find best permutation for given weights
+	// returns char[26]
+	char[] match() {
+		char matches[] = new char[26];
+		boolean processed[] = new boolean[26];
+		double pathWeight[] = new double[26];
+		int codePred[] = new int[26];
+		int textPred[] = new int[26];
+		double bestEndWeight;
+		int bestEnd;
+		int i, j;
+		
+		for (i = 0; i < 26; i++) matches[i] = ' ';
+		for (i = 0; i < 26; i++) {
+			// perform alternating path search
+			// initialize alternating path tree to unmatched text letters
+			for (j = 0; j < 26; j++) {
+				processed[j] = false;
+				pathWeight[j] = 1.0;
+				codePred[j] = textPred[j] = -1;
+			}
+			bestEndWeight = -1.0;
+			bestEnd = -1;
+			for (j = 0; j < 26; j++) if (matches[j] != ' ') {
+				pathWeight[(int)matches[j] - (int)'A'] = 0.0;
+			}
+			
+			// loop adding letters to the alternating path tree
+			for (;;) {
+				// find best text letter to add next
+				int bestLet = -1;
+				double bestWeight = -1.0;
+				for (j = 0; j < 26; j++) if (!processed[j] && pathWeight[j] > bestWeight) {
+					bestLet = j;
+					bestWeight = pathWeight[j];
+				}
+				
+				// test whether we have a better complete alternating path
+				if (bestWeight < bestEndWeight) break;
+				if (bestWeight < 0) {
+					System.out.println("LetterProbability.match(): panic, all paths negative!");
+					break;
+				}
+				
+				// no, add letter to alternating path tree and try extensions from it
+				processed[bestLet] = true;
+				for (j = 0; j < 26; j++) {
+					double newWeight = bestWeight * prob[j][bestLet];
+					if (matches[j] == ' ') {	// potential alternating path?
+						if (newWeight > bestEndWeight) {
+							bestEndWeight = newWeight;
+							bestEnd = j;
+							codePred[j] = bestLet;
+						}
+					} else if (!processed[(int)matches[j]-(int)'A']) { // already matched, not yet in tree
+						int oldMatch = (int)matches[j] - (int)'A';
+						newWeight /= prob[j][oldMatch];
+						if (newWeight > pathWeight[oldMatch]) {
+							pathWeight[oldMatch] = newWeight;
+							textPred[oldMatch] = j;
+							codePred[j] = bestLet;
+						}
+					}
+				}
+			}
+
+			// here with alternating path. use it to rearrange matches
+			while (bestEnd >= 0) {
+				matches[bestEnd] = (char)(codePred[bestEnd]+(int)'A');
+				bestEnd = textPred[codePred[bestEnd]];
+			}
+		}
+		
+		// augmented 26 times, we now have a perfect matching
+		return matches;
+	}
+	
+	// Update probabilities to correspond to locally optimized permutation
+	void adjustPerm(char perm[], double bias) {
+		for (int i = 0; i < 26; i++) {
+			for (int j = 0; j < 26; j++) prob[i][j] *= (1-bias);
+			prob[i][(int)perm[i]-(int)'A'] += bias;
+		}
+	}
+	
+	// Quick sanity check on possible swap
+	double swapQuality(int a, int b, int c, int d) {
+		return (prob[a][c]*prob[b][d]/(prob[a][d]*prob[b][c]));
+	}
+}

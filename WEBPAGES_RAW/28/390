@@ -1,0 +1,18 @@
+#Multiple testing in ANOVA
+#In the following simulation, there is no group effect. 
+#However, due to randomness, we see false positives
+
+I=20
+J=20
+y=rnorm(I*J)
+x=rep(1:I, each=J)
+obj=aov(y~factor(x))
+pairwise.p=matrix(NA,I,I)
+for(ia in 1:(I-1))
+ for(ib in (ia+1):I)
+ {
+ 	pairwise.p[ia,ib]=t.test(y[x==ia], y[x==ib], var.equal=T)$p.value
+ }
+
+image(1-1.0*(pairwise.p<0.05))
+#I did "1-" to make the false positives have a bright red color

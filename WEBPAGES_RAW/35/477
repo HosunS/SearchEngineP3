@@ -1,0 +1,457 @@
+<HR><PRE>
+<B>From:</B>           <A HREF="mailto:lambert@cse.unsw.edu.au">lambert@silver.cs.umanitoba.ca</A> (Tim Lambert)
+<B>Newsgroups:</B>     sci.math
+<B>Subject:</B>        Random convex n-gon
+<B>Summary:</B>        I'll know one when I see one
+<B>Date:</B>           1 Jul 91 19:01:49 GMT
+<B>Organization:</B>   Department of Computer Science, University of Manitoba
+</PRE><HR><PRE>
+In article &lt;LAMBERT.91Jun24202803@silver.cs.umanitoba.ca&gt; I wrote:
+&gt;Can you define a random convex polygon with n vertices?  Assume if you
+&gt;like a distribution from which you are to choose the vertices.  (For
+&gt;example, uniform on unit square.)  Obviously, there is more than one
+&gt;way to define this.  Which definition seems most intuitive?
+
+Here is the promised summary of responses.  My comments are in
+brackets [like this].  I reveal my computer science bias by
+considering the time taken by an algorithm to generate a "randon n-gon".
+
+Many thanks to everyone who replied.
+</PRE><HR><PRE>
+<B>From:</B>           Dan Hoey &lt;<A HREF="mailto:hoey@etl.army.mil">hoey@etl.army.mil</A>&gt;
+</PRE><HR><PRE>
+You might want to choose vertices from your distribution until the
+convex hull is an N-gon.  I think for nice distributions this
+terminates with probability one.
+
+[ For N points chosen uniformly from inside a circle the expected
+[ number of vertices on the convex hull is O(N^(1/3)) [1].  So we would
+[ have to pick O(N^3) points to generate a convex N-gon.  This gives an
+[ obvious O(N^4) algorithm.  If I generate points outside the convex
+[ hull of the points generated so far,  I find that I only have to
+[ generate about 3N points to get an N-gon, so this seems to be an O(N)
+[ algorithm. ]
+
+The problem is that the distribution of vertices that results is not
+the original one--the points near the center are less likely.
+
+[ Yes.  If I take a large number of points from inside a circle then
+[ their convex hull will closely approximate the circle.  This does not
+[ seem very random. ]
+
+I don't know if there's any way to pick them so that you end up with
+a desired distribution.
+</PRE><HR><PRE>
+<B>From:</B>           <A HREF="mailto:ccrwest!ed@UCSD.EDU">ccrwest!ed@UCSD.EDU</A> (Ed Bender)
+</PRE><HR><PRE>
+Three thoughts come to mind, none very good in terms of randomness.
+
+1. Continue choosing points until their convex hull is an n-gon.
+
+2. Choose n rays from the origin so that every open half plane contains a
+   ray---easy to do by choosing sets of n at random until a set is okay.
+   Proceeding around the rays in a clockwise manner choose a point on each
+   ray to be the vertex of a convex n-gon that contains the origin.  The
+   first two points are arbitrary and then the previous two points (and also
+   first two when choosing the nth) may put a simple upper bound on how far out
+   the next point can be.
+
+[ You also need a lower bound on how far out the next point is, to
+[ ensure that it is outside the convex hull of the points selected so
+[ far.  Later points have far less freedom than earlier points.  This
+[ doesn't seem very random. ]
+
+3. Choose n angles at random summing to 360 degrees.  These are the angles
+   to rotate through when moving from one side to the next.  Choose the first
+   two n-2 side lengths at random.  The lengths of the two remaining sides
+   are determined and, if you are lucky, they will not be negative.  If a
+   negative side arises, try again.  I have no idea what the probability of
+   failure is.
+</PRE><HR><PRE>
+<B>From:</B>           Marshall Bern &lt;<A HREF="mailto:bern@parc.xerox.com">bern@parc.xerox.com</A>&gt;
+</PRE><HR><PRE>
+Here's a sketch of an idea due to Thurston (who told David Dobkin
+who told me):  Start with a regular n-gon.  Pick a random velocity
+(direction uniform on [0, 2 pi ], magnitude uniform on [0,1]) for
+each vertex.  Now let each vertex move at its velocity.  When three
+consecutive vertices, a, b, c, become co-linear, you "bounce" b
+off the segment ac.  To do this, you could consider the frame of reference
+in which b is the origin and segment ac is fixed and horizontal, and
+then change the velocity of b to its reflection across the y-axis.
+
+[ Cool idea.  It would even make a pretty display on your screen if you
+[ animated it.  You do the bouncing in a non-inertial frame of
+[ reference, so the total energy of the system isn't fixed, but I guess
+[ that doesn't matter.  Implement with time O(log n) per bounce.
+[ Presumably you need O(n) bounces to get things random enough, so
+[ O(n log n).  A cheaper way to get a similar effect would be to
+[ randomly pick vertices and move them so as not to destroy the
+[ convexity. (If ABCDE are five consecutive vertices then we can move
+[ C anywhere inside the triangle BDI where I is the intersection of
+[ the rays AB and ED.)
+
+Thurston told Dobkin that in the limit, "every convex n-gon is
+equally likely".  I'm not sure what the proper mathematical statement
+would be.  You'd have to define a measure on the space of convex polygons.
+
+[ It doesn't converge to a limit.  Maybe you should do some simulating
+[ annealing kind of stuff and gradually cool the system down so that
+[ the vertices eventually grind to a halt.]
+</PRE><HR><PRE>
+<B>From:</B>           <A HREF="mailto:David.Handscomb@na.oxford.ac.uk">David.Handscomb@na.oxford.ac.uk</A>
+</PRE><HR><PRE>
+The definition that springs first to my mind is described by the
+following algorithm:
+
+repeat:
+choose n points from given distribution;
+if any one lies within triangle formed by any other three then go to repeat
+else accept last n points chosen;
+
+[ Or in other words "Pick n points.  Reject if their convex hull does
+[ not have n points."
+
+This is equally valid in d&gt;2 dimensions, replacing "triangle" by
+"simplex" and "three" by "d+1".
+
+It is a nice problem to determine how many repetitions are required on
+average to generate one polygon.  For n=4, d=2, with points chosen from
+a uniform distribution on a square, the number appears experimentally to
+be around 1.44 - could possibly be worked out exactly.
+
+[ Sylvester's problem [2] is "Find the probability that four random
+[ points from a convex set form a convex quadrilateral."  For a
+[ parallelogram the answer is 25/36, so the expected number of
+[ repetitions is _exactly_ 1.44 -- your experiment was spot on!
+
+The number must increase as n increases, but at what (asymptotic) rate?
+
+[ Good question.  Anyone know the answer? ]
+
+When n is large, is there a more efficient way of generating
+convex polygons from the same distribution?
+
+[ I'm glad you asked.  First pick three points.  Now if the the next
+[ point is inside the triangle or the wedges opposite its corners we'll
+[ have to reject and start again.  Let p = probability of rejection.
+[ Rather than risk rejection, we'll pick a point outside the rejection
+[ region and multiply the probability of the polygon by (1-p).
+[ Continue until you get an n-gon and a probability of getting there.
+[ Time is O(n).  We can use the probability to weight whatever
+[ measurements we make an the n-gon.
+</PRE><HR><PRE>
+<B>From:</B>           "William F. Eddy" &lt;<A HREF="mailto:bill+@andrew.cmu.edu">bill+@andrew.cmu.edu</A>&gt;
+</PRE><HR><PRE>
+Perhaps the easiest way to generate random convex polygons is to
+generate random samples of points and just take the convex hull.  There
+has been a fair amount of work over the last twenty five years or so
+working out properties of the resulting convex hulls under various
+sampling assumptions.   This method does not allow you to prespecify
+the number of vertices (except for various particular sampling
+distributions) so you have to reject all those not having the specified
+number.
+
+[ i.e. pick a random integer k between 1 and infinity.  Reject if the
+[ convex hull of k points does not form an n-gon.  This seems to be
+[ closely related to "keep taking points until the convex hull is an
+[ n-gon".  Maybe you should keep going to see if you ever get an n-gon
+[ again, and randomly choose amongst the n-gons you get.
+
+I can provide additional details and references if you wish.
+</PRE><HR><PRE>
+<B>From:</B>           <A HREF="mailto:mic@theory.lcs.mit.edu">mic@theory.lcs.mit.edu</A> (Michelangelo Grigni)
+</PRE><HR><PRE>
+Here is an idea, using random sides rather than points.
+
+First a simple version, for a random centrally symmetric 2n-gon:
+
+1) Choose n "random" vectors v1, v2, ... vn,
+   by your favorite random point distribution (say normal).
+2) Change signs of the vectors if necessary so that they all
+   point in the positive x direction.
+3) Sort the vectors by increasing slope.
+4) Now start at some arbitrary starting point (say the origin), and
+   make the following relative moves, tracing out a 2n-sided polygon:
+            +v1, +v2, +v3, ..., +vn, -v1, -v2, ..., -vn.   
+   This returns you to where you started.
+
+[ You can implement this in time O(n) (even though the sort would
+[ take O(n log n) ]
+
+This actually has a few nice properties.  Let H be the set of 2^n
+points obtained by summing subsets of the v's.  Then the polygon we
+traced out is the convex hull of H, and furthermore all step 2 did was
+translate H, so we see the distribution of polygon shapes is
+rotationally symmetric, assuming our original point distribution was.
+
+Now for a random convex n-gon, you would need the same basic idea but
+with the constraint v1+v2+...+vn=0.  In general I don't know how you
+might do this.  One idea: to get n random real variables summing to 0,
+so that each has the same normal distribution, first take n
+independent normal variables, then orthogonally project them to the
+constraint plane.
+
+[ Yes.  And if you want them from the uniform distribution on the n-1
+[ dimensional hypersphere formed by the intersection of the constraint
+[ plane and the n-dim unit ball, you can pick a point from the
+[ (n-1)-dim unit ball and rotate it onto the constraint plane.  This
+[ is the simplest to implement.  Time is O(n log n) (because you have
+[ to sort the vectors). ]
+</PRE><HR><PRE>
+<B>From:</B>           "Matti Siivola (KTTL) puh. 4346609, 8744283" &lt;<A HREF="mailto:MSIIVOLA@cc.Helsinki.FI">MSIIVOLA@cc.Helsinki.FI</A>&gt;
+</PRE><HR><PRE>
+My idea would be to first create "star-shaped" n-polygon by choosing n
+angles from 0 to 2*pi and n distances from origin.  Then I would swap
+any two adjanced edges which common end is "inside" to "outside".
+Repeating this will provide a convex polygon.
+
+[ Hmm.  You would have to do the swap so that the angle of the moved
+[ vertex did not change, so that it is still star-shaped.  I'm not
+[ sure how quickly this would converge.  It seems to me you might need
+[ O(n^2) swaps.
+
+Another way is to start with a random triangle (it is always convex).
+Then cut away a randomly chosen corner at random points on the edges.
+This gives 4-gon.  Repeat until a n-gon is obtained.
+
+[ This is dual to the method I described that selects points subject
+[ to the constaint that the convex hull of n points be an n-gon.
+</PRE><HR><PRE>
+<B>From:</B>           <A HREF="mailto:gutest5%blekul11.bitnet@utcs.utoronto.ca">gutest5%blekul11.bitnet@utcs.utoronto.ca</A> (Lieven)
+</PRE><HR><PRE>
+How about smallest convex set that contains all n points.
+I seem to remember that Rudin defines a general triangle in
+a Banach space in such a matter.
+
+[ Lieven means "Pick n points.  Reject if their convex hull does not
+[ have n points."
+</PRE><HR><PRE>
+<B>From:</B>           Anil Joshi &lt;<A HREF="mailto:joshi@cs.uiuc.edu">joshi@cs.uiuc.edu</A>&gt;
+</PRE><HR><PRE>
+I too am interested in these definitions. May be a generalization of
+that would be something like "Define a n vertex random polytope
+belonging to R^M".
+
+--------------------
+References
+[1] "Computational Geometry: An Introduction" F.P. Preparata M.I. Shamos
+[2] "Integral geometry and geometric probability" L.A. Santalo
+</PRE><HR><PRE>
+<B>From:</B>           <A HREF="mailto:rsm@math.arizona.edu">rsm@math.arizona.edu</A> (Robert S. Maier)
+<B>Newsgroups:</B>     sci.math
+<B>Subject:</B>        Re: Random convex n-gon
+<B>Date:</B>           1 Jul 91 23:52:26 GMT
+<B>Organization:</B>   Mathematics Department, University of Arizona
+</PRE><HR><PRE>
+To probabilists, there is a natural way of defining random convex
+polygons.  A random convex polygon is a polygon selected from a random
+tessellation of the plane.  A random tessellation is most easily
+defined by randomly drawing lines in the plane, according to a
+translation-invariant, isotropic `line process'.
+
+To explain what I mean by this, consider the 1-dimensional analogue.
+In 1-d we can `randomly choose points' (i.e. define the standard
+Poisson point process) as follows.  Fix one point at the origin, and
+let the distance to the next point on either side be an exponential
+random variable.  Continue ad infinitum.  (Actually this yields a
+conditioned Poisson process, since the first point is tied down at the
+origin.  With a bit more work, we can define a stationary, i.e.
+translation-invariant Poisson process, or more general renewal
+processes.)
+
+These randomly chosen points partition the line into intervals; they
+are `random intervals'.  If we require the left end of a random
+interval to be the origin, then it will be [0,x], with x exponentially
+distributed.
+
+The generalization to 2 dimensions is simple but not obvious.  We need
+to define a `line process', i.e. we need to draw lines randomly, in a
+translation-invariant, isotropic way.  It is left as exercise to the
+reader to show that the following construction will suffice.
+
+Distribute points along the x axis, according to the standard Poisson
+process.  Draw a line through each point, but choose its orientation
+randomly.  Denote by theta the angle that it makes with the x axis.
+Then the appropriate probability density is proportional to the square
+of the sine of theta.
+
+It is not hard to show that if we choose any fixed line in the plane,
+the intersections of our randomly chosen lines with it will form a
+Poisson point process.  So our line process is a natural 2-D
+generalization of the 1-D point process.  (The Poisson process seems
+to be the only renewal process that will work here.)
+
+We may define a `random convex polygon' as a minimal convex polygon
+formed by the crossing of our random lines.  If we require that one of
+its vertices be the origin, we can use the conditioned Poisson process
+rather than the unconditioned Poisson process.
+
+This definition of random convex polygon is unusual because it does
+not fix n, the number of vertices of the polygon.  It is also a bit
+difficult to implement.  In principle one would have to generate all
+the random points along the x axis, and their associated lines, in
+order to determine the number of edges of the convex polygons touching
+the origin.  That is because parts of their boundaries could be formed
+by lines emanating from points on the x-axis arbitrarily far away.
+
+But this is a very elegant way of defining random convex polygons.
+Can anyone think of a simple way of conditioning on n, i.e. imposing
+the condition that the generated polygon have only n edges?
+
+-- 
+Robert S. Maier   | Internet: <A HREF="mailto:rsm@math.arizona.edu">rsm@math.arizona.edu</A>, <A HREF="mailto:rsm@cs.arizona.edu">rsm@cs.arizona.edu</A>
+Dept. of Math.    | UUCP: uunet!arizona!amethyst!rsm
+Univ. of Arizona  | Bitnet: <A HREF="mailto:maier@arizrvax">maier@arizrvax</A>
+Tucson, AZ  85721 | FAX: +1 602 621 8322
+U.S.A.            | Voice(POTS): +1 602 621 6893  /  +1 602 621 2617
+</PRE>
+<HR><PRE>
+<B>From:</B>           Jeff Erickson &lt;<A HREF="mailto:jeffe@cs.uiuc.edu">jeffe@CS.Duke.EDU</A>&gt;
+<B>Date:</B>           Fri, 18 Apr 1997 19:35:11 -0400
+<B>Newsgroups:</B>     sci.math.research
+<B>Subject:</B>        Re: random simple polygons (2D)
+</PRE><HR><PRE>
+[Since the original posting brings up some open algorithmic and
+mathematical questions, I've added comp.theory and sci.math.research to
+the distribution list.]
+
+Kenneth Sloan wrote: 
+&gt;     0) when I say "random simple polygon" - what do you think I mean?
+&gt;        Randomizing the vertices is simple enough - but how about
+&gt;        the order of the vertices?
+
+I would define a "random simple n-gon" as the output of one of the
+following random processes.
+
+(a) Generate a sequence p_1, p_2, ... p_n of n points uniformly at
+random in the unit square (or whatever domain you want).  Repeat until
+the "polygon" p_1p_2...p_n is simple.  Output the polygon p_1p_2...p_n.
+
+(b) Generate a set {p_1,p_2,...p_n} of n points uniformly at random from
+the unit square (or whatever domain you want).  Generate the list of all
+simple polygons with vertices p_1,p_2,...,p_n in some order.  Output a
+randomly chosen polygon from this list.
+
+I would be VERY surprised if these two processes generated the same
+probability distribution.  I'll let somebody else decide which
+distribution is the "right" one.
+
+Obviously, both of these procedures will take a LONG time.  It is an
+open question whether there is a polynomial-time algorithm that
+generates a random polygon with the same distribution as either of the
+two processes above, or to uniformly generate a simple polygon with a
+given set of vertices, or to determine how many simple polygons there
+are with a given vertex set.  Even the following question is open: What
+is the largest number of simple polygons that use the same set of n
+vertices, as a function of n?  (If you replace "largest" with
+"smallest", the answer is 1; consider n points on a circle.)
+
+There are polynomial-time algorithms for other similar random polygon
+problems: generating random convex polygons [P. Valtr, The probability
+that n random points are in convex position, Disc. Comput. Geom.
+13:637-643, 1995], random monotone polygons using a given vertex set [C.
+Zhu, G. Sundharam, J. Snoeyink, and J.S.B. Mitchell, Generating random
+polygons with given vertices, Comput. Geom. Theory Appl. 6:277-290,
+1996], and random star-shaped polygons using a given vertex set [T. Auer
+and M. Held, Heuristics for the generation of random polygons, In Proc.
+8th Canad. Conf. Comput. Geom., pp.38-44, 1996].
+
+Thomas Auer and Martin Held have a piece of software that implements
+several heuristics for generating random polygons:
+	<A HREF="http://www.cosy.sbg.ac.at/~held/projects/rpg/rpg.html">http://www.cosy.sbg.ac.at/~held/projects/rpg/rpg.html</A>
+You can download the full version of their CCCG paper, which explains
+the heuristics they use, from the same Web page.
+
+Heidi Burgiel and Michelle Raymond have written a Java applet that
+counts the number of simple polygons with a given vertex set:
+	<A HREF="http://www.geom.umn.edu/~burgiel/Java/Ngons/ngons.html">http://www.geom.umn.edu/~burgiel/Java/Ngons/ngons.html</A>
+The source code isn't available, but based on the speed of the applet, I
+suspect it essentially tries all possible permutations and looks for
+intersections.
+
+&gt; An alternate approach is to generate the random vertices, and then
+&gt; *construct* a simple polygon using those vertices.  The problem is that
+&gt; the construction method is likely to bias the type of polygon generated.
+&gt; That is, some of the polygons generated by the specification above may
+&gt; show up much, much less frequently, and others will be over-represented
+&gt; in the sample.
+
+Yup.  This is discussed in the papers by Auer+Held and by Zhu et al. 
+For example, Zhu et al. consider a Markov chain heuristic that starts
+with an arbitrary simple polygon and performs random "2OPT moves" --
+delete a pair of edges and reconnect the two resulting pieces the only
+other possible way, but backtrack if you get something nonsimple.  They
+show that for a certain set of 6 points (the vertices of two nested
+triangles), some polygons are more likely than others in the limit.
+
+&gt; As an extreme example, one might start with the convex
+&gt; hull, and push in the polygon until all vertices are visible.  This
+&gt; produces simple polygons - but probably will not produce very
+&gt; complicated ones.  For example, you won't get any spirals.
+
+I suppose it depends on what you mean by "push in the polygon".  If a
+"pushing step" consists of deleting a random edge of the polygon and
+connecting its endpoints to a random point on the "inside" of the
+deleted edge, you can get spirals.
+ 
+&gt;      1) suppose I claim to be producing "random simple polygons" - how
+&gt;         would you test my claim?  That is - what are good measures,
+&gt;         and what are the right values, which characterize
+&gt;         "random simple polygons"
+&gt; 
+&gt; Possibilities include the distributions of internal angles, lengths of
+&gt; segments, lengths of left- and right-turning "runs", etc.
+
+Well...the only test that would really satisfy me would be to examine
+your algorithm and prove it.  
+
+You could certainly define distributions on random polygons based on the
+measures you suggest.  For example: uniformly generate a set of n real
+numbers in the interval (-pi,pi) whose sum is 2pi, and then (somehow)
+generate a simple poylgon with those turning angles.  Or: uniformly
+generate a set of n numbers between 0 and 1, and then (somehow) generate
+a simple polygon with those edge lengths.  Of course, these are
+different distributions than the "uniform" distributions described
+earlier.
+
+This brings up all sort of icky complexity-theoretic issues about
+distinguishing pseudorandomness from randomness.
+
+&gt; I have what I think is a nice method of producing "random simple
+&gt; polygons" which runs fast enough to be useful, and has no *obvious* (to
+&gt; me) bias - but I don't really believe there isn't any bias; I'm  just
+&gt; afraid that I'm not clever enough to discover the bias that is there.
+
+So what is it?!!
+ 
+&gt; But - just to stir the pot, I'll also ask:
+&gt; 
+&gt;     2) give an efficient algorithm for generating a set of
+&gt;        random simple polygons which passes your test of "randomness"
+&gt;        above.
+
+This is wide open.
+
+&gt;     3) suppose we generate N points uniformly distributed over the unit
+&gt;        disk (square?) and connect them to form a polygon.  What is the
+&gt;        expected number of intersections?
+
+It suffices to compute the probability that the segments pq and rs
+intersect, where p,q,r,s are generated uniformly in the unit square, and
+then multiply by n(n-3)/2, the number of nonadjacent pairs of edges.
+
+The probability that p,q,r,s are in convex position is 25/36.  [For a
+proof of this fact, see H. Solomon, Geometric Probability, SIAM,
+Philadeplhia, 1987.]  If p,q,r,s are in convex position, then pq
+intersects rs with probability 2/3.  If the points are not in convex
+position, ie, one point is inside the convex hull of the other three,
+then the two segments cannot intersect.  So the probability of
+intersection is exactly 25/36 * 2/3 = 25/54.
+
+So the expected number of intersections is 25n(n-3)/108.
+
+--
+Jeff Erickson                         Center for Geometric Computing
+<A HREF="mailto:jeffe@cs.uiuc.edu">jeffe@cs.duke.edu</A>			             Duke University
+<A HREF="http://sal.cs.uiuc.edu/~jeffe">http://sal.cs.uiuc.edu/~jeffe</A>
+</PRE>

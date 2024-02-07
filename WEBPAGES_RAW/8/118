@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC
+ "-//W3C//DTD XHTML 1.1//EN"
+ "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<link rel="stylesheet" href="../../course.css" type="text/css" />
+
+<title>ICS 46 Spring 2016, Notes and Examples: Smart Pointers</title>
+
+</head>
+
+<body>
+
+<div class="navbar">
+
+<p>
+ICS 46 Spring 2016 |
+<a href="../../index.html">News</a> |
+<a href="../../CourseReference.html">Course Reference</a> |
+<a href="../../Schedule.html">Schedule</a> |
+<a href="../../ProjectGuide">Project Guide</a> |
+<a href="../../Notes">Notes and Examples</a> |
+<a href="http://www.ics.uci.edu/~thornton/">About Alex</a>
+</p>
+
+<hr />
+
+</div>
+
+<div class="header">
+
+<p>ICS 46 Spring 2016<br />
+   Notes and Examples: Smart Pointers</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">On the complexities of cleanup</p>
+
+<p>When we write programs in any programming language, one problem we're faced with is what you might call <i>cleanup</i>: making sure that our programs don't leave a mess behind them and, more importantly, that they don't leave a gradually-growing mess as they run for a long period of time.  This is not just a matter of polishing one's program when it's mostly done, and it doesn't affect only programs that run for a long time.  Some cleanup-related issues affect the correctness of a program's results, such as being sure that you've flushed buffers (e.g., by closing any open files) before a program ends, so that anything you've asked to be written will actually get written as you requested, rather than being lost when the buffers are destroyed at program end.</p>
+
+<p>Some programming languages are more aggressive than others about performing at least some of this cleanup on your behalf automatically, and you are likely to have seen different perspectives on this, assuming you've programmed in at least one language other than C++ previously.  For example, languages whose runtimes include <i>garbage collectors</i> will generally deallocate memory for you when it can determine that you're no longer using it.  While this is a handy tool to have, it's worth noting that garbage collectors have some limitations:</p>
+
+<ul>
+  <li>Garbage collectors generally can't determine your intent.  While their goal is to deallocate memory that you're no longer using, they can't know, in general, whether your program plans to use a piece of memory or not, so they have to fall back on some kind of heuristic, such as whether it's possible to reach that object (e.g., through a pointer or reference).
+    <ul>
+      <li>This is similar, in concept, to the interaction between a customer and a server at a restaurant.  Suppose you've eaten half of the food on your plate.  How can the server know whether to take your plate away?  Are you done eating?  Of course, the server can simply ask you whether you're done; the garbage collector can only guess, because it won't be clear who to ask, so it errs on the side of caution, because it's much better <i>not</i> to deallocate an object that you're done with than it is to deallocate an object that you're <i>not</i> done with.</li>
+    </ul>
+  </li>
+  <li>Garbage collectors are most often implemented using an algorithm that guarantees only that unreachable memory will <i>eventually</i> be deallocated, but they are free to postpone it until a later time, even if they've discovered that memory is eligible to be deallocated.  So, while you will be guaranteed that unreachable objects will be destroyed, if it's important to you <i>when</i> they'll be destroyed, you might find yourself disappointed.</li>
+  <li>No system of cleanup, whether automatic (like a garbage collector) or one that you write yourself, can solve the problem of unlimited need.  At some point, if your program needs more memory than it has available, something will have to be done to limit that need (e.g., saving data into a file if it's not immediately needed, or simply destroying data that's least important and living with the consequences).</li>
+</ul>
+
+<p>C++ keeps this issue squarely in view, as it is ultimately a program's responsibility to clean up all of its own resources, since there is no automatic garbage collector.  Objects that are allocated by a program must also be deallocated by that program; files opened must be closed; network connections created must be terminated; and so on.  That isn't to say that C++ provides no tools to assist, but these tools require us to be more attentive to finer-grained details than a lot of other languages do.  We're compelled, as C++ programmers, to design our programs more carefully, and consider &mdash; whenever we allocate some resource &mdash; precisely how and where that resource will be deallocated.</p>
+
+<p>The good news, though, is that many uses of memory and other resources fit certain well-known patterns, and C++ provides tools that automate these patterns for us.  Once we learn how to recognize these patterns, much of the heavy lifting can be done by the language runtime and the C++ Standard Library.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Resource acquisition is initialization (RAII)</p>
+
+<p>C++ programmers are often taught a design philosophy called "resource acquisition is initialization," which is so common that it is often abbreviated as RAII.  If you've never heard of RAII before, or if your memory of it is hazy, now would be a good time to familiarize yourself with the concept, as the rest of this page assumes familiarity with it.  Here are a couple of links that will help you get up to speed if this is new for you:</p>
+
+<ul>
+  <li>Check out the <a href="http://www.ics.uci.edu/~thornton/ics45c/Notes/RAII">RAII notes from my most recent ICS 45C offering</a> for more details.</li>
+  <li>If your recollection of exceptions is also light, you might also want to check out the <a href="http://www.ics.uci.edu/~thornton/ics45c/Notes/ContractsAndExceptions">Contracts and Exceptions notes</a> from that course, as well.  (It might be worth reading Contracts and Exceptions first, then RAII.)</li>
+</ul>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The problem with pointers</p>
+
+<p>Pointers in C++ are a very thinly-veiled abstraction for a location in memory.  While they have their uses in C++, it's important to be aware of their limitations.  Being a simple tool &mdash; keep track of where something is located, so it can be found again later &mdash; they do little else on our behalf.  All they know is a location of an object and a (compatible) type for that object.  It's up to us to use pointers correctly, with sometimes catastrophic consequences, such as program crashes or unexpected behavior, if we make a mistake.</p>
+
+<p>Simple tools have their place, but sometimes we need richer ones to help us tame the complexity of the programs we write.  When we think about pointers in C++, a few limitations come to the fore:</p>
+
+<ul>
+  <li>Pointers can have the value <b>nullptr</b>, which is to say that they can point to nothing at all.  And when you try to dereference such a pointer, it's technically "undefined behavior," but you generally see an immediate program crash.</li>
+  <li>Pointers can technically be pointed to locations they shouldn't be &mdash; some lower-level tools like <b>reinterpret_cast</b> or C-style casting will let you do generally nonsensical things like converting an integer to a pointer, giving you a pointer to whatever memory location you want, regardless of what's there.  Granted, you'd rarely expect any good to come from it, but it is possible.</li>
+  <li>Pointers can point not only to single objects of some type, but also to arrays.  And their declarations will generally look the same either way.</li>
+  <li>Pointers will still point to objects, even after those objects have been deallocated.</li>
+</ul>
+
+<p>Suppose, then, that you have a pointer.  How do you know what your rights and responsibilities are?  Should you feel free to access the object whenever you need it?  Should you feel free to index into it, assuming it's an array?  Should you make sure it's not <b>nullptr</b>?  How can you be sure the object at that location is really of the right type, or that it hasn't been deallocated already?  Is the object dynamically allocated and, if so, should you delete it when you don't need it anymore?  Seeing a simple pointer declaration like <b>int* p</b> doesn't tell you any of these things.  The pointer type implies only that you have a location in memory and a clue about what type of object you might find there; everything else is something that would need to be communicated in some other way that's not a part of the language's syntax or semantics (e.g., via comments, or just details that we talk to each other about, keep in our heads, and hope not to forget later).</p>
+
+<p>So how can we do better than that?  Part of the answer lies in preferring static allocation whenever possible, because statically-allocated objects naturally do the right thing &mdash; they're deallocated and are told to clean themselves up by having their destructors called &mdash; when they fall out of scope, even in cases when exceptions are thrown or <b>return</b> statements take us out of functions early.  (RAII is essentially the idea of centralizing the "hard stuff" in places like constructors and destructors, so we can rely on automatic C++ mechanisms in many cases to clean things up for us.)  Generally, we should think long and hard about whether it's necessary for us to say <b>new</b> and <b>delete</b> ourselves; in a lot of cases, it's not.</p>
+
+<p>Sometimes, though, we really do need pointers to dynamically-allocated objects.  How can we make that easier to get right?  The answer to that lies in first establishing a mental model for how dynamically-allocated objects are typically managed.  If we learn to recognize some of the common patterns, we might be able to automate them.  And, better yet, since some of those patterns are so well-known, we'll find that the C++ Standard Library implements some of them for us, in the form of <i>smart pointers</i> that automate some of the things that we might otherwise have to painstakingly implement ourselves.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Ownership</p>
+
+<p>The key concept behind pointers, no matter what kind of pointer you use, is what you might call <i>ownership</i>, which refers to whether that pointer holds responsibility over the object it points to.  The word "responsibility" here mainly means that when the pointer dies, the object it points to should also be deleted.  When you use a pointer, one of the things you need to be thinking about is this notion of ownership.  The kinds of pointers you've likely learned about previously, which are sometimes called <i>raw pointers</i>, don't describe any of these details, but you still have to know, for example, whether to expect a pointer already to point to an object, as well as whether (and when) you need to use <b>delete</b>, so that you're sure that every dynamically-allocated object exists before you use it and is deallocated exactly once when you're finished with it.</p>
+
+<p class="subtitle">Unique ownership and std::unique_ptr</p>
+
+<p>One of the ownership patterns that arises in typical C++ programs is what you might call <i>unique ownership</i>, which means that a particular pointer is intended to be uniquely responsible, before its death, for destroying the object it points to.  This sounds simple, but it's more common than it sounds.  For example, if you're implementing a class <b>A</b> with a member variable that points to a dynamically-allocated object, and you want that dynamically-allocated object to die when the <b>A</b> object dies, what you want is unique ownership.  (The <b>std::vector</b> class template in the C++ Standard Library does this with the dynamically-allocated array it uses behind the scenes; so does <b>std::string</b>.)  In that case, you might see a pattern like this one:</p>
+
+<blockquote><pre>
+class A
+{
+public:
+    A();
+    ~A();
+
+    // other member functions would be here
+
+private:
+    B* b;
+    // other member variables would be here
+};
+
+
+A::A()
+    : b{new B}, ... // other member variable initializers would be here
+{
+    // other code to be run after the initializers would be here
+}
+
+
+A::~A()
+{
+    // necessary cleanup other than deleting the object pointed to by <b>b</b>
+    // would be here
+
+    delete b;
+}
+</pre></blockquote>
+
+<p>And, as long as you've taken care to use <b>delete</b> in the constructor as we've done, you might feel that you're in pretty good shape.  But, as is often the case in C++, the devil is in the details.</p>
+
+<ul>
+  <li>What if <b>A</b>'s constructor throws an exception <i>after</i> allocating the new <b>B</b> object, but before finishing?  C++ guarantees that all member variables that were initialized will be destroyed, but it's important to note that the death of a raw pointer doesn't imply the death of the object it points to.  (This is for good reason, because, in general, a raw pointer doesn't specify any kind of ownership explicitly, so the compiler is unable to reasonably guess what that relationship might be.)</li>
+  <li>Not written here, but also important, would be a copy constructor and an assignment operator, which would presumably need to allocate a new <b>B</b> themselves (so that the copied object has its own, separate <b>B</b> object).  What if they allocate a new <b>B</b> dynamically and then throw an exception?</li>
+</ul>
+
+<p>Generally speaking, this kind of thing is hard to get right.  But if we could tell the compiler "This is a pointer that uniquely owns the object it points to," then better code could be generated; in particular, the compiler could see to it that such a pointer's death could automatically trigger the death of the object it points to, since that would be a perfectly sensible default if the pointer has unique ownership over the object.</p>
+
+<p>The C++ Standard Library provides a solution to this problem, in the form of a class template called <b>std::unique_ptr</b>.  A <b>std::unique_ptr</b> is a pointer that holds unique ownership of the object it points to, which means that it guarantees that its death will trigger the automatic deletion of the object it points to.  Using a <b>std::unique_ptr</b> is quite simple:</p>
+
+<blockquote><pre>
+#include &lt;memory&gt;    // We need this if we want to use smart pointers
+
+void foo()
+{
+    // Creates a unique_ptr called p and points it to a newly-allocated int.
+    // p holds unique ownership of that int.
+    std::unique_ptr&lt;int&gt; p{new int};
+
+    // We can dereference the pointer with the * operator, just as you'd
+    // expect with a raw pointer.
+    *p = 3;
+    std::cout &lt;&lt; *p &lt;&lt; std::endl;
+
+    // When p falls out of scope -- either because the function ends normally
+    // or because the function threw an exception -- it will destroy the
+    // int it points to automatically, so no need for delete!  Similarly, if
+    // we re-point p to a new integer later, or we point it to null, a
+    // deletion will also be triggered.
+}
+</pre></blockquote>
+
+<p>Given that we have <b>std::unique_ptr</b> in our arsenal now, let's think about that <b>A</b> class again, but using a <b>std::unique_ptr</b> in place of the raw pointer:</p>
+
+<blockquote><pre>
+#include &lt;memory&gt;
+
+class A
+{
+public:
+    A();
+    ~A();
+
+    // other member functions would go here
+
+private:
+    std::unique_ptr&lt;B&gt; b;
+    // other member variables would go here
+};
+
+
+A::A()
+    : b{new B}, ... // other member variable initializers would go here
+{
+    // other code to be run after the initializers would go here
+}
+
+
+A::~A()
+{
+    // necessary cleanup other than deleting the object pointed to by <b>b</b>
+    // would go here, while there is no need to clean up anything relating to
+    // <b>b</b>, because that will be done automatically; if there is no other
+    // code needed in the destructor, we wouldn't even need to write one!
+}
+</pre></blockquote>
+
+<p>The problems we had previously with exceptions would be handled automatically; for example, if <b>A</b>'s constructor failed after constructing a new <b>B</b> and pointing <b>b</b> to it, <b>b</b> would still be guaranteed to be destroyed, <i>and</i> that would trigger the automatic deletion of the <b>B</b> object.</p>
+
+<p>It's certainly true that we would still need to worry about a copy constructor and an assignment operator here, since there is still the problem that unique ownership implies that every <b>A</b> needs its own <b>B</b> object, but even those will be simpler to write, because if they fail partway through and we're using smart pointers to point to those <b>B</b>'s, they'll be cleaned up automatically even in cases when exceptions are thrown.</p>
+
+<p>One important thing to note is that the unique ownership properties of a <b>std::unique_ptr</b> makes it unsafe to copy one.  For example, imagine you had these two functions:</p>
+
+<blockquote><pre>
+void foo(std::unique_ptr&lt;int&gt; q)
+{
+    *q = 4;
+}
+
+void bar()
+{
+    std::unique_ptr&lt;int&gt; p{new int};
+    *p = 3;
+    foo(p);
+    std::cout &lt;&lt; *p &lt;&lt; std::endl;
+}
+</pre></blockquote>
+
+<p>You might first conclude that the output you'd see if you called <b>bar()</b> would be <b>4</b>.  But look at it more closely, and consider what's really happening here:</p>
+
+<ul>
+  <li><b>bar()</b> is called.</li>
+  <li>The local variable <b>p</b> is a <b>std::unique_ptr</b> that is made to point to a newly-allocated <b>int</b>.</li>
+  <li>The value 3 is stored in that <b>int</b>.</li>
+  <li><b>foo()</b> is called and <b>p</b> is copied into the parameter <b>q</b>.  Note that <b>q</b> is also a <b>std::unique_ptr</b>, which is an important detail.</li>
+  <li>The value 4 is stored in the <b>int</b> pointed to by <b>q</b> (which is the same <b>int</b> pointed to by <b>p</b>).</li>
+  <li><b>foo()</b> ends, taking with it its statically-allocated variables, including <b>q</b>.  At this point, <b>q</b> dies, and since it's a <b>std::unique_ptr</b>, it believes that it uniquely owns the <b>int</b> it points to, so that <b>int</b> is deleted!</li>
+  <li>When we return from <b>foo()</b>, <b>bar()</b> attempts to print the value of the <b>int</b> pointed to by <b>p</b>.  But that <b>int</b> was deleted already when <b>foo()</b> ended.  Hilarity ensues.</li>
+</ul>
+
+<p>The moral of this story is actually that copying a <b>std::unique_ptr</b> is simply not allowed; its copy constructor and assignment operator have been deleted, so that you can't call them.  The reason is simple: If it was allowed, it would be 100% certain to cause problems.</p>
+
+<p>In short, a <b>std::unique_ptr</b> applies some of the principles of RAII &mdash; most notably, the automation of cleanup in a destructor &mdash; to pointers.  This is a potentially handy tool, indeed, but obviously not all pointers imply unique ownership, so there's still more to the story.</p>
+
+<p class="subtitle">Shared ownership and std::shared_ptr</p>
+
+<p>In other cases, what you actually want is for ownership to be shared by many pointers, as opposed to in a single one, so that as long as any one of those pointers still points to the object, the object will continue to exist, but as soon as the last one is destroyed, the object will be destroyed automatically.  For example, you might store an object in one of several different data structures (depending on the situation), and as long as it's in any one of those data structures, you still want the object to exist.  This is what we call <i>shared ownership</i>, and the C++ Standard Library provides a class template <b>std::shared_ptr</b> that implements it.</p>
+
+<p>A quick example follows:</p>
+
+<blockquote><pre>
+void foo()
+{
+    std::shared_ptr&lt;int&gt; p1{new int};     // p1 points to a new integer
+    std::shared_ptr&lt;int&gt; p2 = p1;         // p2 points to the same integer
+    *p1 = 4;                              // 4 is stored in that integer
+    std::cout &lt;&lt; *p2 &lt;&lt; std::endl;        // prints <b>4</b>
+    p1 = nullptr;                         // p1 no longer points to the integer, but p2 still does
+}                                         // when the function ends, the integer is destroyed
+</pre></blockquote>
+
+<p>Notice in the example above that, unlike <b>std::unique_ptr</b>s, <b>std::shared_ptr</b>s can be copied safely.  This is because they share ownership of the objects they point to, so the death of any one of them doesn't cause the owned object to die <i>unless</i> no one else is left to share that ownership.</p>
+
+<p>When first confronted with an idea like a <b>std::shared_ptr</b>, it seems like a form of magic that will simply make all of your memory management problems disappear forever.  However, it's important to note that there is still a fair amount of caution required.  For example, in a tree implementation in which every node points to its children <i>and</i> its parent, if every one of those pointers was a <b>std::shared_ptr</b>, even if you no longer had a pointer pointing to any of the nodes, the nodes would still be pointing to <i>each other</i>, so none of them would ever be destroyed, leading to a potentially large memory leak.<p>
+
+<p class="subtitle">Accessing objects without the implication of ownership</p>
+
+<p>Even when you have a dynamically-allocated object, it's not always the case that all pointers to objects imply some kind of ownership.  Sometimes you want to "loan" an object to a function by, say, passing it to the function as a parameter so that the function can use it, but with no expectation that the function will clean it up, since you still want it to live afterward.  Other times, you might want a data structure that is cyclic, such as a tree in which every node points to its children <i>and</i> its parent, in which case not every pointer can imply ownership or there will be problems with things being deleted more than once or not at all.</p>
+
+<p>The question is what to do in cases like these.  While, as usual, there is nuance involved in thinking these things through, there are some guidelines that can help.</p>
+
+<ul>
+  <li>When objects need to be "loaned" or "borrowed," there are a couple of things you can do.  The simplest is to use a reference (e.g., <b>A&amp;</b>), which has the nice property that it implies the object must exist (i.e., there is no notion of <b>nullptr</b> for references); we can further use <b>const</b> (e.g., <b>const A&amp;</b>) to enforce that the loaned/borrowed object can't be changed, which makes loaning and borrowing quite safe.  Alternatively, you can use a raw pointer (e.g., <b>A*</b>), particularly in a design in which you're otherwise using smart pointers where ownership is implied; you would then safely assume that a raw pointer means that no ownership exists, but would preserve the ability to do certain things (e.g., pass <b>nullptr</b>) that you couldn't do with a reference.</li>
+  <li>You can also consider using <b>std::weak_ptr</b>, which is a kind of smart pointer that has two important properties: (1) It holds no ownership of the object is points to, and (2) When used in combination with objects that are managed by <b>std::shared_ptr</b>s, they can determine whether the object has been destroyed (unlike raw pointers, which have no way to tell).  So, for example, a tree data structure could be implemented so that every node has <b>std::shared_ptr</b>s pointing to its children, but a <b>std::weak_ptr</b> pointing to its parent.</li>
+</ul>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Additional, in-depth information</p>
+
+<p>For a more complete explanation of how the various smart pointers in C++11 work, you might also want to check out the very nicely-written paper linked below.  The paper goes into more depth than we'll likely need in this course, but it's a good place to go if you want to see some of the details that I haven't covered here.</p>
+
+<ul>
+  <li><a href="http://www.umich.edu/~eecs381/handouts/C++11_smart_ptrs.pdf">Using C++11's Smart Pointers</a></li>
+</ul>
+
+</div>
+
+</body>
+</html>

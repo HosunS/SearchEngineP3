@@ -1,0 +1,317 @@
+// Test of closest pair algorithms
+// David Eppstein, UC Irvine, 19 Apr 1997
+//
+// Conga line closest pair algorithm
+
+#include "CongaLine.h"
+#include "Error.h"
+
+#define NO_SUBSET ((CongaSubset) 0xffff)
+#define SCRATCH_SUBSET ((CongaSubset) how_many_subsets)
+
+// add an edge to the graph
+inline void CongaLine::AddEdge(point in, point out, double d, CongaSubset s)
+{
+	if (how_many_edges == 2*max_points)
+		error("CongaLine: too many edges");
+	edges[how_many_edges].in = in;
+	edges[how_many_edges].out = out;
+	edges[how_many_edges].d = d;
+	edges[how_many_edges].s = s;
+	how_many_edges++;
+}
+
+// remove an edge from the graph
+inline void CongaLine::RemoveEdge(unsigned long e)
+{
+	if (e >= how_many_edges) error("CongaLine: removing the same edge twice");
+	edges[e] = edges[--how_many_edges];	// copy struct
+}
+
+// move a point to a new subset, leaving all edges in place
+// caller is responsible for calling subset_sizes.Update(p)
+inline void CongaLine::MoveToSubset(point p, CongaSubset s)
+{
+	if (subsets[p] < how_many_subsets) subset_sizes[subsets[p]]--;
+	subsets[p] = s;
+	if (subsets[p] < how_many_subsets) subset_sizes[subsets[p]]++;
+}
+
+// We are about to move a point out of its set; call subset_sizes.Update(p)
+inline void CongaLine::FixWhat(point p)
+{
+	CongaSubset s = subsets[p];
+	if (s >= how_many_subsets) return;
+	subset_sizes[s]--;		// temp so update sees correct value
+	subset_sizes.Update(s);
+	subset_sizes[s]++;		// undo temp change
+}
+
+// reset all data structures by inserting all points into cluster zero
+void CongaLine::CleanAllGraphs()
+{
+	unsigned long i;
+	unsigned long np = 0;
+	for (i = 0; i < max_points; i++) if (subsets[i] != NO_SUBSET) {
+		subsets[i] = 0;
+		np++;
+	}
+	subset_sizes[0] = np;
+	subset_sizes.Update(0);
+	for (i = 0; i < how_many_subsets; i++) {
+		subset_sizes[i] = 0;
+		subset_sizes.Update(i);
+	}
+	how_many_edges = 0;			// forget all the edges we might have had
+	FindSubsetEdges(0);			// create initial graph
+}
+
+// initialize all data structures
+CongaLine::CongaLine(long np, long mp, Distance & d, long hms)
+  : ClosestPairs(np, mp, d), dist(d), edges(new CongaEdge[2*mp]),
+    how_many_edges(0), subsets(new CongaSubset[mp]), max_points(mp),
+    scratch(new point[mp])
+{	
+	if (edges == 0 || subsets == 0 || scratch == 0)
+		error("CongaLine: unable to create arrays");
+
+	gInsertions += np;
+	if (hms == 0) {				// we get to compute the number of subsets
+		hms = 1;				// we choose max(2, ceiling(log_2 n)).
+		unsigned long n = np;
+		while (n > 2) {
+			n /= 2;
+			hms++;
+		}
+	}
+	if (hms == 1) error("CongaLine: must have at least two subsets");
+	if (hms > MaxCongaSubsets) error("CongaLine: too many subsets requested");
+	how_many_subsets = hms;		// remember how many we computed
+	subset_sizes.Allocate(hms); // make data struc for finding pairs to merge
+	unsigned long i;
+	for (i = 0; i < np; i++) subsets[i] = 0;
+	for (i = np; i < mp; i++) subsets[i] = NO_SUBSET;
+	CleanAllGraphs();			// reset data structure
+}
+
+// get rid of allocated space
+CongaLine::~CongaLine()
+{
+	delete edges;
+	delete subsets;
+	delete scratch;
+}
+
+// scan edges to find closest pair
+double CongaLine::operator () (point & a, point & b)
+{
+	gPairs++;
+	if (how_many_edges < 1) error("CongaLine: no more edges");
+	unsigned long best_edge = 0;
+	for (unsigned long i = 1; i < how_many_edges; i++)
+		if (edges[i].d < edges[best_edge].d) best_edge = i;
+	a = edges[best_edge].in;
+	b = edges[best_edge].out;
+	return edges[best_edge].d;
+}
+
+// find an unused subset
+// returns SCRATCH_SUBSET if there aren't any
+// after making subset, caller should call MergeSubsets()
+// to check if result was SCRATCH_SUBSET and if so to do merge
+CongaLine::CongaSubset CongaLine::FindFreeSubset()
+{
+	CongaSubset S = subset_sizes.MinValue();
+	if (subset_sizes[S] == 0) return S;
+	return SCRATCH_SUBSET;
+}
+
+// compute new conga line for a given subset
+// uses a scratch array to list the points in that subset followed by other pts
+// assumes that all relevant edges have been deleted (so that there's room
+// in the edge array to add the edges in s).
+void CongaLine::FindSubsetEdges(CongaSubset s)
+{
+	// make list of points in s and remaining active points
+	unsigned long ns = 0;
+	unsigned long tp = ns;
+	long i;
+	for (i = 0; i < max_points; i++)
+	{
+		if (subsets[i] == s) {				// in S?
+			scratch[tp++] = scratch[ns];	// make room at end of S
+			scratch[ns++] = i;				// ... to add the new point
+		} else if (subsets[i] != NO_SUBSET)	// active?
+			scratch[tp++] = i;				// just add to end of list
+	}
+	
+	// is there enough room for the new edges we might have?
+	// max # new edges = min(2ns, tp)-1
+	unsigned long max_edges = 2*ns - 1;
+	if (tp - 1 < max_edges) max_edges = tp - 1;
+	if (how_many_edges + max_edges > 2*max_points) {
+		CleanAllGraphs();					// run out of room, rebuild
+		return;
+	}
+	
+	// now do Conga line
+	point current = scratch[0];
+	point * p = scratch+1;
+	ns--; tp--;			// account for removal of first element
+	for (;;) {
+		unsigned long i;	// find nbr s.t. either current or nbr is in s
+		double d;
+		if (subsets[current] == s) {	// current is in s
+			if (tp <= 0) return;		// any points left?  if not, done
+			i = NeighborInList(current, p, tp, d);	// search all points in p
+		} else { 
+			if (ns <= 0) return;
+			i = NeighborInList(current, p, ns, d);	// not in s, search only in s
+		}
+		AddEdge(current, p[i], d, s);
+		current = p[i];
+		if (i < ns) {		// neighbor is also in same subset?
+			p[i] = p[0];	// yes, splice out of front of list
+			p++; ns--; tp--;
+		} else p[i] = p[--tp];	// else splice out of back of list
+	}
+}
+
+// find nearest neighbor in a list, subroutine for building conga lines
+unsigned long CongaLine::NeighborInList(point pt, point * ptlist,
+										unsigned long listlen, double & d)
+{
+	unsigned long retval = 0;
+	d = dist(pt, ptlist[0]);
+	for (unsigned long i = 1; i < listlen; i++) {
+		double dd = dist(pt, ptlist[i]);
+		if (dd < d) {
+			d = dd;
+			retval = i;
+		}
+	}
+	return retval;
+}
+
+// code for merging subset B into subset A and recomputing conga lines
+// does *not* call subset_sizes.Update(B)
+// A should not be SCRATCH_SUBSET, but B can be.
+void CongaLine::MergeSubsets(CongaSubset A, CongaSubset B)
+{
+	// merge subset info on points
+	unsigned long i;
+	for (i = 0; i < max_points; i++)
+		if (subsets[i] == B) MoveToSubset(i, A);
+	subset_sizes.Update(A);
+	
+	// delete all existing edges involving the subsets
+	i = 0;
+	while (i < how_many_edges) {
+		if (edges[i].s == A || edges[i].s == B) RemoveEdge(i);
+		else i++;
+	}
+	
+	// create new edges
+	FindSubsetEdges(A);
+}
+
+// have a collection of points in S, need to find edges
+// and, if S=SCRATCH_SUBSET, do some merging
+void CongaLine::MadeNewSubset(CongaSubset S, unsigned long S_size)
+{
+	if (S_size == 0) return;
+	if (S != SCRATCH_SUBSET) {	// able to find room for it already?
+		FindSubsetEdges(S);		// then just make edges and...
+		subset_sizes.Update(S);	// tell merge-finding data struc about new set
+		return;	
+	}
+
+	// here with S = SCRATCH_SUBSET
+	// we need to merge something to get num subsets down within bound
+	// if we can do a merge involving S, do so and avoid FindSubsetEdges(S)
+	CongaSubset smallest_subset = subset_sizes.MinValue();
+	if (subset_sizes[smallest_subset] <= 2*S_size) {
+		MergeSubsets(smallest_subset, S);
+		return;
+	}
+	
+	// here with no good merge available.
+	// have to merge some other pair, rename vertices in S, then FindSubsetEdges
+	point A, B;
+	subset_sizes.MinRatio(A, B);
+	MergeSubsets(A,B);				// do the bulk of the merge code
+
+	// now B is empty, move points into it from S
+	for (point i = 0; i < max_points; i++)
+		if (subsets[i] == S) MoveToSubset(i, B);
+	FindSubsetEdges(B);
+	subset_sizes.Update(B);			// tell data struc about new set
+}
+
+// Point has changed. Have to treat as if newly inserted.
+// Sigh, this is slow, but it's incorrect just to move p to a new set
+// (because now some edges x->p might have become longer than x->something else)
+void CongaLine::UpdatePoint(point p)
+{
+	(*this) -= p;
+	(*this) += p;
+	gInsertions--;
+	gDeletions--;
+}
+
+// Distance has changed. Move both points to new subset, get rid of old pq edges.
+// Unlike UpdatePoint this is reasonably fast.
+// Note that it's safe to remove all edges p->x and q->x, not just p->q and q->p
+void CongaLine::UpdateDistance(point p, point q)
+{
+	unsigned long i = 0;
+	while (i < how_many_edges) {
+		if (edges[i].in == p || edges[i].in == q) RemoveEdge(i);
+		else i++;
+	}
+	CongaSubset S = FindFreeSubset();
+	FixWhat(p);
+	MoveToSubset(p, S);
+	FixWhat(q);
+	MoveToSubset(q, S);
+	MadeNewSubset(S, 2);
+}
+
+// insert new point
+void CongaLine::operator += (point p)
+{
+	gInsertions++;
+	if (subsets[p] != NO_SUBSET)
+		error("CongaLine: reinsertion of existing point");
+	MoveToSubset(p, FindFreeSubset());
+	MadeNewSubset(subsets[p], 1);
+}
+
+// delete point
+void CongaLine::operator -= (point p)
+{
+	gDeletions++;
+	if (subsets[p] == NO_SUBSET)
+		error("CongaLine: deletion of point not previously inserted");
+	FixWhat(p);
+	MoveToSubset(p, NO_SUBSET);
+	
+	// delete edges involving p and send neighbors to new subset
+	CongaSubset S = FindFreeSubset();
+	unsigned long S_size = 0;
+	unsigned long i = 0;
+	while (i < how_many_edges) {
+		if (edges[i].out == p) {
+			if (subsets[edges[i].in] != S) {	// if not already moved...
+				FixWhat(edges[i].in);
+				MoveToSubset(edges[i].in, S);
+				S_size++;
+			}
+			RemoveEdge(i);
+		} else if (edges[i].in == p) RemoveEdge(i);
+		else i++;
+	}
+	
+	// If anything was moved, make new conga line and clean up
+	MadeNewSubset(S, S_size);
+}

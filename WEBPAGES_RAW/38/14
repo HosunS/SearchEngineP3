@@ -1,0 +1,124 @@
+<!-- received="Tue Sep  3 05:13:41 1996 PDT" -->
+<!-- sent="Wed, 28 Aug 1996 22:00:22 -0700" -->
+<!-- name="Christopher Seiwald" -->
+<!-- email="seiwald@perforce.com" -->
+<!-- subject="Re: Seiwald Q &amp; A -- "GET for EDIT" cookies" -->
+<!-- id="199608290500.WAA10151@spice.perforce.com" -->
+<!-- inreplyto="Seiwald Q &amp; A -- "GET for EDIT" cookies" -->
+<title>Archive of Working Group on Versioning and Configuration Management of World Wide Web Content: Re: Seiwald Q &amp; A -- "GET for EDIT" cookies</title>
+<h1>Re: Seiwald Q &amp; A -- "GET for EDIT" cookies</h1>
+<b>Christopher Seiwald</b> (<a href="mailto:seiwald@perforce.com"><i>seiwald@perforce.com</i></a>)<br>
+<i>Wed, 28 Aug 1996 22:00:22 -0700</i>
+<p>
+<ul>
+<li> <b>Messages sorted by:</b> <a href="index.html#114">[ date ]</a><a href="thread.html#114">[ thread ]</a><a href="subject.html#114">[ subject ]</a><a href="author.html#114">[ author ]</a>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0115.html">Yaron Goland: "RE: Microsoft Feature Support List (V 0.1, ALPHA, 8/26/96)"</a>
+<li> <b>Previous message:</b> <a href="0113.html">David G. Durand: "Re: Seiwald Q &amp; A"</a>
+<!-- nextthread="start" -->
+<!-- reply="end" -->
+</ul>
+<hr>
+<!-- body="start" -->
+<pre>
+I'll try to explain the notion behind "GET for EDIT" cookies a little
+since both Jim and David's responses showed that my initial explanation
+left a bit to be desired.
+
+Me:
+
+| &gt;&gt;1.  A fundamental component of "GET for EDIT" has to be a cookie that
+| &gt;&gt;represents any stored context in the document server that needs to be
+| &gt;&gt;reunited with the document on checkin.  Most, if not all, SCM systems
+| &gt;&gt;are aware of their users' activity and use this awareness to keep users
+| &gt;&gt;from stomping on each other's work.
+| &gt;
+
+Jim:
+
+| &gt;I think that use of cookies might be necessary in an implementation.
+| &gt;However, I suspect that you can maybe do it all with only MD5
+| &gt;authentication (i.e., only knowing the user).
+
+David:
+
+| I'm not sure of the role for the cookie in this (just call me dense (later
+| on in this mail I guess why you might use one)). But the reservation and
+| context establishment should be handled by LOCK. If a server requires
+| special reservation for editing, it's the client's responsibility to obtain
+| a lock on the file before doing a PUT. If the client already has a cached
+| copy, a "conditional GET" based on the version at the server might be
+| useful.
+|
+| I think decoupling the access control aspects (LOCKing and so forth) from
+| the GET/PUT operations gives us a lot more generality, extremely easily. I
+| don't see any situation where "get for edit" is really different from "LOCK
+| resource for writing" followed by GET. If the client has a local copy, the
+| GET could even be conditional on the version they have being a leaf (though
+| this would not be a requirement). Then we might even be able to PUT a few
+| times before releasing the lock!
+|
+| Attempts to PUT without a needed lock could bounce on servers that need or
+| want to enforce such a discipline on their clients.
+
+Me again:
+
+Locking ("reservations") can be handled by LOCK, I quite agree.  But
+SCM systems don't hang all their context on a lock: they hang it on the
+"checkout".  That's when the user tells the system, "I'll be changing
+this here document," and the system records that fact for the day when
+the user says, "Uh, here's that document I changed." The SCM system uses
+this context to keep track of the dozens (thousands?) of users out there,
+all trying to change the same set of documents (but invariable all
+starting with different revisions of those documents).  
+
+Not all SCM systems require a lock before checking in documents, and
+some acquire that lock automatically, so many PUTs are likely to happen
+in the absense of a LOCK.  But _all_ SCM systems (except CVS) require
+some sort of checkout (locking or non-locking) before checkin.  Now you
+could fudge it, and by remembering the URL and revision do a paired
+checkout/checkin to establish the required context.  But this defeats
+a feature that all modern SCM systems boast: tracking user activity.
+They have this feature because users don't remember what they're doing,
+and they certainly don't remember what other people are doing.  Half
+the job of SCM systems (and by extension, version aware web servers) is
+to keep track of who is doing what to what, just to remind everyone
+involved.  Those scenarios I cooked up (where Joe and Jane keep stepping
+on each other) weren't just from my past experience: they were from my
+past week's experience.
+
+Only one user can LOCK a file.  If the context is established on LOCK
+then there will be only one context per document, precluding Joe and
+Jane from finding out that they're doctoring the same text.
+
+Normally SCM systems have a tight association between the checkout
+context and the checked-out file, because often there is no way to work
+"outside" of the SCM system.  But if the SCM system is the backend of
+a version-aware web server, with the actual work happening in "stateless"
+web clients, then that context must be represented by a cookie.
+
+The cookie belongs to the underlying SCM system; whether it is an MD5
+hash of the document contents, some cryptic string churned up from bowels
+of the SCM database, or "allworkandnoplaymakesjohnnyadullboy" is not
+HTTP's or a Web authoring tool's business.  They just have to keep it
+associated with the checked-out document so that it can be reunited with
+the checkout context at checkin time.
+
+This cookie is the single most important component of distributed web
+authoring, IMHO.
+
+Christopher
+----
+Christopher Seiwald     Perforce Software	www.perforce.com       
+<a href="mailto:seiwald@perforce.com">seiwald@perforce.com</a>    f-f-f-fast SCM		1-510-865-8720
+</pre>
+<!-- body="end" -->
+<hr>
+<p>
+<ul>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0115.html">Yaron Goland: "RE: Microsoft Feature Support List (V 0.1, ALPHA, 8/26/96)"</a>
+<li> <b>Previous message:</b> <a href="0113.html">David G. Durand: "Re: Seiwald Q &amp; A"</a>
+<!-- nextthread="start" -->
+<!-- reply="end" -->
+</ul>

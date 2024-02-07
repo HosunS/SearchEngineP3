@@ -1,0 +1,74 @@
+-- HaskellExamples1.hs
+--
+-- CompSci 141 / CSE 141 / Informatics 101 Spring 2013
+-- Code Example
+--
+-- A few examples of writing simple Haskell functions, as seen in the first
+-- lecture on Haskell.
+
+module HaskellExamples1 where
+
+
+-- This is how you define a constant expression in Haskell, a name that always
+-- evaluates to the same value.
+--
+-- The first line is a "type signature," which we would read as "zero has type
+-- Integer".  Note that type signatures are almost always optional in Haskell;
+-- the compiler will actually infer types automatically from context (and will
+-- always infer the most general type it can), though there is value in writing
+-- them, because they are a useful form of documentation, and because they
+-- provide a fail-safe against our intentions not matching reality (i.e., if
+-- we expect the type to be one thing, but it turns out that it can't be, then
+-- this means we may have misunderstood the function we were writing).
+
+zero :: Integer
+zero = 0
+
+
+-- Most of the code we write in Haskell will be expressed as functions.  The
+-- function below takes an Integer and returns its square.  Notice that the
+-- function is written in two parts:
+--
+-- (1) A type signature, which says that "square has the type of a function
+--     that takes an Integer and returns an Integer"
+-- (2) An "equation," which specifies what the function's result would be,
+--     given its parameter.  In this case, there is only one equation because
+--     the result is always the same -- given an integer, we want to return
+--     that integer multiplied by itself -- though you can write multiple
+--     equations to cover different scenarios.
+
+square :: Integer -> Integer
+square n = n * n
+
+
+-- These functions calculate the value of n! (i.e., the product of all numbers
+-- from 1 through n) in a couple of ways.  The first has one equation that
+-- contains "guards," which allow us to specify different values to return in
+-- different cases.  In this case, we've named the parameter "n", and then
+-- decide what to do on the basis of whether n is zero or not.  Note, too,
+-- that there is no guard specifying what to do when n is negative; that
+-- means that this function has no result (i.e., it fails) when given a
+-- parameter that is negative.
+
+factorial1 :: Integer -> Integer
+factorial1 n
+    | n == 0     = 1
+    | n > 0      = n * factorial1 (n - 1)
+
+
+-- This second version of factorial instead uses pattern matching to distinguish
+-- between the case where the parameter is 0.  Unlike in many programming
+-- languages, where the only thing you can say about arguments are a name and
+-- (sometimes) a type, Haskell allows you to write "patterns" that describe
+-- the structure of a parameter.  If the parameter's value matches the pattern,
+-- the equation will be chosen (and they're evaluated in the order written).
+--
+-- So, in this case, if given a parameter of 0, this function returns 1.
+-- If given a parameter that is not 0, this function checks if that parameter
+-- is greater than 0 -- there's no pattern that does this, so we have to check
+-- it with a guard -- and returns the appropriate value if so.
+
+factorial2 :: Integer -> Integer
+factorial2 0   = 1
+factorial2 n
+	| n > 0   = n * factorial2 (n - 1)

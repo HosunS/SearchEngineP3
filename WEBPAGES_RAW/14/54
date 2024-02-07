@@ -1,0 +1,123 @@
+<!-- received="Thu Aug  1 16:25:49 1996 PDT" -->
+<!-- sent="Thu, 1 Aug 1996 18:25:49 -0500" -->
+<!-- name="David G. Durand" -->
+<!-- email="dgd@cs.bu.edu" -->
+<!-- subject="Re: Entity Tags" -->
+<!-- id="v02130502ae26d968884d@[128.148.157.46]" -->
+<!-- inreplyto="Entity Tags" -->
+<title>Archive of Working Group on Versioning and Configuration Management of World Wide Web Content: Re: Entity Tags</title>
+<h1>Re: Entity Tags</h1>
+<b>David G. Durand</b> (<a href="mailto:dgd@cs.bu.edu"><i>dgd@cs.bu.edu</i></a>)<br>
+<i>Thu, 1 Aug 1996 18:25:49 -0500</i>
+<p>
+<ul>
+<li> <b>Messages sorted by:</b> <a href="index.html#107">[ date ]</a><a href="thread.html#107">[ thread ]</a><a href="subject.html#107">[ subject ]</a><a href="author.html#107">[ author ]</a>
+<!-- next="start" -->
+<li> <b>Previous message:</b> <a href="0106.html">Dave Long: "Re: Entity Tags"</a>
+<li> <b>Maybe in reply to:</b> <a href="0105.html">David G. Durand: "Entity Tags"</a>
+<!-- nextthread="start" -->
+<!-- reply="end" -->
+</ul>
+<hr>
+<!-- body="start" -->
+<pre>
+&gt;David Durand writes:
+&gt;&gt;So if the Entity tag is the same, the document is byte-for-byte identitical.
+&gt;&gt;If the the Entity tag is "Weak", then it may not be byte-for-byte identical,
+&gt;&gt;if the tags are the same, but the server is saying that it doesn't care,
+&gt;&gt;and caching would still be acceptable. I didn't have a chance to check out
+&gt;&gt;how this affects content-type negotiation, but I got the impression that each
+&gt;&gt;type would have its own entity tag.
+&gt;&gt;
+&gt;&gt;   It seems to me that a versioning system provides the right information to
+&gt;&gt;calculate this stuff correctly (and is under obligation to do so), but that
+&gt;&gt;ETags don't solve many of our problems for us (though they do provide a nice
+&gt;&gt;way to check if the "current version" has changed or not).
+
+&gt;My question (from San Mateo) was whether the notion of "current version"
+&gt;for cacheability is so different from the notion of "current version" for
+&gt;versioning that we need an additional layer beyond the ETags.  (and in
+&gt;the rather narrow scope of preventing conflicting overwrites)
+
+    The problem with the notion of current version (as Fabio and I
+conceptualized it in our draft) is that it's the version you get with _no_
+Version-ID specified. So we would still need to use HTTP's mechanism to
+handle the caching aspect. The requirements for cacheability are very
+strong. This is a special case of some versioning systems approximate
+version references
+
+   I think that while versioning solves the identity problem well enought
+to create ETags (more details later on), even the simplest versioning has
+other requirements (like tracking relationships) that ETags identity test
+does not suffice to provide. So I think there are versioning-specific
+requirements that need to be met separately from ETags.
+
+    They're pretty orthogonal anyway: you can have ETags (via MD5, say)
+without versioning, even if good ETags come cheap when you have a
+versioning system in place.
+
+   [[[ Note that for some systems that allow "active versions," only
+"frozen" or "committed" versions satisfy the immutability requirement for
+cacheability (immutability being the versioning approach to byte-for-byte
+identity). Our functional requirements draft tries to forestall this kind
+of problem, by asking that servers never send different states of the same
+resource under the same Version-ID. Of course a different resource might
+later share the same URL, but there's nothing we can do about that. ]]]
+
+&gt;I imagine the most common system would be a "major/minor" sort of thing,
+&gt;where minor revisions were bumped on every change (and hence equivalent
+&gt;to strong tags), and major revisions were bumped when the content had
+&gt;changed to the point where the provider no longer wished it to be cached
+&gt;(and hence equivalent to weak tags).
+
+
+    I think this is correct. This seems to me like it could be a candidate
+for a "Weak" ETag. Of course a versioning system always has a strong ETag
+available in the form of the complete version identifier. Given that we
+always have a stronger ID available, I'd avoid ever creating a weak ETag.
+
+ I'm not sure if we want to really accomodate this at the version protocol
+level. This kind of facility seems to be most important in managing
+configurations -- so that we might make the HTTP level simple, and leave
+the subtleties to more sophisticated clients.
+
+   Partly this reflects a prejudice that I think I share with the HTTP 1.1
+authors -- dislike of Weak identity verification.
+
+&gt;
+&gt;I admit this is a very naive view of versioning, but I'm not sure that
+&gt;it helps to add complexity.  Can anyone post a scenario where it is
+&gt;important to decouple cacheability from the version id?
+
+If version-Ids are held to denote immutable objects, there is no essential
+reason to decouple it. The one problem is that the HTTP 1.1 document seemed
+to be saying that the ETags should be unique across all documents on a
+server -- that might imply that we would need to use (Resource-ID,
+Version-ID) pairs as ETags, rather than just Version-IDs. This should not
+be a problem.
+
+   To sum up, I think your simplistic view is basically right, and we
+should make sure that it stays as right as possible.
+
+   I am assuming that Content-type negotiation can lead to more than on
+ETag for the "same" resource, if it is available in several forms with
+different Content-types. If this is not true and anyone knows, could they
+post to the list?
+
+    -- David
+
+----------------------------------------------+----------------------------
+  David Durand                 <a href="mailto:dgd@cs.bu.edu">dgd@cs.bu.edu</a>  | david@dynamicDiagrams.com
+  Boston University Computer Science          | Dynamic Diagrams
+  <a href="http://cs-www.bu.edu:80/students/grads/dgd/">http://cs-www.bu.edu:80/students/grads/dgd/</a> | http://dynamicDiagrams.com/
+</pre>
+<!-- body="end" -->
+<hr>
+<p>
+<ul>
+<!-- next="start" -->
+<li> <b>Previous message:</b> <a href="0106.html">Dave Long: "Re: Entity Tags"</a>
+<li> <b>Maybe in reply to:</b> <a href="0105.html">David G. Durand: "Entity Tags"</a>
+<!-- nextthread="start" -->
+<!-- reply="end" -->
+</ul>

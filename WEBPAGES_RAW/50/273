@@ -1,0 +1,122 @@
+/* 
+$Id$
+
+Copyright (C) 2007 by The Regents of the University of California
+
+Redistribution of this file is permitted under
+the terms of the *GNU* Public License (*GPL*) 	
+
+Date: 04/08/2007
+Author: Yiming Lu <yimingl@ics.uci.edu>
+*/
+
+#include "buckethead.h"
+
+Buckets::Buckets( )
+{
+    map = new HashTable();       
+}
+
+
+Buckets::~Buckets()
+{
+	if(map != NULL)
+    {
+   	 /*
+      *  loop through entire table
+   	  */
+        HashTable::const_iterator iter;
+        for ( iter = map->begin(); iter != map->end(); iter++ )
+        {
+        	delete iter->second;
+        }
+        delete map;
+    }
+}
+
+
+void Buckets::addToHashTable(const char *gram, 
+							 unsigned stringID, 
+							 unsigned short position, 
+							 unsigned short stringLength)
+{
+    string tempGram(gram);
+    //get the hashcode for gram
+    unsigned key = hashString(tempGram);			   
+    
+    HashTable::const_iterator iter;
+    iter = map->find(key);	
+    //If the index doesn't have such gram 
+    if ( iter == map->end() )
+    {
+        LengthBucket *bucket = new LengthBucket(stringID,
+                                                position, 
+											    stringLength);
+	    map->insert(make_pair(key, bucket));
+    }   
+    //If the index already has such gram
+    else 
+    {
+        LengthBucket *bucket = (LengthBucket*)iter->second;
+	    bucket->insertIntoGroups(stringID, position, stringLength);
+    }      
+}
+
+
+LengthBucket *Buckets::getMatchedBuckets(const char *gram)
+{
+    string tempGram(gram);
+    //get the hashcode for gram
+    unsigned key = hashString(tempGram);
+    //Check to see if the gram is already in bucket 
+    HashTable::const_iterator iter;
+    iter = map->find(key);
+    if ( iter != map->end() ) 
+    {
+        return 	(LengthBucket*)iter->second;
+    }
+    return NULL;
+}
+
+unsigned Buckets::getMemory()
+{
+    unsigned memOfMap = 8 * (map->size());
+    HashTable::const_iterator iter;
+    for( iter = map->begin(); iter != map->end(); iter++ ) 
+    {
+        memOfMap += iter->second->getMemory();
+    }
+    return (memOfMap + sizeof(*this));
+}
+
+ostream &operator << (ostream &output, const Buckets & bucket)
+{
+    //num of buckets
+    output << bucket.map->size() <<" ";
+    //buckets
+    HashTable::const_iterator 	iter;
+    for(iter = bucket.map->begin(); iter != bucket.map->end(); iter++) 
+    {
+        output << ( iter->first )<<" ";
+        output <<  *(iter->second) <<" ";
+    }
+    return output;
+}
+
+istream &operator >> (istream &input, Buckets & bucket)
+{
+	//num of buckets	
+    unsigned size;
+    input >> size;
+    //buckets
+    for(unsigned i = 0; i < size; i++) 
+    {
+        LengthBucket* lengthBucket = new LengthBucket();
+        unsigned key;		
+	    input >> key;
+	    input >> (*lengthBucket);	
+	    bucket.map->insert(make_pair(key, lengthBucket));
+    }
+    return input;	
+}
+

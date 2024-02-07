@@ -1,0 +1,128 @@
+//    Processing educational code
+//    Copyright (C) 2013  Lee Martie
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.  
+  
+  Cell[][] grid;
+  int cellSize = 10;
+  
+  void setup(){
+  
+    size(600,600);
+    grid = new Cell [width/cellSize][height/cellSize];
+    
+    for(int i = 0; i<width/cellSize; i++){
+        for(int j = 0; j<height/cellSize; j++){
+          
+      Cell cell;
+     float dead = random(0,1);
+     
+       if(dead >= .95){
+         cell = new Cell(true);
+       }else{
+         cell  = new Cell(false);
+       }
+        
+        grid[i][j] = cell;
+      }  
+    }
+  
+  }
+  
+  void draw(){
+    background(0);
+    for(int i = 0; i<(width/cellSize); i++){
+        for(int j = 0; j<(height/cellSize); j++){
+        String bit;
+          if(grid[i][j].dead){
+            fill(255,0,0);
+          bit = "0";  
+          }else{
+           fill(255,255,255);
+          bit = "1"; 
+          }
+          
+         //  rect(i*cellSize, j*cellSize, cellSize,cellSize);
+           
+         PFont f;  // Global font variable
+          f = createFont("Arial",10,true); 
+          textFont(f,10); 
+           text(bit,i*cellSize,j*cellSize); 
+          
+        }
+    }
+    step();
+  }
+  
+  void step(){
+   for(int x = 0; x<(width/cellSize); x++){
+        for(int y = 0; y<(height/cellSize); y++){
+    
+          boolean isAlive = !grid[x][y].dead;
+           int liveCount = 0;
+           
+           if(x-1 >= 0){
+               if(!grid[x-1][y].dead){
+                   liveCount++;
+               }
+            } if(x+1 < (width/cellSize)){
+               if(!grid[x+1][y].dead){
+                   liveCount++;
+               }
+            } if(y-1 >= 0){
+               if(!grid[x][y-1].dead){
+                   liveCount++;
+               }
+            }if(y+1 < (height/cellSize)){
+               if(!grid[x][y+1].dead){
+                   liveCount++;
+               }
+            }if(y+1 < (height/cellSize) && x+1 < (width/cellSize)){
+               if(!grid[x+1][y+1].dead){
+                   liveCount++;
+               }
+            }if(y-1 >=0  && x-1 >= 0){
+               if(!grid[x-1][y-1].dead){
+                   liveCount++;
+               }
+            }if(y-1 >=0  && x+1 < (width/cellSize)){
+               if(!grid[x+1][y-1].dead){
+                   liveCount++;
+               }
+            }if(y+1 < (height/cellSize)  && x-1 >= 0){
+               if(!grid[x-1][y+1].dead){
+                   liveCount++;
+               }
+            }
+
+        //conways life changing rules    
+          if(isAlive){
+            if(liveCount <2)
+              grid[x][y].dead = true;
+            else if(liveCount >= 2 && liveCount <=3)
+              grid[x][y].dead = false;
+            else if(liveCount >3)
+              grid[x][y].dead = true;
+             
+          }else{
+            if(liveCount == 3)
+              grid[x][y].dead = false;
+          }
+          
+          
+        }
+   }
+    
+    
+  }

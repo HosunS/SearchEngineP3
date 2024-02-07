@@ -1,0 +1,96 @@
+To uncompress and expand the file enter
+
+tar xzvf lineup.tgz
+
+This includes the files:
+
+LineUp/lineup.c
+LineUp/lineup2mysql.pl
+LineUp/lineup2txt.pl
+LineUp/lineup.pl
+LineUp/lineup_input.pl
+LineUp/install.pl
+LineUp/README
+LineUp/pio99_marker_map
+
+The pio_marker_map is a sample dataset, and was used in our analysis.
+
+
+########################
+
+To install the LineUp program, first change directory into the lineup 
+directory, and then enter
+
+perl ./install.pl
+
+
+Any error messages will be written to the screen. The gcc compiler gives 
+the following known error message, which do not affect the function of 
+the program. If you see any other error messages, then there may be a problem.
+
+lineup.c: In function `read_data':
+lineup.c:271: warning: unknown escape sequence `\)'
+lineup.c:279: warning: unknown escape sequence `\)'
+lineup.c:290: warning: unknown escape sequence `\)'
+
+
+The install.pl script will create the executable version of the C program, 
+and will set some perl variables.
+
+########################
+
+The input format is a text file with one line per marker name. A line starts 
+with the marker name followed by at least one space, and then the map 
+position(s) of the marker in brackets in the format 
+marker (pos chr, pos chr, pos chr). e.g.
+
+php20554 (322 9)
+umc1465 (236.6 2)
+mmp20 (84.8 6)
+bnl6.32 (968 1)
+lim228 (947.2 1)
+rz444c (95.4 1, 102.6 6)
+umc1197(cat3) (675.4 4)
+
+If you already have your map data in a MySQL table you can use the 
+lineup_input.pl script to create an input file from the MySQL table. 
+You will probably need to edit this script so that the column names 
+are correct for your table format.
+
+The ONLY line you should edit is the following:
+
+$st = "SELECT marker,chr,cM  FROM $table";
+
+replace 'marker' with the name of the column that holds the gene or marker name
+
+replace 'chr' with the column that holds the chromosome information
+
+replace 'cM' with the column that holds the map position information.
+
+Please note that it does not matter if your data are bp positions, 
+rank order positions, cM positions, or any other map unit.
+
+
+########################
+
+To run the program enter
+
+./lineup.pl
+
+This is a perl script which provides a more comfortable interface to the 
+C program and the results parsers.
+
+If you opt to have MySQL output, the results file will end .mysql, and 
+you can send this into your mysql database with the command
+
+mysql -p databasename < basename.mysql
+
+replacing the databasename and basename.mysql as appropriate.
+
+
+
+If you opt to have plain text output, there will be two output files
+
+1) basename_overview.txt - summary information for each run found
+
+2) basename_detail.txt - details of the individual markers in each run

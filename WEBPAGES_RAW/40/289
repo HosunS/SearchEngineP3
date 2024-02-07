@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>5.7 Looping over subsets of Atoms or Bonds</title>
+<META NAME="description" CONTENT="5.7 Looping over subsets of Atoms or Bonds">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="previous" HREF="node48.html">
+<LINK REL="up" HREF="node42.html">
+<LINK REL="next" HREF="node50.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node48.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node42.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node50.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node48.html">5.6 Looping over the</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node42.html">5. Traversing the Atoms,</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node50.html">6. Properties of Atoms</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION008700000000000000000">
+5.7 Looping over subsets of Atoms or Bonds</A>
+</H1>
+
+<P>
+It can sometimes be useful to loop over a subset of the atoms or bonds of a
+molecule.  Traditionally this can be done with "if" statements inside a
+loop, but it can sometimes be cleaner and more convenient to subset the
+members being looped over inside the iterator.  To do this, many of
+OEChem's iterator generation functions (such as <code>OEMolBase::GetAtoms</code>)
+can take an argument which determines which subset of the object to loop
+over (these functions are called predicates as detailed in the chapter
+"Predicate Functions" below).  The details of these functions are not
+important here.  Instead, a programmer can simply use the predefined
+functors to control their loops.
+
+<P>
+The following example shows the use of the predicate <code>OEHasAtomicNum()</code>
+to loop over only carbon atoms in a molecule.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+
+using namespace OESystem;
+using namespace OEChem;
+using namespace std;
+
+int main()
+{
+  OEMol mol;
+  OEParseSmiles(mol, "c1cc(O)c(O)cc1CCN");
+
+  OEIter&lt;OEAtomBase&gt; atom;
+  cerr &lt;&#60; "Carbon Atoms:" &lt;&#60; endl;
+  for (atom=mol.GetAtoms(OEHasAtomicNum(6));atom;++atom)
+  {
+    cerr &lt;&#60; "Atom: " &lt;&#60; atom-&gt;GetIdx() &lt;&#60; " ";
+  }
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch6-8.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+Some of the common predefined functors in OEChem are listed below.
+Predicate functions can be trivial, such as <code>OEIsHydrogen()</code>, or quite
+complex, such as <code>Match(const char*)</code>, which returns atoms which match
+the SMARTS string passed to the constructor.  For a complete listing,
+please see the chapter on predicate functions or the API manual.  Many
+predicates take intuitive construction arguments.  For instance,
+<code>OEHasAtomName</code> has a <code>const char*</code> argument which is the atom's
+name (<I>e.g.</I>  <code>mol.GetAtoms(OEHasAtomName("CA"))</code>).
+
+<P>
+<i>Atoms</i>
+<dl><dd><pre class="verbatim">OEHasAtomName(const char *)
+OEHasAtomicNum(unsigned int)
+OEIsHalogen
+OEIsAromaticAtom
+OEAtomIsInRing
+OEIsChiralAtom
+OEHasResidueNumber(unsigned int)
+OEMatchFunc(const char*)
+</pre></dl>
+<i>Bonds</i>
+<dl><dd><pre class="verbatim">OEHasBondIdx(unsigned int)
+OEHasOrder(unsigned int)
+OEBondIsInRing
+OEIsRotor
+</pre></dl>
+<i>Conformers</i>
+<dl><dd><pre class="verbatim">OEHasConfIdx(unsigned int)
+</pre></dl>
+
+<P>
+These predicates can be particularly helpful when used in conjunction with
+functions which take OEIters as arguments as seen in the example below.
+This use of predicates allows factorization of the loop in a way not easily
+possible with <code>if</code> statements.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+
+#include &lt;iostream&gt;
+
+using namespace OESystem;
+using namespace OEChem;
+using namespace std;
+
+void PrintAtoms(OEIter&lt;OEAtomBase&gt; &amp;atom,const char *title)
+{
+  cerr &lt;&#60; title &lt;&#60; ":" &lt;&#60; endl;
+  for (atom.ToFirst();atom;++atom)
+  {
+    cerr &lt;&#60; atom-&gt;GetIdx() &lt;&#60; " ";
+  }
+  cerr &lt;&#60; endl;
+}
+
+int main()
+{
+  OEMol mol;
+  OEParseSmiles(mol, "c1c(O)c(O)c(Cl)cc1CCCBr");
+
+  OEIter&lt;OEAtomBase&gt; atom;
+  atom = mol.GetAtoms(OEAtomIsInRing());
+  PrintAtoms(atom,"Ring Atoms");
+
+  atom = mol.GetAtoms(OEHasAtomicNum(8));
+  PrintAtoms(atom,"Oxygens");
+
+  atom = mol.GetAtoms(OEIsHalogen());
+  PrintAtoms(atom,"Halogens");
+
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch6-9.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+While this introduction can help you get some use from predicates, details
+on more complex predicates and how to write your own predicates can be
+found in the chapter entitled <i>Predicate Functions</i> (see below).
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node48.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node42.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node50.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node48.html">5.6 Looping over the</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node42.html">5. Traversing the Atoms,</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node50.html">6. Properties of Atoms</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

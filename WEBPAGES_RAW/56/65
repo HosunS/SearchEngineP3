@@ -1,0 +1,65 @@
+// Test of closest pair algorithms
+// David Eppstein, UC Irvine, 19 Apr 1997
+//
+// Brute force closest pair algorithm implementation
+
+#include "BruteForce.h"
+#include "Error.h"
+
+BruteForceCP::~BruteForceCP()
+{
+	delete points;
+	delete where_are_the_points;
+}
+
+BruteForceCP::BruteForceCP(long np, long max_points, Distance & d)
+	: ClosestPairs(np, max_points, d), dist(d)
+{
+	points = new point[max_points];
+	where_are_the_points = new point[max_points];
+	if (points == 0 || where_are_the_points == 0)
+		error("BruteForceCP: unable to initialize arrays, out of memory");
+
+	npoints = np;
+	gInsertions += np;
+	for (long i = 0; i < np; i++) points[i] = where_are_the_points[i] = i;
+}
+
+// add point to end of points[] and store index in where_are...
+//
+void BruteForceCP::operator += (point p)
+{
+	gInsertions++;
+	points[where_are_the_points[p] = npoints++] = p;
+}
+
+// move end of points[] to deleted location and update where_are...
+//
+void BruteForceCP::operator -= (point p)
+{
+	gDeletions++;
+	npoints--;
+	unsigned long q = where_are_the_points[p];
+	where_are_the_points[points[q] = points[npoints]] = q;
+}
+
+// nested loop to find all pairs and return closest one
+//
+double BruteForceCP::operator() (point & a, point & b)
+{
+	gPairs++;
+	if (npoints < 2) error("BruteForceCP: fewer than two points in set");
+	double min_dist = dist(points[0],points[1]);
+	a = points[0];
+	b = points[1];
+	for (unsigned long i = 2; i < npoints; i++)
+		for (unsigned long j = 0; j < i; j++) {
+			double d = dist(points[i], points[j]);
+			if (d < min_dist) {
+				min_dist = d;
+				a = points[i];
+				b = points[j];
+			}
+		}
+	return min_dist;
+}

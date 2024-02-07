@@ -1,0 +1,522 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>Fibonacci Numbers</title>
+<meta name="Owner" value="eppstein">
+<meta name="Reply-To" value="eppstein@ics.uci.edu">
+</head>
+<body>
+<h1>ICS 161: Design and Analysis of Algorithms<br>
+Lecture notes for January 9, 1996</h1>
+
+<!--#config timefmt="%d %h %Y, %T %Z" -->
+<hr>
+<p></p>
+
+<h1>Introduction to analysis of algorithms</h1>
+
+<a name="pseudocode">An algorithm is just the outline or idea
+behind a program. We express algorithms in <i>pseudo-code</i>:
+something resembling C or Pascal, but with some statements in
+English rather than within the programming language. It is expected
+that one could translate each pseudo-code statement to a small
+number of lines of actual code, easily and mechanically.</a> 
+
+<p><a name="analysis">This class covers the design of algorithms
+for various types of problems, as well as a mathematical analysis
+of those algorithms done independently of any actual computational
+experiments. The purpose of design of algorithms is obvious: one
+needs an algorithm in order to write a program. Analysis of
+algorithms is less obviously necessary, but has several
+purposes:</a></p>
+
+<ul>
+<li>Analysis can be more reliable than experimentation. If we
+experiment, we only know the behavior of a program on certain
+specific test cases, while analysis can give us guarantees about
+the performance on all inputs.</li>
+
+<li>It helps one choose among different solutions to problems. As
+we will see, there can be many different solutions to the same
+problem. A careful analysis and comparison can help us decide which
+one would be the best for our purpose, without requiring that all
+be implemented and tested.</li>
+
+<li>We can predict the performance of a program before we take the
+time to write code. In a large project, if we waited until after
+all the code was written to discover that something runs very
+slowly, it could be a major disaster, but if we do the analysis
+first we have time to discover speed problems and work around
+them.</li>
+
+<li>By analyzing an algorithm, we gain a better understanding of
+where the fast and slow parts are, and what to work on or work
+around in order to speed it up.</li>
+</ul>
+
+<h2>The Fibonacci numbers</h2>
+
+We introduce algorithms via a "toy" problem: computation of
+Fibonacci numbers. It's one you probably wouldn't need to actually
+solve, but simple enough that it's easy to understand and maybe
+surprising that there are many different solutions. 
+
+<p> <b>The Fibonacci story:</b></p>
+
+<p> <a href="people.html#fibonacci">Leonardo of Pisa</a> (aka
+Fibonacci) was interested in many things, including a subject we
+now know as <i>population dynamics</i>: For instance, how quickly
+would a population of rabbits expand under appropriate
+conditions?</p>
+
+<p> As is typical in mathematics (and analysis of algorithms is a
+form of mathematics), we make the problem more abstract to get an
+idea of the general features without getting lost in detail:</p>
+
+<ul>
+<li>We assume that a pair of rabbits has a pair of children every
+year.</li>
+
+<li>These children are too young to have children of their own
+until two years later.</li>
+
+<li>Rabbits never die.</li>
+</ul>
+
+(The last assumption sounds stupid, but makes the problem simpler.
+After we have analyzed the simpler version, we could go back and
+add an assumption e.g. that rabbits die in ten years, but it
+wouldn't change the overall behavior of the problem very much.) 
+
+<p>We then express the number of pairs of rabbits as a function of
+time (measured as a number of years since the start of the
+experiment):</p>
+
+<ul>
+<li>F(1) = 1 -- we start with one pair</li>
+
+<li>F(2) = 1 -- they're too young to have children the first
+year</li>
+
+<li>F(3) = 2 -- in the second year, they have a pair of
+children</li>
+
+<li>F(4) = 3 -- in the third year, they have another pair</li>
+
+<li>F(5) = 5 -- we get the first set of grandchildren</li>
+</ul>
+
+In general F(n) = F(n-1) + F(n-2): all the previous rabbits are
+still there (F(n-1)) plus we get one pair of children for every
+pair of rabbits we had two years ago (F(n-2)). 
+
+<p>The algorithmic problem we'll look at today: how to compute
+F(n)?</p>
+
+<h2>Formulas and floating point</h2>
+
+You probably saw in Math 6a that F(n) = (x^n - (1-x)^n)/(x - (1-x))
+where x = (1+sqrt 5)/2 ~ 1.618 is the golden ratio. This solution
+is often used as a standard example of the method of "generating
+functions". 
+
+<p>So this seems to be an algorithm: compute 1.618^n - 0.618^n.
+Problem: how accurately do you have to know x to get the right
+answer? e.g. if you just use x=1.618, you get</p>
+
+<ul>
+<li>F(3)=1.99992 -- close enough to 2?</li>
+
+<li>F(16)=986.698 -- round to 987?</li>
+
+<li>F(18)=2583.1 -- should be 2584</li>
+</ul>
+
+Instead since F(n) is defined in integers it saves some problems to
+stick with integers. 
+
+<h2>A recursive algorithm</h2>
+
+The original formula seems to give us a natural example of
+recursion: 
+
+<p><b>Algorithm 1:</b></p>
+
+<pre>
+    int fib(int n)
+    {
+    if (n &lt;= 2) return 1
+    else return fib(n-1) + fib(n-2)
+    }
+</pre>
+
+An example of the sort of basic question we study in this class is,
+how much time would this algorithm take? How should we measure
+time? The natural measure would be in seconds, but it would be nice
+to have an answer that didn't change every time Intel came out with
+a faster processor. We can measure time in terms of machine
+instructions; then dividing by a machine's speed (in
+instructions/second) would give the actual time we want. However,
+it is hard to guess from a piece of pseudo-code the exact number of
+instructions that a particular compiler would generate. To get a
+rough approximation of this, we try measuring in terms of lines of
+code. 
+
+<p>Each call to fib returns either one or two lines. If n &lt;= 2,
+we only execute one line (the if/return). if n = 3, execute 2 for
+fib(2), plus one each for fib(1) and fib(0): 4</p>
+
+<p>It's like the rabbits! Except for the two lines in each call,
+the time for n is the sum of the times for two smaller recursive
+calls.</p>
+
+<pre>
+    time(n) = 2 + time(n-1) + time(n-2)
+</pre>
+
+<a name="recurrence">In general, any recursive algorithm such as
+this one gives us a <i>recurrence relation</i>: the time for any
+routine is the time within the routine itself, plus the time for
+the recursive calls. This gives in a very easy mechanical way an
+equation like the one above, which we can then solve to find a
+formula for the time. In this case, the recurrence relation is very
+similar to the definition of the Fibonacci numbers.</a> 
+
+<p> With some work, we can solve the equation, at least in terms of
+F(n): We think of the recursion as forming a tree. We draw one
+node, the root of the tree, for the first call then any time the
+routine calls itself, we draw another child in the tree.</p>
+
+<pre>
+        F(5)
+           /    \
+       F(4)      F(3)
+      /    \    /    \
+       F(3)   F(2) F(2)  F(1)
+      /    \
+   F(2)    F(1)
+</pre>
+
+The four internal nodes of this tree for fib(5) take two lines
+each, while the five leaves take one line, so the total number of
+lines executed in all the recursive calls is 13. 
+
+<p>Note that, when we do this for any call to fib, the Fibonacci
+number F(i) at each internal node is just the number of leaves
+below that node, so the total number of leaves in the tree is just
+F(n). Remember that leaves count as one line of code, internal
+nodes 2. To count internal nodes, use basic fact about binary trees
+(trees in which each node has 2 children): the number of internal
+nodes always equals the number of leaves minus one. (You can prove
+this by induction: it's true if there's one leaf and no internals,
+and it stays true if you add 2 children to a leaf.)</p>
+
+<p> So there are F(n) lines executed at the leaves, and 2F(n)-2 at
+the internal nodes, for a total of 3F(n)-2. Let's double check this
+on a simple example: time(5) = 3F(5) - 2 = 3(5)-2 = 13.</p>
+
+<p> This is kind of slow e.g. for n=45 it takes over a billion
+steps. Maybe we can do faster?</p>
+
+<h2>Dynamic programming</h2>
+
+One idea: the reason we're slow slow is we keep recomputing the
+same subproblems over and over again. For instance, the tree above
+shows two computations of F(3). The second time we get to F(3),
+we're wasting effort computing it again, because we've already
+solved it once and the answer isn't going to change. Instead let's
+solve each subproblem once and then look up the solution later when
+we need it instead of repeatedly recomputing it. 
+
+<p>This easy idea leads to some complicated algorithms we'll see
+later in the section on dynamic programming, but here it's pretty
+simple:</p>
+
+<p><b>Algorithm 2:</b></p>
+
+<pre>
+    int fib(int n)
+    {
+    int f[n+1];
+    f[1] = f[2] = 1;
+    for (int i = 3; i &lt;= n; i++)
+        f[i] = f[i-1] + f[i-2];
+    return f[n];
+    }
+</pre>
+
+This is an <a name="iterative">iterative algorithm</a> (one that
+uses loops instead of recursion) so we analyze it a little
+differently than we would a recursive algorithm. Basically, we just
+have to compute for each line, how many times that line is
+executed, by looking at which loops it's in and how many times each
+loop is executed. 
+
+<p>Three lines are executed always. The first line in the loop is
+executed n-1 times (except for n=1) The second line in loop
+executed n-2 times (except for n=1) so time(n) = n-1 + n-2 + 3 = 2n
+(except time(1)=4).</p>
+
+<p>As an example for n=45 it takes 90 steps, roughly 10 million
+times faster than the other program. Even if you don't do this very
+often this is a big enough difference to notice, so the second
+algorithm is much better than the first.</p>
+
+<h2>Space complexity</h2>
+
+Running time isn't the only thing we care about, or the only thing
+that can be analyzed mathematically. Programmer time and code
+length are important, but we won't discuss them here -- they're
+part of the subject of software engineering. However we will often
+analyze the amount of memory used by a program. If a program takes
+a lot of time, you can still run it, and just wait longer for the
+result. However if a program takes a lot of memory, you may not be
+able to run it at all, so this is an important parameter to
+understand. 
+
+<p>Again, we analyze things differently for recursive and iterative
+programs. For an iterative program, it's usually just a matter of
+looking at the variable declarations (and storage allocation calls
+such as malloc() in C). For instance, algorithm 2 declares only an
+array of n numbers. Analysis of recursive program space is more
+complicated: the space used at any time is the total space used by
+all recursive calls active at that time. Each recursive call in
+algorithm 1 takes a constant amount of space: some space for local
+variables and function arguments, but also some space for
+remembering where each call should return to. The calls active at
+any one time form a path in the tree we drew earlier, in which the
+argument at each node in the path is one or two units smaller than
+the argument at its parent. The length of any such path can be at
+most n, so the space needed by the recursive algorithm is again
+(some constant factor times) n. We abbreviate the "some constant
+factor times" using "O" notation: O(n).</p>
+
+<p>It turns out that algorithm 2 can be modified to use a much
+smaller amount of space. Each step through the loop uses only the
+previous two values of F(n), so instead of storing these values in
+an array, we can simply use two variables. This requires some
+swapping around of values so that everything stays in the
+appropriate places:</p>
+
+<p><b>Algorithm 3:</b></p>
+
+<pre>
+    int fib(int n)
+    {
+    int a = 1, b = 1;
+    for (int i = 3; i &lt;= n; i++) {
+        int c = a + b;
+        a = b;
+        b = c;
+    }           
+    return b;
+    }
+</pre>
+
+Here c represents f[i], b represents f[i-1], and a represents
+f[i-2]. The two extra assignments after the sum shift those values
+over in preparation for the next iteration. This algorithm uses
+roughly 4n lines to compute F(n), so it is slower than algorithm 2,
+but uses much less space. 
+
+<h2>Big "O" notation</h2>
+
+There are better algorithms for Fibonacci numbers, but before we
+investigate that, let's take a side track and make our analysis a
+little more abstract. 
+
+<p> A problem with the analysis of the two algorithms above: what
+is a line of code? If I use whitespace to break a line into two, it
+doesn't change the program speed but does change the number of
+lines executed. And as mentioned before, if I buy a faster
+computer, it does change program speed but doesn't change the
+analysis.</p>
+
+<p> To avoid extraneous details like whitespace and computer type,
+we use "big O" notation. The idea: we already write the times as a
+function of n. Big O notation treats two functions as being roughly
+the same if one is c times the other where c is a constant
+(something that doesn't depend on n). So for instance we would
+replace 3F(n)-2 by O(F(n)) and both 2n and 4n by O(n).</p>
+
+<p>Formally, we say that</p>
+
+<pre>
+    f(n)=O(g(n))
+</pre>
+
+If there is some constant c such that 
+
+<pre>
+    f(n) &lt;= c g(n)
+</pre>
+
+It is true that 4n=O(n), but it is also true that n=O(4n). However
+note that this is not always a symmetric relation; n=O(F(n)) but it
+is not true that F(n)=O(n). In practice we will usually only use O
+notation to simplify formulas, by ignoring constant factors and
+other extraneous details. 
+
+<p>What is the point of O notation? First, it makes life easier by
+allowing us to be less careful of all the fine details of an
+algorithm's behavior. But also, it allows us to compare two
+algorithms easily. Algorithm 2 and algorithm 3 are both O(n).
+According to the number of lines executed, one is twice as fast as
+the other, but this ratio does not change as a function of n. Other
+factors (like the amount of time needed to allocate the large array
+in algorithm 2) may mean that in actual time, the algorithms are
+closer to each other; a more careful analysis is needed to
+determine which of the two to use. On the other hand, we know that
+4n is much better than 3F(n)-2 for any reasonable value of n -- but
+this doesn't depend on the factor of 4 in the 4n time bound, it
+would be the same for 7n or 12n. For larger and larger n, the ratio
+of n to F(n) gets very large, so that very quickly any O(n) will be
+faster than any O(F(n)). Replacing 4n by O(n) is an abstraction
+that lets us compare it to other functions without certain details
+(the 4) getting in the way.</p>
+
+<h2>Recursive powering</h2>
+
+Algorithms 3 and 4 above aren't the best! 
+
+<p>Here's a mathematical trick with matrices:</p>
+
+<pre>
+    [ 1 1 ] n      [ F(n+1) F(n)   ]
+    [ 1 0 ]    =   [ F(n)   F(n-1) ]
+</pre>
+
+(You don't have to remember much linear algebra to understand this
+-- just the formula for multiplying two symmetric 2x2 matrices: 
+
+<pre>
+    [ a b ] [ d e ]   [ ad + be  bd + ce ]
+    [ b c ] [ e f ] = [ bd + ce  be + cf ]
+</pre>
+
+You can then prove the result above by induction: Let 
+
+<pre>
+    [ 1 1 ]
+    A = [ 1 0 ]
+</pre>
+
+assume by induction that the equation above is is true for some n,
+multiply both sides by another power of A using the formula for
+matrix multiplication, and verify that the terms you get are the
+same as the formula defining the Fibonacci numbers.) 
+
+<p>We can use this to define another iterative algorithm, using
+matrix multiplication. Although I will write this in C syntax, we
+are starting to get to pseudo-code, since C does not have matrix
+multiplication built in to it the way I have it written below. The
+following algorithm initializes a matrix M to the identity matrix
+(the "zeroth power" of A) and then repeatedly multiplies M by A to
+form the (n-1)st power. Then by the formula above, the top left
+corner holds F(n), the value we want to return.</p>
+
+<p><b>Algorithm 4:</b></p>
+
+<pre>
+    int fib(int n)
+    {
+    int M[2][2] = {{1,0},{0,1}}
+    for (int i = 1; i &lt; n; i++)
+        M = M * {{1,1},{1,0}}
+    return M[0][0];
+    }
+</pre>
+
+This takes time O(n) (so much better than algorithm 1) but is
+probably somewhat slower than algorithm 2 or algorithm 3. (The big
+O notation hides the difference between these algorithms, so you
+have to be more careful to tell which is better.) Like algorithm 3,
+this uses only O(1) space. 
+
+<p> But we can compute M^n more quickly. The basic idea: if you
+want to compute e.g. 3^8 you can multiply 8 3's together one at a
+time (3*3*3*3*3*3*3*3) or you can repeatedly square: square 3^2 =
+9, 9^2 = 3^4 = 81, 81^2 = 3^8 = 6561. The squaring idea uses many
+fewer multiplications, since each one doubles the exponent rather
+than simply adding one to it. With some care, the same idea works
+for matrices, and can be extended to exponents other than powers of
+two.</p>
+
+<p><b>Algorithm 5:</b></p>
+
+<pre>
+    int M[2][2] = {{1,0}{0,1}}
+
+    int fib(int n)
+    {
+    matpow(n-1);
+    return M[0][0];
+    }
+
+    void matpow(int n)
+    {
+    if (n &gt; 1) {
+        matpow(n/2);
+        M = M*M;
+    }
+    if (n is odd) M = M*{{1,1}{1,0}}
+    }
+</pre>
+
+Basically all the time is in matpow, which is recursive: it tries
+to compute the nth power of A by squaring the (n/2)th power.
+However if n is odd, rounding down n/2 and squaring that power of A
+results in the (n-1)st power, which we "fix up" by multiplying one
+more factor of A. 
+
+<p>This is a recursive algorithm, so as usual we get a recurrence
+relation defining time, just by writing down the time spent in a
+call to matpow (O(1)) plus the time in each recursive call (only
+one recursive call, with argument n/2). So the recurrence is</p>
+
+<pre>
+    time(n) = O(1) + time(n/2)
+</pre>
+
+It turns out that this solves to O(log n). For the purposes of this
+class, we will use logarithms base 2, and round all logarithms to
+integers, so log n is basically the number of bits needed to write
+n down in binary. An equivalent way of defining it is the smallest
+value of i such that n &lt; 2^i. But clearly if n &lt; 2^i, n/2
+&lt; 2^(i-1) and conversely, so log n satisfies the recurrence
+log(n) = 1 + log(n/2). The recurrence defining the time for matpow
+is basically the same except with O(1) instead of 1. So the
+solution to the recurrence is just the sum of log n copies of O(1),
+which is O(log n). 
+
+<p>If n is 1 billion, log n would only be 30, and this algorithm
+would be better than algorithms 2 and 3 in the same way that they
+are better than algorithm 1.</p>
+
+<p>(This is actually somewhat cheating: to be able to use this for
+n equal to a billion you need to be able to write down the answer
+which will have O(n) digits, and you need to be able to store
+variables with that many digits. Manipulating such large numbers
+would take more like O(n) steps per operation, where here we are
+only counting one step per integer multiplication or addition. But
+even if you used a special library for dealing with large numbers,
+algorithm 4 would be much faster than the other ones.)</p>
+
+<p>Actually you can get the original formula 1.618^n to work using
+a similar repeated squaring trick, also with time O(log n). So to
+tell which is better you have to be more careful and not just use
+O-notation -- dealing with an integer matrix is somewhat simpler
+than having to compute floating point square roots so it wins.</p>
+
+<p>Which is the sort of comparison that analysis of algorithms is
+all about...</p>
+
+<hr>
+<p><a href="/~eppstein/161/">ICS 161</a> -- <a href="/">Dept.
+Information &amp; Computer Science</a> -- <a href= 
+"http://www.uci.edu/">UC Irvine</a><br>
+<small>Last update: 
+<!--#flastmod file="960109.html" --></small></p>
+</body>
+</html>
+

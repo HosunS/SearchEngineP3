@@ -1,0 +1,97 @@
+// Chazelle BSP counterexample: doubly ruled hyperboloid
+
+#include "colors.inc"	// Standard Color definitions
+#include "textures.inc"	// Standard Texture definitions
+#include "metals.inc"
+
+camera
+{
+  location  <0.0 , 1 ,-3.5>
+  look_at   <0.0 , 0.0 , 0.0>
+  right x
+}
+
+// create a regular point light source
+light_source
+{
+  0*x // light's position (translated below)
+  color red 1.5  green 1.0  blue 1.0  // light's color
+  translate <-10, 20, -5>
+}
+light_source
+{
+  0*x // light's position (translated below)
+  color red 1.0  green 1.5  blue 1.0  // light's color
+  translate <0, 20, -15>
+}
+light_source
+{
+  0*x // light's position (translated below)
+  color red 1.0  green 1.0  blue 1.5  // light's color
+  translate <10, 20, -5>
+}
+
+// fill light on underside
+light_source
+{
+  0*x // light's position (translated below)
+  color red 0.2  green 0.2  blue 0.2  // dim
+  translate <-10, -0.9, -5>
+}
+
+// Light gray ground plane
+plane
+{
+  y, -1.0
+  texture {
+    pigment { color rgb <0.6,0.6,0.6> }
+    finish { reflection 0.2 }
+  }
+}
+
+// Create an infinite sphere around scene and allow any texture on it
+sky_sphere
+{
+  pigment
+  {
+    gradient y
+    color_map { [0.0 color blue 0.6] [1.0 color rgb 1] }
+  }
+}
+
+#declare eps=0.02
+#declare ra=x*180.0/3.14159
+
+#declare wedge = intersection {
+  plane { <1,-1,0>, 0 }
+  plane { <-1,-1,0>, 0 }
+}
+
+#declare wedges = union {
+  object { wedge }
+  object { wedge rotate atan2(.1,1)*ra translate .2*x }
+  object { wedge rotate atan2(.2,1)*ra translate .4*x }
+  object { wedge rotate atan2(.3,1)*ra translate .6*x }
+  object { wedge rotate atan2(.4,1)*ra translate .8*x }
+  object { wedge rotate atan2(.5,1)*ra translate x }
+  object { wedge rotate atan2(-.1,1)*ra translate -.2*x }
+  object { wedge rotate atan2(-.2,1)*ra translate -.4*x }
+  object { wedge rotate atan2(-.3,1)*ra translate -.6*x }
+  object { wedge rotate atan2(-.4,1)*ra translate -.8*x }
+  object { wedge rotate atan2(-.5,1)*ra translate -x }
+}
+
+difference {
+  box {
+    <-1, -1, -1>  // one corner position <X1 Y1 Z1>
+    < 1,  1,  1>  // other corner position <X2 Y2 Z2>
+  }
+  union {
+    object { wedges translate eps*y }
+    object { wedges rotate 90*y scale <1,-1,1> translate -eps*y }
+  }
+  texture { pigment { P_Copper4 } }
+  finish { F_MetalB }
+  rotate 6*clock*y
+}
+

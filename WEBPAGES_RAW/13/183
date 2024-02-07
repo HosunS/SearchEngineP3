@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>17.1 Substructure Search</title>
+<META NAME="description" CONTENT="17.1 Substructure Search">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node154.html">
+<LINK REL="previous" HREF="node152.html">
+<LINK REL="up" HREF="node152.html">
+<LINK REL="next" HREF="node154.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node152.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node152.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node154.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node152.html">17. Pattern Matching</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node152.html">17. Pattern Matching</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node154.html">17.2 Maximum Common Substructure</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION0020100000000000000000">
+17.1 Substructure Search</A>
+</H1>
+
+<P>
+Substructure searches can be done in OEChem using the
+<code>OESubsearch</code> class.  The <code>OESubSearch</code> class can be
+initialized with a SMARTS pattern, a query molecule <code>OEQMolBase</code>,
+or a molecule and expression options.  The following example
+demonstrates how to initialize a <code>OESubSearch</code> instance with a
+SMARTS pattern, and perform a substructure search.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+
+using namespace std;
+using namespace OEChem;
+
+int main()
+{
+  OEGraphMol mol;
+
+  OEParseSmiles(mol, "Cc1ccccc1");
+  OESubSearch ss("c1ccccc1");
+
+  if (ss.SingleMatch(mol))
+  {
+    cout &lt;&#60; "benzene matches toluene" &lt;&#60; endl;
+  }
+  else
+  {
+    cout &lt;&#60; "benzene does not match toluene" &lt;&#60; endl;
+  }
+
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch17-1.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+In the example program, the query pattern is benzene and the molecule
+in which the substructure is being searched for is toluene.  Since
+benzene is a substructure of toluene the program will identify the
+substructure, and report the substructure as found.
+
+<P>
+The <code>OESubSearch</code> class is not only able to identify the presence
+or absence of a substructure, but also the node and edge
+correspondences of the pattern and target.  The following example
+extends the simple match example to write out all atom correspondences
+between benzene and toluene.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+
+using namespace std;
+using namespace OEChem;
+using namespace OESystem;
+
+int main()
+{
+  OEGraphMol mol;
+
+  OEParseSmiles(mol, "c1ccccc1C");
+  OESubSearch ss("c1ccccc1");
+
+  unsigned int count;
+  OEIter&lt;OEMatchBase&gt; match;
+  for (count=1,match = ss.Match(mol);match;++match,count++)
+  {
+    OEIter&lt;OEMatchPair&lt;OEAtomBase&gt; &gt; apr;
+
+    cout &lt;&#60; "Match " &lt;&#60; count &lt;&#60; ':' &lt;&#60; endl;
+    cout &lt;&#60; "pattern atoms: ";
+    for (apr = match-&gt;GetAtoms();apr;++apr)
+      cout &lt;&#60; apr-&gt;pattern-&gt;GetIdx() &lt;&#60; ' ';
+    cout &lt;&#60; endl;
+
+    cout &lt;&#60; "target atoms:  ";
+    for (apr = match-&gt;GetAtoms();apr;++apr)
+      cout &lt;&#60; apr-&gt;target-&gt;GetIdx() &lt;&#60; ' ';
+    cout &lt;&#60; endl;
+  }
+
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch17-2.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+The <code>OESubSearch::Match</code> method returns an iterator over all
+subgraphs.  Each of the subgraphs can be queried for their node and
+edge correspondences.  In this particular example, the benzene
+substructure is identified twelve times in toluene.  Each of the
+matches differ in their node and edge correspondences to the
+substructure..
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node152.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node152.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node154.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node152.html">17. Pattern Matching</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node152.html">17. Pattern Matching</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node154.html">17.2 Maximum Common Substructure</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

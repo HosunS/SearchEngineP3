@@ -1,0 +1,104 @@
+Next couple weeks:
+Binary search tree like data structures
+
+Today:
+Motivation and preliminaries
+
+Binary search in sorted list
+    test existence of search key, but better to use hash table
+    nearest neighbor classification -- can't be done by hash table
+
+What about nearest neighbor classification with dynamic data?
+    adding into array and preserving sorted order not possible quickly
+    need more complex data structures
+
+
+Second example: plane sweep
+Test whether any two line segments in input intersect, if so find a crossing
+    (plane sweep approach, 33.2)
+    - single crossing:
+	sort list of endpoints by x-coordinates
+	initialize sorted list of segments in order by y-coord of sweep point
+	for each endpoint in input:
+		if it's a left endpoint:
+			insert in sorted list
+			test for crossing with pred and with succ
+		else if it's a right endpoint:
+			remove from sorted list
+			test for pred-succ crossing
+
+    - list all crossings, y-coords of sweep points change order @ cross
+        make priority queue of event points, ordered by x-coord
+	initialize queue with all segment endpoints
+	for each priority queue event:
+		if it's a left endpoint:
+			insert in sorted list
+			add potential crossing event w/pred and succ
+			remove potential pred-succ crossing event
+		else if it's a right endpoint:
+			remove from sorted list
+			remove potential crossings w/pred and succ
+			add potential pred-succ crossing
+		else if it's a crossing event:
+			report it
+			swap order in event queue
+			remove two and add two potential crossings
+
+Data structures:
+    (1) event queue: priority queues from last time
+    (2) y-ordered crossing points: data structure w/ins,del,succ,pred
+
+
+Basic binary search tree structure
+    representation: item in each node; left and right children (no parents)
+	(will later see trees with additional info per node)
+
+    search for largest item <= x:
+	def search(T,x):
+		if not T:
+			return None
+		elif T.item > x:
+			return search(T.left, x)
+		elif T.item < x and T.right:
+			return search(T.right, x)
+		else:
+			return T
+
+    similar search for predecessor, successor, etc.
+
+    insert x:
+	search for largest item <= x
+	if not found exactly, result has no right child, add new one there
+
+    delete:
+	find parent
+	cases:
+		0 children - remove
+		1 child - splice out
+		2 children - find successor (has no left), splice, replace
+
+
+Analysis of random search trees
+	model: insert according to random permutation
+
+	E[height(x)] = Sum_y P(y is anc.) <= 2 H_n = O(log n)
+
+	Equivalence to random quicksort
+
+	Book, 12.4:
+	E[height(T)] <= 3 log_2(n) + o(log n)
+
+	Theorem (Lynch, 1965):
+	E[# external nodes at level k] = 2^k/n! [n k]
+	(Stirling number [n+1 k] = n[n k] + [n k-1]; [0 0]=1 [0 k]=0 [n 0]=0)
+
+	1 0 0 0
+	0 1 0 0
+	0 1 1 0
+	0 2 3 1
+	0 6 11 6 1
+	0 24 50 35 10 1
+
+	=> bounds on length of unsuccessful search;
+	   high probability bounds on max height of tree
+	(both O(log n))

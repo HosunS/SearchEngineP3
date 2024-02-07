@@ -1,0 +1,39 @@
+
+B=1000 #number of simulations
+m=20 #sample size of the first sample
+n=10 #sample size of the second sample
+
+### simulation under H0: mux=muy
+mux=0
+muy=0
+sigmax=sqrt(2)
+sigmay=sqrt(2)
+p.values=rep(NA,B)
+
+for(i in 1:B)
+{
+  x=rnorm(m, mux, sigmax)
+  y=rnorm(n, muy, sigmay)
+  p.values[i]=t.test(x,y,var.equal=T)$p.value
+}
+hist(p.values) #the histogram is flat. Under the H0, the p-values follow Uniform(0,1)
+#the estimated type I error rate of the two-sample t-test is
+mean(p.values<0.05)
+
+### simulation under the alternative hypothesis: mux != muy
+mux=1.5
+muy=0
+sigmax=sqrt(2)
+sigmay=sqrt(2)
+p.h1.values=rep(NA,B)
+
+for(i in 1:B)
+{
+  x=rnorm(m, mux, sigmax)
+  y=rnorm(n, muy, sigmay)
+  p.h1.values[i]=t.test(x,y,var.equal=T)$p.value
+}
+hist(p.h1.values)#under the alternative hypothesis, the histogram of p.values doesn't look flat
+#the estimated power of the two-sample t-test is
+mean(p.h1.values<0.05)
+

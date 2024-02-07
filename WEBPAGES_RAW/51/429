@@ -1,0 +1,86 @@
+Analysis of random search trees
+	model 1 (insertions only): any permutation of inserts is equally likely
+		=> some distribution on trees
+
+	model 2 (ins+del): perform arbitrary seq of insert and deletes
+		any permutation of items equally likely for insert sequence
+		any item equally likely to be deleted
+
+	modified delete procedure:
+		if has no right child, set parent->left child (splice or del)
+		else: find successor, move into place
+	
+	Theorem [Hibbard, 1962; see Knuth 6.2.2]:
+	after a single deletion, both models => same dist on tree shapes
+		work on insertion orders rather than trees
+		represent order by permutation of (1,2,...,n)
+			(actual numerical values irrelevant)
+
+		show how mod del op corresponds to an insertion order del op:
+			if item to be deleted is last in order, or
+				succ(item) was inserted prior to item,
+				then just remove it from the permutation
+			else:
+				move succ(item) into place of item
+			renumber permutation
+
+		if we start with n+1 items, there are
+			(n+1) (n+1)! combinations of deleted item & perm
+			all combinations equally likely
+
+		any given permutation P can arise from exactly (n+1)^2 combs:
+			choose 0 <= i,j <= n
+			if i < j:
+				let x = P[i]-epsilon
+				insert copy of P[i] at pos j
+				replace P[i]=x
+				renumber
+				delete P[i]
+			if i > j:
+				let x = P[j]-epsilon
+				insert x at pos i
+				renumber
+				delete P[i]
+			if i == j:
+				let x = n+1
+				insert x at pos i
+				delete P[i]
+
+		so after delete, all permutations still equally likely
+
+	BUT, while dist(shapes) same,
+		joint dist (values & shapes) becomes nonuniform
+		so does not allow us to analyze model 2...
+			only simpler model (some insertions then some dels)
+
+		in practice, dels + reinserts tend to make tree better shaped
+
+
+	E[height(x)] = Sum_y P(y is anc.) <= 2 H_n = O(log n)
+
+	Equivalence to random quicksort
+
+	Book, 12.4:
+	E[height(T)] <= 3 log_2(n) + o(log n)
+
+	Much more is known:
+		w.h.p. max height =~ 4.31107 ln n
+
+		distribution of # nodes at heights
+		(grows polynomially to O(n/sqrt log n), plateaus, shrinks)
+
+
+treap (Aragon Seidel 1989):
+	when each item inserted, choose random "priority" -- real in [0,1]
+
+	binary search tree on item values + heap property on priorities
+		=> same as if items inserted in that order
+		(so priorities random => same quality as random bst)
+
+	insert: bst-insert, choose priority, bubble up (rotate)
+	delete: set priority=1, bubble-down (compare and rotate), remove
+
+	W.H.P. all operations take O(log n) time
+
+
+Answers to homeworks: exercise 20.2-5; probs 10-2, 11-2, 20-2

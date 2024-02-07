@@ -1,0 +1,669 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>Computational Complexity of Games and Puzzles</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body bgcolor="#FFFFFF" text="#000000">
+<h1>Computational Complexity of Games and Puzzles</h1>
+
+Many of the games and puzzles people play are interesting because
+of their difficulty: it requires cleverness to solve them. Often
+this difficulty can be shown mathematically, in the form of
+computational intractibility results: every NP-complete problem is
+in some sense a puzzle, and conversely many puzzles are
+NP-complete. Two-player games often have higher complexities such
+as being PSPACE-complete. 
+
+<p><i>WW</i> (pp. 218-219; see <a href="#refs">references</a>
+below) is disparaging of this sort of result, writing that "this
+asymptotic result says little about the difficulties of calculating
+good strategies", describing NP-hard game positions as "degenerate"
+and "relatively dull", and advocating (as a response to hardness
+proofs) looking for additional rules and conditions that would make
+the game easier. But to me NP-completeness is not the end but the
+beginning of the study of a game: it shows that the game is complex
+enough that we can encode interesting computational problems within
+it. If a game is in P, it becomes no fun once you learn "the trick"
+to perfect play, but hardness results imply that there is no such
+trick to learn: the game is inexhaustible. And of course
+NP-completeness or PSPACE-completeness doesn't even rule out the
+possibility of computing game values exactly; true, it seems to
+imply that worst-case-exponential algorithms are required, but
+there is still plenty of interesting work in designing, analyzing,
+and implementing such algorithms.</p>
+
+<p>There is a curious relationship between computational difficulty
+and puzzle quality. To me, the best puzzles are NP-complete
+(although some good puzzles are in P, relying on gaps in human
+intuition rather than on computational complexity for their
+difficulty). Some puzzles are even harder than NP (for instance,
+sliding block puzzles and Sokoban are PSPACE-complete) but to me
+this means only that the problem can have an annoyingly long
+sequence of manipulations in its solution. For two-player games,
+one encounters a similar phenomenon at a higher level of
+complexity. The tree of potential interactions in a game typically
+gives rise to PSPACE-completeness results of a sort I find more
+interesting than PSPACE-completeness in puzzles. However some games
+are harder, EXPTIME-complete, which to me means that it may
+sometimes be necessary for a well-played game to go on for a
+tediously long sequence of moves. Perhaps some games or puzzles in
+which the players start with incomplete knowledge of the game or
+puzzle configuration might lead to other types of completeness
+(e.g. MA-completeness or #P-completeness) for finding the starting
+move most likely to succeed, but I know of no such results.</p>
+
+<p>I primarily list here real games and puzzles, games that were
+invented to be played, rather than to be analyzed. So I'm not
+including some of the more artificial entries in e.g. <i>WW</i> or
+<i>GJ</i>, such as "sequential truth assignment". If someone can
+point me to a tournament for these games, a copy of the game sold
+in stores, or a program for people to play them against their
+computers, I'll consider adding them.</p>
+
+<p>One caveat: NP-completeness is not a concept that applies to a
+single puzzle or game position, or even a finite collection of
+positions. It only makes sense to talk about an infinite family of
+problems as being NP-complete. For this reason games like chess
+cannot themselves be NP-complete, as they only have a finite
+(albeit unthinkably large) number of possible positions. In many
+cases however there is a natural generalization from some finite
+game or puzzle to an infinite family of game positions on
+arbitrarily large game boards, in which it makes sense to talk
+about NP-completeness. The fact that these infinite generalizations
+are computationally hard gives us some justification for believing
+that the original finite games are also hard in some less
+well-defined sense.</p>
+
+<h3>Index:</h3>
+
+<p>Puzzles and solitaire games:
+<a href="#cryptarith">Alphametics</a>;
+<a href="#samegame">Clickomania</a>;
+<a href="#cryptarith">Cryptarithms</a>;
+<a href="#cubic">Cubic</a>;
+<a href="#15">15-puzzle</a>;
+<a href="#ii">Instant Insanity</a>;
+<a href="#kplumber">KPlumber</a>;
+<a href="#shang">Mah Jongg</a>;
+<a href="#pearls">Pearl puzzles</a>;
+<a href="#rush">Rush Hour</a>;
+<a href="#shang">Shanghai</a>;
+<a href="#sok">Sokoban</a></p>
+
+<p>Two-player games:
+<a href="#amazons">Amazons</a>;
+<a href="#hex">Bridge-It</a>;
+<a href="#checkers">Checkers</a>;
+<a href="#chess">Chess</a>;
+<a href="#dots">Dots and boxes</a>;
+<a href="#checkers">Draughts</a>;
+<a href="#go">Go</a>;
+<a href="#hex">Hex</a>;
+<a href="#mastermind">Mastermind</a>;
+<a href="#othello">Othello</a>;
+<a href="#phutball">Phutball</a>;
+<a href="#othello">Reversi</a>;
+<a href="#hex">Shannon switching game</a>;
+<a href="#twixt">Twixt</a></p>
+
+<a name="refs"><h3>Some useful general references:</h3></a>
+
+<ul>
+<li>E. R. Berlekamp, J. H. Conway, and R. K. Guy, Winning Ways for
+your Mathematical Plays, Academic Press, 1982. We refer to this as
+<i>WW</i>.</li>
+
+<li>M. R. Garey and D. S. Johnson, Computers and Intractibility: a
+guide to the theory of NP-completeness, W.H. Freeman, 1979. We
+refer to this as <i>GJ</i>.</li>
+
+<li>R. K. Guy, ed., Combinatorial Games, <i>Proc. Symp. Applied
+Math.</i> 43, AMS, 1990. We refer to this as <i>CG</i>. See
+especially A. S. Fraenkel, Complexity of games, <i>CG</i> 111-154,
+as well as Fraenkel's introduction to the bibliography.</li>
+
+<li>R. J. Nowakowski, ed., <a href="http://www.msri.org/publications/books/Book42/">More Games of No Chance</a>,
+MSRI Publications #42, 2002.
+We refer to this as <i>MGONC</i>.
+</ul>
+
+<hr>
+<a name="amazons"><h2>Amazons</h2></a>
+
+<blockquote>Description: Players move queens on an n*n board, as part of
+each move shooting an arrow from the moved piece.  Arrows move like a chess
+queen when shot but are immovable afterwards.  The arrows eventually
+block the movement of the queens; the last player to complete a move
+wins.  Game-play combines go-like goals of surrounding territory with
+chess-like tactics of blocking opposing pieces' lines of play.
+The most commonly used starting configuration involves four queens of
+each color placed around the edges of a 10*10 board.
+
+<p>Status: PSPACE-complete.  Endgames in which pieces of opposing colors
+are separated from each other are NP-hard.</p>
+
+<p>References:</p>
+<ul>
+<li>M. Buro, Simple Amazons endgames and their connection to Hamilton
+circuits in cubic subgrid graphs, <i>Proc. 2nd Int. Conf. Computers and
+Games</i>, 2000.</li>
+<li>R. A. Hearn, Amazons is PSPACE-complete,
+<a href="http://arxiv.org/abs/cs.CC/0502013">cs.CC/0502013</a>.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="checkers"><h2>Checkers and Draughts</h2></a>
+
+<blockquote>Description: Players move pieces diagonally forward one
+square at a time on alternating squares of an n*n board, removing
+the other players' pieces by jumping diagonally over them. Object
+is to leave opponent with no move by blocking or jumping all
+pieces. The 8*8 version is called checkers, but on larger boards it
+is called draughts. 
+
+<p>Status: EXPTIME-complete.</p>
+
+<p>References:</p>
+<ul>
+<li><i>GJ</i> 256 [GP10].</li>
+<li>A. S. Fraenkel, M. R. Garey,
+D. S. Johnson, T. Schaefer, and Y. Yesha, The complexity of
+checkers on an N*N board - preliminary report, <i>Proc. 19th IEEE
+Symp. Found. Comp. Sci.</i> (1978) 55-64.</li>
+<li>J. M. Robson. N by N checkers is Exptime complete. SIAM Journal on
+Computing, 13(2):252-267, May 1984.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="chess"><h2>Chess</h2></a>
+
+<blockquote>Description: This game is both too complicated and too
+well-known to describe here in detail, but the basic idea is to
+move pieces around an 8*8 board, capturing one's opponents' pieces,
+until the game is ended either by checkmate (one player winning by
+forcing the capture of the opposing player's king) or by various
+kinds of draws. 
+
+<p>Status: This is a finite game, but generalizations to n*n boards
+are EXPTIME-complete.</p>
+
+<p>References:</p>
+<ul>
+<li>A. S. Fraenkel and D. Lichtenstein, Computing a
+perfect strategy for n*n chess requires time exponential in n, <i>
+Proc. 8th Int. Coll. Automata, Languages, and Programming</i>,
+Springer LNCS 115 (1981) 278-293 and <i>J. Comb. Th. A</i> 31
+(1981) 199-214.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="cryptarith"><h2>Cryptarithms</h2></a>
+
+<blockquote>Description: In these puzzles, also known as
+alphametics, a sequence of letters is arranged in the form of an
+arithmetic problem, a famous example being 
+
+<pre>
+    SEND
+   +MORE
+   -----
+   MONEY
+</pre>
+
+The problem is to construct a 1-1 mapping from letters to digits
+that makes the arithmetic work out correctly. 
+
+<p>Status: This is a finite problem, but generalizations to bases
+other than decimal are NP-complete.</p>
+
+<p>References:</p>
+<ul>
+<li>D. Eppstein, <a href= 
+"http://www.ics.uci.edu/~eppstein/pubs/p-cryptarithm.html">On the
+NP-completeness of cryptarithms</a>, <i>SIGACT News</i> 18(3)
+(1987) 38-40.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="dots"><h2>Dots and boxes</h2></a>
+
+<blockquote>Description: This childhood game is played with pencil
+and paper, starting from a drawing of a rectangular lattice of
+dots. The players alternately connect adjacent dots with line
+segments; if a player forms a four-segment square he or she scores
+a point and gets another move. 
+
+<p>Status: <i>WW</i> describes a generalized version of the game
+that is NP-hard, by a reduction from finding many vertex-disjoint
+cycles in graphs. The same result would seem to apply as well to
+positions from the actual game, by specializing their reduction to
+trivalent planar graphs. (This is very closely related to, but not
+quite the same as, maximum independent sets in maximal planar
+graphs.)</p>
+
+<p>References:</p>
+<ul>
+<li><i>WW</i>, chapter 16.
+E. Berlekamp,
+<a href="http://www.akpeters.com/book.asp?bID=111">The Dots and Boxes
+Game: Sophisticated Child's Play</a>, A. K. Peters, 2000.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="cubic"><h2>Cubic</h2></a>
+
+<blockquote>Description: Something of a cross between
+<a href="#sok">Sokoban</a> and
+<a href="#samegame">Same Game</a>,
+this puzzle involves pushing blocks left or right in a polygonal region,
+where they are subject to a gravity that pulls them downward whenever possible.
+Blocks have colors, and when multiple blocks of the same color
+become adjacent, they vanish.  The goal is to eliminate all blocks.
+
+<p>Status: Friedman claims to prove that Cubic is NP-complete.
+His reduction clearly shows that it is NP-hard, but it is less
+obvious to me that it is in NP.</p>
+
+<p>References:</p>
+<ul>
+<li>E. Friedman,
+Cubic is NP-complete,
+<a href="http://www.stetson.edu/~efriedma/papers/cubic/cubic.html">Proc.
+Florida MAA Section Meeting, 2001</a>.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="15"><h2>15-puzzle</h2></a>
+
+<blockquote>Description: 15 of the 16 positions in a 4*4 matrix are
+filled by tiles, leaving one unfilled hole. Tiles adjoining the
+hole can be shifted into the hole, the object being to form some
+particular permutation of the tiles (typically forming a picture
+out of fragments printed on the tiles). 
+
+<p>Status: this is a finite problem, but can easily be generalized
+to n*n matrices. Testing whether a solution exists is in P but
+finding the solution with the fewest moves is NP-complete.</p>
+
+<p>References:</p>
+<ul>
+<li>D. Ratner and M. Warmuth, Finding a shortest
+solution for the N*N-extension of the 15-puzzle is intractable, <i>
+J. Symb. Comp.</i> 10 (1990) 111-137.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="go"><h2>Go</h2></a>
+
+<blockquote>Description: This ancient game is played by placing
+stones on a 19*19 board. When a group of stones of one color is
+completely surrounded by stones of the other color, the surrounded
+group is removed from the board. The object is to control empty
+squares by surrounding them; after both players are unwilling to
+continue play, these squares are counted and the scores adjusted by
+the numbers of stones that had been removed. 
+
+<p>Status: This is a finite game, but can be generalized to n*n
+boards. Even without ko (special rules related to repetition of
+positions) the game is PSPACE-hard; with ko (Japanese rules) it is EXPTIME-complete.
+It is apparently still open whether Chinese or US rules Go is EXPTIME-complete.
+Even certain "simple" endgames in which the go board has been
+decomposed into many small independent regions of play are
+PSPACE-hard.</p>
+
+<p>References:</p>
+<ul>
+<li><i>GJ</i> 257 [GP11].</li>
+<li>D. Lichtenstein and M. Sipser,
+Go is polynomial-space hard, <i>J. ACM</i> 27 (1980) 393-401.</li>
+<li>J. M. Robson, The complexity of Go, <i>Proc. IFIP</i> (1983) 413-417.</li>
+<li>J. M. Robson. Combinatorial games with exponential space complete
+decision problems. Proc. Mathematical Foundations of Computer Science,
+Springer-Verlag, LNCS 176, 1984, pp. 498-506.</li>
+<li>E. Berlekamp and D. Wolfe, Mathematical Go: Chilling Gets the Last
+Point, A. K. Peters, 1994.</li>
+<li>D. Wolfe, Go endgames are hard,
+MSRI Combinatorial Game Theory Research Worksh., 2000.</li>
+<li>M. Cr&acirc;&#351;maru and J. Tromp, Ladders are
+PSPACE-complete, Proc. 2nd Int. Conf. Computers and Games,
+Springer-Verlag, 2000, pp. 241-249.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="hex"><h2>Hex</h2></a>
+
+<blockquote>Description: players take turns placing pieces on a
+diamond-shaped board composed of hexagonal tiles. Each player owns
+two opposite sides of the board, and aims to connect those sides by
+a contiguous path of pieces. 
+
+<p>Status: First player wins by a strategy-stealing argument but
+PSPACE-complete in general. The "Shannon switching game" in which
+pieces are placed on edges (known on the square grid as "Gale"; a
+related game has been sold as "Bridge-It") is in P.</p>
+
+<p>References:</p>
+<ul>
+<li><i>GJ</i> 254 [GP1]. S. Even and R. E. Tarjan, A
+combinatorial problem which is complete in polynomial space, <i>
+Proc. 7th ACM Symp. Theory of Computing</i> (1975) 66-71 and <i>J.
+ACM</i> 23 (1976) 710-719.</li>
+<li>S. Reisch, Hex ist
+PSPACE-vollst&auml;ndig, <i>Acta Inf.</i> 15 (1981) 167-191.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="ii"><h2>Instant Insanity<sup>*</sup></h2></a>
+
+<blockquote>Description: four multicolored cubes are to be stacked
+so that no color appears twice on a single side of the resulting
+column. 
+
+<p>Status: This is a finite problem, but a generalized version with
+n cubes and n colors is NP-complete.</p>
+
+<p>References:</p>
+<ul>
+<li><i>GJ</i> 258 [GP15]. E. Robertson and I. Munro,
+NP-completeness, puzzles, and games, <i>Util. Math.</i> 13 (1978)
+99-116.</li>
+</ul>
+
+<p><small><sup>*</sup> Trademark of Parker Brothers,
+Inc.</small></p>
+</blockquote>
+
+<hr>
+<a name="kplumber"><h2>KPlumber</h2></a>
+
+<blockquote>Description: rotate tiles containing drawings of pipes, to
+make the pipes form a connected network.
+
+<p>Status: NP-complete.</p>
+
+<p>References:</p>
+<ul>
+<li>D. Kral et al.
+<a href="http://www.math.cas.cz/~sgall/ps/plumber.ps">It is tough
+to be a plumber</a>.  <i>Theor. Comp. Sci.</i>, to appear.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="mastermind"><h2>Mastermind</h2></a>
+
+<blockquote>Description: One player sets up a secret configuration of
+colored pins, and the other player makes a sequence of guesses about the
+configuration.  After each guess, the player with the secret tells the
+other player how many many pins are correct and how many are the correct color
+but in the incorrect position.  The object is to make as few guesses as
+possible.
+
+<p>Status: Since this game relies on secret information, it can be
+treated using classical game theory, but the relevant payoff matrices
+are so large as to make computation with them intractible.
+Finding a solution compatible with the guesses made so far is
+NP-complete; the complexity of determining whether such a solution is
+unique, or of playing either side of the game optimally, remain open.</p>
+
+<p>References:</p>
+<ul>
+<li>M. de Bondt, Master Mind en andere NP-complete spellen,
+manuscript, July 2002.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="othello"><h2>Othello</h2></a>
+
+<blockquote>Description: This game (also known as Reversi) is
+played with reversible pieces on a square board. Players alternate
+placing pieces on the board, placed with the player's color up;
+when a piece is placed, the player also reverses lines of pieces of
+the opposite color sandwiched between the new piece and old pieces
+of the same color, so that those lines also become pieces of the
+player's color. The object is to have the most pieces when the
+board becomes filled. 
+
+<p>Status: PSPACE-complete.</p>
+
+<p>References:</p>
+<ul>
+<li>S. Iwata and T. Kasai, The Othello game on an n*n
+board is PSPACE-complete, <i>Theor. Comp. Sci.</i> 123 (1994)
+329-340.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="phutball"><h2>Phutball</h2></a>
+
+<blockquote>Description: Played on a Go board, with one black stone and
+many white stones.  Players on each turn either place a single white
+stone on any vacant position, or make a sequence of jumps of the black
+stone over contiguous groups of white stones, removing the jumped stones.
+The object is to move the black stone to the edge of the board nearest
+the opponent.
+
+<p>Status: Testing for the existance of a winning move is NP-complete.
+The complexity of determining the correct outcome of a game position
+is PSPACE-hard.</p>
+
+<p>References:</p>
+<ul>
+<li>D. Dereniowski,
+Phutball is PSPACE-hard,
+<a href="http://arxiv.org/abs/0804.1777">ACM Computing Research
+  Repository, 2009</a>.</li>
+<li>E. Demaine, M. Demaine, and D. Eppstein,
+Phutball endgames are hard, <a href="http://arXiv.org/abs/cs.CC/0008025">ACM
+Computing Research Repository, 2000</a>, and
+<a href="http://www.msri.org/publications/books/Book42/files/dephut.pdf">MGONC</a>.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="pearls"><h2>Pearl Puzzles</h2></a>
+
+<blockquote>Description: A Japanese pencil and paper puzzle in which
+black and white "pearls" are placed in a square grid.  The object is to
+draw a polygon with edges parallel to the grid lines, through all the
+pearls, with vertices at each black pearl and adjacent to each white
+pearl, but no vertices adjacent to any black pearl or at any white pearl.
+
+<p>Status: NP-complete.</p>
+
+<p>References:</p>
+<ul>
+<li>E. Friedman, Pearl puzzles are NP-complete,
+<a href="http://www.stetson.edu/~efriedma/papers/pearl/pearl.html">Manuscript,
+2002</a>.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="rush"><h2>Rush Hour<sup>*</sup></h2></a>
+
+<blockquote>Description: This is a commercial sliding block puzzle
+in which pieces representing cars are placed on a 6x6 grid, with
+walls surrounding its perimeter except for one exit edge. The cars
+take up two or three adjacent grid cells, and can only move
+forwards or backwards. The goal is to move a specially marked
+target car out through the exit.
+Similar Java applets are available at
+<a href="http://johnrausch.com/PuzzleWorld/carjamjv.htm">PuzzleWorld</a>
+and <a href="http://www.rhymezone.com/games/bb/">RhymeZone</a>.
+
+<p>Status: This is a finite puzzle, but generalizations to
+arbitrarily large rectangles are PSPACE-complete.</p>
+
+<p>References:</p>
+<ul>
+<li>H. Fernau et al., <a
+href="http://torch.cs.dal.ca/~cccg/papers/22.pdf">On the parameterized
+complexity of a generalized Rush Hour puzzle</a>, CCCG 2003.</li>
+<li>G. W. Flake, <a href= 
+"http://www.neci.nj.nec.com/homepages/flake/rushhour.ps">Rush Hour
+is PSPACE-complete, or why you should generously tip parking lot
+attendants</a>.</li>
+<li>J. Tromp,
+<a href="http://turing.wins.uva.nl/~peter/teaching/tromprh.ps">On
+size 2 Rush Hour logic</a>.</li>
+<li>R. A. Hearn and E. D. Demaine, <a
+href="http://arxiv.org/abs/cs.CC/0205005">The nondeterministic
+constraint logic model of computation</a>,
+ACM Computing Research Repository.</li>
+</ul>
+
+<p><small><sup>*</sup> Trademark of Binary Arts, Inc.</small></p>
+</blockquote>
+
+<hr>
+<a name="samegame"><h2>Same Game</h2></a>
+
+<blockquote>Description: This is a computer puzzle, also known as
+Clickomania, in which a grid is filled with colored tiles.  Contiguous
+groups of two or more tiles of the same color can be removed, causing
+the tiles above them to drop down.  The goal is to remove all tiles.
+
+<p>Status: Solvable in polynomial time for one column of tiles.
+NP-complete for two or more columns and five or more colors of tiles,
+or five or more columns and three or more colors of tiles.</p>
+
+<p>References:</p>
+<ul>
+<li>T. Biedl et al., The complexity of Clickomania,
+<a href="http://arxiv.org/abs/cs.CC/0107031">ACM Computing Research
+Repository, 2001</a>, and
+<a href="http://www.msri.org/publications/books/Book42/files/biedl.pdf">MGONC</a>.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="shang"><h2>Shanghai</h2></a>
+
+<blockquote>Description: This solitaire game is played with
+Mah-Jongg tiles, which (like playing cards) can be arranged in
+groups of four similar or identical tiles. The tiles are placed
+randomly face-up into stacks, forming some particular shape (most
+computer solitaire implementations include several shapes of
+varying difficulty). Only the top tile of a stack is visible,
+although some shapes involve tiles partially covered by other tiles
+which can be seen but not removed. The object is to remove matching
+pairs of uncovered tiles until all tiles have been removed. 
+
+<p>Status: NP-complete even if all tile positions are known.
+PSPACE-hard even to approximate the strategy with maximum
+probability of success when some tiles are covered and
+unknown. #P-complete to count solutions (personal communication from
+Michiel de Bondt).</p>
+
+<p>Proof (of NP-completeness): reduction from 3-SAT. (Joint with Michiel de Bondt; an earlier reduction listed here until early 2016 was not valid.)
+We have a different type of tile for each variable, clause, and term
+(appearance of a variable in a clause) of the 3-SAT instance, with four
+copies of each type of tile. We arrange these into stacks of the
+following types:</p>
+<ul>
+<li>A big stack with three layers. The top and bottom layers each
+include one copy of each variable tile. The middle layer includes one
+copy of each clause tile.</li>
+<li>For each term, a stack with two copies of that term on top of a tile for the clause in which the term appears.</li>
+<li>For each variable, two stacks, each with a variable tile on top of a
+stack of term tiles. One of these stacks has two copies of each term
+tile in which the variable tile appears positively, and the other stack
+has two copies of each term tile in which the variable appears
+negatively.</li>
+</ul>
+<p>The variable tiles can only be matched by pairing one tile from the
+big stack with one tile from one of the two term stacks. If this pairing
+is done according to a satisfying assignment, it will then be possible
+to match the term tiles from all of the chosen variable stacks, freeing
+at least one copy of each clause tile. The freed clause tiles can then
+be used to complete the pairing of the big stack, which in turn allows
+the remaining variable, term, and clause tiles to be paired. On the
+other hand, if there is no satisfying assignment, then there is no way
+of freeing one copy of each clause gadget, and the problem cannot be
+solved.</p>
+
+<p>References:</p>
+<ul>
+<li>A. Condon, J. Feigenbaum, C. Lund, and P. Shor,
+Random debaters and the hardness of approximating stochastic
+functions, <i>SIAM J. Comput.</i> 26:2 (1997) 369-400.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="sok"><h2>Sokoban</h2></a>
+
+<blockquote>Description: A warehouseman moves around a rectilinear
+maze, pushing pallets one at a time from initial locations
+scattered throughout the maze until they are all placed in a
+designated loading dock. 
+
+<p>Status: PSPACE-complete.</p>
+
+<p>References:</p>
+<ul>
+<li>D. Dor and U. Zwick, <a href= 
+"http://www.math.tau.ac.il/~ddorit/sokoban.ps.gz">Sokoban and other
+motion planning problems</a>.</li>
+<li>J. Culberson, <a href= 
+"http://web.cs.ualberta.ca/~joe/Preprints/Sokoban/index.html">
+Sokoban is PSPACE-complete</a>. <a href= 
+"http://www.di.unipi.it/fun98/index.html"><i>Int. Conf. Fun with
+Algorithms</i></a>, Elba, June 1998.
+Proceedings in Informatics 4, Carleton Scientific, Waterloo,
+Canada, 1999, pp. 65-76.</li>
+<li>R. A. Hearn and E. D. Demaine, <a
+href="http://arxiv.org/abs/cs.CC/0205005">The nondeterministic
+constraint logic model of computation</a>,
+ACM Computing Research Repository.</li>
+</ul>
+</blockquote>
+
+<hr>
+<a name="twixt"><h2>Twixt</h2></a>
+
+<blockquote>Description: Players alternate placing vertices on a square
+grid.  Each player's vertices may be connected with edges connecting
+pairs of vertices a knight's move apart.  After placing a vertex, the
+player may remove some of his own edges or add more of them.
+No two edges may cross.
+The object is (like <a href="#hex">Hex</a>) to connect opposite sides of
+the board by a path.
+
+<p>Status: NP-complete to determine whether a single set of vertices can
+support a connecting path. PSPACE-complete to determine the game value, by a
+reduction from <a href="#hex">Hex</a>.</p>
+
+<p>References:
+<ul>
+<li>D. Mazzoni and
+K. Watkins,
+<a href="http://www.mathematik.uni-bielefeld.de/~sillke/PROBLEMS/Twixt_Proof_Draft">Uncrossed knight paths is NP-complete</a>,
+manuscript, October 1997.</li>
+<li>&Eacute;douard Bonnet, Florian Jamain, and Abdallah Saffidine,
+<a href="https://www.conftool.net/cg2013/index.php/Bonnet-Havannah_and_TwixT_are_PSPACE-complete-122.pdf">Havannah and TwixT are PSPACE-complete</a>,
+8th Int. Conf. Computers and Games, Keio University, 2013.</li>
+</ul>
+</blockquote>
+
+<hr>
+<p><a href="http://www.ics.uci.edu/~eppstein/cgt/">Combinatorial
+Games</a>, <a href="http://www.ics.uci.edu/~eppstein/">David
+Eppstein</a>, <a href="http://www.ics.uci.edu/">ICS</a>, <a href= 
+"http://www.uci.edu/">UC Irvine</a>.</p>
+</body>
+</html>
+

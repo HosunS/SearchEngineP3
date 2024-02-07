@@ -1,0 +1,49 @@
+####### read data ########### 
+#the data in the link are log-transformed data
+iron=read.table("http://www.ics.uci.edu/~zhaoxia/teaching/stat120c/Data/iron.txt", head=T)
+names(iron) # the iron data has three columns
+
+######### draw a boxplot ##########
+boxplot(concentration ~ Fe + dosage, data=iron,
+names = c(
+"high\n Fe2+",
+"high \n Fe3+",
+"low\n Fe2+",
+"low\n Fe3+",
+"medium\n Fe2+",
+"medium\n Fe3+"),
+ylab = "iron retention (log)" )
+
+
+######## plot cell means ########
+#calculate cell means
+Fe2.means = c(
+mean(iron$concentration[iron$Fe==2 & iron$dosage=="h"]),
+mean(iron$concentration[iron$Fe==2 & iron$dosage=="m"]),
+mean(iron$concentration[iron$Fe==2 & iron$dosage=="l"]))
+
+Fe3.means = c(
+mean(iron$concentration[iron$Fe==3 & iron$dosage=="h"]),
+mean(iron$concentration[iron$Fe==3 & iron$dosage=="m"]),
+mean(iron$concentration[iron$Fe==3 & iron$dosage=="l"]))
+
+#Another way to calculate cell means
+means = sapply(split(iron$concentration, data.frame(Fe=iron$Fe,dosage=iron$dosage)),mean)
+names(means)
+Fe2.means = means[c(1,5,3)] #from high to low
+Fe3.means = means[c(2,6,4)]#from high to low
+
+#plot the cell means
+dosage = c(10.2, 1.2, 0.3)
+plot(dosage,Fe2.means, type="l",lty=2,ylim=c(1.0,2.5),
+xlab="dosage",ylab="mean retention (log)")
+lines(dosage,Fe3.means)
+legend(4,2.5,legend=c("Fe2+", "Fe3+"),lty=c(2,1))
+
+
+######### conduct the two-way anova analysis ########
+my.obj = aov(concentration ~ factor(Fe) + factor(dosage) + factor(Fe)*factor(dosage), data = iron)
+#you can often do it in this way
+summary(my.obj)
+
+

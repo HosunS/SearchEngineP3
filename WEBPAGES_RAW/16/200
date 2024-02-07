@@ -1,0 +1,1457 @@
+<!-- Begin header.tpl -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Ganglia:: c1ccccc1-42.ics.uci.edu Host Report</title>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<link type="text/css" href="css/smoothness/jquery-ui-1.10.2.custom.min.css" rel="stylesheet" />
+<link type="text/css" href="css/jquery.liveSearch.css" rel="stylesheet" />
+<link type="text/css" href="css/jquery.multiselect.css" rel="stylesheet" />
+<link type="text/css" href="css/jquery.flot.events.css" rel="stylesheet" />
+<link type="text/css" href="css/fullcalendar.css" rel="stylesheet" />
+<link type="text/css" href="css/qtip.min.css" rel="stylesheet" />
+<link type="text/css" href="css/chosen.min.css" rel="stylesheet" />
+<link type="text/css" href="./styles.css" rel="stylesheet" />
+<link type="text/css" href="js/jstree/themes/default/style.min.css" rel="stylesheet" />
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>$.uiBackCompat = false;</script>
+<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+<script type="text/javascript" src="js/jquery.livesearch.min.js"></script>
+<script type="text/javascript" src="js/ganglia.js"></script>
+<script type="text/javascript" src="js/jquery.gangZoom.js"></script>
+<script type="text/javascript" src="js/jquery.cookie.js"></script>
+<script type="text/javascript" src="js/jquery-ui-timepicker-addon.js"></script>
+<script type="text/javascript" src="js/jquery.ba-bbq.min.js"></script>
+<script type="text/javascript" src="js/combobox.js"></script>
+<script type="text/javascript" src="js/jquery.scrollTo-1.4.3.1-min.js"></script>
+<script type="text/javascript" src="js/jquery.buttonsetv.js"></script>
+<script type="text/javascript" src="js/fullcalendar.js"></script>
+<script type="text/javascript" src="js/jquery.qtip.min.js"></script>
+<script type="text/javascript" src="js/jstree/jstree.js"></script>
+<script type="text/javascript" src="js/chosen.jquery.min.js"></script>
+<script type="text/javascript">
+    var server_utc_offset=-28800;
+    var g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+
+    function refreshHeader() {
+      $.get('header.php?date_only=1', function(datetime) {
+        var title = $("#page_title").text();
+        var l = title.lastIndexOf(" at ");
+        if (l != -1)
+          title = title.substring(0, l);
+        title += " at " + datetime;
+        $("#page_title").text(title);
+        });
+    }
+
+    function refresh() {
+      var selected_tab = $("#selected_tab").val();
+      if (selected_tab == "agg") {
+        refreshAggregateGraph();
+        g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+      } else if (selected_tab == "v") {
+        refreshHeader();
+        if ($.isFunction(window.refreshView)) {
+          refreshView();
+          g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+        } else if ($.isFunction(window.refreshDecomposeGraph)) {
+          refreshDecomposeGraph();
+          g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+        } else
+          ganglia_form.submit();
+      } else if (selected_tab == "ev") {
+        refreshOverlayEvent();
+        g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+      } else if (selected_tab == "m") {
+        if ($.isFunction(window.refreshClusterView)) {
+          refreshHeader();
+          refreshClusterView();
+          g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+        } else if ($.isFunction(window.refreshHostView)) {
+          refreshHeader();
+          refreshHostView();
+          g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+        } else
+          ganglia_form.submit();
+      } else
+        ganglia_form.submit();
+    }
+
+    $(function() {
+      var range_menu = $("#range_menu");
+      if (range_menu[0])
+        range_menu.buttonset();
+
+      var custom_range_menu = $("#custom_range_menu");
+      if (custom_range_menu[0])
+        custom_range_menu.buttonset();
+
+      var sort_menu = $("#sort_menu");
+      if (sort_menu[0])
+        sort_menu.buttonset();
+
+      g_overlay_events = ($("#overlay_events").val() == "true");
+
+      g_tabIndex = new Object();
+      g_tabName = [];
+      var tabName = ["m", "s", "v", "agg", "ch", "ev", "rot", "mob"];
+      var j = 0;
+      for (var i in tabName) {
+        if (tabName[i] == "ev" && !g_overlay_events)
+          continue;
+        g_tabIndex[tabName[i]] = j++;
+        g_tabName.push(tabName[i]);
+      }
+
+      // Follow tab's URL instead of loading its content via ajax
+      var tabs = $("#tabs");
+      if (tabs[0]) {
+        tabs.tabs();
+        // Restore previously selected tab
+        var selected_tab = $("#selected_tab").val();
+        //alert("selected_tab = " + selected_tab);
+        if (typeof g_tabIndex[selected_tab] != 'undefined') {
+          try {
+            //alert("Selecting tab: " + selected_tab);
+            tabs.tabs('option', 'active', g_tabIndex[selected_tab]);
+            if (selected_tab == "rot")
+              autoRotationChooser();
+          } catch (err) {
+            try {
+              alert("Error(ganglia.js): Unable to select tab: " + 
+                    selected_tab + ". " + err.getDescription());
+            } catch (err) {
+              // If we can't even show the error, fail silently.
+            }
+          }
+        }
+        tabs.tabs({
+          beforeActivate: 
+          function(event, ui) {
+            var tabIndex = ui.newTab.index();
+            $("#selected_tab").val(g_tabName[tabIndex]);
+            if (g_tabName[tabIndex] != "mob")
+              $.cookie("ganglia-selected-tab-" + window.name, tabIndex);
+            if (tabIndex == g_tabIndex["m"] ||
+              tabIndex == g_tabIndex["v"] ||
+              tabIndex == g_tabIndex["ch"])
+              ganglia_form.submit();
+          }
+        });
+      }
+    });
+
+  $(function () {
+    $("#metrics-picker").val("load_one");
+    $(".header_btn").button();
+
+    done = function done(startTime, endTime) {
+            setStartAndEnd(startTime, endTime);
+            document.forms['ganglia_form'].submit();
+    }
+
+    cancel = function (startTime, endTime) {
+            setStartAndEnd(startTime, endTime);
+    }
+
+    defaults = {
+        startTime: 1486876586,
+        endTime: 1486880186,
+        done: done,
+        cancel: cancel
+    }
+
+    $(".host_small_zoomable").gangZoom($.extend({
+        paddingLeft: 67,
+        paddingRight: 30,
+        paddingTop: 38,
+        paddingBottom: 25
+    }, defaults));
+
+    $(".host_medium_zoomable").gangZoom($.extend({
+        paddingLeft: 67,
+        paddingRight: 30,
+        paddingTop: 38,
+        paddingBottom: 40
+    }, defaults));
+
+    $(".host_default_zoomable").gangZoom($.extend({
+        paddingLeft: 66,
+        paddingRight: 30,
+        paddingTop: 37,
+        paddingBottom: 50
+    }, defaults));
+
+    $(".host_large_zoomable").gangZoom($.extend({
+        paddingLeft: 66,
+        paddingRight: 29,
+        paddingTop: 37,
+        paddingBottom: 56
+    }, defaults));
+
+    $(".cluster_zoomable").gangZoom($.extend({
+        paddingLeft: 67,
+        paddingRight: 30,
+        paddingTop: 37,
+        paddingBottom: 50
+    }, defaults));
+
+    function rrdDateTimeString(date) {
+      return (date.getMonth() + 1) + "/" + date.getDate() + "/" + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes();
+    }
+
+    function setStartAndEnd(startTime, endTime) {
+        // we're getting local start/end times.
+
+        // getTimezoneOffset returns negative values east of UTC,
+        // which is the opposite of PHP. we want negative values to the west.
+        var local_offset = new Date().getTimezoneOffset() * 60 * -1;
+        var delta = local_offset - server_utc_offset;
+        var date = new Date((Math.floor(startTime) - delta) * 1000);
+        $("#datepicker-cs").val(rrdDateTimeString(date));
+        date = new Date((Math.floor(endTime) - delta) * 1000);
+        $("#datepicker-ce").val(rrdDateTimeString(date));
+    }
+
+    initShowEvent();
+    initTimeShift();
+  });
+
+
+</script>
+
+</head>
+<body style="background-color: #ffffff;" onunload="g_refresh_timer=null">
+
+
+
+
+<div id="tabs">
+  <div id="tabs-menu", >
+    <ul>
+      <li><a href="#tabs-main">Main</a></li>
+      <li><a href="#tabs-search">Search</a></li>
+      <li><a href="#tabs-main">Views</a></li>
+      <li><a href="aggregate_graphs.php">Aggregate Graphs</a></li>
+      <li><a href="#tabs-main">Compare Hosts</a></li>
+            <li><a href="events.php">Events</a></li>
+      
+      <li><a href="breakdown_reports.php">Reports</a></li>
+      <li><a href="#tabs-autorotation" onclick="autoRotationChooser();">Automatic Rotation</a></li>
+      <li><a href="#tabs-livedashboard" onclick="liveDashboardChooser();">Live Dashboard</a></li>
+            <li><a href="cubism_form.php">Cubism</a></li>
+      
+      <li><a href="#tabs-mobile" onclick="window.location.href='mobile.php';">Mobile</a></li>
+    </ul>
+  </div>
+
+<div id="tabs-main">
+<form action="./" method="GET" name="ganglia_form">
+  <div style="padding:5px;background-color:#dddddd">
+     <big style="float:left;"><b id="page_title">c1ccccc1-42.ics.uci.edu Host Report at Sat, 11 Feb 2017 22:16:26 -0800</b></big><input style="float:right;" class="header_btn" type="submit" value="Get Fresh Data"/><div style="clear:both"></div>
+  </div>
+  <div style="padding:5px 5px 0 5px;">
+    <div style="float:left;" id="range_menu" class="nobr">Last&nbsp;&nbsp;<input OnChange="ganglia_form.submit();" type="radio" id="range-hour" name="r" value="hour" checked="checked"/><label for="range-hour">hour</label><input OnChange="ganglia_form.submit();" type="radio" id="range-2hr" name="r" value="2hr" /><label for="range-2hr">2hr</label><input OnChange="ganglia_form.submit();" type="radio" id="range-4hr" name="r" value="4hr" /><label for="range-4hr">4hr</label><input OnChange="ganglia_form.submit();" type="radio" id="range-day" name="r" value="day" /><label for="range-day">day</label><input OnChange="ganglia_form.submit();" type="radio" id="range-week" name="r" value="week" /><label for="range-week">week</label><input OnChange="ganglia_form.submit();" type="radio" id="range-month" name="r" value="month" /><label for="range-month">month</label><input OnChange="ganglia_form.submit();" type="radio" id="range-year" name="r" value="year" /><label for="range-year">year</label><input OnChange="ganglia_form.submit();" type="radio" id="range-job" name="r" value="job" /><label for="range-job">job</label></div>
+    <div style="float:left;" id="custom_range_menu">or <span class="nobr">from <input type="TEXT" title="Feb 27 2007 00:00, 2/27/2007, 27.2.2007, now -1 week, -2 days, start + 1 hour, etc." NAME="cs" ID="datepicker-cs" SIZE="17"> to <input type="TEXT" title="Feb 27 2007 00:00, 2/27/2007, 27.2.2007, now -1 week, -2 days, start + 1 hour, etc." name="ce" ID="datepicker-ce" SIZE="17"> <input type="submit" value="Go">
+<input type="button" value="Clear" onclick="ganglia_submit(1)"></span>
+</div>
+    <div style="float:right;"><input title="Hide/Show Events" type="checkbox" id="show_all_events" onclick="showAllEvents(this.checked)"/><label for="show_all_events">Hide/Show Events</label>&nbsp;&nbsp;<button class="header_btn" onclick="window.location='./?p=2&amp;c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu';return false;">Node View</button></div>
+    <div style="clear:both;"></div>
+  </div>
+    <input type="hidden" name="m" id="metrics-picker">
+  
+  
+    <div id="node_menu" style="padding:5px 5px 0 5px;">
+    <b><a href="./?m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"> Grid</a></b> <b>&gt;</b>
+<b><a href="./?c=igb-benzene&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">igb-benzene</a></b> <b>&gt;</b>
+<input type="hidden" name="c" value="igb-benzene">
+<b>c1ccccc1-42.ics.uci.edu</b>
+<input type="hidden" name="h" value="c1ccccc1-42.ics.uci.edu">
+&nbsp;&nbsp;
+  </div>
+  
+
+<input type="hidden" name="tab" id="selected_tab" value="m">
+<input type="hidden" id="vn" name="vn" value="">
+<input type="hidden" id="hide-hf" name="hide-hf" value="false">
+
+<input type="hidden" id="overlay_events" value="true">
+
+<hr size="1" noshade>
+<!-- End header.tpl -->
+<!-- Begin host_view.tpl -->
+<style type="text/css">
+/* don't display legends for these small graphs */
+.flotlegend, .flotlegendtoplabel {
+  display: none !important;
+}
+.flotheader {
+  margin-top: 2em;
+}
+.flottitle {
+  padding-right: 4em;
+  font-weight: bold;
+}
+</style>
+<script type="text/javascript">
+var SEPARATOR = "_|_";
+var ALL_GROUPS = "ALLGROUPS";
+var NO_GROUPS = "NOGROUPS";
+// Map metric group id to name
+var g_mgMap = new Object();
+
+function clearStoredMetricGroups() {
+  var stored_groups = $('input[name="metric_group"]');
+  stored_groups.val(NO_GROUPS);
+}
+
+function selectAllMetricGroups() {
+  var stored_groups = $('input[name="metric_group"]');
+  stored_groups.val(ALL_GROUPS);
+}
+
+function addMetricGroup(mgName) {
+  var stored_groups = $('input[name="metric_group"]');
+
+  var open_groups = stored_groups.val();
+  if (open_groups == ALL_GROUPS)
+    return; // no exceptions
+
+  var groups = open_groups.split(SEPARATOR);
+  switch (groups[0]) {
+    case ALL_GROUPS:
+      // Remove from except list
+      for (var i = 1; i < groups.length; i++) {
+        if (groups[i] == mgName) {
+          groups.splice(i, 1);
+          break;
+        }
+      }
+      open_groups = groups.join(SEPARATOR);
+    break;
+    case NO_GROUPS:
+      // Add to list if not already there
+      var inList = false;
+      for (var i = 1; i < groups.length; i++) {
+         if (groups[i] == mgName) {
+           inList = true;
+           break;
+         }
+      }
+      if (!inList) {
+        open_groups += SEPARATOR;
+        open_groups += mgName;
+      }
+    break;
+    default:
+      alert("Unrecognized group option - " + groups[0]);
+  }
+  stored_groups.val(open_groups);
+}
+
+function removeMetricGroup(mgName) {
+  var stored_groups = $('input[name="metric_group"]');
+
+  var open_groups = stored_groups.val();
+  if (open_groups == NO_GROUPS)
+    return; // no exceptions
+
+  var groups = open_groups.split(SEPARATOR);
+  switch (groups[0]) {
+    case ALL_GROUPS:
+      var inList = false;
+      for (var i = 1; i < groups.length; i++) {
+        if (groups[i] == mgName) {
+          inList = true;
+          break;
+        }
+      }
+      if (!inList) {
+        open_groups += SEPARATOR;
+        open_groups += mgName;
+      }
+    break;
+    case NO_GROUPS:
+      for (var i = 1; i < groups.length; i++) {
+        if (groups[i] == mgName) {
+          groups.splice(i, 1);
+          break;
+        }
+      }
+      open_groups = groups.join(SEPARATOR);
+    break;
+    default:
+      alert("Unrecognized group option - " + groups[0]);
+  }
+  stored_groups.val(open_groups);
+}
+
+function toggleMetricGroup(mgId, mgDiv) {
+  var mgName = g_mgMap[mgId];
+  if (mgDiv.is(":visible")) {
+    // metric group is being closed
+    removeMetricGroup(mgName);
+    mgDiv.html("");
+    mgDiv.hide();
+  } else {
+    addMetricGroup(mgName);
+    var url = 'metric_group_view.php?c=igb-benzene&h=c1ccccc1-42.ics.uci.edu&r=hour&z=default&jr=&js=&st=1486880185&metric_group=' + mgName;
+    url += "&event=";
+    url += ($("#show_all_events").attr("checked") == "checked") ? "show" : "hide";
+    url += "&ts=";
+    url += ($("#timeshift_overlay").attr("checked") == "checked") ? "1" : "0";
+
+    $.get(url, 
+          function(data) {
+            mgDiv.html(data);
+	    mgInitEventBtns(mgDiv);
+	    mgInitTimeshiftBtns(mgDiv);
+            mgDiv.show();
+          });
+  }
+}
+
+function jumpToMetricGroup(mgId) {
+  //alert("jumping to " + mgId);
+  $.scrollTo($('#' + mgId));
+}
+
+function refreshHostView() {
+  $.get('host_overview.php?h=c1ccccc1-42.ics.uci.edu&c=igb-benzene', function(data) {
+    $('#host_overview_div').html(data);
+  });
+
+  $("#optional_graphs img").each(function (index) {
+    var src = $(this).attr("src");
+    if ((src.indexOf("graph.php") == 0) ||
+        (src.indexOf("./graph.php") == 0)) {
+      var d = new Date();
+      $(this).attr("src", jQuery.param.querystring(src, "&_=" + d.getTime()));
+    }    
+  });
+
+  $("#metrics img").each(function (index) {
+    var src = $(this).attr("src");
+    if ((src.indexOf("graph.php") == 0)  ||
+        (src.indexOf("./graph.php") == 0)) {
+      var d = new Date();
+      $(this).attr("src", jQuery.param.querystring(src, "&_=" + d.getTime()));
+    }    
+  });
+}
+
+function mgInitEventBtns(mgDiv) {
+  var checked = $("#show_all_events").attr("checked");
+  mgDiv.find("[id^=" + SHOW_EVENTS_BASE_ID + "]").each(function() {
+    $(this).button();
+    if (checked == "checked")
+      $(this).attr("checked", 'checked');
+    else
+      $(this).removeAttr("checked");
+    $(this).button('refresh');
+  });
+}
+
+function mgInitTimeshiftBtns(mgDiv) {
+  var checked = $("#timeshift_overlay").attr("checked");
+  mgDiv.find("[id^=" + TIME_SHIFT_BASE_ID + "]").each(function() {
+    $(this).button();
+    if (checked == "checked")
+      $(this).attr("checked", 'checked');
+    else
+      $(this).removeAttr("checked");
+    $(this).button('refresh');
+  });
+}
+
+$(function() {
+  var stored_groups = $('input[name="metric_group"]');
+  stored_groups.val("ALLGROUPS");
+ 
+  $("#edit_optional_graphs").dialog({ autoOpen: false, minWidth: 550,
+    beforeClose: function(event, ui) { location.reload(true); } });
+
+  $("#close_edit_optional_graphs_link").button();
+
+  $("#edit_optional_graphs_button").button();
+  $("#edit_optional_graphs_button").click(function(event) {
+    $("#edit_optional_graphs").dialog('open');
+    $('#edit_optional_graphs_content').html('<img src="img/spinner.gif" />');
+    $.get('edit_optional_graphs.php', "hostname=c1ccccc1-42.ics.uci.edu", function(data) {
+      $('#edit_optional_graphs_content').html(data);
+    })
+    return false;
+  });
+
+  $("#save_optional_graphs_button").button();
+  $("#save_optional_graphs_button").click(function(event) {
+    $.get('edit_optional_graphs.php', $("#edit_optional_reports_form").serialize(), function(data) {
+      $('#edit_optional_graphs_content').html(data);
+      $("#save_optional_graphs_button").hide();
+    });
+    return false;
+  });
+
+  $("#expand_all_metric_groups").button();
+  $("#expand_all_metric_groups").click(function(event) {
+    selectAllMetricGroups();
+    document.ganglia_form.submit();
+    return false;
+  });
+
+  $("#collapse_all_metric_groups").button();
+  $("#collapse_all_metric_groups").click(function(event) {
+    clearStoredMetricGroups();
+    document.ganglia_form.submit();
+    return false;
+  });
+
+  $("#host_overview").button();
+  $('#host_overview').click(function() {
+    var options = { to: { width: 200, height: 60 } }; 
+    $("#host_overview_div").toggle("blind", options, 500);
+    return false;
+  });
+
+  $('.metric-group').each(function() {
+    $(this).button();
+    $(this).click(function() {
+      var id = $(this).attr('id');
+      toggleMetricGroup(id, $("#"+id+"_div"));
+      return false;
+    });
+  });
+});
+</script>
+
+
+
+<style type="text/css">
+  .toggler { width: 500px; height: 200px; }
+  #effect { width: 240px; height: 135px; padding: 0.4em; position: relative; }
+  #effect h3 { margin: 0; padding: 0.4em; text-align: center; }
+</style>
+
+<div>
+<button id="host_overview" class="button">Host Overview</button>
+</div>
+
+<div style="display: none;" id="host_overview_div">
+<br>
+<table border="0" width="100%">
+
+<tr>
+ <td align="left" valign="TOP">
+
+<img src="./templates/default/images/node_0-24.jpg" class="noborder" height="60" width="30" title="c1ccccc1-42.ics.uci.edu"/>
+This host is up and running.
+
+<table border="0" width="100%">
+<tr>
+  <td colspan="2" class="title">Time and String Metrics</td>
+</tr>
+
+<tr>
+ <td class="footer" width="30%">Last Boot Time</td><td>Wed, 21 Sep 2016 11:53:57 -0700</td>
+</tr>
+<tr>
+ <td class="footer" width="30%">Gexec Status</td><td>OFF </td>
+</tr>
+<tr>
+ <td class="footer" width="30%">Gmond Started</td><td>Sat, 11 Feb 2017 00:01:01 -0800</td>
+</tr>
+<tr>
+ <td class="footer" width="30%">IP Address</td><td>128.195.8.77 </td>
+</tr>
+<tr>
+ <td class="footer" width="30%">Last Reported</td><td>0 days, 0:00:09 </td>
+</tr>
+<tr>
+ <td class="footer" width="30%">Location</td><td>unspecified </td>
+</tr>
+<tr>
+ <td class="footer" width="30%">Machine Type</td><td>x86_64 </td>
+</tr>
+<tr>
+ <td class="footer" width="30%">Operating System</td><td>Linux </td>
+</tr>
+<tr>
+ <td class="footer" width="30%">Operating System Release</td><td>2.6.32-642.4.2.el6.x86_64 </td>
+</tr>
+<tr>
+ <td class="footer" width="30%">Uptime</td><td>143 days, 11:22:28 </td>
+</tr>
+
+
+<tr><td>&nbsp;</td></tr>
+
+<tr>
+  <td colspan="2" class="title">Constant Metrics</td>
+</tr>
+
+<tr>
+ <td class="footer" width="30%">CPU Count</td><td>24 CPUs</td>
+</tr>
+<tr>
+ <td class="footer" width="30%">CPU Speed</td><td>2927 MHz</td>
+</tr>
+<tr>
+ <td class="footer" width="30%">Memory Total</td><td>49409064 KB</td>
+</tr>
+<tr>
+ <td class="footer" width="30%">Swap Space Total</td><td>24772604 KB</td>
+</tr>
+
+</table>
+
+ <hr />
+<!-- A place to put custom HTML for the host view. Re-implement in a skin. -->
+
+
+</td> 
+</table>
+
+
+</div>
+
+<div id="edit_optional_graphs">
+  <div style="text-align:center">
+    <button id="save_optional_graphs_button">Save</button>
+  </div>
+  <div id="edit_optional_graphs_content" style="padding: .4em 1em .4em 10px;">Empty</div>
+</div>
+
+<div id="optional_graphs" style="padding-top:5px;">
+
+<div style='clear: left'></div>
+
+</div>
+
+<div id="sort_column_dropdowns" style="padding-top:5px;">
+<table border="0" width="100%">
+<tr>
+  <td style="text-align:center;background-color:rgb(238,238,238);">
+  c1ccccc1-42.ics.uci.edu <strong>graphs</strong> (23)
+  last <strong>hour</strong>
+  sorted <strong>by name</strong>
+  <font>
+    Columns&nbsp;&nbsp;<select name="mc" OnChange="ganglia_form.submit();">
+<option value=1 >1
+<option value=2 selected>2
+<option value=3 >3
+<option value=4 >4
+<option value=5 >5
+<option value=6 >6
+<option value=7 >7
+<option value=8 >8
+<option value=9 >9
+<option value=10 >10
+<option value=11 >11
+<option value=12 >12
+<option value=13 >13
+<option value=14 >14
+<option value=15 >15
+<option value=16 >16
+<option value=17 >17
+<option value=18 >18
+<option value=19 >19
+<option value=20 >20
+<option value=21 >21
+<option value=22 >22
+<option value=23 >23
+<option value=24 >24
+<option value=25 >25
+</select>
+
+    Size&nbsp;&nbsp;<SELECT NAME="z" OnChange="ganglia_form.submit();"><OPTION VALUE="small" SELECTED>small</OPTION>
+<OPTION VALUE="medium" SELECTED>medium</OPTION>
+<OPTION VALUE="large">large</OPTION>
+<OPTION VALUE="xlarge">xlarge</OPTION>
+<OPTION VALUE="xxlarge">xxlarge</OPTION>
+<OPTION VALUE="mobile">mobile</OPTION>
+</SELECT>
+
+  </font>
+
+  </td>
+</tr>
+</table>
+
+</div>
+
+<div id=metrics style="padding-top:5px">
+<center>
+<div style="padding-bottom:5px;">
+<button id="expand_all_metric_groups">Expand All Metric Groups</button>
+<button id="collapse_all_metric_groups">Collapse All Metric Groups</button>
+<input title="Time Shift Overlay - overlays previous period on all graphs" type="checkbox" id="timeshift_overlay" onclick="showTimeshiftOverlay(this.checked)"/><label for="timeshift_overlay">Timeshift Overlay</label>
+<select id="jump_to_metric_group" class="ui-corner-all" onchange="jumpToMetricGroup(this.options[this.selectedIndex].value);">
+<option disabled="disabled" selected="selected">Jump To Metric Group...</option>
+
+<option value="mg_cpu">cpu</a>
+
+<option value="mg_disk">disk</a>
+
+<option value="mg_load">load</a>
+
+<option value="mg_memory">memory</a>
+
+<option value="mg_network">network</a>
+
+<option value="mg_process">process</a>
+
+</select>
+</div>
+<table>
+<tr>
+ <td>
+
+
+<table border="0" width="100%">
+<tr>
+  <td class="metric">
+  <button id="mg_cpu" class="metric-group" title="Toggle cpu metrics group on/off">cpu metrics (6)</button>
+<script type="text/javascript">$(function() {
+g_mgMap["mg_cpu"] = "cpu";
+})</script>
+  </td>
+</tr>
+</table>
+
+<div id="mg_cpu_div">
+
+<table><tr>
+
+<td>
+<font style="font-size: 8px">cpu_aidle - CPU aidle</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=85.7&amp;m=cpu_aidle&amp;vl=%25&amp;ti=CPU%20aidle&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=85.7&amp;m=cpu_aidle&amp;vl=%25&amp;ti=CPU%20aidle&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=85.7&amp;m=cpu_aidle&amp;vl=%25&amp;ti=CPU%20aidle'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=85.7&amp;m=cpu_aidle&amp;vl=%25&amp;ti=CPU%20aidle&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_cpu0" onclick="showEvents('graph_img_mg_cpu0', this.checked)"/><label class="show_event_text" for="show_events_mg_cpu0">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_cpu0" onclick="showTimeShift('graph_img_mg_cpu0', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_cpu0">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=85.7&amp;m=cpu_aidle&amp;vl=%25&amp;ti=CPU%20aidle&amp;z=large">
+<img id="graph_img_mg_cpu0" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu cpu_aidle" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=85.7&amp;m=cpu_aidle&amp;vl=%25&amp;ti=CPU%20aidle" title="Percent of time since boot idle CPU" />
+</A>
+
+</td>
+
+
+<td>
+<font style="font-size: 8px">cpu_idle - CPU Idle</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=95.7&amp;m=cpu_idle&amp;vl=%25&amp;ti=CPU%20Idle&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=95.7&amp;m=cpu_idle&amp;vl=%25&amp;ti=CPU%20Idle&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=95.7&amp;m=cpu_idle&amp;vl=%25&amp;ti=CPU%20Idle'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=95.7&amp;m=cpu_idle&amp;vl=%25&amp;ti=CPU%20Idle&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_cpu1" onclick="showEvents('graph_img_mg_cpu1', this.checked)"/><label class="show_event_text" for="show_events_mg_cpu1">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_cpu1" onclick="showTimeShift('graph_img_mg_cpu1', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_cpu1">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=95.7&amp;m=cpu_idle&amp;vl=%25&amp;ti=CPU%20Idle&amp;z=large">
+<img id="graph_img_mg_cpu1" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu cpu_idle" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=95.7&amp;m=cpu_idle&amp;vl=%25&amp;ti=CPU%20Idle" title="Percentage of time that the CPU or CPUs were idle and the system did not have an outstanding disk I/O request" />
+</A>
+
+</td>
+</TR><TR>
+
+<td>
+<font style="font-size: 8px">cpu_nice - CPU Nice</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=4.2&amp;m=cpu_nice&amp;vl=%25&amp;ti=CPU%20Nice&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=4.2&amp;m=cpu_nice&amp;vl=%25&amp;ti=CPU%20Nice&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=4.2&amp;m=cpu_nice&amp;vl=%25&amp;ti=CPU%20Nice'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=4.2&amp;m=cpu_nice&amp;vl=%25&amp;ti=CPU%20Nice&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_cpu2" onclick="showEvents('graph_img_mg_cpu2', this.checked)"/><label class="show_event_text" for="show_events_mg_cpu2">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_cpu2" onclick="showTimeShift('graph_img_mg_cpu2', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_cpu2">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=4.2&amp;m=cpu_nice&amp;vl=%25&amp;ti=CPU%20Nice&amp;z=large">
+<img id="graph_img_mg_cpu2" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu cpu_nice" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=4.2&amp;m=cpu_nice&amp;vl=%25&amp;ti=CPU%20Nice" title="Percentage of CPU utilization that occurred while executing at the user level with nice priority" />
+</A>
+
+</td>
+
+
+<td>
+<font style="font-size: 8px">cpu_system - CPU System</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.1&amp;m=cpu_system&amp;vl=%25&amp;ti=CPU%20System&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.1&amp;m=cpu_system&amp;vl=%25&amp;ti=CPU%20System&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.1&amp;m=cpu_system&amp;vl=%25&amp;ti=CPU%20System'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.1&amp;m=cpu_system&amp;vl=%25&amp;ti=CPU%20System&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_cpu3" onclick="showEvents('graph_img_mg_cpu3', this.checked)"/><label class="show_event_text" for="show_events_mg_cpu3">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_cpu3" onclick="showTimeShift('graph_img_mg_cpu3', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_cpu3">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.1&amp;m=cpu_system&amp;vl=%25&amp;ti=CPU%20System&amp;z=large">
+<img id="graph_img_mg_cpu3" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu cpu_system" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.1&amp;m=cpu_system&amp;vl=%25&amp;ti=CPU%20System" title="Percentage of CPU utilization that occurred while executing at the system level" />
+</A>
+
+</td>
+</TR><TR>
+
+<td>
+<font style="font-size: 8px">cpu_user - CPU User</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.1&amp;m=cpu_user&amp;vl=%25&amp;ti=CPU%20User&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.1&amp;m=cpu_user&amp;vl=%25&amp;ti=CPU%20User&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.1&amp;m=cpu_user&amp;vl=%25&amp;ti=CPU%20User'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.1&amp;m=cpu_user&amp;vl=%25&amp;ti=CPU%20User&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_cpu4" onclick="showEvents('graph_img_mg_cpu4', this.checked)"/><label class="show_event_text" for="show_events_mg_cpu4">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_cpu4" onclick="showTimeShift('graph_img_mg_cpu4', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_cpu4">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.1&amp;m=cpu_user&amp;vl=%25&amp;ti=CPU%20User&amp;z=large">
+<img id="graph_img_mg_cpu4" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu cpu_user" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.1&amp;m=cpu_user&amp;vl=%25&amp;ti=CPU%20User" title="Percentage of CPU utilization that occurred while executing at the user level" />
+</A>
+
+</td>
+
+
+<td>
+<font style="font-size: 8px">cpu_wio - CPU wio</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.0&amp;m=cpu_wio&amp;vl=%25&amp;ti=CPU%20wio&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.0&amp;m=cpu_wio&amp;vl=%25&amp;ti=CPU%20wio&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.0&amp;m=cpu_wio&amp;vl=%25&amp;ti=CPU%20wio'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.0&amp;m=cpu_wio&amp;vl=%25&amp;ti=CPU%20wio&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_cpu5" onclick="showEvents('graph_img_mg_cpu5', this.checked)"/><label class="show_event_text" for="show_events_mg_cpu5">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_cpu5" onclick="showTimeShift('graph_img_mg_cpu5', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_cpu5">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.0&amp;m=cpu_wio&amp;vl=%25&amp;ti=CPU%20wio&amp;z=large">
+<img id="graph_img_mg_cpu5" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu cpu_wio" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.0&amp;m=cpu_wio&amp;vl=%25&amp;ti=CPU%20wio" title="Percentage of time that the CPU or CPUs were idle during which the system had an outstanding disk I/O request" />
+</A>
+
+</td>
+
+
+
+</tr>
+</table>
+
+
+</div>
+
+<table border="0" width="100%">
+<tr>
+  <td class="metric">
+  <button id="mg_disk" class="metric-group" title="Toggle disk metrics group on/off">disk metrics (3)</button>
+<script type="text/javascript">$(function() {
+g_mgMap["mg_disk"] = "disk";
+})</script>
+  </td>
+</tr>
+</table>
+
+<div id="mg_disk_div">
+
+<table><tr>
+
+<td>
+<font style="font-size: 8px">disk_free - Disk Space Available</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=513.960&amp;m=disk_free&amp;vl=GB&amp;ti=Disk%20Space%20Available&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=513.960&amp;m=disk_free&amp;vl=GB&amp;ti=Disk%20Space%20Available&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=513.960&amp;m=disk_free&amp;vl=GB&amp;ti=Disk%20Space%20Available'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=513.960&amp;m=disk_free&amp;vl=GB&amp;ti=Disk%20Space%20Available&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_disk0" onclick="showEvents('graph_img_mg_disk0', this.checked)"/><label class="show_event_text" for="show_events_mg_disk0">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_disk0" onclick="showTimeShift('graph_img_mg_disk0', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_disk0">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=513.960&amp;m=disk_free&amp;vl=GB&amp;ti=Disk%20Space%20Available&amp;z=large">
+<img id="graph_img_mg_disk0" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu disk_free" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=513.960&amp;m=disk_free&amp;vl=GB&amp;ti=Disk%20Space%20Available" title="Total free disk space" />
+</A>
+
+</td>
+
+
+<td>
+<font style="font-size: 8px">disk_total - Total Disk Space</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=550.085&amp;m=disk_total&amp;vl=GB&amp;ti=Total%20Disk%20Space&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=550.085&amp;m=disk_total&amp;vl=GB&amp;ti=Total%20Disk%20Space&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=550.085&amp;m=disk_total&amp;vl=GB&amp;ti=Total%20Disk%20Space'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=550.085&amp;m=disk_total&amp;vl=GB&amp;ti=Total%20Disk%20Space&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_disk1" onclick="showEvents('graph_img_mg_disk1', this.checked)"/><label class="show_event_text" for="show_events_mg_disk1">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_disk1" onclick="showTimeShift('graph_img_mg_disk1', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_disk1">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=550.085&amp;m=disk_total&amp;vl=GB&amp;ti=Total%20Disk%20Space&amp;z=large">
+<img id="graph_img_mg_disk1" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu disk_total" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=550.085&amp;m=disk_total&amp;vl=GB&amp;ti=Total%20Disk%20Space" title="Total available disk space" />
+</A>
+
+</td>
+</TR><TR>
+
+<td>
+<font style="font-size: 8px">part_max_used - Maximum Disk Space Used</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=53.5&amp;m=part_max_used&amp;vl=%25&amp;ti=Maximum%20Disk%20Space%20Used&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=53.5&amp;m=part_max_used&amp;vl=%25&amp;ti=Maximum%20Disk%20Space%20Used&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=53.5&amp;m=part_max_used&amp;vl=%25&amp;ti=Maximum%20Disk%20Space%20Used'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=53.5&amp;m=part_max_used&amp;vl=%25&amp;ti=Maximum%20Disk%20Space%20Used&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_disk2" onclick="showEvents('graph_img_mg_disk2', this.checked)"/><label class="show_event_text" for="show_events_mg_disk2">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_disk2" onclick="showTimeShift('graph_img_mg_disk2', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_disk2">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=53.5&amp;m=part_max_used&amp;vl=%25&amp;ti=Maximum%20Disk%20Space%20Used&amp;z=large">
+<img id="graph_img_mg_disk2" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu part_max_used" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=53.5&amp;m=part_max_used&amp;vl=%25&amp;ti=Maximum%20Disk%20Space%20Used" title="Maximum percent used for all partitions" />
+</A>
+
+</td>
+
+
+
+</tr>
+</table>
+
+
+</div>
+
+<table border="0" width="100%">
+<tr>
+  <td class="metric">
+  <button id="mg_load" class="metric-group" title="Toggle load metrics group on/off">load metrics (3)</button>
+<script type="text/javascript">$(function() {
+g_mgMap["mg_load"] = "load";
+})</script>
+  </td>
+</tr>
+</table>
+
+<div id="mg_load_div">
+
+<table><tr>
+
+<td>
+<font style="font-size: 8px">load_fifteen - Fifteen Minute Load Average</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.95&amp;m=load_fifteen&amp;vl=%20&amp;ti=Fifteen%20Minute%20Load%20Average&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.95&amp;m=load_fifteen&amp;vl=%20&amp;ti=Fifteen%20Minute%20Load%20Average&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.95&amp;m=load_fifteen&amp;vl=%20&amp;ti=Fifteen%20Minute%20Load%20Average'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.95&amp;m=load_fifteen&amp;vl=%20&amp;ti=Fifteen%20Minute%20Load%20Average&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_load0" onclick="showEvents('graph_img_mg_load0', this.checked)"/><label class="show_event_text" for="show_events_mg_load0">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_load0" onclick="showTimeShift('graph_img_mg_load0', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_load0">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.95&amp;m=load_fifteen&amp;vl=%20&amp;ti=Fifteen%20Minute%20Load%20Average&amp;z=large">
+<img id="graph_img_mg_load0" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu load_fifteen" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.95&amp;m=load_fifteen&amp;vl=%20&amp;ti=Fifteen%20Minute%20Load%20Average" title="Fifteen minute load average" />
+</A>
+
+</td>
+
+
+<td>
+<font style="font-size: 8px">load_five - Five Minute Load Average</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.97&amp;m=load_five&amp;vl=%20&amp;ti=Five%20Minute%20Load%20Average&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.97&amp;m=load_five&amp;vl=%20&amp;ti=Five%20Minute%20Load%20Average&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.97&amp;m=load_five&amp;vl=%20&amp;ti=Five%20Minute%20Load%20Average'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.97&amp;m=load_five&amp;vl=%20&amp;ti=Five%20Minute%20Load%20Average&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_load1" onclick="showEvents('graph_img_mg_load1', this.checked)"/><label class="show_event_text" for="show_events_mg_load1">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_load1" onclick="showTimeShift('graph_img_mg_load1', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_load1">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.97&amp;m=load_five&amp;vl=%20&amp;ti=Five%20Minute%20Load%20Average&amp;z=large">
+<img id="graph_img_mg_load1" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu load_five" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.97&amp;m=load_five&amp;vl=%20&amp;ti=Five%20Minute%20Load%20Average" title="Five minute load average" />
+</A>
+
+</td>
+</TR><TR>
+
+<td>
+<font style="font-size: 8px">load_one - One Minute Load Average</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1.03&amp;m=load_one&amp;vl=%20&amp;ti=One%20Minute%20Load%20Average&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1.03&amp;m=load_one&amp;vl=%20&amp;ti=One%20Minute%20Load%20Average&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1.03&amp;m=load_one&amp;vl=%20&amp;ti=One%20Minute%20Load%20Average'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1.03&amp;m=load_one&amp;vl=%20&amp;ti=One%20Minute%20Load%20Average&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_load2" onclick="showEvents('graph_img_mg_load2', this.checked)"/><label class="show_event_text" for="show_events_mg_load2">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_load2" onclick="showTimeShift('graph_img_mg_load2', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_load2">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1.03&amp;m=load_one&amp;vl=%20&amp;ti=One%20Minute%20Load%20Average&amp;z=large">
+<img id="graph_img_mg_load2" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu load_one" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1.03&amp;m=load_one&amp;vl=%20&amp;ti=One%20Minute%20Load%20Average" title="One minute load average" />
+</A>
+
+</td>
+
+
+
+</tr>
+</table>
+
+
+</div>
+
+<table border="0" width="100%">
+<tr>
+  <td class="metric">
+  <button id="mg_memory" class="metric-group" title="Toggle memory metrics group on/off">memory metrics (5)</button>
+<script type="text/javascript">$(function() {
+g_mgMap["mg_memory"] = "memory";
+})</script>
+  </td>
+</tr>
+</table>
+
+<div id="mg_memory_div">
+
+<table><tr>
+
+<td>
+<font style="font-size: 8px">mem_buffers - Memory Buffers</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=364088&amp;m=mem_buffers&amp;vl=KB&amp;ti=Memory%20Buffers&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=364088&amp;m=mem_buffers&amp;vl=KB&amp;ti=Memory%20Buffers&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=364088&amp;m=mem_buffers&amp;vl=KB&amp;ti=Memory%20Buffers'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=364088&amp;m=mem_buffers&amp;vl=KB&amp;ti=Memory%20Buffers&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_memory0" onclick="showEvents('graph_img_mg_memory0', this.checked)"/><label class="show_event_text" for="show_events_mg_memory0">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_memory0" onclick="showTimeShift('graph_img_mg_memory0', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_memory0">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=364088&amp;m=mem_buffers&amp;vl=KB&amp;ti=Memory%20Buffers&amp;z=large">
+<img id="graph_img_mg_memory0" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu mem_buffers" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=364088&amp;m=mem_buffers&amp;vl=KB&amp;ti=Memory%20Buffers" title="Amount of buffered memory" />
+</A>
+
+</td>
+
+
+<td>
+<font style="font-size: 8px">mem_cached - Cached Memory</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1067024&amp;m=mem_cached&amp;vl=KB&amp;ti=Cached%20Memory&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1067024&amp;m=mem_cached&amp;vl=KB&amp;ti=Cached%20Memory&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1067024&amp;m=mem_cached&amp;vl=KB&amp;ti=Cached%20Memory'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1067024&amp;m=mem_cached&amp;vl=KB&amp;ti=Cached%20Memory&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_memory1" onclick="showEvents('graph_img_mg_memory1', this.checked)"/><label class="show_event_text" for="show_events_mg_memory1">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_memory1" onclick="showTimeShift('graph_img_mg_memory1', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_memory1">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1067024&amp;m=mem_cached&amp;vl=KB&amp;ti=Cached%20Memory&amp;z=large">
+<img id="graph_img_mg_memory1" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu mem_cached" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1067024&amp;m=mem_cached&amp;vl=KB&amp;ti=Cached%20Memory" title="Amount of cached memory" />
+</A>
+
+</td>
+</TR><TR>
+
+<td>
+<font style="font-size: 8px">mem_free - Free Memory</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=45766984&amp;m=mem_free&amp;vl=KB&amp;ti=Free%20Memory&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=45766984&amp;m=mem_free&amp;vl=KB&amp;ti=Free%20Memory&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=45766984&amp;m=mem_free&amp;vl=KB&amp;ti=Free%20Memory'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=45766984&amp;m=mem_free&amp;vl=KB&amp;ti=Free%20Memory&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_memory2" onclick="showEvents('graph_img_mg_memory2', this.checked)"/><label class="show_event_text" for="show_events_mg_memory2">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_memory2" onclick="showTimeShift('graph_img_mg_memory2', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_memory2">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=45766984&amp;m=mem_free&amp;vl=KB&amp;ti=Free%20Memory&amp;z=large">
+<img id="graph_img_mg_memory2" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu mem_free" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=45766984&amp;m=mem_free&amp;vl=KB&amp;ti=Free%20Memory" title="Amount of available memory" />
+</A>
+
+</td>
+
+
+<td>
+<font style="font-size: 8px">mem_shared - Shared Memory</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0&amp;m=mem_shared&amp;vl=KB&amp;ti=Shared%20Memory&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0&amp;m=mem_shared&amp;vl=KB&amp;ti=Shared%20Memory&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0&amp;m=mem_shared&amp;vl=KB&amp;ti=Shared%20Memory'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0&amp;m=mem_shared&amp;vl=KB&amp;ti=Shared%20Memory&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_memory3" onclick="showEvents('graph_img_mg_memory3', this.checked)"/><label class="show_event_text" for="show_events_mg_memory3">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_memory3" onclick="showTimeShift('graph_img_mg_memory3', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_memory3">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0&amp;m=mem_shared&amp;vl=KB&amp;ti=Shared%20Memory&amp;z=large">
+<img id="graph_img_mg_memory3" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu mem_shared" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0&amp;m=mem_shared&amp;vl=KB&amp;ti=Shared%20Memory" title="Amount of shared memory" />
+</A>
+
+</td>
+</TR><TR>
+
+<td>
+<font style="font-size: 8px">swap_free - Free Swap Space</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=24619612&amp;m=swap_free&amp;vl=KB&amp;ti=Free%20Swap%20Space&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=24619612&amp;m=swap_free&amp;vl=KB&amp;ti=Free%20Swap%20Space&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=24619612&amp;m=swap_free&amp;vl=KB&amp;ti=Free%20Swap%20Space'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=24619612&amp;m=swap_free&amp;vl=KB&amp;ti=Free%20Swap%20Space&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_memory4" onclick="showEvents('graph_img_mg_memory4', this.checked)"/><label class="show_event_text" for="show_events_mg_memory4">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_memory4" onclick="showTimeShift('graph_img_mg_memory4', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_memory4">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=24619612&amp;m=swap_free&amp;vl=KB&amp;ti=Free%20Swap%20Space&amp;z=large">
+<img id="graph_img_mg_memory4" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu swap_free" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=24619612&amp;m=swap_free&amp;vl=KB&amp;ti=Free%20Swap%20Space" title="Amount of available swap memory" />
+</A>
+
+</td>
+
+
+
+</tr>
+</table>
+
+
+</div>
+
+<table border="0" width="100%">
+<tr>
+  <td class="metric">
+  <button id="mg_network" class="metric-group" title="Toggle network metrics group on/off">network metrics (4)</button>
+<script type="text/javascript">$(function() {
+g_mgMap["mg_network"] = "network";
+})</script>
+  </td>
+</tr>
+</table>
+
+<div id="mg_network_div">
+
+<table><tr>
+
+<td>
+<font style="font-size: 8px">bytes_in - Bytes Received</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=115.13&amp;m=bytes_in&amp;vl=bytes%2Fsec&amp;ti=Bytes%20Received&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=115.13&amp;m=bytes_in&amp;vl=bytes%2Fsec&amp;ti=Bytes%20Received&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=115.13&amp;m=bytes_in&amp;vl=bytes%2Fsec&amp;ti=Bytes%20Received'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=115.13&amp;m=bytes_in&amp;vl=bytes%2Fsec&amp;ti=Bytes%20Received&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_network0" onclick="showEvents('graph_img_mg_network0', this.checked)"/><label class="show_event_text" for="show_events_mg_network0">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_network0" onclick="showTimeShift('graph_img_mg_network0', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_network0">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=115.13&amp;m=bytes_in&amp;vl=bytes%2Fsec&amp;ti=Bytes%20Received&amp;z=large">
+<img id="graph_img_mg_network0" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu bytes_in" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=115.13&amp;m=bytes_in&amp;vl=bytes%2Fsec&amp;ti=Bytes%20Received" title="Number of bytes in per second" />
+</A>
+
+</td>
+
+
+<td>
+<font style="font-size: 8px">bytes_out - Bytes Sent</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=82.36&amp;m=bytes_out&amp;vl=bytes%2Fsec&amp;ti=Bytes%20Sent&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=82.36&amp;m=bytes_out&amp;vl=bytes%2Fsec&amp;ti=Bytes%20Sent&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=82.36&amp;m=bytes_out&amp;vl=bytes%2Fsec&amp;ti=Bytes%20Sent'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=82.36&amp;m=bytes_out&amp;vl=bytes%2Fsec&amp;ti=Bytes%20Sent&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_network1" onclick="showEvents('graph_img_mg_network1', this.checked)"/><label class="show_event_text" for="show_events_mg_network1">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_network1" onclick="showTimeShift('graph_img_mg_network1', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_network1">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=82.36&amp;m=bytes_out&amp;vl=bytes%2Fsec&amp;ti=Bytes%20Sent&amp;z=large">
+<img id="graph_img_mg_network1" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu bytes_out" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=82.36&amp;m=bytes_out&amp;vl=bytes%2Fsec&amp;ti=Bytes%20Sent" title="Number of bytes out per second" />
+</A>
+
+</td>
+</TR><TR>
+
+<td>
+<font style="font-size: 8px">pkts_in - Packets Received</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.42&amp;m=pkts_in&amp;vl=packets%2Fsec&amp;ti=Packets%20Received&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.42&amp;m=pkts_in&amp;vl=packets%2Fsec&amp;ti=Packets%20Received&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.42&amp;m=pkts_in&amp;vl=packets%2Fsec&amp;ti=Packets%20Received'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.42&amp;m=pkts_in&amp;vl=packets%2Fsec&amp;ti=Packets%20Received&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_network2" onclick="showEvents('graph_img_mg_network2', this.checked)"/><label class="show_event_text" for="show_events_mg_network2">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_network2" onclick="showTimeShift('graph_img_mg_network2', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_network2">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.42&amp;m=pkts_in&amp;vl=packets%2Fsec&amp;ti=Packets%20Received&amp;z=large">
+<img id="graph_img_mg_network2" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu pkts_in" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.42&amp;m=pkts_in&amp;vl=packets%2Fsec&amp;ti=Packets%20Received" title="Packets in per second" />
+</A>
+
+</td>
+
+
+<td>
+<font style="font-size: 8px">pkts_out - Packets Sent</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.45&amp;m=pkts_out&amp;vl=packets%2Fsec&amp;ti=Packets%20Sent&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.45&amp;m=pkts_out&amp;vl=packets%2Fsec&amp;ti=Packets%20Sent&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.45&amp;m=pkts_out&amp;vl=packets%2Fsec&amp;ti=Packets%20Sent'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.45&amp;m=pkts_out&amp;vl=packets%2Fsec&amp;ti=Packets%20Sent&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_network3" onclick="showEvents('graph_img_mg_network3', this.checked)"/><label class="show_event_text" for="show_events_mg_network3">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_network3" onclick="showTimeShift('graph_img_mg_network3', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_network3">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.45&amp;m=pkts_out&amp;vl=packets%2Fsec&amp;ti=Packets%20Sent&amp;z=large">
+<img id="graph_img_mg_network3" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu pkts_out" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=0.45&amp;m=pkts_out&amp;vl=packets%2Fsec&amp;ti=Packets%20Sent" title="Packets out per second" />
+</A>
+
+</td>
+
+
+
+</tr>
+</table>
+
+
+</div>
+
+<table border="0" width="100%">
+<tr>
+  <td class="metric">
+  <button id="mg_process" class="metric-group" title="Toggle process metrics group on/off">process metrics (2)</button>
+<script type="text/javascript">$(function() {
+g_mgMap["mg_process"] = "process";
+})</script>
+  </td>
+</tr>
+</table>
+
+<div id="mg_process_div">
+
+<table><tr>
+
+<td>
+<font style="font-size: 8px">proc_run - Total Running Processes</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1&amp;m=proc_run&amp;vl=%20&amp;ti=Total%20Running%20Processes&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1&amp;m=proc_run&amp;vl=%20&amp;ti=Total%20Running%20Processes&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1&amp;m=proc_run&amp;vl=%20&amp;ti=Total%20Running%20Processes'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1&amp;m=proc_run&amp;vl=%20&amp;ti=Total%20Running%20Processes&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_process0" onclick="showEvents('graph_img_mg_process0', this.checked)"/><label class="show_event_text" for="show_events_mg_process0">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_process0" onclick="showTimeShift('graph_img_mg_process0', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_process0">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1&amp;m=proc_run&amp;vl=%20&amp;ti=Total%20Running%20Processes&amp;z=large">
+<img id="graph_img_mg_process0" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu proc_run" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=1&amp;m=proc_run&amp;vl=%20&amp;ti=Total%20Running%20Processes" title="Total number of running processes" />
+</A>
+
+</td>
+
+
+<td>
+<font style="font-size: 8px">proc_total - Total Processes</font><br>
+
+<button title="Export to CSV" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=895&amp;m=proc_total&amp;vl=%20&amp;ti=Total%20Processes&amp;csv=1';return false;">CSV</button>
+<button title="Export to JSON" class="cupid-green" onClick="javascript:location.href='./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=895&amp;m=proc_total&amp;vl=%20&amp;ti=Total%20Processes&amp;json=1';return false;">JSON</button>
+<button title="Inspect Graph" onClick="inspectGraph('c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=895&amp;m=proc_total&amp;vl=%20&amp;ti=Total%20Processes'); return false;" class="shiny-blue">Inspect</button>
+<button title="6 month trend" onClick="drawTrendGraph('./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=895&amp;m=proc_total&amp;vl=%20&amp;ti=Total%20Processes&amp;trend=1&amp;z=xlarge'); return false;" class="shiny-blue">Trend</button>
+
+
+
+<input title="Hide/Show Events" type="checkbox" id="show_events_mg_process1" onclick="showEvents('graph_img_mg_process1', this.checked)"/><label class="show_event_text" for="show_events_mg_process1">Hide/Show Events</label>
+
+<input title="Timeshift Overlay" type="checkbox" id="time_shift_mg_process1" onclick="showTimeShift('graph_img_mg_process1', this.checked)"/><label class="show_timeshift_text" for="time_shift_mg_process1">Timeshift</label>
+<br>
+<a href="./graph_all_periods.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=895&amp;m=proc_total&amp;vl=%20&amp;ti=Total%20Processes&amp;z=large">
+<img id="graph_img_mg_process1" class="noborder host_default_zoomable" style="margin:5px;" alt="c1ccccc1-42.ics.uci.edu proc_total" src="./graph.php?c=igb-benzene&amp;h=c1ccccc1-42.ics.uci.edu&amp;r=hour&amp;z=default&amp;jr=&amp;js=&amp;st=1486880185&amp;v=895&amp;m=proc_total&amp;vl=%20&amp;ti=Total%20Processes" title="Total number of processes" />
+</A>
+
+</td>
+
+
+
+</tr>
+</table>
+
+
+</div>
+
+ </td>
+</tr>
+</table>
+</center>
+</div>
+<input type="hidden" name="metric_group" value="">
+<!-- End host_view.tpl -->
+<!-- Begin footer.tpl -->
+</form> <!-- ganglia-form -->
+</div> <!-- tabs-main -->
+
+<div id="tabs-search">
+  Search term matches any number of metrics and hosts. For example type web or disk; wait a split second, and a drop down menu will show up with choices.
+  <!-- Uses LiveSearch from http://andreaslagerkvist.com/jquery/live-search/ -->
+  <div id="metric-search">
+    <form method="post" action="/search/" onsubmit="return false;">
+      <p>
+	<label>
+	    <small>Search as you type</small><br />
+	    <input type="text" name="q" id="search-field-q" size="60" placeholder="Search as you type" on />
+	</label>
+      </p>
+    </form>
+  </div>
+</div> 
+
+<div id="create-new-view-dialog" title="Create new view">
+  <div id="create-new-view-layer">
+    <form id="create_view_form">
+      <input type="hidden" name="create_view" value="1">
+      <fieldset>
+	 <label for="new_view_name">View Name</label>
+	 <input type="text" name="vn" id="new_view_name" class="text ui-widget-content ui-corner-all" />
+         <center><button style="margin:10px;" onclick="createView(); return false;">Create</button></center>
+      </fieldset>
+    </form>
+  </div>
+  <div id="create-new-view-confirmation-layer"></div>
+</div>
+
+<script>
+$(function(){
+  var create_new_view_dialog = $("#create-new-view-dialog");
+  if (create_new_view_dialog[0])
+    create_new_view_dialog.dialog({
+      autoOpen: false,
+      height: "auto",
+      width: "auto",
+      modal: true,
+      position: { my: "top",
+                  at: "top+200",
+                  of: window },
+      close: function() {
+        $("#create-new-view-layer").toggle();
+        $("#create-new-view-confirmation-layer").html("");
+	newViewDialogCloseCallback();
+      }
+    });
+});
+</script>
+
+<div id="metric-actions-dialog" title="Metric Actions">
+  <div id="metric-actions-dialog-content">
+	Available Metric actions.
+  </div>
+</div>
+
+<script>
+$(function(){
+  initMetricActionsDialog();	
+});
+</script>
+
+<div id="tabs-mobile"></div>
+
+<div id="tabs-autorotation">
+Invoke automatic rotation system. Automatic rotation rotates all of the graphs/metrics specified in a view waiting 
+30 seconds in between each. This will run as long as you have this page open.
+<p>
+Please select the view you want to rotate.</p>
+  <div id="tabs-autorotation-chooser">
+Loading view, please wait...<img src="img/spinner.gif" />
+  </div>
+</div>
+
+<div id="tabs-livedashboard">
+Live dashboard provides you with an overview of all view metrics in a compact format. Data updates every 15 seconds.
+Only those elements that contain a metric or graph report are supported. Aggregate graphs will not be included.
+<p>
+You can get more graphs per page by using your browser zoom functionality.
+<p>
+Please select the view you want to view</p>
+  <div id="tabs-livedashboard-chooser">
+Loading view, please wait...<img src="img/spinner.gif" />
+  </div>
+</div>
+
+
+<div align="center">
+<font size="-1" class="footer" >
+<hr />
+Ganglia Web Frontend version 3.7.1
+<a href="http://ganglia.sourceforge.net/downloads.php?component=ganglia-webfrontend&amp;version=3.7.1">Check for Updates.</a><br />
+
+Ganglia Web Backend <i>(gmetad)</i> version 3.7.2
+<a href="http://ganglia.sourceforge.net/downloads.php?component=gmetad&amp;version=3.7.2">Check for Updates.</a><br />
+
+Downloading and parsing ganglia's XML tree took 0.0025s.<br />
+Images created with <a href="http://www.rrdtool.org/">RRDtool</a> version 1.4.8.<br />
+<a href="http://dwoo.org/">Powered by Dwoo</a> 1.1.1.<br />
+</font>
+</div>
+</div> <!-- div-tabs -->
+<div id="popup-dialog" title="Inspect Graph">
+  <div id="popup-dialog-navigation"></div>
+  <div id="popup-dialog-content">
+  </div>
+</div>
+
+<script>
+$(function(){
+  $("#popup-dialog").dialog({ autoOpen: false, 
+                              width:800, 
+                              height:500,
+                              position: { my: "top",
+                                          at: "top+200",
+                                          of: window } } );
+});
+</script>
+</body>
+<!-- End footer.tpl -->
+</html>
+

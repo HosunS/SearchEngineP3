@@ -1,0 +1,153 @@
+To uncompress and expand the file enter
+
+tar xzvf closeup.tgz
+
+This includes the files:
+
+CloseUp/closeup.c
+CloseUp/closeup2mysql.pl
+CloseUp/closeup2txt.pl
+CloseUp/closeup.pl
+CloseUp/closeup_input.pl
+CloseUp/install.pl
+CloseUp/README
+CloseUp/pio99_marker_map
+
+The pio_marker_map is a sample dataset, and was used in our analysis.
+
+
+########################
+
+To install the CloseUp program, first change directory into the closeup
+directory, and then enter
+
+perl ./install.pl
+
+
+Any error messages will be written to the screen. Hopefully
+there won't be any.
+
+
+The install.pl script will create the executable version of the C program,
+and will set some perl variables.
+
+########################
+
+The input format is a text file with one line per marker name. A line starts
+with the marker name followed by at least one space, and then the map
+position(s) of the marker in brackets in the format 
+
+marker (pos chr, pos chr, pos chr).
+
+ e.g.
+
+php20554 (322 9)
+umc1465 (236.6 2)
+mmp20 (84.8 6)
+bnl6.32 (968 1)
+lim228 (947.2 1)
+rz444c (95.4 1, 102.6 6)
+umc1197(cat3) (675.4 4)
+
+If you already have your map data in a MySQL table you can use the
+closeup_input.pl script to create an input file from the MySQL table.
+You will probably need to edit this script so that the column names
+are correct for your table format.
+
+The ONLY line you should edit is the following:
+
+$st = "SELECT marker,chr,cM  FROM $table";
+
+replace 'marker' with the name of the column that holds the gene or marker name
+
+replace 'chr' with the column that holds the chromosome information
+
+replace 'cM' with the column that holds the map position information.
+
+Please note that it does not matter if your data are bp positions,
+rank order positions, cM positions, or any other map unit.
+
+
+As an alternative input format, it is also possible to input data in the form:
+
+marker chr pos
+
+e.g.
+
+php20554 9 322
+
+with one entry per line and entries in no particular order. It is not
+possible to mix the two input formats.
+
+########################
+
+To run the program enter
+
+./closeup.pl
+
+This is a perl script which provides a more comfortable interface to the
+C program and the results parsers.
+
+If you opt to have MySQL output, the results file will end .mysql, and
+you can send this into your mysql database with the command
+
+mysql -p databasename < basename.mysql
+
+replacing the databasename and basename.mysql as appropriate.
+
+
+If you opt to have plain text output, there will be two output files
+
+1) basename_overview.txt - summary information for each run found
+
+2) basename_detail.txt - details of the individual markers in each run
+
+
+########################
+
+The closeup.c program itself does not have a user-friendly GUI,
+so the simplified perl interface, closeup.pl, is provided (see above).
+However if you really want to run the C program directly, a sample
+run might look like this:
+
+>$ closeup
+To start the closeup program
+
+>Run, Cluster, Fast-run? (r,c,f)
+Choose Cluster. That is CloseUp. Run and Fast-run are version of LineUp
+
+>what is minimum length run? (3)
+Choose 3. This is the only value we have extensively tested.
+
+>use Fold or SD for density cutoff? (f/s)
+Choose f. Using Standard Deviation rather than Fold gives very
+similar results. For Fold, the cutoff is how many times the observed
+density must be greater than the expected. For SD, the cutoff is how
+many SDs the observed must be greater than the expected.
+
+>what is the density cutoff? (2)
+Choose 2. This applies to either Fold or SD (see previous option)
+
+>what is maximum cluster size diff? (20)
+Choose 20. Matches that unbalance the two cluster halves by more
+than 20 times the average distance between genes/markers are not
+included in the C2 half of the cluster pair.
+
+>do left extend? (y/n)
+Choose n. Left extension tries to grow the clusters both to the
+left and to the right, rather than just to the right. It works,
+but has not been extensively tested.
+
+>what randomization type? 1) uniform 2) chrom 3) matched?
+Choose 2. 1 and 3 are no longer supported for CloseUp.
+
+>how many cycles of randomization (100)
+Choose 100 for reasonably quick results. There is generally very
+little change between 100 and 1000.
+
+>what is the name of the data?
+Choose whatever file you wish to analyze.
+
+########################
+
+

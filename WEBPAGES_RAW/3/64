@@ -1,0 +1,82 @@
+If you have any questions, e-mail Daniel Quang (dxquang@uci.edu).
+
+LICENSING
+=========
+DANN uses the MIT license.
+
+Pre-computed files
+==================
+In the data folder, there is file called DANN_whole_genome_SNVs.tsv.bgz. Its tabix index is also available. It follows the same format as the whole_genome_SNVs.tsv.gz file on the CADD website, annotating all possible SNVs throughout the genome. If you want other sets of pre-computed scores, our friends at Cold Spring Harbor have graciously hosted our scores for us: http://genome-mirror.cshl.edu/cgi-bin/hgTrackUi?g=disc
+
+At the suggestion of our Cold Spring Harbor friends, we have also stored the SNP scores in DANN_whole_genome_SNVs.bed.starch. This is a starch file that is much smaller.
+
+Installation
+============
+Required
+--------
+You need the following programs and packages. Some of them can be very difficult to install. We recommend a Linux setup. Our own clusters were running CentOS 6.4 with an SGE. 
+
+* [Python 2.7.8](https://www.python.org/download/releases/2.7.8/). Many of the scripts and packages require the latest version of Python.
+* [svmlight-loader](https://github.com/mblondel/svmlight-loader). For converting svmlight files to sparse CSR matrices very efficiently.
+* [numpy and scipy](http://www.numpy.org/). Common Python package.
+* [scikit-learn](http://scikit-learn.org/stable/). Contains many machine learning libraries.
+* [deepnet](https://github.com/nitishsrivastava/deepnet). CUDA deep learning package.
+* [LIBOCAS](http://cmp.felk.cvut.cz/~xfrancv/ocas/html/). For SVM training.
+
+Data files
+==========
+All training and testing files are located in the data folder. All command lines in this README will assume that you all relevant executable files are located in your bin, your current working directory contains the data files, and all .gz files have been decompressed using the gzip -d command.
+
+The original CADD training and testing data can be downloaded from [here](http://krishna.gs.washington.edu/martin/download/), which has been graciously provided by Martin Kircher.
+
+There are four different datasets: training, validation, testing, and ClinVar_ESP. The models are trained on variants in the training set. The validation set is used for hyperparameter tuning and for selecting the “best” model which maximizes accuracy on this set. The testing set is an independent set the models are tested on in order to monitor for overfitting. The ClinVar_ESP dataset is also a testing set containing a set of “gold standard” pathogenic and benign variants. The ClinVar_ESP dataset is the same dataset used in the Kircher et al. paper.
+
+.svmlight files contain the features of the variants in that set in svmlight format. These files are meant to be used by the LIBOCAS program. LIBOCAS only uses 1-based indexing.
+
+.X.npz files contain the feature data from the svmlight files in sparse CSR format. The features are also normalized to have unit variance because the logistic regression and deep neural network models are sensitive to feature scaling. This file can also be derived from the respective .svmlight file, but we provide the feature scaled .npz files as well for convenience.
+
+.y.npz files contain the labels from the svmlight files. -1 labels are changed to 0. Again, these files can be derived from the respective svmlight files, but we provide these files for convenience.
+
+Model training and prediction
+=============================
+LIBOCAS
+——————-
+The following command line closely replicates CADD’s training. The parameter C is is set to 0.0025, verbosity is set to 1, 20 cores are used in parallel, and the model is saved to cadd_svmocas.model.
+```
+svmocas -c 0.0025 -v 1 -p 20 training.svmlight cadd_svmocas.model
+```
+
+The following command lines will calculate scores for variants in the validation, testing, and ClinVar_ESP sets. You can use these outputs to do AUC analyses. Keep in mind that many of the variants in ClinVar_ESP have multiple gene annotations, which will skew the AUC analysis. Shoot us an e-mail if you are really serious about doing proper AUC analysis.
+
+```
+linclassif -t 1 -e -o svm_ocas_validation.pred validation.svmlight cadd_svmocas.model 
+
+linclassif -t 1 -e -o svm_ocas_testing.pred testing.svmlight cadd_svmocas.model 
+
+linclassif -t 1 -e -o svm_ocas_ClinVar_ESP.pred ClinVar_ESP.svmlight cadd_svmocas.model 
+```
+Logistic regression
+——————————————————-
+We rolled up the model training and model prediction into one python package. Unfortunately, when it evaluates the ClinVar and ESP dataset, it does not filter the data. Many of the variants have multiple gene annotations. If you really to do some proper AUC analysis, shoot us an e-mail. You also need to go into the logistic_regression folder and modify the lgtc_sgd.py script so that cadd_dir and ClinVar_ESP_dir are pointing to the correct directories where the files are located.
+
+```
+python lgtc_sgd.py
+```
+deepnet
+——————-
+deepnet uses Google protocol buffer files to set up the model architecture and establish file links. You have to change the file paths in all pbtxt files in the deepnet folder. Hopefully it is obvious enough based on the file names which ones to change.
+
+In the following command line, trainer.py is in the deepnet package. You will need to find the file path to it. Training can take about 24 hours. We included the BEST trained models in the deepnet folder in case you want to skip the training.
+
+```
+python /path/to/trainer.py model.pbtxt train.pbtxt eval.pbtxt
+```
+
+For calculating the prediction scores which you can use for AUC analyses, run the following command lines. This will get you bumpy files containing the scores for the validation, testing, and ClinVar_ESP (change the data_proto line in train.pbtxt to the cadd_rep_dq2.pbtxt file sets. You will need the file path to the extract_neural_net_representation.py script from the deepnet package.
+
+```
+python /path/to/extract_neural_net_representation.py cadd_3layer_tanh_BEST train.pbtxt outputdir hidden1 hidden2 hidden3 output_layer
+```
+
+
+

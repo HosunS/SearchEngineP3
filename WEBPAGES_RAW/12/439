@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Interactive Fuzzy
+Search to Help Autistic Kids</title>
+<script type='text/javascript' src='auto-complete.js'></script>
+<link rel='stylesheet' href='auto-complete.css' type='text/css' />
+<STYLE TYPE="text/css">
+body{
+    font-family: Arial,sans-serif;
+    font-size: 18pt;
+}
+td{ 
+    font-size: 18pt;
+    font-family: Arial,sans-serif;
+    vertical-align: top;
+}
+th{
+    font-size: 18pt;
+    font-family: Arial,sans-serif;
+    text-align: left;
+}
+div{
+    font-family: Arial,sans-serif;
+    font-size: 18pt;
+}
+input{
+    font-family: Arial,sans-serif;
+    font-size: 18pt;
+}
+
+</STYLE>
+</head>
+
+<body>
+
+<div>
+<div>Search For Animals <a href='learning.html'>[Back]</a></div>
+<br>
+<div><input type='text' id='input' style='width: 800px;'></div>
+<div class='droplist' id='list'></div>
+</div>
+<br>
+<div id='details'></div>
+
+<script type='text/javascript'>
+var data;
+var dl = new DropList("input", "list", "#d0d0ff", 
+    function (value) {
+        var values = value.split(' ');
+        if(value.length >= 1) {
+            var url = "/cgi-bin/query-2.fcgi?max=12&get=animals&q=";
+            for(var i = 0; i < values.length; i++) {
+                if(i)url = url + "+";
+                url = url + values[i].toLowerCase();
+            }
+            sendAjaxRequest(display, url);
+        }
+        else dl.showList(null);
+    }, 
+    function (node) {
+        if(node)display2(node);
+    });
+
+function highlight(record, attr) {
+    var str = " " + record.d[attr].replace("<", "&lt;");
+    for(var k = 0; k < record.p.length; k++) {
+        if(record.p[k].length)
+            str = str.replace(" " + record.p[k], " <font	color='red'>$&</font>", "gi");
+    }
+    return str;
+}
+
+function display(responseText) {
+    data = eval("(" + responseText + ")");
+    var html = "";
+    for(var i = 0; i < data.length; i++) {
+        html = html + "<div style='float: left; padding: 10;' id='data" + data[i].id + "'>";
+        html = html + "<div style='width: 160px; height: 120px;'><center><img src='" + data[i].d[2] + "'></center></div>";
+        html = html + "<div align='center'><b>" +highlight(data[i], 1) + "</b></div>";
+        html = html + "</div>"
+    }
+    html = html + ""
+    dl.showList(html);
+}
+
+function display2(node) {    
+    var i;
+    for(i = 0; i < data.length; i++) {
+        if("data" + data[i].id == node.id)
+            break;
+    }
+
+    var details = document.getElementById('details');
+    var str = "<table width='800px'><tbody>"
+        + "<tr><td><b>ID</b></td><td>" + highlight(data[i], 0) + "</td></tr>"
+        + "<tr><td><b>Name</b></td><td>" + highlight(data[i], 1) + "</td></tr>"
+        + "<tr><td><b>Picture</b></td><td><img width='600px' src='" + data[i].d[3] + "'></td></tr>"
+        + "</tbody></table>";
+    
+    details.innerHTML = str;
+    dl.showList(null);
+}
+
+</script>
+
+</body>
+</html>
+
+

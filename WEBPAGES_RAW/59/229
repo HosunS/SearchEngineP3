@@ -1,0 +1,406 @@
+#***************************************************************#
+# R code for Appendix C, Getting Started in R                   #
+#***************************************************************#
+
+
+
+
+## SOME R BASICS
+
+y <- c(44,15,87,-4)
+x = c(pi,exp(1),sqrt(3),10^2)
+
+
+mean(x)
+median(x)
+var(x)
+sd(x)
+range(x)
+quantile(x,c(0.25,0.75))
+min(x)
+max(x)
+length(x)
+sum(x)
+#rm(x) # this will remove x
+
+
+
+
+
+z <- c(rep(4,5),16,NA)
+z
+mean(z)
+
+mean(z,na.rm=TRUE)
+
+
+?mean
+help(mean)
+
+
+
+
+sqrt(x)
+
+
+
+
+
+x1 <- matrix(x,nrow=2,ncol=2)
+x1
+y1 <- matrix(y,2,2)
+y1
+t(x1)
+solve(x1)
+x1%*%y1
+
+
+
+
+x1[2,1]
+
+x1[2,]
+
+
+
+apply(x1,1,min)
+apply(x1,2,mean)
+
+
+
+
+
+dnorm(0,mean=0,sd=1)
+pnorm(1.645,0,1)
+qnorm(c(0.025,0.50,0.975),0,1)
+
+
+
+
+
+dpois(5,lambda=7)
+
+dunif(0,min=-5,max=20)
+
+
+dbinom(10,20,0.3)
+
+
+
+
+
+dt(0,1)
+
+
+
+
+
+dgamma(5,10,2)
+
+
+
+
+
+a <- rgamma(1000,10,2)
+mean(a)
+
+
+rnorm(1000,4,5)
+
+
+
+
+
+library(help=coda)
+
+
+
+
+
+
+
+
+
+## USER-CONTRIBUTED PACKAGES
+install.packages("Hmisc")    # need an internet connection
+library(Hmisc)
+summarize(FEV,by=Smoke,FUN=mean)
+summarize(FEV,by=Smoke,FUN=sd)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## READING IN DATA
+
+
+
+library(xlsReadWrite)
+library(RODBC)
+
+FEVdata2 <- read.xls("H:\\RApp\\FEVdata.xls",colNames=TRUE)
+FEVdata1 <- read.table("H:\\RApp\\FEVdata.txt",header=T,sep="\t")
+data3 <- read.table("http://anson.ucdavis.edu/~johnson/epi204/data.txt",
+	               col.names=c("survive","iss","iciss","bp","rts","age","score"))
+attach(FEVdata1)
+attach(FEVdata2)
+
+FEVdata1
+FEVdata2
+
+summary(FEVdata1)
+summary(FEVdata2)
+
+
+# If the Excel file does not contain variable names in Row 1
+FEVdata4  <- read.xls(file="H:\\RApp\\FEVdatanonames.xls",colNames=c("Age","FEV","Smoke"))
+
+
+
+
+FEVdata1[1:10,]
+
+
+
+
+
+
+
+
+
+## GRAPHING
+
+
+# Figure C.1.  Scatterplot
+plot(Age,FEV)
+lines(lowess(Age[Smoke==1],FEV[Smoke==1]),lwd=2)
+lines(lowess(Age[Smoke==0],FEV[Smoke==0]),lty=2,lwd=2)
+legend("bottomright",c("S","NS"),lty=c(1,2))
+
+
+
+
+
+# Figure C.2.  Gamma(5,2) pdf
+x <- seq(0.01,10,0.01)
+plot(x,dgamma(x,5,2),type="l",ylab="f(x)",main="Gamma(5,2)")
+
+
+
+
+# Figure C.3.  Boxplot
+g=factor(Smoke,c(0,1),c("Non-smoker","Smoker"))
+boxplot(FEV~g,range=0,boxwex=0.25,ylab="FEV",xlab="")
+lines(rep(1.2,length(FEV[Smoke==0])),FEV[Smoke==0],type="p")
+lines(rep(2.2,length(FEV[Smoke==1])),FEV[Smoke==1],type="p")
+
+
+# Figure C.4.  Histogram
+par(mfrow=c(2,2))
+
+hist(FEV,main="",ylim=c(0,100))   # Plot 1
+
+hist(FEV,main="",prob=T,ylim=c(0,0.6))  
+lines(density(FEV),type='l')      # Plot 2
+                                
+plot(density(FEV[Smoke==0]),type='l',xlab="FEV",
+     ylab="Density", main="All Ages",xlim=c(1,7),ylim=c(0,0.7))
+lines(density(FEV[Smoke==1]),lty=2)
+legend("topright", c("NS","S"),lty=c(1,2))   # Plot 3
+
+plot(density(FEV[Smoke==0 & Age>=14]),type='l',xlab="FEV",
+     ylab="Density", main="Age 14 and Older",xlim=c(1,7),ylim=c(0,0.7))
+lines(density(FEV[Smoke==1 & Age>=14]),lty=2)
+legend("topright", c("NS","S"),lty=c(1,2))   # Plot 4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## R/WinBUGS INTERFACE
+
+ library(R2WinBUGS)
+ n1 <- 17
+ n2 <- 16
+ y <- c(65,156,100,134,16,108,121,4,39,143,56,26,22,1,1,5,65)
+ x <- c(56,65,17,7,16,22,3,4,2,3,8,4,3,30,4,43)
+ leukemiadata <- list("n1","n2","y","x")
+ parameters <- c("theta1","theta2","median1","median2")
+ inits <- list(list(theta1=1, theta2=1))
+ leuk.fit <- bugs(leukemiadata, inits, parameters,"leukemia.txt",
+       working.directory="H:\\RApp", n.chains=1, n.iter=50000, 
+       n.thin=1, n.burnin=0)
+ print(leuk.fit)
+ attach.bugs(leuk.fit)
+
+
+
+# Figure C.5.  Posterior densities of median time to death
+plot(density(median1), type="l", xlab="", main="", ylab="", xlim=c(0,75), ylim=c(0,0.15), lwd=3)
+lines(density(median2),lty=2,lwd=3)
+mtext("Median survival",line=3,side=1,cex=1.5)
+mtext("Posterior density",line=2.5,side=2,cex=1.5)
+text(26,0.14,"AG Negative",lwd=2,cex=1.5)
+text(61,0.03,"AG Positive",lwd=2,cex=1.5)
+
+
+
+# Figure C.6.  Plot 20 S1(t) curves
+par(mfrow=c(1,2))
+
+time <- seq(0,170,1)
+plot(time,exp(-theta1[1]*time), type="l", xlab="t", ylab="", cex=2, lwd=2)
+mtext(expression(S[1](~t)),line=2.5,side=2)
+for(i in 2:20){
+	lines(time, exp(-theta1[i]*time), lty=1, cex=2, lwd=2)
+}
+
+
+# Survival curves estimated by posterior means
+ time <- seq(0,170,1)
+ survcurves1 <- exp(-theta1%*%t(time))
+ survmean1 <- apply(survcurves1,2,mean)
+ survcurves2 <- exp(-theta2%*%t(time))
+ survmean2 <- apply(survcurves2,2,mean)
+ plot(time,survmean1,type="l", xlab="t", ylab="S(t)",lwd=3)
+ lines(time, survmean2,lty=2, lwd=3)
+ legend("topright", c("AG Positive","AG Negative"),lty=1:2,lwd=2)
+
+
+
+
+
+# Figure C.7.  Bands
+ surv1 <- apply(survcurves1,2,quantile,c(0.025,0.50,0.975))
+ surv2 <- apply(survcurves2,2,quantile,c(0.025,0.50,0.975))
+ plot( time, surv1[2,], type="l", xlab="t", ylab="S(t)", lwd=3)
+ lines(time, surv1[1,], lty=1, lwd=3)
+ lines(time, surv1[3,], lty=1, lwd=3)
+ lines(time, surv2[2,], lty=2, lwd=3)
+ lines(time, surv2[1,], lty=2, lwd=3)
+ lines(time, surv2[3,], lty=2, lwd=3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## WRITING NEW R FUNCTIONS	
+
+
+
+t.interval=function(y1,y2,conflevel){
+  y1c=na.omit(y1)
+  y2c=na.omit(y2)
+  n1=length(y1c)
+  n2=length(y2c)
+  sp2=((n1-1)*var(y1c) + (n2-1)*var(y2c))/(n1+n2-2)
+  d=mean(y1c)-mean(y2c)
+  t=qt(conflevel+0.5*(1-conflevel),n1+n2-2)
+  l=d-t*sqrt(sp2*(1/n1+1/n2))
+  u=d+t*sqrt(sp2*(1/n1+1/n2))
+  return(c(l,d,u))
+}
+
+
+
+x <- rnorm(10)
+y <- rnorm(15,2,1)
+
+t.interval(x,y,0.95)
+t.test(x,y, var.equal=TRUE)
+
+
+
+
+
+x <- c(rnorm(100),NA,NA)
+y <- rnorm(15,2,1)
+
+t.interval(x,y,0.95)
+t.test(x,y, var.equal=TRUE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

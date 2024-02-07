@@ -1,0 +1,193 @@
+//    Processing educational code
+//    Copyright (C) 2013  Lee Martie
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.  
+
+Cell[][] grid;
+int cellSize = 10;
+int gridWidth = 310;
+int gridHeight = 310;
+
+int [] hist = new int[100];
+
+int[] rowValue;
+
+void setup() {
+
+  size(1210, 310);
+  grid = new Cell [gridWidth/cellSize][gridHeight/cellSize];
+
+  rowValue = new int[gridWidth/cellSize];
+
+  for (int i = 0; i<gridWidth/cellSize; i++) {
+    for (int j = 0; j<gridHeight/cellSize; j++) {
+
+      Cell cell;
+      float dead = random(0, 1);
+
+      if (dead >= .93) {
+        cell = new Cell(true);
+      }
+      else {
+        cell  = new Cell(false);
+      }
+
+      grid[i][j] = cell;
+    }
+  }
+}
+
+void draw() {
+  background(0);
+  for (int i = 0; i<(gridWidth/cellSize); i++) {
+    for (int j = 0; j<(gridHeight/cellSize); j++) {
+      String bit;
+      if (grid[i][j].dead) {
+        fill(255, 0, 0);
+        bit = "0";
+      }
+      else {
+        fill(255, 255, 255);
+        bit = "1";
+      }
+
+      //  rect(i*cellSize, j*cellSize, cellSize,cellSize);
+
+      PFont f;  // Global font variable
+      f = createFont("Arial", 10, true); 
+      textFont(f, 10); 
+      text(grid[i][j].bit, i*cellSize, j*cellSize);
+    }
+  }
+  talk();
+  step();
+}
+
+
+void step() {
+  int dispersion = 1;
+  for (int x = 0; x<(gridWidth/cellSize); x++) {
+    for (int y = 0; y<(gridHeight/cellSize); y++) {
+
+      boolean isAlive = !grid[x][y].dead;
+      int liveCount = 0;
+
+      if (x-dispersion >= 0) {
+        if (!grid[x-dispersion][y].dead) {
+          liveCount++;
+        }
+      } 
+      if (x+dispersion < (gridWidth/cellSize)) {
+        if (!grid[x+dispersion][y].dead) {
+          liveCount++;
+        }
+      } 
+      if (y-dispersion >= 0) {
+        if (!grid[x][y-dispersion].dead) {
+          liveCount++;
+        }
+      }
+      if (y+dispersion < (gridHeight/cellSize)) {
+        if (!grid[x][y+dispersion].dead) {
+          liveCount++;
+        }
+      }
+      if (y+dispersion < (gridHeight/cellSize) && x+dispersion < (gridWidth/cellSize)) {
+        if (!grid[x+dispersion][y+dispersion].dead) {
+          liveCount++;
+        }
+      }
+      if (y-dispersion >=0  && x-dispersion >= 0) {
+        if (!grid[x-dispersion][y-dispersion].dead) {
+          liveCount++;
+        }
+      }
+      if (y-dispersion >=0  && x+dispersion < (gridWidth/cellSize)) {
+        if (!grid[x+dispersion][y-dispersion].dead) {
+          liveCount++;
+        }
+      }
+      if (y+dispersion < (gridHeight/cellSize)  && x-dispersion >= 0) {
+        if (!grid[x-dispersion][y+dispersion].dead) {
+          liveCount++;
+        }
+      }
+
+      //conways life changing rules    
+      if (isAlive) {
+        if (liveCount <2) {
+          grid[x][y].dead = true;
+          grid[x][y].bit = "0";
+        }
+        else if (liveCount >= 2 && liveCount <=3) {
+          grid[x][y].dead = false;
+          grid[x][y].bit = "1";
+        }
+        else if (liveCount >3) {
+          grid[x][y].dead = true;
+          grid[x][y].bit = "0";
+        }
+      }
+      else {
+        if (liveCount == 3) {
+          grid[x][y].dead = false;
+          grid[x][y].bit = "1";
+        }
+      }
+    }
+  }
+}
+
+
+void talk() {
+  for (int x = 0; x<(gridWidth/cellSize); x++) {
+    String bits = "";
+
+    for (int y = 0; y<(gridHeight/cellSize); y++) {
+
+      bits = bits + grid[x][y].bit;
+    }
+    int dec = (Integer.parseInt(bits, 2)%100);
+
+    // if(rowValue[x] != dec)
+    hist[dec]++;
+
+    //System.out.println(dec+": "+hist[dec]);
+
+    rowValue[x] = dec;
+  }
+
+
+
+  int w = (width-gridWidth)/hist.length;
+  //Graphing the results
+  for (int x = 0; x < hist.length; x++) {
+
+
+
+    stroke(0);
+    fill(175);
+    float scaleFactor = .10;
+
+    w = Math.max(1, w);
+    rect((x*w)+gridWidth, (gridHeight-(hist[x])*scaleFactor), w-1, hist[x]);
+
+      PFont f; 
+      f = createFont("Arial", 7, true); 
+      textFont(f, 7); 
+      fill(255,255,255);
+      text(x,(x*w)+gridWidth,10);
+  }
+}
+

@@ -1,0 +1,357 @@
+<HTML><HEAD>
+<TITLE>Computational Statistics: Regression</TITLE>
+</HEAD><BODY BGCOLOR="#FFFFFF" TEXT="#000000">
+<!--#config timefmt="%d %h %Y, %T %Z" -->
+
+<A HREF="/~theory/">
+<IMG src="/~theory/logo/shortTheory.gif"
+WIDTH=521 HEIGHT=82 BORDER=0 ALT="ICS Theory Group"></A>
+
+
+<H1><A HREF="/~eppstein/280/">ICS 280, Spring 1999:<BR>
+Computational Statistics</A></H1>
+
+<H2>Regression</H2>
+
+The data model for linear regression is that the data points
+are constrained to lie on some hyperplane (i.e., there is a linear
+relation between their coordinates).  Another way of interpreting this
+is to treat one of the coordinates as "dependent" and the rest as
+"independent": the dependent coordinate is then a linear function of the
+independent ones.  The data may be chosen according to some probability
+distribution on the line, or there may be some known pattern of
+independent coordinates (e.g. they are chosen on the grid), at each
+point of which one measures the dependent coordinate.
+For the probability distribution models, it doesn't much matter which is
+the dependent and which the independent variables (the only restriction
+is that the hyperplane must not be parallel to the dependent coordinate axis).
+But this choice may make a difference if the independent coordinates are
+nonrandom or if the noise model adds noise only to the dependent coordinate.
+
+<P>
+Data models in which the data points must satisfy multiple linear
+relations (i.e. they lie on a lower dimensional subspace) can often
+be handled by treating each dependent coordinate separately,
+but this is only appropriate for noise models in which the coordinates
+are independent (e.g. Gaussian noise).
+
+<H3>Projective Duality</H3>
+
+There's another picture of regression that is mathematically equivalent
+but may help human intuition.
+Interpret the coordinates (a,b) defining
+any line y=ax+b to instead define a point in a "dual" a-b plane.
+Then the set of lines through any point (x,y) in the primal plane
+turns into a set of points b=(-x)a+y in the dual plane; this set is just
+a line.
+
+<P>So if we have a collection of points (x<sub>i</sub>,y<sub>i</sub>)
+defining a regression problem, we can think of them instead as
+each defining a different line b=(-x<sub>i</sub>)a+y<sub>i</sub>
+in the a-b plane.  What we want to find is a point in the a-b plane
+that is "near" all of these lines; that is, we expect the lines
+to roughly look like they all go through a common point, and we want to
+find that common point.
+
+<P>Similar methods transform any higher dimensional regression problem
+of fitting a single hyperplane to a set of data points
+into an equivalent problem of fitting a single point
+to an arrangement of hyperplanes.
+
+<H3><A NAME="Lp">L<sub>p</sub> Models for Dependent Noise</A></H3>
+
+Let's first consider the case in which the noise is a random variable
+added only to the independent variable.
+The most common algorithm for fitting this model is least squares:
+If we are trying to find a linear model
+y=m.x+b (where y is the dependent variable, x is the vector of
+independent variables, and m and b are the parameters we're trying to find)
+then we measure the error of fit by
+<DIV ALIGN=CENTER>
+E = sum (m.x<sub>i</sub>+b-y<sub>i</sub>)<sup>2</sup>
+</DIV>
+The least squares fit is the one minimizing this error estimate.
+
+<P>
+The big advantage of least squares is that it's easy to solve:
+E is just a positive definite quadratic form, so it has a unique
+minimum.  Since E is a smooth function of m and b, its minimum
+occurs at the point where its partial derivatives in each coordinate
+are all zero.  This gives a system of d equations in d unknowns
+which one can solve by Gaussian elimination, or one can
+instead use local improvement methods to approximate the optimal fit.
+Thus the time is linear in the number of unknowns, and at worst
+cubic in the dimension.
+
+<P>
+More generally the L<sub>p</sub> error is formed by using pth powers
+in place of squares in the definition of E.
+The limit of this, the L<sub>infinity</sub> norm, is
+just the maximum error of any individual data point.
+The most commonly used of these are the L<sub>1</sub> norm
+(also known as "least absolute deviation" or LAD regression)
+which is less sensitive to outliers than least squares,
+and the L<sub>infinity</sub> norm,
+which is more sensitive to outliers and therefore useful
+in contexts where one wants to detect them e.g. measuring flatness of a
+surface.
+
+<P>The L<sub>infinity</sub> estimator can be expressed as a low
+dimensional linear program: find (m,b,e), minimizing e,
+and satisfying the linear constraints
+-e&nbsp;<U>&lt;</U>&nbsp;m.x<sub>i</sub>+b-y<sub>i</sub>&nbsp;<U>&lt;</U>&nbsp;e.
+The dimension (number of variables to be found) is just d+1.
+Therefore, it can be solved in time linear in the number of data points
+(but exponential in the dimension)
+using low-dimensional linear programming techniques.
+[citations to be filled in later].
+There also exists a similar linear time bound for L<sub>1</sub> estimation
+[<A HREF="bib.html#Z84">Z84</A>].
+All L<sub>p</sub> estimators are invariant to coordinate changes
+and affine transformations among only dependent variables.
+
+<P>One advantage of assuming dependent noise is that
+it is preserved by the duality transformation described above:
+the vertical distance of a point (x<sub>i</sub>,y<sub>i</sub>)
+from the line y=ax+b is the same as the vertical distance
+of the point (a,b) from the line
+b=(-x<sub>i</sub>)a+y<sub>i</sub>.
+(Just work out the equations, they're the same!)
+
+<P>In the discussion, one of the students suggested using a convex combination
+of different L<sub>p</sub> metrics, which might e.g. come from a truncated
+power series for some harder-to-estimate metric.  Alternatively, the
+coefficients in the convex combination might themselves come
+from some sort of statistical estimation, to fit the noise
+actually apparent in the data.  However, I don't know of any references
+related to these ideas.
+
+<H3><A NAME="tls">L<sub>p</sub> Models for Independent Noise</A></H3>
+
+If the noise is added to all coordinates (not just the dependent ones)
+it may be appropriate to use the Euclidean distance from the regression
+hyperplane in place of the vertical distance m.x+b-y used above.
+Alternatively, the same considerations as in
+<A HREF="point.html#dist">single point estimation</A>
+may make a different distance function appropriate.
+
+L<sub>2</sub> estimation with Euclidean distance is known as "total least
+squares"
+[<A HREF="bib.html#GL80">GL80</A>,
+[<A HREF="bib.html#M59">M59</A>,
+[<A HREF="bib.html#P01">P01</A>].
+The optimal estimator must go through the centroid of the
+data (this is not too hard to see if one applies duality) but the
+algebra describing the estimator quality as a function of its parameters
+is messy and hard to invert.  However, the problem can
+apparently be solved by singular value decomposition.
+
+<P>There's a nice connection between L<sub>1</sub> estimation in the
+independent noise model
+and the famous "k-sets" or "k-level" problem from computational
+geometry: if you fix a choice of slope, the problem is just a
+one-dimensional L<sub>1</sub> problem which can be solved by the median.
+If we use projective duality,
+what we want to know is the median among the points where the dual
+hyperplanes cross each possible vertical line;
+this sequence of medians forms a surface in the arrangement and is known
+as the "k-level" (here k=n/2).  In two dimensions, this surface is just
+a polygonal path, formed by walking left-to-right through the
+arrangement and turning up or down at every crossing point you pass through.
+A famous problem posed by Erd&ouml;s
+and Lov&aacute;sz is on the number of edges this path can have;
+known bounds are Omega(n&nbsp;log&nbsp;k) and O(nk<sup>1/3</sup>).
+
+<P>L<sub>infinity</sub> estimation is equivalent to computing the width of
+a set (minimum distance between parallel supporting hyperplanes);
+it can be computed in O(n log n) time in the plane, but the best time
+known in three dimensions is O(n<sup>3/2</sup>) [citations to be filled
+in later].
+
+<P>These independent noise estimators are generally invariant
+under arbitrary translations or rotations of the coordinate system,
+however they are not invariant to general affine transformations.
+
+<H3>Dual-Independent Noise</H3>
+
+If one has in mind some physical meaning to the dual interpretation,
+in which the data define lines and the estimator one is trying to find
+is a point near all these lines, then it may make sense to use Euclidean
+distance in the dual plane instead of the primal.
+I.e., we define the distance from the estimator point (a,b)
+to a data line b=(-x<sub>i</sub>)a+y<sub>i</sub>.
+to be the usual Euclidean distance of that point from that line.
+
+<P>With that definition, one can make any sort of L<sub>p</sub>
+regression etc.  The L<sub>1</sub>, L<sub>2</sub>, and
+L<sub>infinity</sub> regressions can all be solved easily using
+simple modifications of the algorithms for dependent noise models.
+(This is one big advantage of dual independence over primal independence.)
+
+<P>I don't know of any references, or work by actual statisticians,
+on this sort of model.
+
+<H3><A NAME="LMS">Least Median of Squares</A></H3>
+
+The LMS estimator, defined by Rousseeuw
+[<A HREF="bib.html#R84">R84</A>],
+minimizes the median error (rather than the sum of errors or squared
+errors as in L<sub>1</sub> or L<sub>2</sub> estimation).
+Equivalently, we seek a planar strip of minimum possible
+vertical width that covers at least half the data points.
+
+<P>It is commonly claimed that
+this estimator provides the maximum possible robustness to outliers
+-- up to half the data may be arbitrarily corrupted.
+This claim seems to rely on an assumption that the data
+is well spread out along the independent coordinates,
+rather than being tightly clustered along lower dimensional subspaces in
+a way that would
+allow an adversary to set up false estimates using large
+numbers of valid data points.
+But the same assumption must be made for any other robust regression method.
+
+<P>
+Unfortunately algorithms for computing the LMS estimator are relatively slow:
+O(n<sup>2</sup>) even in two dimensions
+[<A HREF="bib.html#SS87">SS87</A>,
+<A HREF="bib.html#ES90">ES90</A>].
+There are theoretical reasons for believing that no exact
+algorithm can be faster than this.
+However Mount et al
+[<A HREF="bib.html#MNRSW97">MNRSW97</A>]
+provide an O(n log n) time approximation as well as
+a randomized algorithm that they believe should work well in practice
+(although it lacks theoretical performance guarantees).
+
+<P>In the dual framework, we are given an arrangement of lines,
+and we wish to find the shortest possible vertical line segment
+that crosses at least half of the lines.
+
+<P>This estimator assumes a dependent noise model;
+one can define LMS-like estimator in similar ways for
+independent noise (in which case one is trying to find 
+a line minimizing the median distance to the points)
+or for dual-independent noise
+(in which case one is trying to find a minimum-radius circle
+that crosses at least half of the lines).
+
+<H3><A NAME="repmed">Repeated Median</A></H3>
+
+I don't know what this is, but it's the subject of
+[<A HREF="bib.html#MMN98">MMN98</A>].
+
+<P>Here's my guess, based on the name -- I haven't looked the paper
+itself up yet.  LMS estimation can be interpreted as finding a set of
+outliers to throw away and ignore (namely the points further away
+than the median distance it finds).  But once it throws away those
+points, it then does something fairly stupid with the rest of the points:
+just the L<sub>infinity</sub> estimator, which is very sensitive to outliers.
+So if the data that's left after throwing away half the points is still
+suspect, it seems more reasonable to instead apply the same outlier
+detection strategy recursively.
+
+<P>There's not much to say about algorithms for this, at least not
+without more progress on algorithms for the LMS estimator.
+The reason is that if you have a quadratic algorithm for LMS,
+and apply it recursively as above, you can describe the recursion's time
+by the recurrence T(n)=T(n/2)+O(n<sup>2</sup>) which is again quadratic.
+So asymptotically, the time for this recursive approach would be the
+same as the time for simple LMS estimation.
+
+<H3><A NAME="medslope">Median Slope</A></H3>
+
+The so-called Thiel-Sen estimator (for planar data only) finds
+a line y=mx+b
+by choosing m
+to be the median among the n(n-1)/2 slopes of lines determined
+by pairs of data points.  The remaining parameter b can then be
+found by choosing the median among the values y-mx.
+
+<P>In the dual framework, we are given an arrangement of lines
+in the a-b plane.  Each pair of lines determines a point where
+the two lines cross; we wish to find the median a-coordinate
+among these (n&nbsp;choose&nbsp;2) crossings points.
+
+<P>This method is only robust to n(1-1/sqrt(2)) ~ 0.29n outliers rather
+than n/2 for the
+LMS estimator (proof: if there are n/sqrt(2) valid data points, they define
+roughly n^2/4 slopes, too many for the outliers to perturb the median).
+However, it can be computed more quickly: O(n log n) time by
+any of several algorithms
+[<A HREF="bib.html#BC98">BC98</A>,
+<A HREF="bib.html#CSSS89">CSSS89</A>,
+<A HREF="bib.html#DMN92">DMN92</A>,
+<A HREF="bib.html#KS93">KS93</A>,
+<A HREF="bib.html#M91b">M91b</A>].
+
+<P>I guess in higher dimensions one could apply any robust single point
+estimation technique (e.g. centerpoint or least median of squares) to
+the normal vectors to hyperplanes defined by d-tuples of points.
+But I don't know of any work on such generalizations.
+
+<H3><A NAME="depth">Regression Depth</A></H3>
+
+A "nonfit" (in the context of dependent-noise regression) is defined to
+be a vertical hyperplane; these are bad because they can't be used to
+predict the values of the dependent variable.  Rousseeuw and Hubert [<A
+HREF="bib.html#RH99">HR99</A>] define the "depth" of a hyperplane to be
+the minimum number of points it must cross on any continuous motion that
+moves it to a nonfit.  It doesn't make any difference if you restrict
+the class of continuous motions to be rotations around some lower
+dimensional axis.  Equivalently, one can say that a plane
+partitions the data into two subsets; the depth is the 
+minimum number of points that would have to change from one subset to
+the other to get a partition achievable by a vertical hyperplane.
+The depth of a plane is a lower bound on the number
+of outliers that would have to have occurred to make that plane
+inaccurate.
+
+<P>The dual version of this is much easier to understand.
+The depth of a point in an arrangement is just the minimum
+number of lines (or hyperplanes) that you would need to cross
+to get from the point out to infinity.  A good fit according
+to this measure is then just a point with high depth;
+that is, one that's enclosed by a large number of hyperplanes
+in every possible direction.
+
+<P>In one dimension, a hyperplane is just a point, a vertical hyperplane
+is just a point at infinity, and so the median of a point set
+gives optimal depth n/2.
+In two dimensions, a very simple construction, the "catline"
+[<A HREF="bib.html#HR98">HR98</A>] has depth n/3.
+This is optimal, since one can find sets of points for which
+no line is better than n/3.
+It turns out that any point set in any dimension has a hyperplane of depth
+at least n/(d+1), exactly matching the quality bounds known for centerpoints
+[<A HREF="bib.html#ABET98">ABET98</A>].
+However the proof is nonconstructive.
+
+<P>Just as with the centerpoint, you probably want the deepest possible
+plane not just any deep plane.  This can be found efficiently in the
+plane
+[<A HREF="bib.html#KMRSSS99">KMRSSS99</A>]
+and less efficiently in higher dimensions.
+One can also efficiently approximate the deepest plane
+in linear time in any dimension using
+<A HREF="cluster.html#eps">geometric sampling</A> techniques
+[<A HREF="bib.html#SW98">SW98</A>].
+
+<P>Because (the primal formulation of) this estimator depends on a definition
+of a vertical direction, it makes sense for the dependent or dual-independent
+noise models but not for independent noise.
+It is invariant under affine transformations among only
+independent variables, arbitrary affine transformations of the dual space,
+or more generally any continuous deformation of space that
+doesn't ever flatten a tetrahedron (produce d+1 coplanar points) or make
+a vertical triangle (d points forming a vertical plane).
+
+<H2><A HREF="cluster.html">NEXT: Clustering</A></H2>
+
+<HR><P>
+<A HREF="/~eppstein/">David Eppstein</A>,
+<A HREF="/~theory/">Theory Group</A>,
+<A HREF="/">Dept. Information & Computer Science</A>,
+<A HREF="http://www.uci.edu/">UC Irvine</A>.<BR>
+<SMALL>Last update: <!--#flastmod file="regress.html" --></SMALL>
+</BODY></HTML>

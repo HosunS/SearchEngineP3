@@ -1,0 +1,47 @@
+/* 
+$Id$
+
+Copyright (C) 2007 by The Regents of the University of California
+
+Redistribution of this file is permitted under
+the terms of the *GNU* Public License (*GPL*) 	
+
+Date: 04/08/2007
+Author: Yiming Lu <yimingl@ics.uci.edu>
+*/
+
+#ifndef _buckethead_h_
+#define _buckethead_h_
+
+#include <tr1/unordered_map>
+#include "gram.h" 
+#include "../util/gram.h"
+
+using namespace std;
+using namespace tr1;
+/* The index structure of the filter tree. It uses unordered_map for the gram level index.
+ */
+
+typedef unordered_map <unsigned, LengthBucket*> HashTable;
+
+class Buckets
+{
+public:		
+    Buckets();
+    ~Buckets();	
+    //get the matched buckets given a gram
+    LengthBucket* getMatchedBuckets(const char *gram);
+    //insert the gram info into the idex
+    void addToHashTable(const char *gram, 
+					    unsigned stringID, 
+					    unsigned short position, 
+					    unsigned short stringLength);
+	//The operators are used for searlization of index.
+    friend ostream &operator << (ostream &output, const Buckets & buckets);
+    friend istream &operator >> (istream &input, Buckets & buckets);
+    //This function returns the memory requirement of a node of this type
+    unsigned getMemory();
+    HashTable *map;
+};
+
+#endif /*_buckethead_h_*/

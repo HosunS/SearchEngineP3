@@ -1,0 +1,27 @@
+(module simple-text-io mzscheme 
+  (provide begin read display newline)
+  #|
+;; Number -> String
+;; convert decimal number into string with exactly two digits to right of "."
+(define (decimal->string n)
+  (list->string (truncate (string->list (number->string (/ (round (* 100 (+ #i0.0 n))) 100))))))
+
+;; List-of-char -> List-of-char
+;; find the "." and truncate after next two chars
+(define (truncate str)
+  (cond
+	[(empty? str) (error 'truncate "can't happen")]
+	[else (cond
+			[(char=? (first str) #\.) (cons #\. (pick2 (rest str)))]
+			[else (cons (first str) (truncate (rest str)))])]))
+
+
+;; List-of-char -> List-of-char
+;; pick first 2 chars from list, or supplement them with #\0
+(define (pick2 str)
+  (cond
+	[(empty? str) (list #\0 #\0)]
+	[(empty? (rest str)) (list (first str) #\0)]
+	[else (list (first str) (second str))]))
+  |#
+  )

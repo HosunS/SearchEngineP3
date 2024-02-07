@@ -1,0 +1,23 @@
+model{
+  for(k in 1:180){
+     logy[k] <- log(y[k])
+     logy[k] ~ dnorm(m[k],tau)
+     m[k] <- mu + b[ID[k]]
+   }
+  for(i in 1:30){ b[i] ~ dnorm(0,taub) }
+  sigma ~ dunif(0,100)
+  tau <- 1/(sigma*sigma)
+  sigmab ~ dunif(0,100) 
+  taub <- 1/(sigmab*sigmab)
+  mu ~ dnorm(0,0.001)
+  rho <- tau/(taub+tau)
+  bf ~ dnorm(0,taub)
+  ef ~ dnorm(0,tau)
+  muf <- mu + bf
+  logyf <- muf + ef
+   # Predictive density
+  yf <- exp(logyf)
+   # 90th and 10th percentiles for muf
+  U <- mu + 1.28*sqrt(1/taub)
+  L <- mu - 1.28*sqrt(1/taub)
+}

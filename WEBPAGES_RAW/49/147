@@ -1,0 +1,352 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<!-- Page automatically generated from latex_to_html converter. -->
+<!-- by cc_extract_html, $Revision: 3.19 $ -->
+<!-- LaTeX source file: './Box_intersection_d_ref/box_intersection_d.tex' -->
+<html> <head>  
+<title>box_intersection_d</title>
+</head>  
+<link href="../latex_to_html.css" rel="STYLESHEET">
+<body bgcolor="white">
+<!-- ------------------------------------------------------------------- -->
+
+
+<!-- Top Navigation ---------------------------------------------------- -->
+<div class="NavTop">
+<hr>
+  <strong>Navigation:</strong>
+<a href="Chapter_intro.html">Up</a>, 
+  <a href="../contents.html">Table of Contents</A>,
+  <a href="../biblio.html">Bibliography</a>,
+  <a href="../manual_index.html">Index</a>,
+  <a href="../title.html">Title Page</a>
+<hr><!-- End of Top Navigation ----------------------------------------- -->
+</div>
+
+
+<A NAME="Cross_link_anchor_1233"></A>
+
+<A NAME="Cross_link_anchor_1234"></A>
+
+      
+     
+     
+     
+<A NAME="Index_anchor_1305"></A> 
+
+   
+<TABLE ALIGN=RIGHT><TR><TD><IMG ALIGN=TOP SRC="cc_Function.gif"></TD></TR></TABLE>
+
+
+    <A NAME="ccRef_CGAL::box_intersection_d"></A>
+<h2><I>CGAL::box_intersection_d</I></h2>
+
+
+   
+     
+     
+<A NAME="Index_anchor_1306"></A> 
+
+   
+
+
+   
+     
+     
+<A NAME="Index_anchor_1307"></A>
+<P>
+
+<H3>Definition</H3>
+<P>
+
+The function <I><A HREF="Function_box_intersection_d.html#Cross_link_anchor_1234">box_intersection_d</A></I> computes the pairwise intersecting boxes
+between two sequences of iso-oriented boxes in arbitrary dimension.
+The sequences of boxes are given with two random-access iterator
+ranges and will be reordered in the course of the algorithm. For each
+intersecting pair of boxes a <I>callback</I> function object is called
+with the two intersecting boxes as argument; the first argument is a
+box from the first sequence, the second argument a box from the second
+sequence.  The performance of the algorithm can be tuned with a
+<I>cutoff</I> parameter, see the implementation section below for more
+details.
+<P>
+
+The algorithm reorders the boxes in the course of the algorithm. Now,
+depending on the size of a box it can be faster to copy the boxes, or
+to work with pointers to boxes and copy only pointers. We offer
+automatic support for both options. To simplify the description, let
+us call the <I>value_type</I> of the iterators <I>box handle</I>.  The
+<I>box handle</I> can either be our box type itself or a pointer (or
+const pointer) to the box type.
+<P>
+
+A <MATH><I>d</I></MATH>-dimensional iso-oriented box is defined as the <A HREF="../Kernel_23_ref/Class_Cartesian.html#Cross_link_anchor_6">Cartesian</A> product
+of <MATH><I>d</I></MATH> intervals. We call the box <I>half-open</I> if the <MATH><I>d</I></MATH>
+intervals <MATH><I>{ [lo<SUB>i</SUB>,hi<SUB>i</SUB>) | 0  <IMG BORDER=0 WIDTH=11 HEIGHT=25 ALIGN=MIDDLE SRC="cc_leq.gif"> i &lt; d}</I></MATH> are half-open intervals,
+and we call the box <I>closed</I> if the <MATH><I>d</I></MATH> intervals <MATH><I>{ [lo<SUB>i</SUB>,hi<SUB>i</SUB>]
+| 0  <IMG BORDER=0 WIDTH=11 HEIGHT=25 ALIGN=MIDDLE SRC="cc_leq.gif"> i &lt; d}</I></MATH> are closed intervals. Note that closed boxes support
+zero-width boxes and they can intersect at their boundaries, while
+non-empty half-open boxes always have a positive <A HREF="../Kernel_23_ref/Function_volume.html#Cross_link_anchor_269">volume</A> and they only
+intersect iff their interiors overlap.  The distinction between closed
+or half-open boxes does not require a different representation of
+boxes, just a different interpretation when comparing boxes, which is
+selected with the <I>topology</I> parameter and its two values,
+<I>CGAL::Box_intersection_d::HALF_OPEN</I> and
+<I>CGAL::Box_intersection_d::CLOSED</I>.
+<P>
+
+In addition, a box has an unique <I>id</I>-number. It is used to order
+boxes consistently in each dimension even if boxes have identical
+coordinates. In consequence, the algorithm guarantees that a pair of
+intersecting boxes is reported only once. Boxes with equal
+<I>id</I>-number are not reported since they obviously intersect trivially.
+<P>
+
+The algorithm uses a traits class of the <I><A HREF="Concept_BoxIntersectionTraits_d.html#Cross_link_anchor_1242">BoxIntersectionTraits_d</A></I>
+concept to access the boxes. A default traits class is provided that
+assumes that the box type is a model of the <I><A HREF="Concept_BoxIntersectionBox_d.html#Cross_link_anchor_1241">BoxIntersectionBox_d</A></I>
+concept and that the box handle, i.e., the iterators value type, is
+identical to the box type or a pointer to the box type.
+<P>
+
+An important special application of this algorithm is the test for
+self-intersections where the second box sequence is an identical copy
+of the first sequence including the preserved <I>id</I>-number. Note
+that this implies that the address of the box is not sufficient for
+the <I>id</I>-number if boxes are copied by value. To ease the use of
+this special case we offer a simplified version of this function with
+one iterator range only, which then creates internally the second copy
+of the boxes, under the name <I><A HREF="Function_box_self_intersection_d.html#Cross_link_anchor_1237">CGAL::box_self_intersection_d</A></I>.
+<P>
+
+In the general case, we distinguish between the bipartite case (the
+boxes are from different sequences) and the complete case (the boxes
+are from the same sequence, i.e., the self <A HREF="../Kernel_23_ref/Function_intersection.html#Cross_link_anchor_221">intersection</A> case). The
+default is the bipartite case, since the complete case is typically
+handled with the simplified function call mentioned above. However,
+the general function call offers the <I>setting</I> parameter with the
+values <I>CGAL::Box_intersection_d::<A HREF="../Nef_2_ref/Class_Nef_polyhedron_2#Enum_Content">COMPLETE</A></I> and
+<I>CGAL::Box_intersection_d::BIPARTITE</I>.
+<P>
+
+<I>#include &lt;<A HREF="../../../include/CGAL/box_intersection_d.h">CGAL/box_intersection_d.h</A>&gt;</I>
+<P>
+
+<TABLE BORDER=0 CELLSPACING=2 CELLPADDING=0 WIDTH=650>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% COLSPAN=3>
+        <I><NOBR>
+    template&lt; class RandomAccessIterator1, class RandomAccessIterator2, class Callback &gt;
+        </I></NOBR>
+        </TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_box_intersection_d6_RandomAccessIterator1_begin1+_RandomAccessIterator1_end1+_RandomAccessIterator2_begin2+_RandomAccessIterator2_end2+_Callback_callback+_std::ptrdiff_t_cutoff_=_10+_Box_intersection_d::Topology_topology_=_Box_intersection_d::CLOSED+_Box_intersection_d::Setting_setting_=_Box_intersection_d::BIPARTITE9;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0><TR><TD ALIGN=LEFT VALIGN=TOP NOWRAP><I>
+    <A HREF="Function_box_intersection_d.html#Cross_link_anchor_1234">box_intersection_d</A> ( </I></TD><TD ALIGN=LEFT VALIGN=TOP NOWRAP><I>
+    RandomAccessIterator1 begin1,<BR>
+
+RandomAccessIterator1 end1,<BR>
+
+RandomAccessIterator2 begin2,<BR>
+
+RandomAccessIterator2 end2,<BR>
+
+Callback callback,<BR>
+
+std::ptrdiff_t cutoff = 10,<BR>
+
+Box_intersection_d::Topology topology = Box_intersection_d::CLOSED,<BR>
+
+Box_intersection_d::Setting setting = Box_intersection_d::BIPARTITE)</I></TD></TR></TABLE>
+    
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    Invocation of box <A HREF="../Kernel_23_ref/Function_intersection.html#Cross_link_anchor_221">intersection</A> with default box traits
+    <I><A HREF="Class_Box_intersection_d--Box_traits_d.html#Cross_link_anchor_1245">CGAL::Box_intersection_d::Box_traits_d</A>&lt;Box_handle&gt;</I>, where
+    <I>Box_handle</I> corresponds to the iterator value type  of
+    <I>RandomAccessIterator1</I>.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% COLSPAN=3>
+        <I><NOBR>
+    template&lt; class RandomAccessIterator1, class RandomAccessIterator2, class Callback, class BoxTraits &gt;
+        </I></NOBR>
+        </TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_box_intersection_d6_RandomAccessIterator1_begin1+_RandomAccessIterator1_end1+_RandomAccessIterator2_begin2+_RandomAccessIterator2_end2+_Callback_callback+_BoxTraits_box_traits+_std::ptrdiff_cutoff_=_10+_Box_intersection_d::Topology_topology_=_Box_intersection_d::CLOSED+_Box_intersection_d::Setting_setting_=_Box_intersection_d::BIPARTITE9;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0><TR><TD ALIGN=LEFT VALIGN=TOP NOWRAP><I>
+    <A HREF="Function_box_intersection_d.html#Cross_link_anchor_1234">box_intersection_d</A> ( </I></TD><TD ALIGN=LEFT VALIGN=TOP NOWRAP><I>
+    RandomAccessIterator1 begin1,<BR>
+
+RandomAccessIterator1 end1,<BR>
+
+RandomAccessIterator2 begin2,<BR>
+
+RandomAccessIterator2 end2,<BR>
+
+Callback callback,<BR>
+
+BoxTraits box_traits,<BR>
+
+std::ptrdiff cutoff = 10,<BR>
+
+Box_intersection_d::Topology topology = Box_intersection_d::CLOSED,<BR>
+
+Box_intersection_d::Setting setting = Box_intersection_d::BIPARTITE)</I></TD></TR></TABLE>
+    
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    Invocation with custom box traits.
+        </TD></TR>
+        </TABLE>
+<P>
+
+<H3>Requirements</H3>
+<P>
+
+<UL>
+  <LI><I>RandomAccessIterator1</I>, and ...<I>2</I>, must be
+    mutable random-access iterators and both value types must be
+    the same. We call this value type <I>Box_handle</I> in the following.
+  <LI><I>Callback</I> must be of the <I>BinaryFunction</I> concept. 
+    The <I>Box_handle</I> must be convertible to both argument types. The
+    return type is not used and can be <I>void</I>.
+  <LI>The <I>Box_handle</I> must be a model of the <I>Assignable</I> concept.
+  <LI>In addition, if the default box traits is used the <I>Box_handle</I> must 
+    be a class type <I>T</I> or a pointer to a class type <I>T</I>, where
+    <I>T</I> must be a model of the <I><A HREF="Concept_BoxIntersectionBox_d.html#Cross_link_anchor_1241">BoxIntersectionBox_d</A></I> concept.
+    In both cases, the default box traits specializes to a suitable
+    implementation.
+  <LI><I>BoxTraits</I> must be of the <I><A HREF="Concept_BoxIntersectionTraits_d.html#Cross_link_anchor_1242">BoxIntersectionTraits_d</A></I> concept.
+</UL>
+<P>
+
+<H3>See Also</H3>
+<P>
+
+<I><A HREF="Function_box_self_intersection_d.html#Cross_link_anchor_1237">CGAL::box_self_intersection_d</A></I><BR>
+
+<I><A HREF="Function_box_intersection_all_pairs_d.html#Cross_link_anchor_1235">CGAL::box_intersection_all_pairs_d</A></I>
+<P>
+
+<I><A HREF="Class_Box_intersection_d--Box_traits_d.html#Cross_link_anchor_1245">CGAL::Box_intersection_d::Box_traits_d</A>&lt;BoxHandle&gt;</I><BR>
+
+<I><A HREF="Concept_BoxIntersectionBox_d.html#Cross_link_anchor_1241">BoxIntersectionBox_d</A></I><BR>
+
+<I><A HREF="Concept_BoxIntersectionTraits_d.html#Cross_link_anchor_1242">BoxIntersectionTraits_d</A></I>
+<P>
+
+<H3>Implementation</H3>
+<P>
+
+The implemented algorithm is described in&nbsp;[<A HREF="../biblio.html#Biblio_cgal:ze-fsbi-02">ZE02</A>] as
+version two.  Its performance depends on a <I>cutoff</I> parameter.
+When the size of both iterator ranges drops below the <I>cutoff</I>
+parameter the function switches from the streamed segment-tree
+algorithm to the two-way-scan algorithm, see&nbsp;[<A HREF="../biblio.html#Biblio_cgal:ze-fsbi-02">ZE02</A>]
+for the details.
+<P>
+
+The streamed segment-tree algorithm needs <MATH><I>O(n </I></MATH>log<MATH><I><SUP>d</SUP> (n) + k)</I></MATH>
+worst-case running time and <MATH><I>O(n)</I></MATH> space, where <MATH><I>n</I></MATH> is the number of
+boxes in both input sequences, <MATH><I>d</I></MATH> the (constant) dimension of the
+boxes, and <MATH><I>k</I></MATH> the output complexity, i.e., the number of pairwise
+intersections of the boxes. The two-way-scan algorithm needs <MATH><I>O(n </I></MATH>log<MATH><I>(n) + l)</I></MATH> worst-case running time and <MATH><I>O(n)</I></MATH> space, where <MATH><I>l</I></MATH> is the
+number of pairwise overlapping intervals in one dimensions (the
+dimension where the algorithm is used instead of the segment tree).
+Note that <MATH><I>l</I></MATH> is not necessarily related to <MATH><I>k</I></MATH> and using the
+two-way-scan algorithm is a heuristic.
+<P>
+
+Unfortunately, we have no general method to automatically determine an
+optimal cutoff parameter, since it depends on the used hardware, the
+runtime ratio between callback runtime and segment-tree runtime, and
+of course the number of boxes to be checked and their distribution. In
+cases where the callback runtime is dominant, it may be best to make
+the threshold parameter small. Otherwise a <I>cutoff</I><MATH><I>=<A HREF="../NumberTypeSupport_ref/Function_sqrt.html#Cross_link_anchor_1414">sqrt</A>(n)</I></MATH> can
+lead to acceptable results. For well distributed boxes the original
+paper&nbsp;[<A HREF="../biblio.html#Biblio_cgal:ze-fsbi-02">ZE02</A>] gives optimal cutoffs in the thousands.
+Anyway, for optimal runtime some experiments to <A HREF="../NumberTypeSupport_ref/Function_compare.html#Cross_link_anchor_1339">compare</A> different
+cutoff parameters are recommended. See also
+Section&nbsp;<A HREF="../Box_intersection_d/Chapter_main.html#sec:box-inters-performance"><IMG SRC="cc_ref_up_arrow.gif" ALT="reference" WIDTH="10" HEIGHT="10"></A>.
+<P>
+
+<H3>Example</H3>
+<P>
+
+The box implementation provided with
+<I><A HREF="Class_Box_intersection_d--Box_d.html#Cross_link_anchor_1243">CGAL::Box_intersection_d::Box_d</A>&lt;double,2&gt;</I> has a special
+constructor for the C<SMALL>GAL</SMALL> bounding box type <I><A HREF="../Kernel_23_ref/Class_Bbox_2.html#Cross_link_anchor_41">CGAL::Bbox_2</A></I> (and
+similar for dimension 3). We use this in the example to create <MATH><I>3
+ &times; 3</I></MATH> <I>boxes</I> in a grid layout. Additionally we pick the
+center box and the box in the upper-right corner as our second box
+sequence <I>query</I>.
+<P>
+
+The default policy of the box type implements the <I>id</I>-number with
+an explicit counter in the boxes, which is the default choice since it
+always works. We use the <I>id</I>-number in our callback function to
+report the result of the <A HREF="../Kernel_23_ref/Function_intersection.html#Cross_link_anchor_221">intersection</A> algorithm call. The result will
+be that the first <I>query</I> box intersects all nine <I>boxes</I> and
+the second <I>query</I> box intersects the four boxes in the
+upper-right quadrant.
+<P>
+
+<pre class="ExampleCode">// file: examples/Box_intersection_d/minimal.C
+#include &lt;CGAL/<A HREF="Function_box_intersection_d.html#Cross_link_anchor_1234">box_intersection_d</A>.h&gt;
+#include &lt;CGAL/<A HREF="../Kernel_23_ref/Class_Bbox_2.html#Cross_link_anchor_42">Bbox_2</A>.h&gt;
+#include &lt;iostream&gt;
+
+typedef <A HREF="Class_Box_intersection_d--Box_d.html#Cross_link_anchor_1243">CGAL::Box_intersection_d::Box_d</A>&lt;double,2&gt; Box;
+typedef <A HREF="../Kernel_23_ref/Class_Bbox_2.html#Cross_link_anchor_41">CGAL::Bbox_2</A>                              Bbox;
+                                                     // 9 boxes of a grid
+Box boxes[9] = { Bbox( 0,0,1,1), Bbox( 1,0,2,1), Bbox( 2,0,3,1), // low
+                 Bbox( 0,1,1,2), Bbox( 1,1,2,2), Bbox( 2,1,3,2), // middle
+                 Bbox( 0,2,1,3), Bbox( 1,2,2,3), Bbox( 2,2,3,3)};// upper
+// 2 selected boxes as query; center and upper right
+Box query[2] = { Bbox( 1,1,2,2), Bbox( 2,2,3,3)};
+
+void callback( const Box&amp; a, const Box&amp; b ) {
+    std::cout &lt;&lt; &quot;box &quot; &lt;&lt; a.id() &lt;&lt; &quot; intersects box &quot; &lt;&lt; b.id() &lt;&lt; std::endl;
+}
+int main() {
+    <A HREF="Function_box_intersection_d.html#Cross_link_anchor_1233">CGAL::box_intersection_d</A>( boxes, boxes+9, query, query+2, callback);
+    return 0;
+}
+
+</pre>
+<P>
+
+<div class="NavNext"><hr> <b>Next:</b> <a href="Function_box_intersection_all_pairs_d.html"><I>box_intersection_all_pairs_d</I></a> 
+
+
+    
+<div class="NavBottom">
+<hr><!-- Bottom Navigation --------------------------------------------- -->
+  <strong>Navigation:</strong>
+<!Up_chapter_link_58!>
+  <a href="../contents.html">Table of Contents</A>,
+  <a href="../biblio.html">Bibliography</a>,
+  <a href="../manual_index.html">Index</a>,
+  <a href="../title.html">Title Page</a>
+<!-- End of Bottom Navigation ------------------------------------------ -->
+
+
+<hr><!-- --------------------------------------------------------------- -->
+<div class="NavAddress">
+
+The <A HREF=http://www.cgal.org>CGAL Project</A> .
+
+Tue, December 21, 2004 .
+<hr></div>
+</body>  </html>  

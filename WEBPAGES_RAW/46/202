@@ -1,0 +1,398 @@
+<html>
+<head>
+<title>Fuzzy Keyword Search on Spatial Data</title>
+<link rel="stylesheet" type="text/css" href="index.css"/>
+<script src="http://maps.google.com/maps?file=api&v=2&key=ABQIAAAAGSAHmR8vkzIZ0Rksq36K2BSkTToH5jpzxmsWG1Lk3cY4JgplhBTmRDKUqcC8Znbt4goQPJxhs3B7fA" type="text/javascript"></script>
+<script src="../ClusterMarker.js"></script>
+<script type="text/javascript">
+	var map;
+	var http;
+	var cntrPntLat;
+	var cntrPntLng;
+	var addrsMsg = "We couldn't understand the location!";
+	var mapType;
+	var cluster;
+	var startCommunicationTime;
+	var stopCommunicationTime;
+	var startClientPreprocessingTime;
+	var stopClientPreprocessingTime;
+	var keywordsSuggestion = "e.g., ghirardelli chocolates or girardilli choclates";
+	var locationSuggestion = "e.g., san fransisco, ca";
+
+
+	function createMarker(point, title, description, tag, kwds, url)
+	{
+		var keys = kwds.split(" ");
+		var regex = prepareRegex(keys);		
+		var marker = new GMarker(point, {title:title});
+
+		title = highlight(title , regex);
+		description = highlight(description , regex);
+		tag = highlight(tag , regex);
+
+		var firstTab = "<div class=\"infowindow-title\">" + title + "</div>" + description;
+		var secondTab = "Tags: " + tag + "<br><br><a href=" + url + ">Click here to see the photo</a>";
+		
+
+		GEvent.addListener(marker, 'click', function() {marker.openInfoWindowTabsHtml([new GInfoWindowTab("Description", "<div class=\"infowindow\">" + firstTab + "</div>"), new GInfoWindowTab("Tags & URL", "<div class=\"infowindow\">" + secondTab + "</div>")]);});
+
+		return marker;
+	};
+
+	function createTabbedMarker(point,html1,html2,label1,label2)
+	{
+		var marker = new GMarker(point);
+		GEvent.addListener(marker, "click", function() {marker.openInfoWindowTabsHtml([new GInfoWindowTab(label1,html1), new GInfoWindowTab(label2,html2)]);});
+		return marker;
+	}
+
+	function onStateChange()
+	{
+		if (http.readyState == 4)
+		{
+			if (http.status == 200)
+			{
+				stopCommunicationTime = (new Date).getTime();
+				var startDrawingTime = stopCommunicationTime;
+				var objects = http.responseText.split("=+=");	
+
+				if (objects.length > 1)
+				{
+					var markersArray = [];
+					for(var i = 0; i < (objects.length) - 1; ++i)
+					{
+						var coordsKwdsUrl = objects[i].split("|+|");
+						var coords = coordsKwdsUrl[0].split(",");
+						var title = coordsKwdsUrl[1] + " ";
+						var description = coordsKwdsUrl[2] + " ";
+						var tag = coordsKwdsUrl[3] + " ";
+						var kwds = " " + coordsKwdsUrl[4];
+						var url = coordsKwdsUrl[5];
+
+						title = title.replace(/[\r\n]+/g, "");
+						description = description.replace(/[\r\n]+/g, "");
+						tag = tag.replace(/[\r\n]+/g, "");
+						kwds = kwds.replace(/[\r\n]+/g, "");
+
+						var rand = (Math.random() * 4);
+						if (rand > 3.0)
+						{
+							point = new GLatLng(parseFloat(coords[0]) + Math.random() / 5000, parseFloat(coords[1]) + Math.random() / 5000);
+						}
+						else if (rand > 2.0)
+						{
+							point = new GLatLng(parseFloat(coords[0]) - Math.random() / 5000, parseFloat(coords[1]) - Math.random() / 5000);
+						}
+						else if (rand > 1.0)
+						{
+							point = new GLatLng(parseFloat(coords[0]) + Math.random() / 5000, parseFloat(coords[1]) - Math.random() / 5000);
+						}
+						else
+						{
+							point = new GLatLng(parseFloat(coords[0]) - Math.random() / 5000, parseFloat(coords[1]) + Math.random() / 5000);
+						}
+
+						var marker = createMarker(point, title, description, tag, kwds, url);
+
+						markersArray.push(marker);
+					}
+
+					cluster.addMarkers(markersArray);
+					cluster.fitMapToMarkers();					
+
+					var stopDrawingTime = (new Date).getTime();
+					stopClientPreprocessingTime = startCommunicationTime;
+					var clientPreprocessingTime = stopClientPreprocessingTime - startClientPreprocessingTime;
+					var searchTime = parseFloat(objects[(objects.length) - 1]);
+					var drawingTime = stopDrawingTime - startDrawingTime;
+					var communicationTime = stopCommunicationTime - startCommunicationTime;
+					if (communicationTime > 0)
+					{
+						communicationTime -= searchTime;
+					}
+					var totalTime = clientPreprocessingTime + searchTime + drawingTime + communicationTime;
+					document.getElementById("msg").innerHTML = "We found " + ((objects.length) - 1) + " matches!";
+					document.getElementById("stats").innerHTML = "<small>(Client's preprocessing time: " + clientPreprocessingTime + "ms, Search time: " + searchTime.toFixed(2) + "ms, Drawing time: " + parseFloat(drawingTime) + "ms, Communication time: " + communicationTime.toFixed(2) + "ms, Total time: " + totalTime.toFixed(0) + "ms)</small>";
+				}
+				else
+				{
+					document.getElementById("msg").innerHTML = "We couldn't find any results matching!";
+				}
+			}
+		}
+	}
+
+	function checkInput()
+	{
+		if ((document.getElementById("kwds").value == keywordsSuggestion || document.getElementById("kwds").value == "") && document.getElementById("addrs").value != locationSuggestion)
+		{
+			var geocoder = new GClientGeocoder();
+			var address = document.getElementById("addrs").value;
+			geocoder.getLocations(address, addAddressToMap);
+			return false;
+		}
+		if (document.getElementById("kwds").value != keywordsSuggestion && document.getElementById("addrs").value != locationSuggestion)
+		{
+			return true;
+		}
+	}
+
+	function prepareRegex(keys)
+	{
+		var regex = "([^A-Za-z0-9_&</])(\\b";
+		var j = 0;
+
+		for(var k = 0; k < keys.length; ++k)
+		{
+			if(keys[k].length)
+			{
+			        keys[k] = keys[k].replace(/,/g, "");
+			        keys[k] = keys[k].replace(/\?/g, "");
+				keys[k] = keys[k].replace(/\./g, "");
+				if(j && j < (keys.length - 1))
+				{
+					regex += "\\b|\\b";
+				}
+				regex += keys[k].replace(/\W/g, function(sub){return "\\" + sub;});
+				++j;
+			}
+		}
+		regex += "\\b)";
+		regex = regex.replace(/[\r\n]+/g, "");
+		return new RegExp(regex, "gi");
+	}
+
+	function highlight(string, regexp)
+	{
+		if(regexp == null)
+			return string;
+		string = " " + string; 
+		var nstr = string.replace(regexp, function(sub, m1, m2)
+						{
+						return m1 + "<b>" + m2 + "</b>";
+						});
+		return nstr;
+	}
+
+	function startSearch()
+	{
+		startClientPreprocessingTime = (new Date).getTime();
+		cluster.removeMarkers();
+		map.clearOverlays();
+
+		document.getElementById("msg").innerHTML = "&nbsp;";
+		document.getElementById("stats").innerHTML = "&nbsp;";
+		if (checkInput() == true)
+		{
+			if (window.XMLHttpRequest)
+			{
+				http = new XMLHttpRequest();
+			}
+			else if (window.ActiveXObject)
+			{
+				http = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			else
+			{
+				document.getElementById("msg").innerHTML ="Your browser does not support XMLHTTP!";
+			}
+			http.onreadystatechange = onStateChange;
+			
+			var geocoder = new GClientGeocoder();
+			geocoder.getLatLng(document.getElementById("addrs").value,
+				function(point)
+				{
+					if (!point)
+					{
+						document.getElementById("msg").innerHTML = addrsMsg;
+					}
+					else
+					{
+						cntrPntLat = point.lat();
+						cntrPntLng = point.lng();
+						var query = "/localsearch/fuzzysearch/flickr?kwds=" + document.getElementById("kwds").value + "&lat=" + cntrPntLat+ "&lng=" + cntrPntLng;	
+						startCommunicationTime = (new Date).getTime();
+						http.open("get", query);
+						http.send(null);
+					}
+				}
+			);
+		}
+		var currentType = map.getCurrentMapType().getName(true);
+		if (currentType == "Map")
+		{
+			mapType = G_NORMAL_MAP;
+		}
+		else if (currentType == "Sat")
+		{
+			mapType = G_SATELLITE_MAP;
+		}
+		else if (currentType == "Hyb")
+		{
+			mapType = G_HYBRID_MAP;
+		}
+		else if (currentType == "Ter")
+		{
+			mapType = G_PHYSICAL_MAP;
+		}
+	}
+
+	function addAddressToMap(response)
+	{
+		if (!response || response.Status.code != 200)
+		{
+			document.getElementById("msg").innerHTML = addrsMsg;
+		}
+		else
+		{
+			place = response.Placemark[0];
+			point = new GLatLng(place.Point.coordinates[1], place.Point.coordinates[0]);
+			var marker = createMarker(point, place.address);
+			map.addOverlay(marker);
+			map.setCenter(point, 10, G_NORMAL_MAP);
+		}
+	}
+
+	function load()
+	{
+		if (GBrowserIsCompatible())
+		{
+			map = new GMap2(document.getElementById("map"));
+			map.addControl(new GLargeMapControl());
+			map.addControl(new GMapTypeControl());
+			map.addControl(new GScaleControl());
+			map.setCenter(new GLatLng(37.0625, -95.6770), 4, G_NORMAL_MAP);
+			map.enableScrollWheelZoom();
+			map.addMapType(G_PHYSICAL_MAP);
+			cluster = new ClusterMarker(map);
+			cluster.clusterMarkerTitle = 'Click to zoom in and see %count objects';
+		}
+         	document.getElementById("kwds").value = "";
+		document.getElementById("addrs").value = "";
+		addKeywordsSuggestion();
+		addLocationSuggestion();
+	}
+	
+	function checkEnter(e)
+	{
+		var characterCode;
+		if(e && e.which)
+		{
+			e = e;
+			characterCode = e.which;
+		}
+		else
+		{
+			e = event;
+			characterCode = e.keyCode;
+		}	 
+		if(characterCode == 13)
+		{
+			startSearch();
+		}
+	}
+
+	function startExample(kwds, addrs)
+	{
+		document.getElementById("kwds").value = kwds;
+		document.getElementById("addrs").value = addrs;
+		document.getElementById("kwds").style.color = '#000000';
+		document.getElementById("addrs").style.color = '#000000';
+		
+		startSearch();
+	}
+
+	function addKeywordsSuggestion()
+	{
+		if (document.getElementById("kwds").value == "")
+		{ 
+			document.getElementById("kwds").value = keywordsSuggestion;
+			document.getElementById("kwds").style.color = '#A8A8A8';
+		}
+	}
+	
+	function addLocationSuggestion()
+	{
+		if (document.getElementById("addrs").value == "")
+		{
+			document.getElementById("addrs").value = locationSuggestion;
+			document.getElementById("addrs").style.color = '#A8A8A8';
+		}
+	}
+
+	function removeKeywordsSuggestion()
+	{
+		if (document.getElementById("kwds").value == keywordsSuggestion)
+		{
+			document.getElementById("kwds").value = "";
+			document.getElementById("kwds").style.color = '#000000';
+		}
+	}
+	
+	function removeLocationSuggestion()
+	{
+		if (document.getElementById("addrs").value == locationSuggestion)
+		{
+			document.getElementById("addrs").value = "";
+			document.getElementById("addrs").style.color = '#000000';
+		}
+	}
+
+</script>
+</head>
+
+<body onload="load()" onunload="GUnload()">
+<div id="container">
+<div id = "links" style="position:absolute;right:13px;top:7px;"><a href='http://flamingo.ics.uci.edu/'>Powered by Flamingo Project</a></div> 
+<div id="body"> 
+<div id="header"> 
+	<h1>Fuzzy Keyword Search on Spatial Data</h1>
+</div>
+</div>
+	<br/>
+	<div id="body"> 
+	The purpose of this demo is to show our solution on how to find relevant answers to mistyped spatial-keyword queries. It is built using a multimedia metadata collection extracted from Flickr pages, called <a href="http://cophir.isti.cnr.it/">CoPhIR Test Collection</a> We processed the dataset to extract the photos taken in the U.S. based on their latitude and longitude values. Moreover, we used the keywords in the title, description, and tags of a photo as its textual attribute. The final dataset had about two million objects. Each record had a URL corresponding to the photo or a page including the photo. The total data size was about 400MB. 
+<br><br>
+<a href='http://jujube.ics.uci.edu/localsearch/fuzzysearch/geonamesdemo/'>Fuzzy Keyword Search on Spatial Data Using the GeoNames Dataset</a>
+	</div>
+	<div id="body"> 
+	<div class="break"></div> 
+	</div>
+	<table>
+	<tr>
+	<td>Keywords</td>
+	<td><input type="text" id="kwds" name="kwds" class="textbox-standard" onKeyPress="checkEnter(event)" onblur="addKeywordsSuggestion()" onfocus="removeKeywordsSuggestion()"/></td>
+	</tr>
+	<tr> 
+	<td>Location</td>
+	<td><input type="text" id="addrs" name="addrs" class="textbox-standard" onKeyPress="checkEnter(event)" onblur="addLocationSuggestion()" onfocus="removeLocationSuggestion()"/></td>
+	</tr>
+	</table>
+	<input type="button" name="button" value="Search" onClick="startSearch()">
+	<br/>
+	<br/>
+
+	<div id="msg">&nbsp;</div>
+	
+	<div id="map"></div>
+	<br/>
+	<div id="examples">
+	<b>Try these:</b><br/>
+	<a href="javascript:void(0)" onclick="startExample('girardilli choclates', 'San Francisco');return false;">Search for "girardilli choclates" near San Francisco</a><br/>
+	<a href="javascript:void(0)" onclick="startExample('colesium', 'Los Angeles');return false;">Search for "colesium" near Los Angeles</a><br/>
+	<a href="javascript:void(0)" onclick="startExample('desnyland hotels', 'Anaheim');return false;">Search for "desnyland hotels" near Anaheim</a><br/>
+	<a href="javascript:void(0)" onclick="startExample('google selicon valley', '1600 Amphitheatre Parkway Mountain View, CA 94043');return false;">Search for "google selicon valley" near 1600 Amphitheatre Parkway Mountain View, CA 94043</a><br/>
+	</div>
+	<br/>
+	<hr/>
+	<div id="stats" >&nbsp;</div>
+	<div id="body"> 
+	<div class="break"></div> 
+	</div>
+          <div id = "links" >For questions about this demo, please
+            contact <a href="http://www.ics.uci.edu/~salsubai/">Sattam Alsubaiee.</a> 
+          </div> 
+</div>
+</body>
+</html>
+

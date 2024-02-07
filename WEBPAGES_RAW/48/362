@@ -1,0 +1,82 @@
+
+#########################################################
+# Quick note about problem 8
+#########################################################
+
+# When you import the dataset use the FROM WEB URL option
+
+HtWt <- read.delim("/var/folders/4r/ch295sgj68g78rd9qy6lbxyh0000gn/T//Rtmp8jbYr5/datada217550160")
+
+#########################################################
+# Part 1: More on the predict() function
+#########################################################
+
+# Lets use the Breakfast Cereal data and model the number of calories as a function of sugar
+
+Cereal <- read.delim("~/Documents/Class Work/Teaching/UC Irvine - STAT 110 (Fall 2015)/Stat2Data2012TXT/Cereal.txt")
+
+mod.cereal <- lm( Calories ~ Sugar, data = Cereal )
+
+# In the past, we have done things like summary(mod.cereal), rstandard(mod.cereal), fitted.values(mod.cereal), etc
+
+# How to get help on the predict() function or any function
+help(predict)
+# or
+?predict
+
+# In the past if we had a cereal with 4.5 grams of sugar we could predict the calories by
+predict( mod.cereal, list( Sugar = 4.5 ) )
+
+# If you had two cereals, one with 4.5 grams of sugar and one with 3.75 grams of sugar you could predict
+# both of them by
+predict( mod.cereal, list( Sugar = c(4.5, 3.75) ) )
+
+# Now suppose you want a 95% confidence interval for the mean number of calories when you have 4.5 grams of sugar
+predict( mod.cereal, list( Sugar = 4.5 ) , interval = "confidence", se.fit = TRUE)
+
+# Sometimes you have more than one or two points you want to predict (or as we'll see next week) multiple predictors
+# in those cases you'll want to make a data.frame to input in the predict function
+
+add.data = data.frame(Sugar = c(4.5, 3.75, 1.5), Fiber = c(1.2, 2.5, 4))
+
+predict( mod.cereal, newdata = add.data, interval = "confidence", se.fit = T)
+
+# Now suppose you want a 98% prediction interval for a cereal with 4.5 grams of sugar
+
+predict( mod.cereal, list( Sugar = 4.5 ), interval = "prediction", se.fit = T, level = 0.98)
+
+
+#########################################################
+# Part 2: The anova() function
+#########################################################
+
+# The anova() function carries out the F-test where the null hypothesis
+# is all the non-intercept beta coefficients are equal to zero
+
+anova( mod.cereal )
+
+# We'll go over the meanings and interpretations in discussion about each of the columns and entries
+
+
+#########################################################
+# Part 3: How to trouble shoot in R
+#########################################################
+
+# One of the issues I notice is that students forget to "clean up" their workspace in R
+# The rm() function removes items (data, vectors, values, etc) from R
+
+# The reason you need to remove things is IF you use the same variable name for multiple reasons
+# then you can mix and match items in R!  This creates an ERROR.  One way to avoide the error
+# is to remove things from their workspace and then rerun the correct code.
+
+# Suppose I want to clean up my work space from above I can manually remove each of the things 
+# in my workspace like so:
+rm( add.data )
+
+# I can remove multiple variables at once
+rm( Cereal, mod.cereal )
+
+# I can remove the ALL the variables
+rm( list = ls() )
+
+# Be careful: be sure to save your script file before hand, so you can re-run the code!

@@ -1,0 +1,74 @@
+<HR><PRE>
+<B>Newsgroups:</B>     sci.math.research
+<B>From:</B>           <A HREF="mailto:greg@dent.uchicago.edu">greg@dent.uchicago.edu</A> (Greg Kuperberg)
+<B>Subject:</B>        Re: Computing the classical voronoi diagram
+<B>Date:</B>           Wed, 5 May 1993 21:37:30 GMT
+<B>Organization:</B>   Dept. of Mathematics
+</PRE><HR><PRE>
+&gt;I am looking for a fast (hopefully C) program to compute the "classical"
+&gt;voronoi diagram associated to a quadratic form.
+
+This is a complicated problem.
+
+&gt;I am really only interested in the two-dimensional case at present.
+
+Ah!  That changes everything.  The Voronoi cell is going to be a
+hexagon in the general case and a parellelogram in special cases.  If
+your lattice is just ordinary Z^2 and distance is given by a quadratic
+form, i.e. a 2 x 2 symmetric, positive definite real matrix, the
+following algorithm outputs the four or six Voronoi neighbors of the
+origin, after doing a series of changes of basis.  It is then a matter
+of simple linear algebra to find equations for the six sides.
+
+Let Q = (a b) be your quadratic form, and let P = (1 -1) and N = (1  0)
+        (b c)                                     (0  1)         (0 -1)
+
+be matrices that will be used for change of basis.  Recall that Q is
+positive definite iff a,c, and the determinant, ac-b^2 are positive.
+The determinant will not change throughout the computation.
+
+The algorithm
+-------------
+In each step of the algorithm, update a,b, and c as necessary to
+reflect changes in Q.
+
+1. If b&lt;0, replace Q &lt;-- N Q N.
+2. While a<U>&lt;</U>b, replace Q &lt;-- P^T Q P.
+3. While c<U>&lt;</U>b, replace Q &lt;-- P Q P^T.
+4. If Q changed in step 2 or 3, go back to step 2.
+5. (+-1,0) and (0,+-1) are Voronoi neighbors, and so are (1,-1) and (-1,1)
+provided that b &gt; 0.
+
+Geometric interpretation of the algorithm
+-----------------------------------------
+The set of positive def. quadratic forms with a given determinant,
+say determinant 1, (equivalently the set of ellipses centered at the
+origin with area pi) is a hyperbolic plane.  The set for which the
+Voronoi cells of the lattice Z^2 are parallelograms is a collection
+of geodesics that divide the hyperbolic plane into a tiling by
+ideal triangles.  You can find a continuous path from any quadratic
+form to any other in the same ideal triangle without degeneration
+of the sides of the Voronoi region, which means that the origin has
+the same Voronoi neighbors for all quadratic forms in the same triangle.
+
+The goal of the algorithm is to find which ideal triangle contains a
+given quadratic form.  Each ideal triangle divides the hyperbolic plane
+into three complementary regions.  Therefore the adjacency graph of the
+triangles is an infinite tree in which every vertex has three
+neighbors.  The algorithm is a binary search using the fact that the
+equation b = 0 determines an edge in the triangle tiling, and the fact
+that an integral change of basis induces an isometry of the tiling.
+Step 1 reflects the hyperbolic plane if the quadratic form Q is on the
+wrong side of the geodesic b=0.  Step 2 checks if Q lies in one of the
+triangles which is a left descendant of the "root" triangle T adjacent
+to b=0, while step 3 does the same for the right descendants.  By the
+time you get to step 4, Q lies in T itself.
+
+Possible acceleration of the algorithm
+--------------------------------------
+In step 2, for example, you replace Q by P^T Q P repeatedly by a <U>&lt;</U> b.
+This has the effect of replacing b by b-a; a does not change.  You know
+ahead of time that you are going to do this n = floor(b/a) times.  So
+you can replace Q by (P^n)^T Q P^n and move to step 3.  P^n = (1 -n)
+                                                              (0  1)
+</PRE>

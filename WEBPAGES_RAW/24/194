@@ -1,0 +1,66 @@
+// Test of closest pair algorithms
+// David Eppstein, UC Irvine, 19 Apr 1997
+//
+// Generate n vectors in R^d, with varying distances
+
+#include "Vector.h"
+#include "Random.h"
+#include "Error.h"
+
+static inline double DoubleAbs(double a)
+{
+	if (a < 0) return -a;
+	else return a;
+}
+
+// Create new random set of vectors
+VectorPointSet::VectorPointSet(unsigned long npoints, int dim)
+	: PointSet(npoints), d(dim), points(new double[dim*npoints])
+{
+	if (points == 0) error("VectorPointSet: unable to create points");
+	for (long i = 0; i < d*npoints; i++)
+		points[i] = RandomDouble();
+}
+
+// Merge two clusters and replace by their median
+void VectorPointSet::interact(point i, point j)
+{
+	for (int k = 0; k < d; k++)
+		points[i*d+k] = points[j*d+k] = (points[i*d+k] + points[j*d+k])/2;
+}
+
+double VectorL1::VecDistance(double * u, double * v)
+{
+	double total = 0;
+	for (int i = 0; i < d; i++)
+		total += DoubleAbs(u[i] - v[i]);
+	return total;
+}
+
+double VectorL2::VecDistance(double * u, double * v)
+{
+	double total = 0;
+	for (int i = 0; i < d; i++) {
+		double delta = u[i] - v[i];
+		total += delta*delta;
+	}
+	return total;
+}
+
+double VectorLinf::VecDistance(double * u, double * v)
+{
+	double maxdif = DoubleAbs(u[0] - v[0]);
+	for (int i = 1; i < d; i++) {
+		double dif = DoubleAbs(u[i] - v[i]);
+		if (dif > maxdif) maxdif = dif;
+	}
+	return maxdif;
+}
+
+double VectorDot::VecDistance(double * u, double * v)
+{
+	double total = 0;
+	for (int i = 0; i < d; i++)
+		total += u[i] + v[i];
+	return total;
+}

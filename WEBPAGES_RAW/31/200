@@ -1,0 +1,214 @@
+#############################################################
+# Part One: The linear model object in R
+#############################################################
+
+# Let's use the used Porsche Price example from last discussion.
+PorschePrice <- read.delim("~/Documents/Class Work/Teaching/UC Irvine - STAT 110 (Fall 2015)/Stat2Data2012TXT/PorschePrice.txt")
+View(PorschePrice)
+
+# Let's create the linear model object. We want to predict the price as a function of the mileage of the car.
+# So Price is the response variable and Mileage is the explanatory variable
+fit <- lm( Price ~ Mileage, data = PorschePrice )
+
+# We've seen summary() function used on an lm object.
+summary(fit)
+
+# But there is far more we can do with the linear model object
+
+# If you want to find the estimates of the coefficients.
+fit$coefficients
+# or
+coefficients( fit )
+
+# If you want to get the fitted values of each point of data (ie the y-hat for each point of data)
+fit$fitted.values
+# or
+fitted.values( fit )
+
+# If you want the residual for each point of data
+fit$residuals
+# or
+residuals( fit )
+
+# There are other types of residuals you may want to find.
+# To find the standardized residuals
+rstandard( fit )
+# To find the studentized residuals
+rstudent( fit )
+
+# Maybe you want to find the predicted price of a used Porsche with 50,000 and another Porsche with 25,000 miles on it.
+# You can use the coefficients to find them like this:
+betas <- coefficients( fit )
+betas[1] + betas[2]*c(50, 25)
+# or you can use the predict() function in R
+predict( fit, list(Mileage = c(50,25) ) )
+
+#############################################################
+# Part Two: How to plot in R
+#############################################################
+
+# To create a plot in R we need to plot using Cartesian coordinates
+# That is, each point has an (x, y) coordinate.
+
+# Let's plot the mileage vs. price of the used Porsche.  Remember,
+# we used mileage as the explanatory variable and price as the response variable
+# so mileage is plotted on the x-axis and price on the y-axis
+
+# This is the most basic plot:
+plot( x = PorschePrice$Mileage, y = PorschePrice$Price )
+
+# BUT THIS IS BAD PLOT!
+# it is too basic, the axes are poorly named, there is no title, etc.
+
+# A much better plot requires adding additional inputs in to the plot() function in R
+plot( x = PorschePrice$Mileage, y = PorschePrice$Price, type = "p", xlab = "Mileage (in 1000s)", ylab = "Price (in $1000)", main = "Used Porsche Prices", xlim = c(0,100), ylim=c(0,100), cex = 1, pch = 3, col = "blue" )
+
+# What do these additional inputs do?
+# type: this tells R what type of plot you want, "p" is points (ie scatterplot), "l" is lines, there are others, but we don't cover them.  The default is "p"
+# xlab: the x-axis label
+# ylab: the y-axis label
+# main: the title of the plot
+# xlim: the limits of the x-axis, must be a vector where the first number is the lowest value and the second is the highest value.
+# ylim: the limits of the y-axis
+# col: is the color of the points and/or lines. The default is black, but there are hundreds of colors to choose from.
+# cex: if you've set type = "p" then cex is the magnification of the points. The default is 1, but >1 will increase the size and <1 will decrease the size.
+# pch: if you've set type = "p" then pch is the type of point; 1 is open circles, 2 is open triangles, 3 is plus signs. 1 is the default type of point. There are other types of points you can use, but you'll have to look those up on your own time.
+
+# There are two other inputs you might want to add to the plot() function in R
+# lwd: if you've set type = "l" then lwd is the line's thickness; 1 is the default, but >1 will make a thicker line, and <1 will make a thinner line
+# lty: if you've set type = "l" then lty is the type of line; 1 is the default and is a solid line, 2 is a dashed line, etc.
+
+# The plot() function has a glaring problem, you can't plot TWO sets of data at the same time!
+# To add additional things to a plot you'll need to use some other functions, namely, points() and lines()
+
+# Let's add the regression line to the Price vs. Mileage plot.
+# The first step is to create a linear model object lm(Price ~ Mileage, data = PorschePrice)
+# but we did above so we don't need to do that.
+
+# First, let's start by plotting the regression line
+plot(x = PorschePrice$Mileage, y = fitted.values(fit), type = "l", xlab = "Mileage (in 1000s)", ylab = "Price (in $1000s)", main = "Used Porsche Prices vs.\nNumber of Miles", xlim = c(0,90), ylim = c(0,90))
+# Now let's add the points to the scatter plots
+points(x = PorschePrice$Mileage, y = PorschePrice$Price)
+
+# Now, let's see what happens if we start with the scatterplot and add the regression line
+plot( x = PorschePrice$Mileage, y = PorschePrice$Price, type = "p", xlab = "Mileage (in 1000s)", ylab = "Price (in $1000s)", main = "Used Porsche Prices vs.\nNumber of Miles")
+# Add the regression line
+lines( x = PorschePrice$Mileage, y = fitted.values(fit), lwd = 2)
+
+# Sometimes you get an odd situation when you try plotting a line.
+# Suppose you wanted to plot the following points in a piece-wise straight line
+x <- c(-1, 1, 0, -2, 2)
+y <- c(0.5, 3.8, 2.3, 0.9, 4.8)
+plot( x , y , type = "l")
+# Notice that R goes through and plots (-1, 0.5), (1,3.8), (0,2.3), (-2, 0.9), (2, 4.8) in that order
+# We want the plot to go through (-2, 0.9), (-1, 0.5), (0, 2.3), (1, 3.8), (2, 4.8)
+# to trick R to plot in that order we use the sort() and order() functions
+# the sort function sorts items in acending (increasing) order
+# the order function returns a vector of which position each entry would be in if the sort() function were used.
+
+plot( x = sort(x), y = y[ order(x) ], type = "l", xlab = "x", ylab = "y")
+
+#############################################################
+# Part Three: Adding & Removing from a data.frame
+#############################################################
+
+# Occasionally, we'll need to add or remove stuff from a data.frame
+
+# Suppose we want to model the log price of a used Porsche, well we've got two options
+# Change the model in our lm() statement or add a column to the data.frame
+
+# Adding new columns to our data.frame (i.e. adding more variables)
+# Step 1: Create your variable and be sure to give it an appropriate name.
+# Some examples of Step 1
+
+# log of the used Porsche's price
+logPrice <- log( PorschePrice$Price )
+# Remember the step above does natural log, that is, base e, not base 10!
+# To do a base 10 log 
+log10Price <- log( PorschePrice$Price, base = 10 )
+# Maybe you wanted to make the explanatory variable in the model the square root of the used Porsche's mileage
+sqrtMileage <- sqrt( PorschePrice$Mileage )
+# or the mileage squared
+sqMileage <- PorschePrice$Mileage^2
+
+# Step 2: Add the variables to the data.frame using the cbind() or rbind() commands
+# When you want to add new columns to the data.frame you use the cbind() function
+PorschePrice <- cbind( PorschePrice, logPrice, log10Price, sqrtMileage, sqMileage)
+View(PorschePrice)
+
+# Adding a new observation to the data.frame
+# You'll need to create a vector the same length as the number of columns
+rbind(PorschePrice, c(45.2, 3, 11.5, log(45.2), log(45.2,10), sqrt(11.5), 11.5^2) )
+View(PorschePrice)
+
+# Removing an observation from the data.frame
+# In the homework you'll need to identify and delete some observations from your data.frame
+# To delete a specific row from a data.frame you can use the same indexing technique I showed you last week
+
+# For example, let's remove that fictious line I added to the PorschePrice data.frame
+# We know that I added a 31st observation, so we need to delete line 31
+PorschePrice <- PorschePrice[ -31, ]
+View(PorschePrice)
+
+# If you want to delete multiple observations, try to do delete them all at once
+PorschePrice <- PorschePrice[ -c(1, 3, 5), ]
+PorschePrice
+
+# If you delete observations in a sequential manner recognize that R fills in the rows
+# So if you delete row 3, observation 4 moves to row 3, observation 5 moves to row 4, and so on
+# If I run the code below it will delete observation 5, not observation 4!
+PorschePrice <- PorschePrice[ -4, ]
+
+# The moral of the story: Be very careful deleting is permanent!
+# The only way to recover the data.frame is to re-import it.
+# But you can also make a copy of the data.frame and work from that if you want to.
+
+# One more delete command, sometimes you need to delete things from your computer's memory
+# the rm() function does that
+rm(PorschePrice)
+# You can remove more than one thing at a time like this
+rm(logPrice, log10Price, sqMileage, sqrtMileage)
+
+#############################################################
+# Part Four: Special plots in R
+#############################################################
+
+# The Normal probability plot (sometimes called QQ plot) is a special plot
+# Recall a QQ plot works like this: the x-coordinate is the inverse cdf of (Observ # - 0.5)/n
+# in R notation, the x-coordinates are qnorm( (1:n - 0.5)/n )
+# The y-coordinate is the residual (can be standardized)
+
+# To make a qq plot in R use the qqnorm() function
+qqnorm( residuals( fit ) )
+
+# To add the qq line to the plot use the qqline() function
+qqline( residuals( fit ) )
+
+# If you want to use the standardized residuals, you need to first standardize the residuals
+qqnorm( rstandard( fit ) )
+qqline( rstandard( fit ) )
+
+
+# Another special plot in R is the histogram
+# The histogram is easy to create in R, just use the hist() function
+hist( residuals( fit ) , main = "Histogram of Residuals")
+
+# Sometimes you need to change the parameters on the hist() function to make the plot better
+hist( residuals( fit ), breaks = 15, freq = FALSE, main = "Histogram of Residuals", xlab = "Residual")
+# If you add the breaks input in to the hist() function that tells R how many bins you want
+# while the freq input tells R if you want frequency or density as the y-axis
+
+#############################################################
+# Part Five: Confidence Intervals in R
+#############################################################
+
+# If you have a linear model object in R you can get the confidence intervals really easy
+# using the confint() command
+
+confint(fit)
+
+# You can add additional inputs to change things:
+# parm is the list of the coefficients you want the confidence interval for
+# level is the confidence level
+confint(fit, parm = "Mileage", level = 0.99)
+

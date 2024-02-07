@@ -1,0 +1,1837 @@
+<!-- Begin header.tpl -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Ganglia:: unspecified Grid Report</title>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<link type="text/css" href="css/smoothness/jquery-ui-1.10.2.custom.min.css" rel="stylesheet" />
+<link type="text/css" href="css/jquery.liveSearch.css" rel="stylesheet" />
+<link type="text/css" href="css/jquery.multiselect.css" rel="stylesheet" />
+<link type="text/css" href="css/jquery.flot.events.css" rel="stylesheet" />
+<link type="text/css" href="css/fullcalendar.css" rel="stylesheet" />
+<link type="text/css" href="css/qtip.min.css" rel="stylesheet" />
+<link type="text/css" href="css/chosen.min.css" rel="stylesheet" />
+<link type="text/css" href="./styles.css" rel="stylesheet" />
+<link type="text/css" href="js/jstree/themes/default/style.min.css" rel="stylesheet" />
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>$.uiBackCompat = false;</script>
+<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+<script type="text/javascript" src="js/jquery.livesearch.min.js"></script>
+<script type="text/javascript" src="js/ganglia.js"></script>
+<script type="text/javascript" src="js/jquery.gangZoom.js"></script>
+<script type="text/javascript" src="js/jquery.cookie.js"></script>
+<script type="text/javascript" src="js/jquery-ui-timepicker-addon.js"></script>
+<script type="text/javascript" src="js/jquery.ba-bbq.min.js"></script>
+<script type="text/javascript" src="js/combobox.js"></script>
+<script type="text/javascript" src="js/jquery.scrollTo-1.4.3.1-min.js"></script>
+<script type="text/javascript" src="js/jquery.buttonsetv.js"></script>
+<script type="text/javascript" src="js/fullcalendar.js"></script>
+<script type="text/javascript" src="js/jquery.qtip.min.js"></script>
+<script type="text/javascript" src="js/jstree/jstree.js"></script>
+<script type="text/javascript" src="js/chosen.jquery.min.js"></script>
+<script type="text/javascript">
+    var server_utc_offset=-28800;
+    var g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+
+    function refreshHeader() {
+      $.get('header.php?date_only=1', function(datetime) {
+        var title = $("#page_title").text();
+        var l = title.lastIndexOf(" at ");
+        if (l != -1)
+          title = title.substring(0, l);
+        title += " at " + datetime;
+        $("#page_title").text(title);
+        });
+    }
+
+    function refresh() {
+      var selected_tab = $("#selected_tab").val();
+      if (selected_tab == "agg") {
+        refreshAggregateGraph();
+        g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+      } else if (selected_tab == "v") {
+        refreshHeader();
+        if ($.isFunction(window.refreshView)) {
+          refreshView();
+          g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+        } else if ($.isFunction(window.refreshDecomposeGraph)) {
+          refreshDecomposeGraph();
+          g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+        } else
+          ganglia_form.submit();
+      } else if (selected_tab == "ev") {
+        refreshOverlayEvent();
+        g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+      } else if (selected_tab == "m") {
+        if ($.isFunction(window.refreshClusterView)) {
+          refreshHeader();
+          refreshClusterView();
+          g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+        } else if ($.isFunction(window.refreshHostView)) {
+          refreshHeader();
+          refreshHostView();
+          g_refresh_timer = setTimeout("refresh()", 300 * 1000);
+        } else
+          ganglia_form.submit();
+      } else
+        ganglia_form.submit();
+    }
+
+    $(function() {
+      var range_menu = $("#range_menu");
+      if (range_menu[0])
+        range_menu.buttonset();
+
+      var custom_range_menu = $("#custom_range_menu");
+      if (custom_range_menu[0])
+        custom_range_menu.buttonset();
+
+      var sort_menu = $("#sort_menu");
+      if (sort_menu[0])
+        sort_menu.buttonset();
+
+      g_overlay_events = ($("#overlay_events").val() == "true");
+
+      g_tabIndex = new Object();
+      g_tabName = [];
+      var tabName = ["m", "s", "v", "agg", "ch", "ev", "rot", "mob"];
+      var j = 0;
+      for (var i in tabName) {
+        if (tabName[i] == "ev" && !g_overlay_events)
+          continue;
+        g_tabIndex[tabName[i]] = j++;
+        g_tabName.push(tabName[i]);
+      }
+
+      // Follow tab's URL instead of loading its content via ajax
+      var tabs = $("#tabs");
+      if (tabs[0]) {
+        tabs.tabs();
+        // Restore previously selected tab
+        var selected_tab = $("#selected_tab").val();
+        //alert("selected_tab = " + selected_tab);
+        if (typeof g_tabIndex[selected_tab] != 'undefined') {
+          try {
+            //alert("Selecting tab: " + selected_tab);
+            tabs.tabs('option', 'active', g_tabIndex[selected_tab]);
+            if (selected_tab == "rot")
+              autoRotationChooser();
+          } catch (err) {
+            try {
+              alert("Error(ganglia.js): Unable to select tab: " + 
+                    selected_tab + ". " + err.getDescription());
+            } catch (err) {
+              // If we can't even show the error, fail silently.
+            }
+          }
+        }
+        tabs.tabs({
+          beforeActivate: 
+          function(event, ui) {
+            var tabIndex = ui.newTab.index();
+            $("#selected_tab").val(g_tabName[tabIndex]);
+            if (g_tabName[tabIndex] != "mob")
+              $.cookie("ganglia-selected-tab-" + window.name, tabIndex);
+            if (tabIndex == g_tabIndex["m"] ||
+              tabIndex == g_tabIndex["v"] ||
+              tabIndex == g_tabIndex["ch"])
+              ganglia_form.submit();
+          }
+        });
+      }
+    });
+
+  $(function () {
+    $("#metrics-picker").val("load_one");
+    $(".header_btn").button();
+
+    done = function done(startTime, endTime) {
+            setStartAndEnd(startTime, endTime);
+            document.forms['ganglia_form'].submit();
+    }
+
+    cancel = function (startTime, endTime) {
+            setStartAndEnd(startTime, endTime);
+    }
+
+    defaults = {
+        startTime: 1486876458,
+        endTime: 1486880058,
+        done: done,
+        cancel: cancel
+    }
+
+    $(".host_small_zoomable").gangZoom($.extend({
+        paddingLeft: 67,
+        paddingRight: 30,
+        paddingTop: 38,
+        paddingBottom: 25
+    }, defaults));
+
+    $(".host_medium_zoomable").gangZoom($.extend({
+        paddingLeft: 67,
+        paddingRight: 30,
+        paddingTop: 38,
+        paddingBottom: 40
+    }, defaults));
+
+    $(".host_default_zoomable").gangZoom($.extend({
+        paddingLeft: 66,
+        paddingRight: 30,
+        paddingTop: 37,
+        paddingBottom: 50
+    }, defaults));
+
+    $(".host_large_zoomable").gangZoom($.extend({
+        paddingLeft: 66,
+        paddingRight: 29,
+        paddingTop: 37,
+        paddingBottom: 56
+    }, defaults));
+
+    $(".cluster_zoomable").gangZoom($.extend({
+        paddingLeft: 67,
+        paddingRight: 30,
+        paddingTop: 37,
+        paddingBottom: 50
+    }, defaults));
+
+    function rrdDateTimeString(date) {
+      return (date.getMonth() + 1) + "/" + date.getDate() + "/" + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes();
+    }
+
+    function setStartAndEnd(startTime, endTime) {
+        // we're getting local start/end times.
+
+        // getTimezoneOffset returns negative values east of UTC,
+        // which is the opposite of PHP. we want negative values to the west.
+        var local_offset = new Date().getTimezoneOffset() * 60 * -1;
+        var delta = local_offset - server_utc_offset;
+        var date = new Date((Math.floor(startTime) - delta) * 1000);
+        $("#datepicker-cs").val(rrdDateTimeString(date));
+        date = new Date((Math.floor(endTime) - delta) * 1000);
+        $("#datepicker-ce").val(rrdDateTimeString(date));
+    }
+
+    initShowEvent();
+    initTimeShift();
+  });
+
+
+</script>
+
+</head>
+<body style="background-color: #ffffff;" onunload="g_refresh_timer=null">
+
+
+
+
+<div id="tabs">
+  <div id="tabs-menu", >
+    <ul>
+      <li><a href="#tabs-main">Main</a></li>
+      <li><a href="#tabs-search">Search</a></li>
+      <li><a href="#tabs-main">Views</a></li>
+      <li><a href="aggregate_graphs.php">Aggregate Graphs</a></li>
+      <li><a href="#tabs-main">Compare Hosts</a></li>
+            <li><a href="events.php">Events</a></li>
+      
+      <li><a href="breakdown_reports.php">Reports</a></li>
+      <li><a href="#tabs-autorotation" onclick="autoRotationChooser();">Automatic Rotation</a></li>
+      <li><a href="#tabs-livedashboard" onclick="liveDashboardChooser();">Live Dashboard</a></li>
+            <li><a href="cubism_form.php">Cubism</a></li>
+      
+      <li><a href="#tabs-mobile" onclick="window.location.href='mobile.php';">Mobile</a></li>
+    </ul>
+  </div>
+
+<div id="tabs-main">
+<form action="./" method="GET" name="ganglia_form">
+  <div style="padding:5px;background-color:#dddddd">
+     <big style="float:left;"><b id="page_title">unspecified Grid Report at Sat, 11 Feb 2017 22:14:18 -0800</b></big><input style="float:right;" class="header_btn" type="submit" value="Get Fresh Data"/><div style="clear:both"></div>
+  </div>
+  <div style="padding:5px 5px 0 5px;">
+    <div style="float:left;" id="range_menu" class="nobr"></div>
+    <div style="float:left;" id="custom_range_menu">or <span class="nobr">from <input type="TEXT" title="Feb 27 2007 00:00, 2/27/2007, 27.2.2007, now -1 week, -2 days, start + 1 hour, etc." NAME="cs" ID="datepicker-cs" SIZE="17"> to <input type="TEXT" title="Feb 27 2007 00:00, 2/27/2007, 27.2.2007, now -1 week, -2 days, start + 1 hour, etc." name="ce" ID="datepicker-ce" SIZE="17"> <input type="submit" value="Go">
+<input type="button" value="Clear" onclick="ganglia_submit(1)"></span>
+</div>
+    <div style="float:right;">&nbsp;&nbsp;</div>
+    <div style="clear:both;"></div>
+  </div>
+    <input type="hidden" name="m" id="metrics-picker">
+  
+    <div style="padding:5px 5px 0 5px;">
+    <div id="sort_menu" class="nobr" style="display:inline">Sorted&nbsp;&nbsp;<input OnChange="ganglia_submit();" type="radio" id="radio-ascending" name="s" value="ascending" /><label title="Sort hosts by ascending metric value" for="radio-ascending">ascending</label><input OnChange="ganglia_submit();" type="radio" id="radio-descending" name="s" value="descending" /><label title="Sort hosts by descending metric value" for="radio-descending">descending</label><input OnChange="ganglia_submit();" type="radio" id="radio-by_name" name="s" value="by name" checked="checked"/><label title="Sort hosts by name" for="radio-by_name">by name</label><input OnChange="ganglia_submit();" type="radio" id="radio-by_hosts_up" name="s" value="by hosts up" /><label title="Display hosts in UP state first" for="radio-by_hosts_up">by hosts up</label><input OnChange="ganglia_submit();" type="radio" id="radio-by_hosts_down" name="s" value="by hosts down" /><label title="Display hosts in DOWN state first" for="radio-by_hosts_down">by hosts down</label></div>
+  </div>
+  
+    <div id="node_menu" style="padding:5px 5px 0 5px;">
+    <b><a href="./?m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"> Grid</a></b> <b>&gt;</b>
+<select name="c" OnChange="ganglia_form.submit();">
+<option value="">--Choose a Source
+<option value="andromeda">andromeda
+<option value="archer">archer
+<option value="asterix">asterix
+<option value="bayonet">bayonet
+<option value="cacofonix">cacofonix
+<option value="cbcl">cbcl
+<option value="datalab">datalab
+<option value="igb-benzene">igb-benzene
+<option value="igb-helios">igb-helios
+<option value="igb-misc">igb-misc
+<option value="igb-nebula">igb-nebula
+<option value="infrastructure">infrastructure
+<option value="mimir">mimir
+<option value="misc">misc
+<option value="misc-inst">misc-inst
+<option value="misc-rsh">misc-rsh
+<option value="pedigree">pedigree
+<option value="seal">seal
+<option value="sensorium">sensorium
+<option value="syn2">syn2
+<option value="titan">titan
+<option value="http://richard-castle-v1.ics.uci.edu/ganglia/">unspecified Grid
+<option value="virthost">virthost
+<option value="welling">welling
+<option value="www">www
+<option value="zen">zen
+<option value="zion">zion
+</select>
+<b></b>
+<input type="hidden" name="p" value="2">
+&nbsp;&nbsp;
+  </div>
+  
+
+<input type="hidden" name="tab" id="selected_tab" value="m">
+<input type="hidden" id="vn" name="vn" value="">
+<input type="hidden" id="hide-hf" name="hide-hf" value="false">
+
+<input type="hidden" id="overlay_events" value="true">
+
+<hr size="1" noshade>
+<!-- End header.tpl -->
+
+
+<table border="0" width="100%">
+
+<tr>
+<td colspan="3">&nbsp;</td>
+</tr>
+
+<tr>
+  <td class=grid colspan="3">
+    <a href="./?m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>unspecified Grid (26 sources)</strong></a> <FONT SIZE="-2"><a href="./?t=yes&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">(tree view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>4624</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>359</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>5%, 5%, 5%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>5%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+   <td>
+    <a href="./graph_all_periods.php?me=unspecified&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;g=load_report&amp;z=large">
+      <img src="./graph.php?me=unspecified&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;g=load_report&amp;z=medium"
+           alt="unspecified Grid (26 sources) LOAD" border="0" />
+    </a>
+   </td>
+   <td>
+    <a href="./graph_all_periods.php?me=unspecified&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;g=mem_report&amp;z=large">
+      <img src="./graph.php?me=unspecified&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;g=mem_report&amp;z=medium"
+           alt="unspecified Grid (26 sources) MEM" border="0" />
+    </a>
+   </td>
+  </tr>
+
+  <tr>
+   <td>
+    <a href="./graph_all_periods.php?me=unspecified&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;g=cpu_report&amp;z=large">
+      <img src="./graph.php?me=unspecified&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;g=cpu_report&amp;z=medium"
+           alt="unspecified Grid (26 sources) CPU" border="0" />
+    </a>
+   </td>
+   <td>
+    <a href="./graph_all_periods.php?me=unspecified&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;g=network_report&amp;z=large">
+      <img src="./graph.php?me=unspecified&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;g=network_report&amp;z=medium"
+           alt="unspecified Grid (26 sources) NETWORK" border="0" />
+    </a>
+   </td>
+
+  </tr>
+ </table>
+</td>
+
+
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=andromeda&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>andromeda</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=andromeda&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880054">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>10</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>4</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>1%, 0%, 0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=andromeda&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=andromeda&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880054&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="andromeda LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=andromeda&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=andromeda&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880054&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="andromeda MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=archer&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>archer</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=archer&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880048">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>112</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>16</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>38%, 40%, 39%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>37%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=archer&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=archer&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880048&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="archer LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=archer&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=archer&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880048&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="archer MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=asterix&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>asterix</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=asterix&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880056">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>48</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>14</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>3%, 3%, 2%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>3%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=asterix&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=asterix&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880056&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="asterix LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=asterix&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=asterix&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880056&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="asterix MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=bayonet&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>bayonet</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=bayonet&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880046">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>56</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>9</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>3%, 2%, 3%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>3%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=bayonet&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=bayonet&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880046&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="bayonet LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=bayonet&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=bayonet&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880046&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="bayonet MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=cacofonix&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>cacofonix</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=cacofonix&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880042">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>40</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>5</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>1%, 1%, 1%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>1%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=cacofonix&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=cacofonix&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880042&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="cacofonix LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=cacofonix&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=cacofonix&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880042&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="cacofonix MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=cbcl&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>cbcl</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=cbcl&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880045">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>0</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>2</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>0%, 0%, 0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=cbcl&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=cbcl&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880045&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="cbcl LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=cbcl&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=cbcl&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880045&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="cbcl MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=datalab&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>datalab</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=datalab&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880050">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>128</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>10</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>2%, 2%, 2%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>2%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=datalab&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=datalab&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880050&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="datalab LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=datalab&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=datalab&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880050&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="datalab MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=igb-benzene&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>igb-benzene</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=igb-benzene&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880049">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>896</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>49</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>7%, 7%, 7%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>7%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=igb-benzene&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=igb-benzene&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880049&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="igb-benzene LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=igb-benzene&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=igb-benzene&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880049&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="igb-benzene MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=igb-helios&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>igb-helios</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=igb-helios&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880045">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>24</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>3</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>0%, 0%, 0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=igb-helios&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=igb-helios&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880045&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="igb-helios LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=igb-helios&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=igb-helios&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880045&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="igb-helios MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=igb-misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>igb-misc</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=igb-misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880047">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>376</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>13</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>6%, 6%, 6%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>6%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=igb-misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=igb-misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880047&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="igb-misc LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=igb-misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=igb-misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880047&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="igb-misc MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=igb-nebula&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>igb-nebula</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=igb-nebula&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880047">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>128</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>7</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>0%, 0%, 0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=igb-nebula&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=igb-nebula&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880047&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="igb-nebula LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=igb-nebula&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=igb-nebula&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880047&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="igb-nebula MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=infrastructure&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>infrastructure</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=infrastructure&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880051">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>119</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>31</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>11%, 10%, 9%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>11%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=infrastructure&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=infrastructure&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880051&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="infrastructure LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=infrastructure&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=infrastructure&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880051&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="infrastructure MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=mimir&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>mimir</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=mimir&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880051">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>64</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>6</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>2%, 2%, 2%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>2%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=mimir&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=mimir&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880051&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="mimir LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=mimir&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=mimir&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880051&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="mimir MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>misc</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880056">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>125</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>44</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>5%, 4%, 3%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>5%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880056&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="misc LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880056&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="misc MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=misc-inst&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>misc-inst</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=misc-inst&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1485805364">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>40</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>5</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>0%, 0%, 0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-01-30 11:42</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=misc-inst&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=misc-inst&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1485805364&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="misc-inst LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=misc-inst&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=misc-inst&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1485805364&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="misc-inst MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=misc-rsh&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>misc-rsh</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=misc-rsh&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880051">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>32</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>15</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>0%, 0%, 0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=misc-rsh&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=misc-rsh&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880051&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="misc-rsh LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=misc-rsh&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=misc-rsh&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880051&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="misc-rsh MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=pedigree&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>pedigree</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=pedigree&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880043">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>648</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>27</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>0%, 0%, 0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=pedigree&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=pedigree&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880043&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="pedigree LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=pedigree&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=pedigree&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880043&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="pedigree MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=seal&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>seal</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=seal&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880049">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B></B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>0%, 0%, 0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=seal&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=seal&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880049&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="seal LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=seal&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=seal&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880049&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="seal MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=sensorium&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>sensorium</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=sensorium&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880051">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>320</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>41</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>12%, 12%, 11%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>12%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=sensorium&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=sensorium&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880051&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="sensorium LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=sensorium&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=sensorium&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880051&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="sensorium MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=syn2&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>syn2</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=syn2&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880048">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>208</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>4</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>1%, 1%, 1%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>1%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=syn2&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=syn2&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880048&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="syn2 LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=syn2&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=syn2&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880048&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="syn2 MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=titan&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>titan</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=titan&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880048">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>288</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>6</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>10%, 10%, 10%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>10%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=titan&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=titan&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880048&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="titan LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=titan&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=titan&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880048&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="titan MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=virthost&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>virthost</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=virthost&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880054">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>376</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>14</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>3%, 3%, 3%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>3%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=virthost&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=virthost&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880054&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="virthost LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=virthost&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=virthost&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880054&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="virthost MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=welling&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>welling</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=welling&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880058">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>36</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>6</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>0%, 0%, 0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=welling&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=welling&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880058&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="welling LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=welling&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=welling&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880058&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="welling MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=www&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>www</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=www&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880056">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>8</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>15</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>54%, 55%, 52%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>54%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=www&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=www&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880056&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="www LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=www&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=www&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880056&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="www MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=zen&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>zen</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=zen&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880054">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B></B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>0%, 0%, 0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=zen&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=zen&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880054&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="zen LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=zen&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=zen&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880054&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="zen MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+<tr>
+  <td class=cluster colspan="3">
+    <a href="./?c=zion&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><strong>zion</strong></a> <FONT SIZE="-2"><a href="./?p=2&amp;c=zion&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880048">(physical view)</a></FONT>
+  </td>
+</tr>
+
+<tr>
+<td align="LEFT" valign="TOP">
+<table cellspacing="1" cellpadding="1" width="100%" border="0">
+ <tr><td>CPUs Total:</td><td align="left"><B>552</B></td></tr>
+ <tr><td width="80%">Hosts up:</td><td align="left"><B>17</B></td></tr>
+ <tr><td>Hosts down:</td><td align="left"><B>0</B></td></tr>
+ <tr><td>&nbsp;</td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Current Load Avg (15, 5, 1m):</font><br>&nbsp;&nbsp;<b>0%, 0%, 0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Avg Utilization (last hour):</font><br>&nbsp;&nbsp;<b>0%</b></td></tr>
+ <tr><td class="footer" colspan="2"><font size="-1">Localtime:</font><br>&nbsp;&nbsp;2017-02-11 22:14</td></tr>
+</table>
+</td>
+
+
+
+<td>
+ <table align="center" border="0">
+  <tr>
+
+      <td>
+      <a href="./?c=zion&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=zion&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880048&amp;g=load_report&amp;z=medium&amp;r=hour"
+             alt="zion LOAD" border="0" />
+      </a>
+      </td>
+
+      <td>
+      <a href="./?c=zion&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2">
+        <img src="./graph.php?c=zion&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2&amp;st=1486880048&amp;g=network_report&amp;z=medium&amp;r=hour"
+             alt="zion MEM" border="0" />
+      </a>
+      </td>
+
+  </tr>
+ </td>
+</table>
+
+
+
+
+
+</tr>
+
+</table>
+
+<table border="0" width="100%">
+<tr>
+  <td colspan="2" class="title">Snapshot of the unspecified Grid |
+    <font size="-1"><a href="./cluster_legend.html">Legend</a></font>
+  </td>
+</tr>
+</table>
+
+<center>
+<table cellspacing="12" cellpadding="2">
+<tr><td valign=bottom align=center><b>andromeda</b></td>
+<td valign=bottom align=center><b>archer</b></td>
+<td valign=bottom align=center><b>asterix</b></td>
+<td valign=bottom align=center><b>bayonet</b></td>
+<td valign=bottom align=center><b>cacofonix</b></td>
+</tr>
+<tr><td valign=top align=center><a href="./?c=andromeda&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="andromeda" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=archer&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_25-49.jpg" alt="archer" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=asterix&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="asterix" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=bayonet&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="bayonet" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=cacofonix&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="cacofonix" border=0 align=top></a></td>
+</tr>
+<tr><td valign=bottom align=center><b>cbcl</b></td>
+<td valign=bottom align=center><b>datalab</b></td>
+<td valign=bottom align=center><b>igb-benzene</b></td>
+<td valign=bottom align=center><b>igb-helios</b></td>
+<td valign=bottom align=center><b>igb-misc</b></td>
+</tr>
+<tr><td valign=top align=center><a href="./?c=cbcl&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="cbcl" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=datalab&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="datalab" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=igb-benzene&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="igb-benzene" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=igb-helios&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="igb-helios" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=igb-misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="igb-misc" border=0 align=top></a></td>
+</tr>
+<tr><td valign=bottom align=center><b>igb-nebula</b></td>
+<td valign=bottom align=center><b>infrastructure</b></td>
+<td valign=bottom align=center><b>mimir</b></td>
+<td valign=bottom align=center><b>misc</b></td>
+<td valign=bottom align=center><b>misc-inst</b></td>
+</tr>
+<tr><td valign=top align=center><a href="./?c=igb-nebula&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="igb-nebula" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=infrastructure&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="infrastructure" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=mimir&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="mimir" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=misc&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="misc" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=misc-inst&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="misc-inst" border=0 align=top></a></td>
+</tr>
+<tr><td valign=bottom align=center><b>misc-rsh</b></td>
+<td valign=bottom align=center><b>pedigree</b></td>
+<td valign=bottom align=center><b>seal</b></td>
+<td valign=bottom align=center><b>sensorium</b></td>
+<td valign=bottom align=center><b>syn2</b></td>
+</tr>
+<tr><td valign=top align=center><a href="./?c=misc-rsh&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="misc-rsh" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=pedigree&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="pedigree" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=seal&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="seal" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=sensorium&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="sensorium" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=syn2&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="syn2" border=0 align=top></a></td>
+</tr>
+<tr><td valign=bottom align=center><b>titan</b></td>
+<td valign=bottom align=center><b>virthost</b></td>
+<td valign=bottom align=center><b>welling</b></td>
+<td valign=bottom align=center><b>www</b></td>
+<td valign=bottom align=center><b>zen</b></td>
+</tr>
+<tr><td valign=top align=center><a href="./?c=titan&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="titan" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=virthost&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="virthost" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=welling&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="welling" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=www&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_50-74.jpg" alt="www" border=0 align=top></a></td>
+<td valign=top align=center><a href="./?c=zen&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="zen" border=0 align=top></a></td>
+</tr>
+<tr><td valign=bottom align=center><b>zion</b></td>
+</tr>
+<tr><td valign=top align=center><a href="./?c=zion&amp;m=load_one&amp;r=hour&amp;s=by%20name&amp;hc=4&amp;mc=2"><img src="./templates/default/images/cluster_0-24.jpg" alt="zion" border=0 align=top></a></td>
+</tr>
+
+</table>
+</center>
+
+<!-- Begin footer.tpl -->
+</form> <!-- ganglia-form -->
+</div> <!-- tabs-main -->
+
+<div id="tabs-search">
+  Search term matches any number of metrics and hosts. For example type web or disk; wait a split second, and a drop down menu will show up with choices.
+  <!-- Uses LiveSearch from http://andreaslagerkvist.com/jquery/live-search/ -->
+  <div id="metric-search">
+    <form method="post" action="/search/" onsubmit="return false;">
+      <p>
+	<label>
+	    <small>Search as you type</small><br />
+	    <input type="text" name="q" id="search-field-q" size="60" placeholder="Search as you type" on />
+	</label>
+      </p>
+    </form>
+  </div>
+</div> 
+
+<div id="create-new-view-dialog" title="Create new view">
+  <div id="create-new-view-layer">
+    <form id="create_view_form">
+      <input type="hidden" name="create_view" value="1">
+      <fieldset>
+	 <label for="new_view_name">View Name</label>
+	 <input type="text" name="vn" id="new_view_name" class="text ui-widget-content ui-corner-all" />
+         <center><button style="margin:10px;" onclick="createView(); return false;">Create</button></center>
+      </fieldset>
+    </form>
+  </div>
+  <div id="create-new-view-confirmation-layer"></div>
+</div>
+
+<script>
+$(function(){
+  var create_new_view_dialog = $("#create-new-view-dialog");
+  if (create_new_view_dialog[0])
+    create_new_view_dialog.dialog({
+      autoOpen: false,
+      height: "auto",
+      width: "auto",
+      modal: true,
+      position: { my: "top",
+                  at: "top+200",
+                  of: window },
+      close: function() {
+        $("#create-new-view-layer").toggle();
+        $("#create-new-view-confirmation-layer").html("");
+	newViewDialogCloseCallback();
+      }
+    });
+});
+</script>
+
+<div id="metric-actions-dialog" title="Metric Actions">
+  <div id="metric-actions-dialog-content">
+	Available Metric actions.
+  </div>
+</div>
+
+<script>
+$(function(){
+  initMetricActionsDialog();	
+});
+</script>
+
+<div id="tabs-mobile"></div>
+
+<div id="tabs-autorotation">
+Invoke automatic rotation system. Automatic rotation rotates all of the graphs/metrics specified in a view waiting 
+30 seconds in between each. This will run as long as you have this page open.
+<p>
+Please select the view you want to rotate.</p>
+  <div id="tabs-autorotation-chooser">
+Loading view, please wait...<img src="img/spinner.gif" />
+  </div>
+</div>
+
+<div id="tabs-livedashboard">
+Live dashboard provides you with an overview of all view metrics in a compact format. Data updates every 15 seconds.
+Only those elements that contain a metric or graph report are supported. Aggregate graphs will not be included.
+<p>
+You can get more graphs per page by using your browser zoom functionality.
+<p>
+Please select the view you want to view</p>
+  <div id="tabs-livedashboard-chooser">
+Loading view, please wait...<img src="img/spinner.gif" />
+  </div>
+</div>
+
+
+<div align="center">
+<font size="-1" class="footer" >
+<hr />
+Ganglia Web Frontend version 3.7.1
+<a href="http://ganglia.sourceforge.net/downloads.php?component=ganglia-webfrontend&amp;version=3.7.1">Check for Updates.</a><br />
+
+Ganglia Web Backend <i>(gmetad)</i> version 3.7.2
+<a href="http://ganglia.sourceforge.net/downloads.php?component=gmetad&amp;version=3.7.2">Check for Updates.</a><br />
+
+Downloading and parsing ganglia's XML tree took 0.0239s.<br />
+Images created with <a href="http://www.rrdtool.org/">RRDtool</a> version 1.4.8.<br />
+<a href="http://dwoo.org/">Powered by Dwoo</a> 1.1.1.<br />
+</font>
+</div>
+</div> <!-- div-tabs -->
+<div id="popup-dialog" title="Inspect Graph">
+  <div id="popup-dialog-navigation"></div>
+  <div id="popup-dialog-content">
+  </div>
+</div>
+
+<script>
+$(function(){
+  $("#popup-dialog").dialog({ autoOpen: false, 
+                              width:800, 
+                              height:500,
+                              position: { my: "top",
+                                          at: "top+200",
+                                          of: window } } );
+});
+</script>
+</body>
+<!-- End footer.tpl -->
+</html>
+

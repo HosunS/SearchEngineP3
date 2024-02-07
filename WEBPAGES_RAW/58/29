@@ -1,0 +1,214 @@
+/* 
+$Id$
+
+Copyright (C) 2007 by The Regents of the University of California
+
+Redistribution of this file is permitted under
+the terms of the *GNU* Public License (*GPL*) 	
+
+Date: 04/08/2007
+Author: Yiming Lu <yimingl@ics.uci.edu>
+*/
+
+#ifndef _filtertreegram_h_
+#define _filtertreegram_h_
+
+#include <string>
+#include <vector>
+#include <iostream>
+
+using namespace std;
+
+/* This class is the type of the nodes at the position level. It 
+ * contains a list of string grams sharing the same gram, length, 
+ * position information
+ */
+class StringPosition
+{
+public:
+    StringPosition();
+    StringPosition(unsigned stringID, unsigned short position);
+    ~StringPosition();
+    
+    unsigned short getPosition()
+    {
+        return this->position;
+    }
+    
+    unsigned getSize()
+    {
+        return this->actualCnt;
+    }
+   
+    unsigned* getStrIDs()
+    {
+        return this->stringIDs;
+    }
+		
+    //This function is used to add a new string ID to the list.
+    void addStringID(unsigned stringID);
+		
+    //The operators are used for searlization of StringPosition Objects.
+    friend ostream &operator << (ostream &output, 
+                                 const StringPosition & stringPos);
+    friend istream &operator >> (istream &input, 
+                                 StringPosition & stringPos);								 	
+                                 
+    //This function returns the memory requirement of a node of this type
+    unsigned getMemory()
+    {
+    	unsigned memOfStringIDs = sizeOfStringIDs * sizeof(unsigned);
+    	return (memOfStringIDs + sizeof(*this));
+    }	
+    
+private:
+    unsigned short position;
+    unsigned actualCnt; //actual number of elements in stringIDs
+    unsigned sizeOfStringIDs; //space size of stringIDs
+    unsigned *stringIDs;	// the list of stringIDs	
+};
+
+/* This class is the type of the nodes at the length level. It 
+ * contains a list of string grams sharing the same gram, length 
+ * information.
+ */
+class GroupStringPosition
+{
+public:
+    GroupStringPosition();
+    GroupStringPosition(unsigned short length, 
+                        unsigned stringID, 
+                        unsigned short position);
+    GroupStringPosition(unsigned short length,
+                        StringPosition *strPos);
+    ~GroupStringPosition();
+    
+    unsigned short getLength()
+    {
+    	return this->length;
+    }
+    unsigned getSize()
+    {
+    	return actualCnt;
+    }
+    
+    StringPosition ** getPositions()
+    {
+    	return positions;
+    }
+    	
+    //insert into the ordered position list
+    void insertIntoPositions(unsigned strID, unsigned short pos);
+    
+    //append the strPos to the end of the position list
+    void appendToPositions(StringPosition *strPos);
+    
+    //The operators are used for searlization of GroupStringPosition Objects.	
+    friend ostream &operator << (ostream &output,
+	                             const GroupStringPosition & group);
+    friend istream &operator >> (istream &input,
+                                 GroupStringPosition & group);
+    //This function returns the memory requirement of a node of this type
+    unsigned getMemory()
+    {
+        unsigned memOfPositions = sizeOfPositions*(sizeof(StringPosition *));
+        for(unsigned i = 0; i < actualCnt; i++)
+        {
+            memOfPositions += positions[i]->getMemory();
+        }
+        return (memOfPositions + sizeof(*this));
+    }
+  
+private:
+    unsigned short length;
+    unsigned actualCnt;   //actual number of elements in stringIDs
+    unsigned sizeOfPositions; //space size of stringIDs
+    StringPosition ** positions; //the list of StringPosition Nodes	
+};
+
+
+/* This class is the type of the nodes at the gram level. It 
+ * contains a list of string grams sharing the same gram. 
+ */
+class LengthBucket 
+{
+public:
+    LengthBucket();
+    LengthBucket(unsigned stringID,
+                 unsigned short position,
+                 unsigned short length);
+    ~LengthBucket();
+		
+    bool isEmpty()
+    {
+        return (actualCnt <= 0);
+    }
+    
+    unsigned getSize()
+    {
+        return actualCnt;
+    }	
+    
+    GroupStringPosition ** getGroups()
+    {
+        return groups;
+    }
+    
+    //insert into the ordered length list
+    void insertIntoGroups(unsigned stringID,
+                          unsigned short position,
+                          unsigned short length);
+    
+    //append the strPos to the end of the position list
+    void appendToGroups(GroupStringPosition *groupPosition);
+    
+    //The operators are used for searlization of LengthBucket Objects.	
+    friend ostream &operator << (ostream &output,
+                                 const LengthBucket & bucket);
+    friend istream &operator >> (istream &input,
+                                 LengthBucket & bucket);
+                                 
+    //This function returns the memory requirement of a node of this type
+    unsigned getMemory()
+    {
+        unsigned memOfGroups = sizeOfGroups * (sizeof(GroupStringPosition *));
+        for(unsigned i = 0; i < actualCnt; i++)
+        {
+            memOfGroups += groups[i]->getMemory();
+        }
+        return (memOfGroups + sizeof(*this));
+    }	
+    
+private:
+    unsigned actualCnt;
+    unsigned sizeOfGroups;
+    GroupStringPosition **groups;
+};
+
+/* This class is for the count filter. It will store the count for each gram.
+ */
+class CountTable
+{
+public:
+    CountTable();
+    CountTable(const CountTable & countTable);
+    CountTable(const unsigned patterId, const unsigned stringCount);
+    ~CountTable();
+
+    unsigned  addCount(unsigned patternId); 
+    unsigned  getCount(unsigned patternId);
+    void  resetCount(unsigned patternId);
+    
+    unsigned getMaxCount()
+    {
+        return MAXCOUNT;
+    }
+
+private:
+    unsigned        patternId;
+    unsigned        stringCount;
+    const unsigned  MAXCOUNT;
+};
+
+#endif  // _filtertreegram_h_
+

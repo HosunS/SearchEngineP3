@@ -1,0 +1,43 @@
+User's guide to 
+  cocktail 
+R or mathlab function for computing D-optimal designs (approximate theory)
+
+Paper:   "D-optimal designs via a cocktail algorithm"
+         http://www.ics.uci.edu/~yamingy/cocktail.pdf 
+
+Contact: Yaming Yu
+         Department of Statistics, University of California
+         Irvine, CA 92697-1250, USA
+         yamingy@uci.edu
+
+
+In R: 
+
+Step 1.  Save the source text files 
+           http://www.ics.uci.edu/~yamingy/cocktail.r
+           http://www.ics.uci.edu/~yamingy/cocktail_demo.r
+
+Step 2.  Run R from the same directory and type 
+           source('cocktail.r') 
+
+Usage.   See beginning comments in the file 
+           cocktail.r
+         or try the demo
+           source('cocktail_demo.r')
+         in R
+
+
+In matlab:
+
+Step 1.  Save the source text files
+           http://www.ics.uci.edu/~yamingy/cocktail.m
+           http://www.ics.uci.edu/~yamingy/cocktail_demo.m 
+
+Step 2.  Run matlab from the same directory and type
+           cocktail_demo
+
+Usage.   See beginning comments in the file 
+           cocktail.m 
+         or try 
+           help cocktail
+         in matlab

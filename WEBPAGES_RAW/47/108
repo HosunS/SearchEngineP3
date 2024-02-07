@@ -1,0 +1,3796 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD>
+<TITLE>Extensions for Distributed Authoring and Versioning on the World Wide Web -- WEBDAV</TITLE>
+</HEAD>
+<BODY>
+<PRE>
+WEBDAV Working Group                     Y. Y. Goland, Microsoft
+INTERNET-DRAFT                 E. J. Whitehead, Jr., U.C. Irvine
+&lt;draft-ietf-webdav-protocol-04&gt;               A. Faizi, Netscape
+                                             S. R Carter, Novell
+                                               D. Jensen, Novell
+Expires April 20, 1998                          October 12, 1997
+
+
+</PRE><HR>
+This HTML version was converted from plaintext ASCII to HTML by <A HREF="mailto:jdavis@parc.xerox.com">Jim Davis</A>.  My sincere apologies for any errors introduced in the process.  When in doubt, consult the ascii version.
+<HR>
+
+
+
+<h1>         Extensions for Distributed Authoring and Versioning
+                              on the
+                      World Wide Web -- WEBDAV</h1>
+
+<h2>Status of this Memo</h2>
+
+This document is an Internet-Draft. Internet-Drafts are working
+documents of the Internet Engineering Task Force (IETF), its
+areas, and its working groups. Note that other groups may also
+distribute working documents as Internet-Drafts.
+
+Internet-Drafts are draft documents valid for a maximum of six
+months and may be updated, replaced, or made obsolete by other
+documents at any time. It is inappropriate to use Internet-Drafts
+as reference material or to cite them other than as "work in
+progress".
+
+<P>To learn the current status of any Internet-Draft, please check
+the "1id-abstracts.txt" listing contained in the Internet-Drafts
+Shadow Directories on ftp.is.co.za (Africa), nic.nordu.net
+(Europe), munnari.oz.au (Pacific Rim), ds.internic.net (US East
+Coast), or ftp.isi.edu (US West Coast).
+
+<P>Distribution of this document is unlimited. Please send comments
+to the Distributed Authoring and Versioning (WEBDAV) working
+group at &lt;w3c-dist-auth@w3.org&gt;, which may be joined by sending a
+message with subject "subscribe" to &lt;w3c-dist-auth-request@w3.org&gt;.
+
+<P>Discussions of the WEBDAV working group are archived at
+<PRE>&lt;URL:<A HREF="http://www.w3.org/pub/WWW/Archives/Public/w3c-dist-auth">http://www.w3.org/pub/WWW/Archives/Public/w3c-dist-auth</A>&gt;.
+
+</PRE>
+
+
+<p>Abstract
+
+<p>This Document specifies a set of methods and content-types
+ancillary to HTTP/1.1 for the management of resource properties,
+simple name space manipulation, simple resource locking
+(collision avoidance) and resource version control.
+
+<pre>
+
+                        Table of Contents
+Abstract
+1    Terminology
+2    Data Model and Methods for DAV Properties
+     2.1  Introduction
+          2.1.1   The DAV Property
+          2.1.2   Existing Metadata Proposals
+          2.1.3   Properties and HTTP Headers
+     2.2  A Property Model for HTTP Resources
+          2.2.1   Overview
+          2.2.2   Property Namespace
+     2.3  Schemas
+          2.3.1   PropSchema XML Element
+          2.3.2   DTD XML Element
+          2.3.3   DefinedProps XML Element
+          2.3.4   PropEntries XML Element
+          2.3.5   Live XML Element
+     2.4  DAV Schema
+          2.4.1   DAV Property
+          2.4.2   Level XML Element
+          2.4.3   Prop XML element
+          2.4.4   PropLoc XML Attribute
+          2.4.5   Example
+     2.5  Property Identifiers
+          2.5.1   Problem Definition
+     2.6  Link XML Element
+          2.6.1   Problem Description
+          2.6.2   Solution Requirements
+          2.6.3   Link XML Element
+          2.6.4   Src XML Element
+          2.6.5   Dst XML Element
+          2.6.6   Example
+     2.7  Multi-Status Response
+          2.7.1   Problem Definition
+          2.7.2   Solution Requirements
+          2.7.3   Multi-Status Response
+     2.8  Properties and Methods
+          2.8.1   DELETE
+          2.8.2   GET
+          2.8.3   PROPPATCH
+          2.8.4   PUT
+          2.8.5   PROPFIND
+3    A Proposal for Collections of Web Resources and Name Space
+     Operations
+     3.1  Observations on the HTTP Object Model
+          3.1.1   Collection Resources
+          3.1.2   Creation and Retrieval of Collection
+                  Resources
+          3.1.3   Source Resources and Output Resources
+     3.2  MKCOL Method
+          3.2.1   Problem Description
+          3.2.2   Solution Requirements
+          3.2.3   Request
+          3.2.4   Response
+          3.2.5   Example
+     3.3  Standard DAV Properties
+          3.3.1   IsCollection Property
+          3.3.2   DisplayName Property
+          3.3.3   CreationDate Property
+          3.3.4   GETentity Property
+          3.3.5   INDEXentity Property
+          3.3.6   Content-Type XML Element
+          3.3.7   Content-Length XML Element
+          3.3.8   Content-Language XML Element
+          3.3.9   Last-Modified XML Element
+          3.3.10  Etag XML Element
+     3.4  INDEX Method
+          3.4.1   Problem Description
+          3.4.2   Solution Requirements
+          3.4.3   The Request
+          3.4.4   The Response
+          3.4.5   ResInfo XML Element
+          3.4.6   Members XML Element
+          3.4.7   Href XML Element
+          3.4.8   Example
+     3.5  Behavior of RFC 2068 Methods on Collections
+          3.5.1   GET, HEAD for Collections
+          3.5.2   POST for Collections
+          3.5.3   PUT for Collections
+          3.5.4   DELETE for Collections
+          3.5.5   DELETE Method for Non-Collection
+                  Resources
+     3.6  COPY Method
+          3.6.1   Problem Description
+          3.6.2   Solution Requirements
+          3.6.3   The Request
+          3.6.4   The Response
+          3.6.5   Examples
+     3.7  MOVE Method
+          3.7.1   Problem Description
+          3.7.2   Solution Requirements
+          3.7.3   The Request
+          3.7.4   The Response
+          3.7.5   Examples
+     3.8  ADDREF Method
+          3.8.1   Problem Definition
+          3.8.2   Solution Requirements
+          3.8.3   The Request
+          3.8.4   Example
+     3.9  DELREF Method
+          3.9.1   Problem Definition
+          3.9.2   Solution Requirements
+          3.9.3   The Request
+          3.9.4   Example
+     3.10 PATCH Method
+          3.10.1  Problem Definition
+          3.10.2  Solution Requirements
+          3.10.3  The Request
+          3.10.4  text/xml elements for PATCH
+          3.10.5  The Response
+          3.10.6  Examples
+     3.11 Headers
+          3.11.1  Destination Header
+          3.11.2  Enforce-Live-Properties Header
+          3.11.3  Overwrite Header
+          3.11.4  Destroy Header
+          3.11.5  Collection-Member Header
+     3.12 Links
+          3.12.1  Source Link Property Type
+4    State Tokens
+     4.1  Overview
+          4.1.1   Problem Description
+          4.1.2   Solution Requirements
+     4.2  State Token Syntax
+     4.3  State Token Conditional Headers
+          4.3.1   If-State-Match
+          4.3.2   If-None-State-Match
+     4.4  State Token Header
+     4.5  E-Tag
+5    Locking
+     5.1  Locking: Introduction
+          5.1.1   Exclusive Vs. Shared Locks
+          5.1.2   Required Support
+     5.2  LOCK Method
+          5.2.1   Operation
+          5.2.2   The Effect of Locks on Properties and
+                  Containers
+          5.2.3   Locking Replicated Resources
+          5.2.4   Locking Multiple Resources
+          5.2.5   Interaction with other Methods
+          5.2.6   Lock Compatibility Table
+          5.2.7   Status Codes
+          5.2.8   Lock-Info Request Header
+          5.2.9   Owner Request Header
+          5.2.10  Time-Out Header
+          5.2.11  Lock Response
+          5.2.12  Example - Simple Lock Request
+          5.2.13  Example - Multi-Resource Lock Request
+     5.3  Write Lock
+          5.3.1   Methods Restricted by Write Locks
+          5.3.2   Write Locks and Properties
+          5.3.3   Write Locks and Null Resources
+          5.3.4   Write Locks and Collections
+          5.3.5   Write Locks and COPY/MOVE
+          5.3.6   Re-issuing Write Locks
+          5.3.7   Write Locks and The State-Token Header
+     5.4  Lock Tokens
+          5.4.1   Problem Description
+          5.4.2   Lock Token Introduction
+          5.4.3   Generic Lock Tokens
+          5.4.4   OpaqueLockToken Lock Token
+     5.5  UNLOCK Method
+          5.5.1   Problem Definition
+          5.5.2   Example
+     5.6  Discovery Mechanisms
+          5.6.1   Lock Capability Discovery
+          5.6.2   Active Lock Discovery
+6    Version Control
+7    Internationalization Support
+8    Security Considerations
+9    Copyright
+10   Acknowledgements
+11   References
+12   Authors' Addresses
+</PRE>
+
+
+<h2>1    Terminology</h2>
+
+Collection - A resource that contains member resources.
+
+<P>Member Resource - a resource referred to by a collection. There
+are two types of member resources: external and internal.
+
+<P>Internal Member Resource - the name given to a member resource of
+a collection whose URI is relative to the URI of the collection.
+
+<P>External Member Resource - a member resource with an absolute URI
+that is not relative to its parent's URI.
+
+<P>Properties - A set of name/value pairs that contain descriptive
+information about a resource.
+
+<P>Live Properties - Properties whose semantics and syntax are
+enforced by the server. For example, a live "read-only" property
+that is enforced by the server would disallow PUTs to the
+associated resource.
+
+<P>Dead properties - Properties whose semantics and syntax are not
+enforced by the server. A dead "read-only" property would not be
+enforced by the server and thus would not be used by the server
+as a reason to disallow a <TT>PUT</TT> on the associated resource.
+
+<P>The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL
+NOT", "SHOULD", SHOULD NOT", "RECOMMENDED",  "MAY", and
+"OPTIONAL" in this document are to be interpreted as described in
+RFC 2119 [Bradner, 1997].
+
+
+<h2>2    Data Model and Methods for DAV Properties</h2>
+
+<h3>2.1  Introduction</h3>
+
+
+<h4>2.1.1     The DAV Property</h4>
+
+Properties are pieces of data that describe the state of a
+resource. Properties are data about data. The term property is
+used within this specification to disambiguate the concept from
+the overloaded terms "metadata" and "attribute".
+
+<P>Properties are used within distributed authoring environments to
+provide for efficient discovery and management of resources. For
+example, a 'subject' property might allow for the indexing of all
+resources by their subject, and an 'author' property might allow
+for the discovery of what authors have written which documents.
+
+
+<h4>2.1.2     Existing Metadata Proposals</h4>
+
+Properties have a long played an essential role in the
+maintenance of large document repositories, and many current
+proposals contain some notion of a property. These include PICS
+[Miller et al., 1996], PICS-NG, the Rel/Rev draft [Maloney,
+1996], Web Collections, XML [Bray, Sperberg-McQueen, 1997],
+several proposals on representing relationships within HTML,
+digital signature manifests (DCMF), and a position paper on Web
+metadata architecture [Berners-Lee, 1997].
+
+<P>Some proposals come from a digital library perspective. These
+include the Dublin Core [Weibel et al., 1995] metadata set and
+the Warwick Framework [Lagoze, 1996], a container architecture
+for different metadata schemas. The literature includes many
+examples of metadata, including MARC [MARC, 1994], a
+bibliographic metadata format, RFC 1807 [Lasher, Cohen, 1995], a
+technical report bibliographic format employed by the Dienst
+system, and the proceedings from the first IEEE Metadata
+conference describe many community-specific metadata sets.
+
+<P>Participants of the 1996 Metadata II Workshop in Warwick, UK
+[Lagoze, 1996], noted that, "new metadata sets will develop as
+the networked infrastructure matures" and "different communities
+will propose, design, and be responsible for different types of
+metadata." These observations can be corroborated by noting that
+many community-specific sets of metadata already exist, and there
+is significant motivation for the development of new forms of
+metadata as many communities increasingly make their data
+available in digital form, requiring a metadata format to assist
+data location and cataloging.
+
+
+<h4>2.1.3     Properties and HTTP Headers</h4>
+
+Properties already exist, in a limited sense, within HTTP through
+the use of message headers. However, in distributed authoring
+environments a relatively large number of properties are needed
+to describe the state of a resource, and setting/returning them
+all through HTTP headers is inefficient. Thus a mechanism is
+needed which allows a principal to identify a set of properties
+in which the principal is interested and to then set or retrieve
+just those properties.
+
+
+<h3>2.2  A Property Model for HTTP Resources</h3>
+
+<h4>2.2.1     Overview</h4>
+
+The DAV property model is based on name/value doubles. The name
+of a property identifies the property's syntax and semantics, and
+provides an address with which to refer to a property. The name
+and value of a property is expressed as a well-formed XML
+element, where the name of the property is the name of the XML
+element, and the value of the property MUST be either blank, or a
+well-formed XML element value.
+
+
+<h4>2.2.2     Property Namespace</h4>
+
+
+<H4>2.2.2.1   Problem Definition</H4>
+
+The requirement is to be able to associate a value with a
+property name on a resource.  It must be possible to associate a
+URL with the property name.
+
+
+<H4>2.2.2.2   Solution Requirement</H4>
+
+Ideally a property namespace should work well with extant
+property implementations as well as database systems. The DAV
+property namespace has been specified with the following two
+facts in mind:
+<LI>    Namespaces associated with flat file systems are ubiquitous.
+<LI>    The majority of databases use a fixed schema mechanism.
+The last point makes efficient implementation of hierarchical
+properties difficult. Specifically, each property has a random
+set of children; the best a relational database can do is provide
+a table with name and value, where the value is a series of
+indexes into other tables and each index represents a specific
+value. However most RDBS do not provide for table pointers, only
+index values. Such a system would have to be jury-rigged to
+handle table pointers. In addition, indexing systems are
+optimized for a small set of relatively large tables;
+hierarchical property systems tend toward many properties, each
+with different numbers and types of children, thus potentially
+requiring a table for each child.
+
+<P>It would seem best to implement a flat property namespace,
+inducing a natural isomorphism between DAV and most native file
+systems. Adopting such a model will not restrict RDBS from taking
+full advantage of their search facilities.
+
+<P>However, it seems that future trends might be toward hierarchical
+properties. Therefore, DAV requirements [Slein et al.] stipulate
+that the design of the flat property system MUST be such that it
+will be possible to add true hierarchical properties later
+without breaking downlevel clients. Specifically, a flat client
+MUST be able to speak to a hierarchical server and a hierarchical
+client MUST be able to speak to a flat server. Worst case either
+way MUST be that the request fails.
+
+
+<H4>2.2.2.3   Property Names</H4>
+
+A property name identifies both the syntax and semantics of the
+property's value. It is critical that property names do not
+collide, e.g., two principals defining the same property name
+with two different meanings.
+
+<P>The URI framework provides a mechanism to prevent namespace
+collision and for varying degrees of administrative control.
+Rather than reinvent these desirable features, DAV properties
+make use of them by requiring that all DAV property names MUST be
+URIs.  Since a property is also an XML element, the name of the
+XML element is a URI.
+
+<P>The property namespace is flat, that is, it is not possible to
+string together a series of property names in order to refer to a
+hierarchy of properties. Thus it is possible to refer to a
+property B but not a property A/B, where A is also a property
+defined on the resource.
+
+<P>Finally, it is not possible to define the same property twice as
+this would cause a collision in the resource's property
+namespace.
+
+
+<h3>2.3  Schemas</h3>
+
+A schema is a group of property names and XML elements.
+
+<P>Schema discovery is used to determine if a system supports a
+group of properties or XML elements. A property does not
+necessarily contain sufficient information to identify any
+schema(s) to which it may belong.
+
+<P>As with property names, schemas MUST use URIs as their names.
+
+<P>A resource declares its support for a schema by defining a
+property whose name is the same as the schema's. The property
+SHOULD contain the PropSchema XML element.
+
+
+<h4>2.3.1     PropSchema XML Element</h4>
+
+Name:     http://www.ietf.org/standards/dav/PropSchema
+<BR>Purpose:  To provide information about properties
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   Any
+<BR>Values=   [DTD] [DefinedProps]
+<BR>Description:This property contains the definition of the schema.
+This definition consists of two parts. A DTD element that
+contains a DTD that declares all XML elements and DefinedProps
+that defines any properties associated with the schema. As with
+all XML it is possible to add extra XML elements. Therefore
+schemas may define extra XML elements which are to be included
+with their values.
+
+<h4>2.3.2     DTD XML Element</h4>
+
+Name:          http://www.ietf.org/standards/dav/DTD
+<BR>Purpose:  To contain the DTD for XML elements associated with the
+schema.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   Any
+<BR>Values:   XML Declaration statements
+
+
+<h4>2.3.3     DefinedProps XML Element</h4>
+
+Name:          http://www.ietf.org/standards/dav/DefinedProps
+<BR>Purpose:  To contain a list of properties defined by the schema.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   Any
+<BR>Values=   1*PropEntries
+
+<h4>2.3.4     PropEntries XML Element</h4>
+
+Name:          http://www.ietf.org/standards/dav/PropEntries
+<BR>Purpose:  To contain the name of a defined property, the DTD of
+its value, and its live/dead status.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   DefinedProps
+<BR>Values=   Prop [DTD] [Live]
+<BR>Description:Prop contains the name of the property. The DTD
+contains the DTD of the property's value. Live, if defined,
+indicates that the property has semantics and syntax that are
+enforced by the server.
+
+
+<h4>2.3.5     Live XML Element</h4>
+
+Name:          http://www.ietf.org/standards/dav/Live
+<BR>Purpose:  If present this indicates the server MUST enforce the
+syntax and semantics of the property.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   PropEntries
+
+
+<h3>2.4  DAV Schema</h3>
+
+The DAV Schema is specified as
+http://www.ietf.org/standards/dav/. This schema is used to
+indicate support for
+<LI>    properties that may be defined on a resource and
+<LI>    XML elements that may be returned in responses.
+
+
+<h4>2.4.1     DAV Property</h4>
+
+Name:          http://www.ietf.org/standards/dav
+<BR>Purpose:  Defines support for the DAV schema and protocol.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Values=   PropSchema Level
+<BR>Description:This property indicates that the resource supports
+the DAV schema and protocol to the level indicated. THE VALUE IN
+PROPSCHEMA IS TBD, WE NEED TO PROVIDE IT IN AN APPENDIX.
+
+
+<h4>2.4.2     Level XML Element</h4>
+
+Name:          http://www.ietf.org/standards/dav/level
+<BR>Purpose:  To indicate the level of DAV compliance the resource
+meets.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   DAV
+<BR>Values=   "1" | "2" | "3"
+<BR>Description:A value of 1 for level indicates that the resource
+supports the property and namespace sections of the DAV
+specification. Level 2 indicates that the resource supports level
+1 and the lock section of the specification, with a minimum
+locking capability of the write lock. Level 3 indicates support
+for levels 1 and 2 as well as support for the versioning section
+of the DAV specification.
+
+
+<h4>2.4.3     Prop XML element</h4>
+
+Name:          http://www.ietf.org/standards/dav/prop
+<BR>Purpose:  Contains properties related to a resource.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   Any
+<BR>Values:   XML Elements
+<BR>Description:The Prop XML element is a generic container for
+properties defined on resources. All elements inside Prop MUST
+define properties related to the resource. No other elements may
+be used inside of a Prop element.
+
+
+<h4>2.4.4     PropLoc XML Attribute</h4>
+
+Name:          http://www.ietf.org/standards/dav/PropLoc
+<BR>Purpose:  To specify the location of the associated property.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Values=   URL
+<BR>Description:This attribute is used with elements inside of Props
+contained in responses to specify the URL of the property on the
+associated resource. The PropLoc attribute MUST NOT be used in
+requests.
+
+
+<h4>2.4.5     Example</h4>
+
+<PRE>&lt;?XML:Namespace href="http://www.ietf.org/standards/dav/" AS="D"/&gt;
+&lt;?XML:Namespace href="AIIM:Dublin:" AS="A"/&gt; &lt;D:Prop&gt;
+     &lt;A:Author D:PropLoc="http://www.foo.com/resource/props/Author"&gt;
+          Larry Masinter
+     &lt;/A:Author&gt;
+&lt;/D:Prop&gt;
+
+</PRE>
+
+The previous specifies that the property author exists on some
+unspecified resource and that the property can be directly
+referenced at http://www.foo.com/resource/props/Author. The
+resource upon which the property is defined must be determined
+from context.
+
+
+<h3>2.5  Property Identifiers</h3>
+
+
+<h4>2.5.1     Problem Definition</h4>
+
+DAV properties are resources and thus may have a URI where the
+value of an instance of the property may be retrieved.  This URI
+is separate from the URI name of the property, which identifies
+the syntax and semantics of the property, but which does not give
+information on how to access the value of an instance of the
+property.
+
+<P>A server is free to assign whatever URI it chooses to identify an
+instance of a property defined on a resource. In fact, a server
+is free not to reveal the URI of an instance of a particular
+resource and instead require that the client access the property
+through <TT>PROPFIND</TT> and <TT>PROPPATCH</TT>.  However, many servers will want
+to allow clients to directly manipulate properties. On these
+servers, a client can discover the URI of an instance of a
+property by performing a <TT>PROPFIND</TT> and examining the PropLoc
+attribute, if returned, of each property.
+
+<h3>2.6  Link XML Element</h3>
+
+<h4>2.6.1     Problem Description</h4>
+
+A mechanism is needed to associate resources with other
+resources. These associations, known as links, consist of three
+values, a type describing the nature of the association, the
+source of the link, and the destination of the link. In the case
+of annotation, neither the source nor the destination of a link
+need be the resource upon which the link is recorded.
+
+
+<h4>2.6.2     Solution Requirements</h4>
+
+The association mechanism MUST make use of the DAV property
+mechanism in order to make the existence of the associations
+searchable.
+
+
+<h4>2.6.3     Link XML Element</h4>
+
+Name:          http://www.ietf.org/standards/dav/link
+<BR>Purpose:  To identify a property as a link and to contain the
+source and destination of that link.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Values=   1*Src 1*Dst
+<BR>Description:Link is used to provide the sources and destinations
+of a link. The type of the property containing the Link XML
+element provides the type of the link. Link is a multi-valued
+element, so multiple Links may be used together to indicate
+multiple links with the same type.
+
+
+<h4>2.6.4     Src XML Element</h4>
+
+Name: http://www.ietf.org/standards/dav/src
+<BR>Purpose: To indicate the source of a link.
+<BR>Schema: http://www.ietf.org/standards/dav/
+<BR>Parent: http://www.ietf.org/standards/dav/link
+<BR>Values= URI
+
+
+<h4>2.6.5     Dst XML Element</h4>
+
+Name: http://www.ietf.org/standards/dav/Dst
+<BR>Purpose: To indicate the destination of a link
+<BR>Schema: http://www.ietf.org/standards/dav/
+<BR>Parent: http://www.ietf.org/standards/dav/link
+<BR>Values= URI
+
+
+<h4>2.6.6     Example</h4>
+
+<PRE>&lt;?XML:Namespace
+     href = "http://www.ietf.org/standards/dav/" AS = "D"/&gt;
+&lt;?XML:Namespace
+     href = "http://www.foocorp.com/Project/" AS = "F"/&gt;
+&lt;D:Prop&gt;
+     &lt;Source&gt;
+          &lt;Link&gt;
+               &lt;F:ProjFiles&gt;Source&lt;/F:ProjFiles&gt;
+               &lt;src&gt;http://foo.bar/program&lt;/src&gt;
+               &lt;dst&gt;http://foo.bar/src/main.c&lt;/dst&gt;
+          &lt;/Link&gt;
+          &lt;Link&gt;
+               &lt;F:ProjFiles&gt;Library&lt;/F:ProjFiles&gt;
+               &lt;src&gt;http://foo.bar/program&lt;/src&gt;
+               &lt;dst&gt;http://foo.bar/src/main.lib&lt;/dst&gt;
+          &lt;/Link&gt;
+          &lt;Link&gt;
+               &lt;F:ProjFiles&gt;Makefile&lt;/F:ProjFiles&gt;
+               &lt;src&gt;http://foo.bar/program&lt;/src&gt;
+               &lt;dst&gt;http://foo.bar/src/makefile&lt;/dst&gt;
+     &lt;Link&gt;
+     &lt;/Source&gt;
+&lt;/D:Prop&gt;
+
+</PRE>
+
+In this example the resource http://foo.bar/program has a source
+property defined which contains three links. Each link contains
+three elements, two of which, src and dst, are part of the DAV
+schema defined in this document, and one which is defined by the
+schema http://www.foocorp.com/project/ (Source, Library, and
+Makefile). A client which only implements the elements in the DAV
+spec will not understand the foocorp elements and will ignore
+them, thus seeing the expected source and destination links. An
+enhanced client may know about the foocorp elements and be able
+to present the user with additional information about the links.
+
+
+<h3>2.7  Multi-Status Response</h3>
+
+
+<h4>2.7.1     Problem Definition</h4>
+
+Some methods effect more than one resource. The effect of the
+method on each of the scoped resources may be different, as such
+a return format that can specify the effect of the method on each
+resource is needed.
+
+
+<h4>2.7.2     Solution Requirements</h4>
+
+The solution must:
+<LI> communicate the status code and reason
+<LI> give the URI of the resource on which the method was invoked
+<LI> be consistent with other return body formats
+
+<h4>2.7.3     Multi-Status Response</h4>
+
+The default multi-status response body is an <TT>text/xml</TT> HTTP entity
+that contains a single XML element called <TT>multiresponse</TT>, which
+contains a set of XML elements called response, one for each 200,
+300, 400, and 500 series status code generated during the method
+invocation.  100 series status codes MUST NOT be recorded in a
+response XML element.
+
+
+<H4>2.7.3.1   <TT>Multiresponse</TT></H4>
+
+Name: http://www.ietf.org/standards/dav/multiresponse
+<BR>Purpose:  Contains multiple response messages.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   Any
+<BR>Value:    1*Response [ResponseDescription]
+<BR>Description:The ResponseDescription at the top level is used to
+provide a general message describing the over arching nature of
+the response. If this value is available an application MAY use
+it instead of presenting the individual response descriptions
+contain within the responses.
+<H4>2.7.3.2   Response</H4>
+
+Name: http://www.ietf.org/standards/dav/response
+<BR>Purpose:  Holds a single response
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   Any
+<BR>Value:    (Prop | HREF) Status [ResponseDescription]
+<BR>Description: Prop MUST contain one or more empty XML elements
+representing the name of properties. Multiple properties may be
+included if the same response applies to them all. If HREF is
+used then the response refers to a problem with the referenced
+resource, not a property.
+
+
+<H4>2.7.3.3   Status</H4>
+
+Name: http://www.ietf.org/standards/dav/status
+<BR>Purpose:  Holds a single HTTP status-line
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   Response
+<BR>Value:    status-line   ;status-line defined in [Fielding et al.,
+1997]
+
+
+<H4>2.7.3.4   ResponseDescription</H4>
+
+Name:
+http://www.ietf.org/standards/dav/ResponseDescription
+<BR>Purpose:  Contains a message that can be displayed to the user
+explaining the nature of the response.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   <TT>Multiresponse</TT> and/or Response
+<BR>Value:    Any
+<BR>Description:   This XML element provides information suitable to
+be presented to a user.
+
+
+<h3>2.8  Properties and Methods</h3>
+
+
+<h4>2.8.1     DELETE</h4>
+
+As properties are resources, the deletion of a property causes
+the same result as the deletion of any resource. It is worth
+pointing out that the deletion of a property effects both direct
+manipulation, that is by the property's URL, as well as indirect
+discovery and manipulation, that is <TT>PROPPATCH</TT> and <TT>PROPFIND</TT>.
+
+
+<h4>2.8.2     GET</h4>
+
+A <TT>GET</TT> with a Request-URI that identifies a property returns the
+name and value of that property.  Accept types may be used to
+specify the format of the return value, but all DAV compliant
+servers MUST at minimum support a return type of <TT>text/xml</TT>. If
+<TT>text/xml</TT> is used as the response format then it MUST return the
+name and value of the property using the <TT>Prop</TT> XML element.
+
+
+<H4>2.8.2.1   Example</H4>
+
+The following example assumes that the property's URL, originally
+generated by the server, was discovered by examining the <TT>proploc</TT>
+XML attribute returned on a result from a <TT>FINDPROP</TT>.
+<PRE>
+GET /bar.html;prop=z39.50_authors HTTP/1.1
+Host: foo.com
+</PRE>
+<PRE>
+HTTP/1.1 200 OK
+Content-Type: text/xml
+Content-Length: xxxx
+E-tag: "1234"
+Last-Modified: xxxx
+</PRE>
+
+<PRE>&lt;?XML:Namespace href = "http://www.ietf.org/standards/dav/" AS = "D"/&gt;
+&lt;?XML:Namespace href = "http://www.w3.com/standards/z39.50/"AS = "Z"/&gt;
+&lt;D:prop&gt;
+     &lt;Z:Authors&gt;
+          &lt;Z:Author&gt;Jane Doe&lt;/Z:Author&gt;
+          &lt;Z:Author&gt;Joe Doe&lt;/Z:Author&gt;
+           &lt;Z:Author&gt;Lots o'Doe&lt;/Z:Author&gt;
+     &lt;/Z:Authors&gt;
+&lt;/D:prop&gt;
+
+</PRE>
+
+
+<h4>2.8.3     <TT>PROPPATCH</TT></h4>
+
+The <TT>PROPPATCH</TT> method processes instructions specified in the
+request body to create and/or remove properties defined on the
+resource identified by Request-URI.
+
+<P>All DAV compliant servers MUST process instructions which are
+specified using the <TT>PropertyUpdate</TT>, <TT>Create</TT>, and <TT>Remove</TT> XML
+elements of the DAV schema.  The request message body MUST
+contain at least one <TT>PropertyUpdate</TT> XML element.  Instruction
+processing MUST occur in the order instructions are received
+(i.e., from top to bottom), and MUST be performed atomically.
+
+
+<H4>2.8.3.1   PropertyUpdate XML element</H4>
+
+Name:          http://www.ietf.org/standards/dav/PropertyUpdate
+<BR>Purpose:  To contain a request to alter the properties on a
+resource.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   Any
+<BR>Values=   *(<TT>Create</TT> | <TT>Remove</TT>)
+<BR>Description:This XML element is a container for the information
+required to modify the properties on the resource. This XML
+element is multi-valued.
+
+
+<H4>2.8.3.2   <TT>Create</TT> XML element</H4>
+
+Name:          http://www.ietf.org/standards/dav/create
+<BR>Purpose:  To create the DAV properties specified inside the
+<TT>Create</TT> XML element.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   http://www.ietf.org/standards/dav/PropertyUpdate
+<BR>Values=   Prop
+<BR>Description:This XML element MUST contain only a <TT>Prop</TT> XML
+element. The elements contained by <TT>Prop</TT> specify the name and
+value of properties that are created on Request-URI. If a
+property already exists then its value is replaced. The <TT>Prop</TT> XML
+element MUST NOT contain a PropLoc XML attribute.
+
+
+<H4>2.8.3.3   <TT>Remove</TT> XML element</H4>
+
+Name:          http://www.ietf.org/standards/dav/remove
+<BR>Purpose:  To remove the DAV properties specified inside the
+<TT>Remove</TT> XML element.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   http://www.ietf.org/standards/dav/PropertyUpdate
+<BR>Values=   Prop
+<BR>Description:<TT>Remove</TT> specifies that the properties specified in
+<TT>Prop</TT> should be removed. Specifying the removal of a property that
+does not exist is not an error. All the elements in <TT>Prop</TT> MUST be
+empty, as only the names of properties to be removed are
+required.
+
+
+<H4>2.8.3.4   Response</H4>
+
+The response MUST have a response body that contains a
+<TT>multiresponse</TT> identifying the results for each property.
+
+
+<H4>2.8.3.5   Response Codes</H4>
+
+<LI>200 OK - The command succeeded. As there can be a mixture of
+<TT>Create</TT> and <TT>Remove</TT>s in a body, a 201 Create seems inappropriate.
+<LI>403 Forbidden - The client, for reasons the server chooses not to
+specify, can not alter one of the properties.
+<LI>405 Conflict - The client has provided a value whose semantics
+are not appropriate for the property. This includes trying to set
+read only properties.
+<LI>413 Request Entity Too Long - If a particular property is too
+long to be recorded then a composite XML error will be returned
+indicating the offending property.
+<LI>417 Insufficient Space on Resource - The resource does not have
+sufficient space to record the state of the resource after the
+execution of this method.
+<LI>418 Atomicity Failure - The command was not executed because of
+an atomicity failure elsewhere the caused the entire command to
+be aborted.
+
+
+<H4>2.8.3.6   Example</H4>
+
+<PRE>
+PROPPATCH /bar.html HTTP/1.1
+Host: www.foo.com
+Content-Type: text/xml
+Content-Length: xxxx
+</PRE>
+
+<PRE>&lt;?XML:Namespace href = "http://www.ietf.org/standards/dav/" AS = "D"/&gt;
+&lt;?XML:Namespace href = "http://www.w3.com/standards/z39.50/" AS = "Z"/&gt;
+&lt;D:PropertyUpdate&gt;
+     &lt;Create&gt;
+          &lt;prop&gt;
+               &lt;Z:authors&gt;
+                    &lt;Z:Author&gt;Jim Whitehead&lt;/Z:Author&gt;
+                    &lt;Z:Author&gt;Roy Fielding&lt;/Z:Author&gt;
+               &lt;/Z:authors&gt;
+          &lt;/Prop&gt;
+     &lt;/Create&gt;
+     &lt;Remove&gt;
+          &lt;prop&gt;&lt;Z:Copyright-Owner/&gt;&lt;/prop&gt;
+     &lt;/Remove&gt;
+&lt;/D:PropertyUpdate&gt;
+HTTP/1.1 405 Conflict
+Content-Type: text/xml
+Content-Length: xxxxx
+
+</PRE>
+
+<PRE>&lt;?XML:Namespace href="http://www.ietf.org/standards/dav/" AS = "D"/&gt;
+&lt;?XML:Namespace href="http://www.w3.com/standards/z39.50/" AS = "Z"/&gt;
+&lt;D:MultiResponse&gt;
+     &lt;ResponseDescription&gt; Copyright Owner can not be deleted or
+altered.&lt;/ResponseDescription&gt;
+     &lt;Response&gt;
+          &lt;Prop&gt;&lt;Z:authors/&gt;&lt;/Prop&gt;
+          &lt;Status&gt;HTTP/1.1 418 Atomicity Failure&lt;/Status&gt;
+     &lt;/Response&gt;
+     &lt;Response&gt;
+          &lt;Prop&gt;&lt;Z:Copyright-Owner/&gt;&lt;/Prop&gt;
+          &lt;Status&gt;HTTP/1.1 405 Conflict&lt;/Status&gt;
+     &lt;/Response&gt;
+&lt;/D:MultiResponse&gt;
+
+</PRE>
+
+
+<h4>2.8.4     PUT</h4>
+
+A <TT>PUT</TT> is specified in order to control what is returned by a <TT>GET</TT>.
+However a <TT>GET</TT> on a property always returns a predefined property
+containment format. Therefore <TT>PUT</TT> can not be used if the Request-URI refers to a property.
+
+
+<h4>2.8.5     PROPFIND</h4>
+
+The <TT>PROPFIND</TT> method retrieves properties defined on Request-URI.
+The request message body is an XML document that MUST contain
+only one <TT>PropFind</TT> XML element, which specifies the type of
+property find action to be performed.  The XML element contained
+by <TT>PropFind</TT> specifies the type of action to be performed:
+retrieve all property names and values (<TT>Allprop</TT>), retrieve only
+specified property names and values (Prop), or retrieve only a
+list of all property names (Propname).  When a <TT>Prop</TT> XML element
+is present, it specifies a list of the names of properties whose
+name and value are to be returned.  The <TT>Prop</TT> element, when used
+within a <TT>FINDPROP</TT> request body MUST be empty.
+
+<P>The response is a <TT>text/xml</TT> message body that contains a
+<TT>Multiresponse</TT> XML element which describes the results of the
+attempts to retrieve the various properties. If a property was
+successfully retrieved then its value MUST be returned in the
+<TT>Prop</TT> XML element. In the case of <TT>Allprop</TT> and <TT>Findprop</TT>, if a
+principal does not have the right to know if a particular
+property exists, an error MUST NOT be returned. The results of
+this method SHOULD NOT be cached.
+
+
+<H4>2.8.5.1   <TT>PropFind</TT> XML element</H4>
+
+Name:          http://www.ietf.org/standards/dav/Propfind
+<BR>Purpose:  To specify the set of matching properties
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   Any
+<BR>Values=   (<TT>Prop</TT> | <TT>Allprop</TT> | Propname)
+<BR>Description: <TT>PropFind</TT> is a container element for the exact
+specification of a <TT>PROPFIND</TT> request.
+<H4>2.8.5.2   <TT>Allprop</TT></H4>
+
+Name:          http://www.ietf.org/standards/dav/Allprop
+<BR>Purpose:  To specify that all properties are to be returned
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   <TT>PropFind</TT>
+<BR>Description: Its presence in a <TT>PROPFIND</TT> request specifies the
+name and value of all properties defined on the resource MUST be
+returned.
+
+
+<H4>2.8.5.3   Propname</H4>
+
+Name:          http://www.ietf.org/standards/dav/Propname
+<BR>Purpose:  To specify that the names of all properties defined on
+the resource are to be returned.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   <TT>PropFind</TT>
+<BR>Description: Its presence in a <TT>PROPFIND</TT> request specifies the
+name of all properties defined on the resource MUST be returned.
+
+
+<H4>2.8.5.4   PropFindResult XML element</H4>
+
+Name: http://www.ietf.org/standards/dav/PropFindResult
+<BR>Purpose: To contain the results of a SEARCH request
+<BR>Schema: http://www.ietf.org/standards/dav/
+<BR>Parent: Any
+<BR>Values: Prop
+
+
+<H4>2.8.5.5   Example 1 - Prop</H4>
+
+<PRE>
+PROPFIND  /container/ HTTP/1.1
+Host: www.foo.bar
+Content-Length: xxxx
+Content-Type: text/xml
+</PRE>
+
+
+<PRE>&lt;?XML:Namespace href =
+     "http://www.ietf.org/standards/dav/" AS = "G"/&gt;
+&lt;?XML:Namespace href =
+     "http://www.foo.bar/boxschema/" AS = "B"/&gt;
+&lt;G:PROPFIND&gt;
+     &lt;prop&gt;
+          &lt;B:bigbox&gt;
+          &lt;B:author&gt;
+          &lt;B:DingALing&gt;
+          &lt;B:Random&gt;
+     &lt;/prop&gt;
+&lt;/G:PROPFIND&gt;
+
+</PRE>
+
+<PRE>
+HTTP/1.1 207 Multi-Response
+Content-Type: text/xml
+Content-Length: xxxxx
+</PRE>
+
+<PRE>&lt;?XML:Namespace href ="http://www.ietf.org/standards/dav/" AS = "S"&gt;
+&lt;?XML:Namespace href = "http://www.foo.bar/boxschema" AS = R"&gt;
+&lt;D:MultiResponse&gt;
+     &lt;ResponseDescription&gt; There has been an access violation
+error. &lt;/ResponseDescription&gt;
+     &lt;Response&gt;
+          &lt;Prop&gt;
+               &lt;R:bigbox D:Proploc="http://prop.com/BoxType"&gt;
+                    &lt;BoxType&gt;Box type A&lt;/BoxType&gt;
+               &lt;/R:bigbox&gt;
+               &lt;R:author D:Proploc="http://prop.com/Author"&gt;
+                    &lt;Name&gt;J.J. Dingleheimerschmidt&lt;/Name&gt;
+               &lt;/R:author&gt;
+          &lt;/Prop&gt;
+          &lt;Status&gt;HTTP/1.1 200 Success&lt;/Status&gt;
+&lt;/Response&gt;
+     &lt;Response&gt;
+          &lt;Prop&gt;&lt;R:DingALing/&gt;&lt;R:Random/&gt;&lt;/&gt;
+          &lt;Status&gt;HTTP/1.1 403 Forbidden&lt;/Status&gt;
+          &lt;ResponseDescription&gt; The user does not have access to
+the DingALink property. &lt;/ResponseDescription&gt;
+     &lt;/Response&gt;
+&lt;/D:MultiResponse&gt;
+
+</PRE>
+
+The result will return all properties on the container. In this
+case only two properties were found. The principal did not have
+sufficient access rights to see the third and fourth properties
+so an error was returned.
+
+
+<H4>2.8.5.6   Example 2 - <TT>Allprop</TT></H4>
+
+<PRE>
+PROPFIND  /container/ HTTP/1.1
+Host: www.foo.bar
+Content-Length: xxxx
+Content-Type: text/xml
+</PRE>
+
+<PRE>&lt;?XML:Namespace href =
+     "http://www.ietf.org/standards/dav/" AS = "G"/&gt;
+&lt;G:PROPFIND&gt;
+     &lt;Allprop/&gt;
+&lt;/G:PROPFIND&gt;
+
+</PRE>
+
+<PRE>
+HTTP/1.1 200 Success
+Content-Type: text/xml
+Content-Length: xxxxx
+</PRE>
+
+<PRE>&lt;?XML:Namespace href =
+     "http://www.ietf.org/standards/dav/" As = "S"&gt;
+&lt;?XML:Namespace href = "http://www.foo.bar/boxschema" AS = R"&gt;
+&lt;S:MultiResponse&gt;
+     &lt;Prop&gt;
+          &lt;R:bigbox D:Proploc="http://prop.com/BigBox"&gt;
+               &lt;BoxType&gt;Box type A&lt;/BoxType&gt;
+          &lt;/R:bigbox&gt;
+          &lt;R:author D:Proploc="http://prop.com/Author"&gt;
+               &lt;Name&gt;Hadrian&lt;/Name&gt;
+          &lt;/R:author&gt;
+     &lt;/Prop&gt;
+     &lt;Status&gt;HTTP/1.1 200 Success&lt;/Status&gt;
+&lt;/S:MultiResponse&gt;
+
+</PRE>
+
+This particular client only had the right to see two properties,
+BoxType and Author. No error is returned for the remaining
+properties, as the client does not even have sufficient rights to
+know they exist. If the client did have the right to know they
+existed but did not have the right to see their value, a 207
+multi-response with a <TT>multiresponse</TT>, as used in the previous
+example, would have been returned.
+
+
+<H4>2.8.5.7   Example 3 - Propname</H4>
+
+<PRE>
+PROPFIND  /container/ HTTP/1.1
+Host: www.foo.bar
+Content-Length: xxxx
+Content-Type: text/xml
+</PRE>
+
+<PRE>&lt;?XML:Namespace href = "http://www.ietf.org/standards/dav/" AS = "G"/&gt;
+&lt;G:PROPFIND&gt;
+     &lt;Propname/&gt;
+&lt;/G:PROPFIND&gt;
+</PRE>
+
+<PRE>
+HTTP/1.1 200 Success
+Content-Type: text/xml
+Content-Length: xxxxx
+
+&lt;?XML:Namespace href = "http://www.ietf.org/standards/dav/" As = "S"&gt;
+&lt;?XML:Namespace href = "http://www.foo.bar/boxschema" AS = "R"&gt;
+&lt;S:MultiResponse&gt;
+     &lt;Prop&gt;
+          &lt;R:bigbox D:Proploc="http://prop.com/BigBox"/&gt;
+          &lt;R:author D:Proploc="http://prop.com/Author"/&gt;
+          &lt;R:DingALing/&gt;
+          &lt;R:Random/&gt;
+     &lt;/Prop&gt;
+     &lt;Status&gt;HTTP/1.1 200 Success&lt;/Status&gt;
+&lt;/S:MultiResponse&gt;
+
+</PRE>
+
+In this case only two of the properties have direct URLs
+available, while the other two properties can only be referenced
+via <TT>PROPFIND</TT> and <TT>PROPPATCH</TT>.
+
+
+<h2>3    A Proposal for Collections of Web Resources and Name Space   Operations</h2>
+
+<h3>3.1  Observations on the HTTP Object Model</h3>
+
+This section provides a description of a new type of Web
+resource, the collection, and discusses its interactions with the
+HTTP URL namespace.  This discussion is a prerequisite for the
+specification of methods that operate on collections, given later
+in this document.
+
+
+<h4>3.1.1     Collection Resources</h4>
+
+A collection is a resource whose state consists of a list of
+internal members, a list of external members, and a set of
+properties.  An internal member resource MUST have a URI that is
+immediately relative to the base URI of the collection, that is,
+a relative URI in which "../" is illegal, which must begin with
+"./" and which MAY contain only one other "/" at the end of the
+URI. An external member resource MUST be an absolute URI that is
+not an internal URI.  Any given internal or external URI MUST
+only belong to the collection once, i.e., multiple instances of
+URIs in a collection are illegal.  Properties defined on
+collections have no special distinction, and behave exactly as do
+properties on non-collection resources.
+
+<P>The purpose of a collection resource is to model collection-like
+objects (e.g., a filesystem directory) within a server's
+namespace.  Once these objects have been modeled with
+collections, a client may perform an <TT>INDEX</TT>, add and remove
+external members using <TT>ADDREF</TT> and <TT>DELREF</TT>, and perform recursive
+operations, such as a full hierarchy copy.
+
+<P>To support methods which operate on collections, a server SHOULD
+model its collection-like objects with collection resources.  For
+example, a server which is implemented on top of a filesystem
+SHOULD treat all filesystem directories exposed by the server as
+collection resources.
+
+
+<h4>3.1.2     Creation and Retrieval of Collection Resources</h4>
+
+This document specifies the <TT>MKCOL</TT> method to create new collection
+resources, and the <TT>INDEX</TT> method to list their contents.
+
+<P>In HTTP/1.1, the <TT>PUT</TT> method is defined to store the request body
+at the location specified by Request-URI.  While a description
+format for a collection can readily be constructed that could be
+used with <TT>PUT</TT>, the implications of sending such a description to
+the server are undesirable.  For example, if a description of a
+collection that omitted some existing resources were <TT>PUT</TT> to a
+server, this might be interpreted as a command to remove those
+members.  This would extend <TT>PUT</TT> to perform <TT>DELETE</TT> functionality,
+which is undesirable since it changes the semantics of <TT>PUT</TT>, and
+makes it difficult to control <TT>DELETE</TT> functionality with an access
+control scheme based on methods.
+
+<P>While the <TT>POST</TT> method is sufficiently open-ended that a "create a
+collection" <TT>POST</TT> command could be constructed, this is
+undesirable because it would be difficult to separate access
+control for collection creation from other uses of <TT>POST</TT> if they
+both use the same method.
+
+<P>While it might seem desirable to have <TT>GET</TT> return a listing of the
+members of a collection, this is foiled by the existence of the
+"index.html" de-facto standard namespace redirection, in which a
+<TT>GET</TT> request on a collection is automatically redirected to the
+index.html resource.
+
+<P>The exact definition of the behavior of <TT>GET</TT> and <TT>PUT</TT> on
+collections is defined later in this document.
+
+
+<H4>3.1.2.1   Example</H4>
+
+The structured resource http://foo/bar is created with a <TT>PUT</TT>. Bar
+is a multipart/related file with two members http://foo/bar/a and
+http://foo/bar/b. If bar were deleted then both a and b would
+also be deleted since they are all really just one resource. If
+http://foo/bar/a/c was <TT>PUT</TT> then a <TT>DELETE</TT> on http://foo/bar/a
+would also delete http://foo/bar/a/c as c was created with a <TT>PUT</TT>
+not a <TT>MKCOL</TT>.
+
+<P>If http://foo/bar/b/d is created with a <TT>MKCOL</TT> and
+http://foo/bar/b/d/e was created then a <TT>DELETE</TT> on d would fail
+because d is a collection with an internal member. However the
+existence of the collection d is something of an illusion. If a
+<TT>DELETE</TT> was executed on http://foo/bar then everything would be
+deleted, even though http://foo/bar/b/d was created with a <TT>MKCOL</TT>.
+
+<P>Thus the effect of a <TT>MKCOL</TT> within a composite resource's
+namespace is felt on its children, not its ancestors. The
+children of d MUST be treated as members of a collection when a
+method is executed on d. But a method executed on b or a is
+treated as if there only existed a non-collection resource.
+
+<h4>3.1.3     Source Resources and Output Resources</h4>
+
+For many resources, the entity returned by <TT>GET</TT> exactly matches
+the persistent state of the resource, for example, a GIF file
+stored on a disk.  For this simple case, the URL at which a
+resource is accessed is identical to the URL at which the source
+(the persistent state) of the resource is accessed. This is also
+the case for HTML source files that are not processed by the
+server prior to transmission.
+
+<P>However, the server can sometimes process HTML resources before
+they are transmitted as a return entity body. For example,
+server-side-include directives within an HTML file instruct a
+server to replace the directive with another value, such as the
+current date.  In this case, what is returned by <TT>GET</TT> (HTML plus
+date) differs from the persistent state of the resource (HTML
+plus directive). Typically there is no way to access the HTML
+resource containing the unprocessed directive.
+
+<P>Sometimes the entity returned by <TT>GET</TT> is the output of a data-producing process that is described by one or more source
+resources (that may not even have a location in the URL
+namespace).  A single data-producing process may dynamically
+generate the state of a potentially large number of output
+resources. An example of this is a CGI script that describes a
+"finger" gateway process that maps part of the namespace of a
+server into finger requests, such as
+http://www.foo.bar.org/finger_gateway/user@host.
+
+<P>In the absence of distributed authoring capability, it is
+acceptable to have no mapping of source resource(s) to the URI
+namespace, and in fact has desirable security benefits. However,
+if remote editing of the source resource(s) is desired, the
+source resource(s) should be given a location in the URI
+namespace. This source location should not be one of the
+locations at which the generated output is retrievable, since in
+general it is impossible for the server to differentiate requests
+for source resources from requests for process output resources.
+There is often a many-to-many relationship between source
+resources and output resources.
+
+<P>For DAV compliant servers all output resources which have a
+single source resource (and that source resource has a URI), the
+URI of the source resource SHOULD be stored in a single link on
+the output resource with type
+http://www.ietf.org/standards/dav/source. Note that by storing
+the source URI in links on the output resources, the burden of
+discovering the source is placed on the authoring client.
+
+
+<h3>3.2  <TT>MKCOL</TT> Method</h3>
+
+
+<h4>3.2.1     Problem Description</h4>
+
+A client must be able to create a collection.
+
+
+<h4>3.2.2     Solution Requirements</h4>
+
+The solution must ensure that a collection has been made (i.e.
+that it responds to the <TT>INDEX</TT> method) as opposed to a non-collection resource. If a collection could not be made, it must
+indicate this failure to the user-agent.
+
+
+<h4>3.2.3     Request</h4>
+
+<TT>MKCOL</TT> creates a new collection resource at the location specified
+by the Request-URI. If the Request-URI exists, then <TT>MKCOL</TT> must
+fail. During <TT>MKCOL</TT> processing, a server MUST make the Request-URI
+a member of its parent collection. If no such an ancestor exists,
+the method MUST fail. When the <TT>MKCOL</TT> operation creates a new
+collection resource, all ancestors MUST already exist, or the
+method MUST fail with a 409 Conflict status code.  For example,
+if a request to create collection <TT>/a/b/c/d/</TT> is made, and neither
+<TT>/a/b/</TT> nor <TT>/a/b/c/</TT> exist, the request MUST fail.
+
+
+<H4>3.2.3.1   MKCOL Without Request Body</H4>
+
+When <TT>MKCOL</TT> is invoked without a request body, the newly created
+collection has no members.
+
+
+<H4>3.2.3.2   MKCOL With Request Body</H4>
+
+A <TT>MKCOL</TT> request message MAY contain a message body.  The behavior
+of a <TT>MKCOL</TT> request when the body is present is limited to
+creating collections, members of a collection, bodies of members
+and properties on the collections or members. If the server
+receives a <TT>MKCOL</TT> request entity type it does not support or
+understand it MUST respond with a 415 (Unsupported Media Type)
+status code.  The exact behavior of <TT>MKCOL</TT> for various request
+media types is undefined in this document, and will be specified
+in separate documents.
+
+
+<h4>3.2.4     Response</h4>
+
+Responses from a <TT>MKCOL</TT> request are not cacheable, since <TT>MKCOL</TT> has
+non-idempotent semantics.
+<LI>201 (Created) - The collection or structured resource was created
+in its entirety.
+<LI>403 (Forbidden) - This indicates at least one of two conditions:
+1) The server does not allow the creation of collections at the
+given location in its namespace, and 2) The parent collection of
+the Request-URI exists but cannot accept members.
+<LI>409 (Conflict) - A collection cannot be made at the Request-URI
+until one or more intermediate collections have been created.
+
+<LI> 415 (Unsupported Media Type)- The server does not support the
+request type of the body.
+<LI>417 (Insufficient Space on Resource) - The resource does not have
+sufficient space to record the state of the resource after the
+execution of this method.
+
+
+<h4>3.2.5     Example</h4>
+
+This example creates a container collection called
+/webdisc/xfiles/ on the server www.server.org.
+<PRE>
+     MKCOL /webdisc/xfiles/ HTTP/1.1
+     Host: www.server.org
+
+     HTTP/1.1 201 Created
+</PRE>
+
+<h3>3.3  Standard DAV Properties</h3>
+
+The following properties are defined on DAV compliant resources.
+All enclosed properties are part of the DAV Schema.
+
+
+<h4>3.3.1     <TT>IsCollection</TT> Property</h4>
+
+Name:     http://www.ietf.org/standards/dav/iscollection
+<BR>Purpose:  This property contains a Boolean value that is set to
+"true" if the resource is a collection
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Value:    ("true" | "false")
+<BR>Description: This property MUST be defined on all DAV compliant
+resources.
+
+
+<h4>3.3.2     <TT>DisplayName</TT> Property</h4>
+
+Name: http://www.ietf.org/standards/dav/displayname
+<BR>Purpose:  A name for the resource that is suitable for
+presentation to a user.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Value:    Any valid XML character data (as defined in [Bray,
+Sperberg-McQueen, 1997])
+<BR>Description: This property SHOULD be defined on all DAV compliant
+resources. If present, the property contains a description of the
+resource that is suitable for presentation to a user.
+
+
+<h4>3.3.3     <TT>CreationDate</TT> Property</h4>
+
+Name: http://www.ietf.org/standards/dav/creationdate
+<BR>Purpose:  The time and date the resource was created.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Value:    The time and date MUST be given in ISO 8601 format
+[ISO8601]
+<BR>Description: This property SHOULD be defined on all DAV compliant
+resources. If present, it contains a timestamp of the moment when
+the resource was created (i.e., the moment it had non-null
+state).
+
+
+<h4>3.3.4     <TT>GETentity</TT> Property</h4>
+
+Name: http://www.ietf.org/standards/dav/GETentity
+<BR>Purpose:  Contains the value of headers that are returned by a
+<TT>GET</TT> without Accept headers.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Value:    Content-Type Content-Length Content-Language Last-Modified Etag Creation-Date
+<BR>Description: This property MUST be defined on all DAV compliant
+resources unless <TT>GET</TT> is not supported, in which case this
+property MUST NOT be defined. This property MUST contain at most
+one instance of each element in its Value, if they are defined.
+
+<h4>3.3.5     <TT>INDEXentity</TT> Property</h4>
+
+Name: http://www.ietf.org/standards/dav/INDEXentity
+<BR>Purpose:  Contains the value of headers that are returned by an
+<TT>INDEX</TT>.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Value:    Content-Type Content-Length Content-Language Last-Modified Etag Creation-Date
+<BR>Description: This property MUST be defined on all DAV compliant
+resources unless <TT>INDEX</TT> is not supported, in which case this
+property MUST NOT be defined. This property MUST contain at most
+one instance of each element in its Value, if they are defined.
+
+
+<h4>3.3.6     Content-Type XML Element</h4>
+
+Name: http://www.ietf.org/standards/dav/content-type
+<BR>Purpose:  The content-type of the member resource.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   GETentity or INDEXentity
+<BR>Value:    media-type   ; defined in Section 3.7 of [Fielding et
+al., 1997]
+<BR>Description: If the parent of this element is GETentity, the
+value MUST be identical to the content-type returned by a <TT>GET</TT> on
+the resource without Accept headers.  If the parent is
+INDEXentity, the value MUST be identical to the content-type
+returned by an <TT>INDEX</TT> on the resource.  If no content-type is
+available, this element MUST NOT be defined.
+
+
+<h4>3.3.7     Content-Length XML Element</h4>
+
+Name:          http://www.ietf.org/standards/dav/content-length
+<BR>Purpose:  Describes the default content-length of the resource.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Value:    content-length ; see section 14.14 of RFC 2068
+<BR>Description: If the parent of this element is GETentity, this
+element MUST have a value equal to the content-length header
+returned by a <TT>GET</TT> on the resource without Accept headers.  If the
+parent is INDEXentity, the value MUST be identical to the
+content-length returned by an <TT>INDEX</TT> on the resource.  If no
+content-length is available, this element MUST NOT be defined.
+
+
+<h4>3.3.8     Content-Language XML Element</h4>
+
+Name:          http://www.ietf.org/standards/dav/content-language
+<BR>Purpose:  Describes the default natural language of a resource.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Value:    language-tag   ;language-tag is defined in section
+14.13 of RFC 2068
+<BR>Description: If the parent of this element is GETentity, this
+element MUST have a value equal to the content-language header
+returned by a <TT>GET</TT> on the resource without Accept headers.  If the
+parent is INDEXentity, the value MUST be identical to the
+content-language header returned by an <TT>INDEX</TT> on the resource.  If
+no content-language header is available, this element MUST NOT be
+defined.
+
+
+<h4>3.3.9     Last-Modified XML Element</h4>
+
+Name:     http://www.ietf.org/standards/dav/last-modified
+<BR>Purpose:  The date the resource was last modified.
+<BR>Schema:        http://www.ietf.org/standards/dav/
+<BR>Parent:        GETentity or INDEXentity
+<BR>Value:    The date MUST be given in RFC 1123 format using the
+rfc-1123  production, defined in section 3.3.1 of [Fielding et al.,
+1997].
+<BR>Description: If the parent of this element is GETentity, this
+element MUST have a value equal to the last-modified header
+returned by a <TT>GET</TT> on the resource without Accept headers.  If the
+parent is INDEXentity, the value MUST be identical to the last-modified header returned by an <TT>INDEX</TT> on the resource.  If no
+last-modified header is available, this element MUST NOT be defined.
+
+
+<h4>3.3.10    Etag XML Element</h4>
+
+Name: http://www.ietf.org/standards/dav/etag
+<BR>Purpose:  The entity tag of the resource.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   GETentity or INDEXentity
+<BR>Value:    entity-tag  ; defined in Section 3.11 of [Fielding et
+al., 1997]
+<BR>Description: If the parent of this element is GETentity, this
+element MUST have a value equal to the entity-tag header returned
+by a <TT>GET</TT> on the resource without Accept headers.  If the parent
+is INDEXentity, the value MUST be identical to the entity-tag
+header returned by an <TT>INDEX</TT> on the resource.  If no entity-tag
+header is available, this element MUST NOT be defined.
+
+
+<h3>3.4  INDEX Method</h3>
+
+
+<h4>3.4.1     Problem Description</h4>
+
+A mechanism is needed to discover if a resource is a collection
+and if so, list its members.
+
+
+<h4>3.4.2     Solution Requirements</h4>
+
+The solution:
+<LI> must allow a client to discover the members of a collection
+<LI> must always provide a machine-readable description of the
+  membership of a collection
+<LI> must be leveraged as a more general mechanism to provide a
+  list of contents for any resource which can profitably return a
+  membership like listing.
+
+
+<h4>3.4.3     The Request</h4>
+
+The <TT>INDEX</TT> method returns a machine-readable representation of the
+membership of the resource at the Request-URI.
+
+<P>For a collection, <TT>INDEX</TT> MUST return a list of its members. All
+WebDAV compliant resources MUST support the <TT>text/xml</TT> response
+entity described below.  The <TT>INDEX</TT> result for a collection MAY
+also return a list of the members of child collections, to any
+depth.
+
+<P>Collections that respond to an <TT>INDEX</TT> method with a <TT>text/xml</TT>
+entity MUST contain only one ResInfo element.  This ResInfo
+element contains an Href element, which gives the identifier(s)
+of the resource, a <TT>Prop</TT> element, which gives selected properties
+of the resource, and a Members element, which contains a ResInfo
+element for each member of the collection.  The <TT>Prop</TT> element MUST
+contain at least the following properties, if they are defined
+and available: DisplayName, IsCollection, CreationDate,
+GETentity, and INDEXentity.
+
+<P>The response from <TT>INDEX</TT> is cacheable, and SHOULD be accompanied
+by an ETag header (see section 13.3.4 of RFC 2068). If <TT>GET</TT> and
+<TT>INDEX</TT> return different entities for the same resource state, they
+MUST return different entity tags.
+
+
+<h4>3.4.4     The Response</h4>
+
+<LI>200 (OK) - The server MUST send a machine readable response
+entity which describes the membership of the resource.
+
+
+<h4>3.4.5     ResInfo XML Element</h4>
+
+Name:     http://www.ietf.org/standards/dav/resinfo
+<BR>Purpose:  Describes a resource.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   Any
+<BR>Value:    Href <TT>Prop</TT> Members
+<BR>Description: There MUST be at least one Href element.  Each Href
+element contains a URI for the resource, which MUST be an
+absolute URI. There MUST be a single <TT>Prop</TT> element that contains a
+series of properties defined on the resource.  If the resource is
+a collection, it MAY have at most one Members element, which
+describes the members of the collection.
+
+
+<h4>3.4.6     Members XML Element</h4>
+
+Name: http://www.ietf.org/standards/dav/members
+<BR>Purpose:  Describes the membership of a collection resource.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   ResInfo
+<BR>Value:    ResInfo
+<BR>Description: Contains zero or more ResInfo elements, which
+describe members of the collection.
+
+
+<h4>3.4.7     Href XML Element</h4>
+
+Name: http://www.ietf.org/standards/dav/href
+<BR>Purpose:  To identify that the content of the element is a URI.
+<BR>Schema:   http://www.ietf.org/standards/dav/
+<BR>Parent:   Any
+<BR>Value:    URI ; See section 3.2.1 of [Fielding et al., 1997]
+
+<h4>3.4.8     Example</h4>
+
+<PRE>INDEX /user/yarong/dav_drafts/ HTTP/1.1
+Host: www.microsoft.com
+
+HTTP/1.1 200 OK
+Content-Type: text/xml
+Content-Length: xxx
+Last-Modified: Thu, 11 Sep 1997 23:45:12 GMT
+ETag: "fooyyybar"
+
+     &lt;?XML:Namespace href = "http://www.ietf.org/standards/dav/" as = "D"/&gt;
+&lt;D:ResInfo&gt;
+     &lt;XML:Href&gt;
+          http://www.microsoft.com/user/yarong/dav_drafts/
+     &lt;/XML:Href&gt;
+     &lt;Prop&gt;
+        &lt;DisplayName&gt;
+          WebDAV working drafts directory
+        &lt;/DisplayName&gt;
+        &lt;IsCollection&gt;true&lt;/IsCollection&gt;
+        &lt;CreationDate&gt;19970418T070304Z&lt;/CreationDate&gt;
+        &lt;GETentity&gt;
+          &lt;Content-Type&gt;text/html&lt;/Content-Type&gt;
+          &lt;Content-Length&gt;2754&lt;/Content-Length&gt;
+          &lt;Content-Language&gt;en&lt;/Content-Language&gt;
+          &lt;Last-Modified&gt;
+               Fri, 22 Aug 1997 10:11:26 GMT
+          &lt;/Last-Modified&gt;
+          &lt;Etag&gt;"8675309"&lt;/Etag&gt;
+        &lt;/GETentity&gt;
+        &lt;INDEXentity&gt;
+          &lt;Content-Type&gt;text/xml&lt;/Content-Type&gt;
+          &lt;Content-Length&gt;xxx&lt;/Content-Length&gt;
+          &lt;Last-Modified&gt;
+               Thu, 11 Sep 1997 23:45:12 GMT
+          &lt;/Last-Modified&gt;
+          &lt;Etag&gt;"fooyyybar"&lt;/Etag&gt;
+        &lt;/INDEXentity&gt;
+     &lt;/Prop&gt;
+
+     &lt;Members&gt;
+        &lt;ResInfo&gt;
+          &lt;XML:Href&gt;
+          http://www.microsoft.com/user/yarong/dav_drafts/base
+          &lt;/XML:Href&gt;
+          &lt;Prop&gt;
+             &lt;IsCollection
+     D:PropLoc="http://www.microsoft.com/user/yarong/dav_drafts/b
+     ase;props=IsCollection"&gt;
+               False
+             &lt;/IsCollection&gt;
+             &lt;DisplayName&gt;
+               WebDAV Name Space Operations Draft
+             &lt;/DisplayName&gt;
+             &lt;Creation-Date&gt;19970320T230525Z&lt;/Creation-Date&gt;
+
+             &lt;GETentity&gt;
+               &lt;Content-Type&gt;application/msword&lt;/Content-Type&gt;
+               &lt;Content-Length&gt;1400&lt;/Content-Length&gt;
+               &lt;Content-Language&gt;en&lt;/Content-Language&gt;
+               &lt;Last-Modified&gt;
+                    Fri, 22 Aug 1997 18:22:56 GMT
+               &lt;/Last-Modified&gt;
+               &lt;Etag&gt;"8675309"&lt;/Etag&gt;
+             &lt;/GETentity&gt;
+          &lt;/Prop&gt;
+        &lt;/ResInfo&gt;
+     &lt;/Members&gt;
+     &lt;/D:ResInfo&gt;
+</PRE>
+
+This example shows the result of the <TT>INDEX</TT> method applied to the
+collection resource
+http://www.microsoft.com/user/yarong/dav_drafts/.  It returns a
+response body in XML format, which gives information about the
+container and its sole member,
+http://www.microsoft.com/user/yarong/dav_drafts/base. The entry
+on the collection confirms that the resource the <TT>INDEX</TT> was
+executed on is a collection. The result also contains the URI of
+the IsCollection property on the member resource.
+
+
+<h3>3.5  Behavior of RFC 2068 Methods on Collections</h3>
+
+With the introduction of the collection resource type to the HTTP
+object model, it is necessary to define the behavior of the
+existing methods (defined in RFC 2068) when invoked on a
+collection resource to avoid ambiguity.  While some methods, such
+as <TT>OPTIONS</TT> and <TT>TRACE</TT> behave identically when applied to
+collections, <TT>GET</TT>, <TT>HEAD</TT>, <TT>POST</TT>, <TT>PUT</TT>, and <TT>DELETE</TT> require some
+additional explanation.
+
+
+<h4>3.5.1     <TT>GET</TT>, <TT>HEAD</TT> for Collections</h4>
+
+The semantics of <TT>GET</TT> are unchanged when applied to a collection,
+since <TT>GET</TT> is defined as, "retrieve whatever information (in the
+form of an entity) is identified by the Request-URI" [Fielding et
+al., 1997]. <TT>GET</TT> when applied to a collection MAY return the
+contents of an "index.html" resource, a human-readable view of
+the contents of the collection, or something else altogether, and
+hence it is possible the result of a <TT>GET</TT> on a collection will
+bear no correlation to the state of the collection.
+
+<P>Similarly, since the definition of <TT>HEAD</TT> is a <TT>GET</TT> without a
+response message body, the semantics of <TT>HEAD</TT> are unmodified when
+applied to collection resources.
+
+
+<h4>3.5.2     <tt>POST</tt> for Collections</h4>
+
+Since by definition the actual function performed by <TT>POST</TT> is
+determined by the server and often depends on the particular
+resource, the behavior of <TT>POST</TT> when applied to collections cannot
+be meaningfully modified because it is largely undefined.  Thus
+the semantics of <TT>POST</TT> are unmodified when applied to a
+collection.
+
+
+<h4>3.5.3     <TT>PUT</TT> for Collections</h4>
+
+As defined in the HTTP/1.1 specification [Fielding et al., 1997],
+the "<TT>PUT</TT> method requests that the enclosed entity be stored under
+the supplied Request-URI."  Since submission of an entity
+representing a collection would implicitly encode creation and
+deletion of resources, this specification intentionally does not
+define a transmission format for creating a collection using <TT>PUT</TT>.
+Instead, the <TT>MKCOL</TT> method is defined to create collections.  If a
+<TT>PUT</TT> is invoked on a collection resource it MUST fail.
+
+<P>When the <TT>PUT</TT> operation creates a new non-collection resource all
+ancestors MUST already exist.  If all ancestors do not exist, the
+method MUST fail with a 409 Conflict status code.  For example,
+if resource /a/b/c/d.html is to be created and /a/b/c/ does not
+exist, then the request MUST fail.
+
+
+<H4>3.5.3.1   <TT>PUT</TT> for Non-Collection Resources</H4>
+
+A <TT>PUT</TT> performed on an existing resource replaces the <TT>GET</TT> response
+entity of the resource, but MUST NOT change the value of any dead
+properties defined on the resource.  Live properties defined on
+the resource MAY be recomputed during <TT>PUT</TT> processing.
+
+
+<h4>3.5.4     DELETE for Collections</h4>
+
+When <TT>DELETE</TT> is applied to a collection without internal members
+the collection resource, along with its properties, and external
+members, MUST be deleted.  A <TT>DELETE</TT> method applied to a
+collection resource containing internal member resources MUST
+fail with a 409 Conflict status code.
+
+
+<h4>3.5.5     DELETE Method for Non-Collection Resources</h4>
+
+If the <TT>DELETE</TT> method is issued to a non-collection resource which
+is an internal member of a collection, then during <TT>DELETE</TT>
+processing a server MUST remove the Request-URI from its parent
+collection. A server MAY remove the URI of a deleted resource
+from any collections of which the resource is an external member.
+
+
+<h3>3.6  COPY Method</h3>
+
+
+<h4>3.6.1     Problem Description</h4>
+
+Currently, in order to create a copy of a resource, the client
+must <TT>GET</TT> an entity and then <TT>PUT</TT> that entity to the desired
+destination. This requires (1) an entity to be transmitted to and
+from the server and (2) that the resource be expressible as an
+entity with complete fidelity.
+
+<P>This is problematic because of the network traffic involved in
+making a copy, and because there is often no way to fully express
+a resource as an entity without a loss of fidelity.
+
+
+<h4>3.6.2     Solution Requirements</h4>
+
+The solution:
+<LI> MUST allow a principal to create a copy of a resource
+  without having to transmit the resource to and from the server.
+
+
+<h4>3.6.3     The Request</h4>
+
+The <TT>COPY</TT> method creates a duplicate of the source resource, given
+by the Request-URI, in the destination resource, given by the
+Destination header.  The Destination header MUST be present.  The
+exact behavior of the <TT>COPY</TT> method depends on the type of the
+source resource.
+
+
+<H4>3.6.3.1   COPY for HTTP/1.1 resources</H4>
+
+When the source resource is not a collection, and is not a
+property, the body of the destination resource MUST be octet-for-octet identical to the body of the source resource. Alterations
+to the destination resource do not modify the source resource.
+Alterations to the source resource do not modify the destination
+resource. Thus, all copies are performed "by-value".
+
+<P>All properties on the source resource MUST be duplicated on the
+destination resource, subject to modifying headers, following the
+definition for copying properties.
+
+<H4>3.6.3.2   COPY for Properties</H4>
+
+The following section defines how properties on a resource are
+handled during a <TT>COPY</TT> operation.
+Live properties SHOULD be duplicated as identically behaving live
+properties at the destination resource. Since they are live
+properties, the server determines the syntax and semantics (hence
+value) of these properties.  Properties named by the Enforce-Live-Properties header MUST be live on the destination resource, or
+the method MUST fail.  If a property is not named by Enforce-Live-Properties and cannot be copied live, then its value MUST be
+duplicated, octet-for-octet, in an identically named, dead
+resource on the destination resource.
+
+<P>If a property on the source already exists on the resource and
+the overwrite header is set to TRUE then the property at the
+destination MUST be overwritten with the property from the
+source. If the overwrite header is false and the previous
+situation exists then the <TT>COPY</TT> MUST fail with a 409 Conflict.
+
+
+<H4>3.6.3.3   COPY for Collections</H4>
+
+A <TT>COPY</TT> on a collection causes a new, empty collection resource to
+be created at the destination with the same properties as the
+source resource.  All properties on the source collection MUST be
+duplicated on the destination collection, subject to modifying
+headers, following the definition for copying properties.  The
+new collection MUST NOT contain any members, internal or
+external.
+
+
+<H4>3.6.3.4   Type Interactions</H4>
+
+If the destination resource identifies a property and the source
+resource is not a property, then the copy SHOULD fail.
+
+<P>If the destination resource identifies a collection and the
+Overwrite header is "true," prior to performing the copy, the
+server MUST perform a <TT>DELETE</TT> operation on the collection.
+
+
+<h4>3.6.4     The Response</h4>
+
+<LI>200 (OK) The source resource was successfully copied to a pre-existing destination resource.
+
+<LI>201 (Created) The source resource was successfully copied.  The
+copy operation resulted in the creation of a new resource.
+
+<LI>412 (Precondition Failed) This status code MUST be returned if
+the server was unable to maintain the liveness of the properties
+listed in the Enforce-Live-Properties header, or if the Overwrite
+header is false, and the state of the destination resource is
+non-null.
+
+<LI>417 (Insufficient Space on Resource) - The destination resource
+does not have sufficient space to record the state of the
+resource after the execution of this method.
+
+<LI>500 (Server Error) The resource was in such a state that it could
+not be copied. This may occur if the Destination header specifies
+a resource that is outside the namespace the resource is able to
+interact with.
+
+<h4>3.6.5     Examples</h4>
+
+
+<H4>3.6.5.1   Overwrite Example</H4>
+
+This example shows resource
+http://www.ics.uci.edu/~fielding/index.html being copied to the
+location http://www.ics.uci.edu/users/f/fielding/index.html.  The
+contents of the destination resource were overwritten, if non-null.
+
+<PRE>COPY /~fielding/index.html HTTP/1.1
+Host: www.ics.uci.edu
+Destination: http://www.ics.uci.edu/users/f/fielding/index.html
+
+HTTP/1.1 200 OK
+</PRE>
+
+<H4>3.6.5.2   No Overwrite Example</H4>
+
+The following example shows the same copy operation being
+performed, except with the Overwrite header set to "false."  A
+response of 412, Precondition Failed, is returned because the
+destination resource has a non-null state.
+
+<PRE>COPY /~fielding/index.html HTTP/1.1
+Host: www.ics.uci.edu
+Destination: http://www.ics.uci.edu/users/f/fielding/index.html
+Overwrite: "false"
+
+HTTP/1.1 412 Precondition Failed
+</PRE>
+
+<h3>3.7  MOVE Method</h3>
+
+<h4>3.7.1     Problem Description</h4>
+
+The move operation on a resource is the logical equivalent of a
+copy followed by a delete, where the actions are performed
+atomically.  Using RFC 2068 methods only, this procedure could be
+performed in several steps. First, the client could issue a <TT>GET</TT>
+to retrieve a representation of a resource, issue a <TT>DELETE</TT> to
+remove the resource from the server, then use <TT>PUT</TT> to place the
+resource on the server with a new URI. As is the case for <TT>COPY</TT> -
+because of the network traffic involved in making a move, and
+because there is often no way to fully express a resource as an
+entity without a loss of fidelity - server move functionality is
+preferable.
+
+<P>With a WEBDAV server, a principal may accomplish this task by
+issuing a <TT>COPY</TT> and then <TT>DELETE</TT>. Network load decreases, but the
+server load may still be significant because the server must
+create a duplicate resource. Were a server to know beforehand
+that a principal intended to perform <TT>COPY</TT> and <TT>DELETE</TT> operations
+in succession, it could avoid the creation of a duplicate
+resource.
+
+<h4>3.7.2     Solution Requirements</h4>
+
+The solution:
+<LI> Must prevent the unneeded transfer of entity bodies from and
+  to the server.
+<LI> Must prevent the unneeded creation of copies by the server.
+
+<h4>3.7.3     The Request</h4>
+
+The move operation on a resource is the logical equivalent of a
+copy followed by a delete, where the actions are performed
+atomically. If a resource exists at the destination, the
+destination resource will be DELETEd as a side effect of the <TT>MOVE</TT>
+operation, subject to the restrictions of the overwrite header.
+
+<h4>3.7.4     The Response</h4>
+
+<LI>200 (OK) - The resource was moved. A successful response must
+contain the Content-Location header, set equal to the URI in
+source. This lets caches properly flush any cached entries for
+the source. Unfortunately the Content-Location header only allows
+a single value so it is not possible for caches unfamiliar with
+the <TT>MOVE</TT> method to properly clear their caches.
+
+<LI>412 (Precondition Failed) This status code MUST be returned if
+the server was unable to maintain the liveness of the properties
+listed in the Enforce-Live-Properties header, or if the Overwrite
+header is false, and the state of the destination resource is
+non-null.
+
+<LI>501 (Not Implemented) - This may occur if the Destination header
+specifies a resource which is outside its domain of control
+(e.g., stored on another server) resource and the server either
+refuses or is incapable of moving to an external resource.
+
+<LI>502 (Bad Gateway) - This may occur when moving to external
+resources and the destination server refused to accept the
+resource.
+
+
+<h4>3.7.5     Examples</h4>
+
+
+<H4>3.7.5.1   Overwrite Example</H4>
+
+This example shows resource
+http://www.ics.uci.edu/~fielding/index.html being moved to the
+location http://www.ics.uci.edu/users/f/fielding/index.html.  The
+contents of the destination resource were overwritten, if non-null.
+
+<PRE>MOVE /~fielding/index.html HTTP/1.1
+Host: www.ics.uci.edu
+Destination: http://www.ics.uci.edu/users/f/fielding/index.html
+
+HTTP/1.1 200 OK
+Content-Location:
+http://www.ics.uci.edu/users/f/fielding/index.html
+</PRE>
+
+<h3>3.8  <TT>ADDREF</TT> Method</h3>
+
+<h4>3.8.1     Problem Definition</h4>
+
+There needs to be a way to add an external member to a
+collection.
+
+<h4>3.8.2     Solution Requirements</h4>
+
+The solution must:
+<LI>    allow access control
+<LI>    allow referencing to URIs of external members
+<LI>    not require a body
+
+
+<h4>3.8.3     The Request</h4>
+
+The <TT>ADDREF</TT> method adds the URI specified in the Collection-Member
+header as an external member to the collection specified by the
+Request-URI. The value in the Collection-Member header MUST be an
+absolute URI meeting the requirements of an external member URI.
+
+<P>It is not an error if the URI specified in the Collection-Member
+header already exists as an external member of the collection,
+however, after processing <TT>ADDREF</TT> there MUST be only one instance
+of the URI in the collection.  If the URI specified in the
+Collection-Member header already exists as an internal member of
+the collection, the <TT>ADDREF</TT> method MUST fail with a 412
+Precondition Failed status code.
+
+
+<h4>3.8.4     Example</h4>
+
+<PRE>ADDREF /~whitehead/dav/ HTTP/1.1
+HOST: www.ics.udi.edu
+Collection-Member: http://www.ietf.org/standards/dav/
+
+HTTP/1.1 200 OK
+</PRE>
+
+<h3>3.9  DELREF Method</h3>
+
+
+<h4>3.9.1     Problem Definition</h4>
+
+There needs to be a way to remove an external member from a
+collection.
+
+
+<h4>3.9.2     Solution Requirements</h4>
+
+The solution must:
+<LI> allow access control
+<LI> allow referencing to URIs of external members
+<LI> not require a body
+
+
+<h4>3.9.3     The Request</h4>
+
+The <TT>DELREF</TT> method removes the URI specified in the Collection-Member header from the collection specified by the Request-URI.
+DELREFing a URI which is not a member of the collection is not an
+error. DELREFing an internal member MUST fail with a 412
+Precondition Failed status code.
+
+
+<h4>3.9.4     Example</h4>
+
+<PRE>DELREF /~whitehead/dav/ HTTP/1.1
+Host: www.ics.udi.edu
+Collection-Member: http://www.ietf.org/standards/dav/
+
+HTTP/1.1 200 OK
+</PRE>
+
+<h3>3.10 PATCH Method</h3>
+
+<h4>3.10.1    Problem Definition</h4>
+
+At present, if a principal wishes to modify a resource, they must
+issue a <TT>GET</TT> against the resource, modify their local copy of the
+resource, and then issue a <TT>PUT</TT> to place the modified resource on
+the server. This procedure is inefficient because the entire
+entity for a resource must be transmitted to and from the server
+in order to make even small changes.  Ideally, the update entity
+transmitted to the server should be proportional in size to the
+modifications.
+
+
+<h4>3.10.2    Solution Requirements</h4>
+
+The solution must:
+<LI>    allow partial modification of a resource without having to
+     transmit the entire modified resource
+<LI>    allow byte-range patching
+<LI>    allows extensions so that patches can be done beyond simple
+     byte-range patching
+<LI>    allow ranges to be deleted, inserted, and replaced
+
+
+<h4>3.10.3    The Request</h4>
+
+The request entity of the <TT>PATCH</TT> method contains a list of
+differences between the resource identified by the Request-URI
+and the desired content of the resource after the <TT>PATCH</TT> action
+has been applied.  The list of differences is in a format defined
+by the media type of the entity (e.g., "application/diff") and
+must include sufficient information to allow the server to
+convert the original version of the resource to the desired
+version.  Processing performed by <TT>PATCH</TT> is atomic, hence all
+changes MUST be successfully executed or the method fails. <TT>PATCH</TT>
+MUST fail if executed on a non-existent resource; i.e. <TT>PATCH</TT> does
+not create a resource as a side effect.
+
+<P>If the request appears (at least initially) to be acceptable, the
+server MUST transmit an interim 100 response message after
+receiving the empty line terminating the request headers and
+continue processing the request.  Since the semantics of <TT>PATCH</TT>
+are non-idempotent, responses to this method are not cacheable.
+
+<P>While server support for <TT>PATCH</TT> is optional, if a server does
+support <TT>PATCH</TT>, it MUST support at least the <TT>text/xml</TT> diff format
+defined below.  Support for the VTML difference format [VTML] is
+recommended, but not required.
+
+<h4>3.10.4    <TT>text/xml</TT> elements for <TT>PATCH</TT></h4>
+
+The <TT>resourceupdate</TT> XML element contains a set of XML sub-entities
+that describe modification operations.  The name and meaning of
+these XML elements is given below. Processing of these directives
+MUST be performed in the order encountered within the XML
+document.  A directive operates on the resource as modified by
+all previous directives (executed in sequential order). The
+length of the resource MAY be extended or reduced by a <TT>PATCH</TT>.
+
+<P>The changes specified by the <TT>resourceupdate</TT> XML element MUST be
+executed atomically.
+
+
+<H4>3.10.4.1  <TT>ResourceUpdate</TT></H4>
+
+Name:     http://www.ietf.org/standards/dav/patch/resourceupdate
+<BR>Purpose:       Contains an ordered set of changes to a non-collection, non-property resource.
+<BR>Schema:        http://www.ietf.org/standards/dav/patch/
+<BR>Parent:        Any
+<BR>Value:         *(<TT>Insert</TT> | <TT>Delete</TT> | <TT>Replace</TT>)
+
+
+<H4>3.10.4.2  <TT>Insert</TT></H4>
+
+Name:     http://www.ietf.org/standards/dav/patch/insert
+<BR>Purpose:       Insert the XML element's contents starting at the
+specified octet.
+<BR>Schema:        http://www.ietf.org/standards/dav/patch/
+<BR>Parent:        <TT>ResourceUpdate</TT>
+<BR>Value:         The insert XML element MUST contain an <TT>Octet-Range</TT>
+XML element that specifies an octet position within the body of a
+resource.  A value of "end" specifies the end of the resource.
+The body of the insert XML element contains the octets to be
+inserted.
+
+<P>Please note that in order to protect the white space contained in
+this XML element the following attribute/value MUST be included
+in the element: XML-SPACE = "PRESERVE".
+
+
+<H4>3.10.4.3  <TT>Delete</TT></H4>
+
+Name:     http://www.ietf.org/standards/dav/patch/delete
+<BR>Purpose:       Removes the specified range of octets.
+<BR>Schema:        http://www.ietf.org/standards/dav/patch/
+<BR>Parent:        <TT>ResourceUpdate</TT>
+<BR>Value:         The <TT>Delete</TT> XML element MUST contain an octet-range
+XML element.
+
+<BR>Discussion: The octets that are deleted are removed, which means
+the resource is collapsed and the length of the resource is
+decremented by the size of the octet range.  It is not
+appropriate to replace deleted octets with zeroed-out octets,
+since zero is a valid octet value.
+
+
+<H4>3.10.4.4  <TT>Replace</TT></H4>
+
+Name:     http://www.ietf.org/standards/dav/patch/replace
+<BR>Purpose:       Replaces the specified range of octets with the
+contents of the XML element.  If the number of octets in the XML
+element is different from the number of octets specified, the
+update MUST be rejected.
+<BR>Schema:        http://www.ietf.org/standards/dav/patch/
+<BR>Parent:        ResourceUpdate
+<BR>Value:         The Replace XML element MUST contain an <TT>octet-range</TT> XML element. The contents of the entity are the replacement
+octets.
+
+<P>Please note that in order to protect the white space contained in
+this XML element the following attribute/value MUST be included
+in the element: XML-SPACE = "PRESERVE".
+
+
+<H4>3.10.4.5  <TT>Octet-Range</TT> Attribute</H4>
+
+Name:          http://www.ietf.org/standards/dav/patch/octet-range
+<BR>Purpose:  Specifies a range of octets that the enclosing property
+effects.
+<BR>Schema:   http://www.ietf.org/standards/dav/patch/
+<BR>Parent:   <TT>Insert</TT>, <TT>Delete</TT>, <TT>Replace</TT>
+<BR>Value:    number ["-" (number | "end")]
+          Number = 1*Digit
+
+<BR>Description: Octet numbering begins with 0. If the octet contains
+a single number then the operation is to begin at that octet and
+to continue for a length specified by the operation. In the case
+of a delete, this would mean to delete a single octet. In the
+case of an insert this would mean to begin the insertion at the
+specified octet and to continue for the length of the included
+value, extending the resource if necessary. In the case of
+replace, the replace begins at the specified octet and overwrites
+all that follow to the length of the included value.
+
+
+<h4>3.10.5    The Response</h4>
+
+<LI>200 (OK) - The request entity body was processed without error,
+resulting in an update to the state of the resource.
+
+<LI>409 (Conflict) - If the update information in the request message
+body does not make sense given the current state of the resource
+(e.g., an instruction to delete a non-existent line), this status
+code MAY be returned.
+
+<LI>415 (Unsupported Media Type) - The server does not support the
+content type of the update instructions in the request message
+body.
+
+<LI>416 (Unprocessable Entity) - A new status code.  The server
+understands the content type of the request entity, but was
+unable to process the contained instructions.
+
+<LI>417 (Insufficient Space on Resource) - The resource does not have
+sufficient space to record the state of the resource after the
+execution of this method.
+
+
+<h4>3.10.6    Examples</h4>
+
+
+<H4>3.10.6.1  HTML file modification</H4>
+
+The following example shows a modification of the title and
+contents of the HTML resource http://www.example.org/hello.html.
+Before:
+<PRE>
+     &lt;HTML&gt;
+     &lt;HEAD&gt;
+     &lt;TITLE&gt;Hello world HTML page&lt;/TITLE&gt;
+     &lt;/HEAD&gt;
+     &lt;BODY&gt;
+     &lt;P&gt;Hello, world!&lt;/P&gt;
+     &lt;/BODY&gt;
+     &lt;/HTML&gt;
+</PRE>
+<TT>PATCH</TT> Request:                     Response:
+<PRE>
+     PATCH hello.html HTTP/1.1
+     Host: www.example.org
+     Content-Type: text/xml
+     Content-Length: xxx
+
+                                   HTTP/1.1 100 Continue
+     &lt;?XML:Namespace href =
+     Shttp://www.ietf.org/standards/dav/patch/" AS = "D"/&gt;
+     &lt;D:ResourceUpdate&gt;
+          &lt;Replace XML-SPACE = "PRESERVE"&gt;
+          &lt;octet-range&gt;14&lt;/octet-range&gt;
+          &amp;003CTITLE&amp;003ENew Title&amp;003C/TITLE&amp;003E
+          &lt;/Replace&gt;
+          &lt;Delete&gt;&lt;octet-range&gt;38-50&lt;/Delete&gt;
+     &lt;Insert XML-SPACE = "PRESERVE"&gt;&lt;octet-range&gt;86&lt;/&gt;&amp;
+     003CP&amp;003ENew paragraph&amp;003C/P&amp;003E&lt;/Insert&gt;
+     &lt;/D:ResourceUpdate&gt;
+                                   HTTP/1.1 200 OK
+</PRE>
+After:
+<PRE>
+     &lt;HTML&gt;
+     &lt;HEAD&gt;
+     &lt;TITLE&gt;New Title&lt;/TITLE&gt;
+     &lt;/HEAD&gt;
+     &lt;BODY&gt;
+     &lt;P&gt;Hello, world!&lt;/P&gt;
+     &lt;P&gt;New paragraph&lt;/P&gt;
+     &lt;/BODY&gt;
+     &lt;/HTML&gt;
+</PRE>
+
+<h3>3.11 Headers</h3>
+
+<h4>3.11.1    Destination Header</h4>
+
+The Destination header specifies a destination resource for
+methods such as <TT>COPY</TT> and <TT>MOVE</TT>, which take two URIs as parameters.
+<PRE>     Destination= "Destination" ":" URI
+</PRE>
+
+
+<h4>3.11.2    Enforce-Live-Properties Header</h4>
+
+The Enforce-Live-Properties header specifies properties that MUST
+be "live" after they are copied (moved) to the destination
+resource of a copy (or move). If the value "*" is given for the
+header, then it designates all live properties on the source
+resource.  If the value is "Omit" then the server MUST NOT
+duplicate on the destination resource any properties that are
+defined on the source resource. If this header is not included
+then the server is expected to act as defined by the default
+property handling behavior of the associated method.
+
+<PRE>     EnforceLiveProperties = "Enforce-Live-Properties" ":" ("*" |
+     "Omit" | 1#(Property-Name))
+     Property-Name = "&lt;" URI "&gt;"
+</PRE>
+
+<h4>3.11.3    Overwrite Header</h4>
+
+The Overwrite header specifies whether the server should
+overwrite the state of a non-null destination resource during a
+<TT>COPY</TT> or <TT>MOVE</TT>.  A value of "false" states that the server MUST NOT
+perform the <TT>COPY</TT> or <TT>MOVE</TT> operation if the state of the
+destination resource is non-null. By default, the value of
+Overwrite is "true," and a client MAY omit this header from a
+request when its value is "true." While the Overwrite header
+appears to duplicate the functionality of the If-Match: * header
+of HTTP/1.1, If-Match applies only to the Request-URI, and not to
+the Destination of a <TT>COPY</TT> or <TT>MOVE</TT>.
+
+<PRE>     Overwrite = "Overwrite" ":" ("true" | "false")
+</PRE>
+
+If there is a conflict and the Overwrite header equals "true", or
+is absent and thus defaults to "true", then the method MUST fail
+with a 409 Conflict.
+
+
+<h4>3.11.4    Destroy Header</h4>
+
+When deleting a resource the client often wishes to specify
+exactly what sort of delete is being enacted. The Destroy header,
+used with the Mandatory header, allows the client to specify the
+end result they desire. The Destroy header is specified as
+follows:
+
+The Undelete token requests that, if possible, the resource
+should be left in a state such that it can be undeleted. The
+server is not required to honor this request.
+
+<P>The NoUndelete token requests that the resource MUST NOT be left
+in a state such that it can be undeleted.
+
+<P>The VersionDestroy token includes the functionality of the
+NoUndelete token and extends it to include having the server
+remove all versioning references to the resource that it has
+control over.
+
+<PRE>     DestroyHeader = "Destroy" ":" #Choices
+</PRE>
+
+Choices = "VersionDestroy" | "NoUndelete" | "Undelete" | token
+|"&lt;" URI "&gt;" ; a token extension MUST NOT be used unless it is
+specified in a RFC16, otherwise a URI MUST be used for
+extensions.
+
+
+<h4>3.11.5    Collection-Member Header</h4>
+
+The Collection-Member header specifies the URI of an external
+resource to be added/deleted to/from a collection.
+
+<PRE>     CollectionMember = "Collection-Member" ":" URI
+</PRE>
+
+
+<h3>3.12 Links</h3>
+
+
+<h4>3.12.1    Source Link Property Type</h4>
+
+Name:     http://www.ietf.org/standards/dav/link/source
+<BR>Purpose:       The destination of the source link identifies the
+resource that contains the unprocessed source of the link's
+source.
+<BR>Schema:        http://www.ietf.org/standards/dav/link/
+<BR>Parent:        Any
+<BR>Value:         An XML document with zero or more link XML
+elements.
+
+Discussion: The source of the link (src) is typically the URI of
+the output resource on which the link is defined, and there is
+typically only one destination (dst) of the link, which is the
+URI where the unprocessed source of the resource may be accessed.
+When more than one link destination exists, this specification
+asserts no policy on ordering.
+
+
+<h2>4    State Tokens</h2>
+
+<h3>4.1  Overview</h3>
+
+
+<h4>4.1.1     Problem Description</h4>
+
+There are times when a principal will want to predicate
+successful execution of a method on the current state of a
+resource.  While HTTP/1.1 provides a mechanism for conditional
+execution of methods using entity tags via the "If-Match" and
+"If-None-Match" headers, the mechanism is not sufficiently 
+extensibleto express conditional statements involving more 
+generic state indicators, such as lock tokens.
+
+<P>The fundamental issue with entity tags is that they can only be
+generated by a resource. However there are times when a client
+will want to be able to share state tokens between resources,
+potentially on different servers, as well as be able to generate
+certain types of lock tokens without first having to communicate
+with a server.
+
+<P>For example, a principal may wish to require that resource B have
+a certain state in order for a method to successfully execute on
+resource A. If the client submits an e-tag from resource B to
+resource A, then A has no way of knowing that the e-tag is meant
+to describe resource B.
+
+<P>Another example occurs when a principal wishes to predicate the
+successful completion of a method on the absence of any locks on
+a resource. It is not sufficient to submit an "If-None-Match: *"
+as this refers to the existence of an entity, not of a lock.
+
+<P>This draft defines the term "state token" as an identifier for a
+state of a resource. The sections below define requirements for
+state tokens and provide a  state token syntax, along with two
+new headers which can accept the new state token syntax.
+
+
+<h4>4.1.2     Solution Requirements</h4>
+
+
+<H4>4.1.2.1   Syntax</H4>
+
+Self-Describing. A state token must be self describing such that
+upon inspecting a state token it is possible to determine what
+sort of state token it is, what resource(s) it applies to, and
+what state it represents.
+
+<P>This self-describing nature allows servers to accept tokens from
+other servers and potentially be able to coordinate state
+information cross resource and cross site through standardized
+protocols. For example, the execution of a request on resource A
+can be predicated on the state of resource B, where A and B are
+potentially on different servers.
+
+<P>Client Generable. The state token syntax must allow, when
+appropriate, for clients to generate a state token without having
+first communicated with a server.
+
+<P>One drawback of entity tags is that they are set by the server,
+and there is no interoperable algorithm for calculating an entity
+tag. Consequently, a client cannot generate an entity tag from a
+particular state of a resource.  However, a state token which
+encodes an MD5 state hash could be calculated by a client based
+on a client-held state of a resource, and then submitted to a
+server in a conditional method invocation.
+
+<P>Another potential use for client generable state tokens is for a
+client to generate lock tokens with wild card fields, and hence
+be able to express conditionals such as: "only execute this <TT>GET</TT>
+if there are no write locks on this resource."
+
+
+<H4>4.1.2.2   Conditonals</H4>
+
+Universal. A solution must be applicable to all requests.
+Positive and Negative. Conditional expressions must allow for the
+expression of both positive and negative state requirements.
+
+
+<h3>4.2  State Token Syntax</h3>
+State tokens are URLs employing the following syntax:
+<PRE>
+State-Token = "StateToken:" Type ":" Resources ":" State-Info
+Type = "Type" "=" Caret-encoded-URL
+Resources = "Res" "=" Caret-encoded-URL
+Caret-encoded-URL = "^" Resource "^"
+Resource = &lt;A URI where all "^" characters are escaped&gt;
+State-Info = *(uchar | reserved)  ; uchar, reserved defined
+section 3.2.1 of RFC 2068
+</PRE>
+
+<p>This proposal has created a new URL scheme for state tokens
+because a state token names a network resource using its normal
+name, which is typically state-invariant, along with additional
+information that specifies a particular state of the resource.
+Encoding the state information into the native URL scheme of the
+network resource was not felt to be safe, since freedom from name
+space collisions could not be guaranteed. If this proposal is
+accepted, the StateToken URL scheme will need to be defined and
+registered with IANA.
+
+<P>State Token URLs begin with the URL scheme name "StateToken"
+rather than the name of the particular state token type they
+represent in order to make the URL self describing. Thus it is
+possible to examine the URL and know, at a minimum, that it is a
+state token.
+
+<P>Labeled name/value pairs are used within the token to allow new
+fields to be added. Processors of state tokens MUST be prepared
+to accept the fields in whatever order they are present and MUST
+ignore any fields they do not understand.
+The "Type" field specifies the type of the state information
+encoded in the state token. A URL is used in order to avoid
+namespace collisions.
+
+<P>The "Res" field identifies the resource for which the state token
+specifies a particular state. Since commas and spaces are
+acceptable URL characters, a caret is used to delimit a URL.
+Since a caret is an acceptable URL character, any instances of it
+must be escaped using the % escape convention.
+
+<P>The State-Info production is expanded upon in descriptions of
+specific state token types, and is intended to contain the state
+description information for a particular state token.
+
+
+<h3>4.3  State Token Conditional Headers</h3>
+
+
+<h4>4.3.1     If-State-Match</h4>
+
+<PRE>
+If-State-Match = "If-State-Match" ":" ("AND" | "OR") 1#("&lt;" State-Token "&gt;")
+</PRE>
+
+<p>
+The If-State-Match header is intended to have similar
+functionality to the If-Match header defined in section 14.25 of
+RFC 2068.
+
+<P>If the AND keyword is used and all of the state tokens identify
+the state of the resource, then the server MAY perform the
+requested method. If the OR keyword is used and any of the state
+tokens identifies the current state of the resource, then server
+MAY perform the requested method.  If neither of the keyword
+requirements is met, the server MUST NOT perform the requested
+method, and MUST return a 412 (Precondition Failed) response.
+
+
+<h4>4.3.2     If-None-State-Match</h4>
+
+<PRE>
+If-None-State-Match = "If-None-State-Match" ":" 1#("&lt;" State-Token "&gt;")
+</PRE>
+
+The If-None-State-Match header is intended to have similar
+functionality to the If-None-Match header defined in section
+14.26 of RFC 2068.
+
+<P>If any of the state tokens identifies the current state of the
+resource, the server MUST NOT perform the requested method.
+Instead, if the request method was <TT>GET</TT>, <TT>HEAD</TT>, <TT>INDEX</TT>, or <TT>GETMETA</TT>,
+the server SHOULD respond with a 304 (Not Modified) response,
+including the cache-related entity-header fields (particularly
+ETag) of the current state of the resource.  For all other
+request methods, the server MUST respond with a status of 412
+(Precondition Failed).
+
+<P>If none of the state tokens identifies the current state of the
+resource, the server MAY perform the requested method.
+
+<P>Note that the "AND" and "OR" keywords specified with the If-State-Match header are intentionally not defined for If-None-State-Match, because this functionality is not required.
+
+
+<h3>4.4  State Token Header</h3>
+
+<PRE>
+State-Token-Header = "State-Token" ":" 1#("&lt;" State-Token "&gt;")
+</PRE>
+
+The State Token header is intended to have similar functionality
+to the etag header defined in section 14.20 of RFC 2068. The
+purpose of the tag is to return state tokens defined on a
+resource in a response. The contents of the state-token are not
+guaranteed to be exhaustive and are generally used to return a
+new state token that has been defined as the result of a method.
+For example, if a <TT>LOCK</TT> method were successfully executed on a
+resource the response would include a state token header with the
+lock state token included.
+
+
+<h3>4.5  E-Tags</h3>
+
+E-tags have already been deployed using the If-Match and If-None-Match headers.  Introducing two mechanisms to express e-tags
+would only confuse matters, therefore e-tags should continue to
+be expressed using quoted strings and the If-Match and If-None-Match headers.
+
+<h2>5    Locking</h2>
+
+<h3>5.1  Locking: Introduction</h3>
+
+Locking is used to arbitrate access to a resource amongst
+principals that have equal access rights to that resource.
+
+<P>This specification allows locks to vary over two parameters, the
+number of principals involved and the type of access to be
+granted. Furthermore, this document only provides the definition
+of locking for one access type, write. However, the syntax is
+extensible, and allows the specification of other access types.
+
+
+<h4>5.1.1     Exclusive Vs. Shared Locks</h4>
+
+The most basic form of lock is an exclusive lock. This is a lock
+where the access right in question is only granted to a single
+principal. The need for this arbitration results from a desire to
+avoid having to constantly merge results. In fact, many users so
+dislike having to merge that they would rather serialize their
+access to a resource rather than have to constantly perform
+merges.
+
+<P>However, there are times when the goal of a lock is not to
+exclude others from exercising an access right but rather to
+provide a mechanism for principals to indicate that they intend
+to exercise their access right.  Shared locks are provided for
+this case. A shared lock allows multiple principals to receive a
+lock, hence any principal with appropriate access can get the
+lock.
+
+<P>With shared locks there are two trust sets that affect a
+resource.  The first trust set is created by access permissions.
+Principals who are trusted, for example, may have permission to
+write the resource, those who are not, don't.  Among those who
+have access permission to write the resource, the set of
+principals who have taken out a shared lock also must trust each
+other, creating a (typically) smaller trust set within the access
+permission write set.
+
+<P>Starting with every possible principal on the Internet, in most
+situations the vast majority of these principals will not have
+write access to a given resource.  Of the small number who do
+have write access, some principals may decide to guarantee their
+edits are free from overwrite conflicts by using exclusive write
+locks. Others may decide they trust their collaborators (the
+potential set of collaborators being the set of principals who
+have write permission) and use a shared lock, which informs their
+collaborators that a principal is potentially working on the
+resource.
+
+<P>The WebDAV extensions to HTTP do not need to provide all of the
+communications paths necessary for principals to coordinate their
+activities.  When using shared locks, principals may use any out
+of band communication channel to coordinate their work (e.g.,
+face-to-face interaction, written notes, post-it notes on the
+screen, telephone conversation, email, etc.)  The intent of a
+shared lock is to let collaborators know who else is potentially
+working on a resource.
+
+<P>Shared locks are included because experience from web distributed
+authoring systems has indicated that exclusive write locks are
+often too rigid.  An exclusive write lock is used to enforce a
+particular editing process: take out exclusive write lock, read
+the resource, perform edits, write the resource, release the
+lock.  What happens if the lock isn't released?  While the time-out mechanism provides one solution, if you need to force the
+release of a lock immediately, it doesn't help much.  Granted, an
+administrator can release the lock for you, but this could become
+a significant burden for large sites. In addition there is the
+problem that an administrator may not be immediately available.
+
+<P>Despite their potential problems, exclusive write locks are
+extremely useful, since often a guarantee of freedom from
+overwrite conflicts is what is needed.  The tradeoff described in
+this specification is to provide exclusive write locks, but also
+to provide a less strict mechanism in the form of shared locks
+which can be used by a set of people who trust each other and who
+have access to a communications channel external to HTTP which
+can be used to negotiate writing to the resource.
+
+
+<h4>5.1.2     Required Support</h4>
+
+A WebDAV compliant server is not required to support locking in
+any form. If the server does support locking it may choose to
+support any combination of exclusive and shared locks for any
+access types.
+
+<P>The reason for this flexibility is that server implementers have
+said that they are willing to accept minimum requirements on all
+services but locking. Locking policy strikes to the very heart of
+their resource management and versioning systems and they require
+control over what sort of locking will be made available. For
+example, some systems only support shared write locks while
+others only provide support for exclusive write locks while yet
+others use no locking at all. As each system is sufficiently
+different to merit exclusion of certain locking features, the
+authors are proposing that locking be allowed as the sole axis of
+negotiation within WebDAV.
+
+
+<h3>5.2  <TT>LOCK</TT> Method</h3>
+
+The following sections describe the <TT>LOCK</TT> method, which is used to
+take out a lock of any access type.  These sections on the <TT>LOCK</TT>
+method describe only those semantics that are specific to the
+<TT>LOCK</TT> method and are independent of the access type of the lock
+being requested.  Once the general <TT>LOCK</TT> method has been
+described, subsequent sections describe the semantics of the
+"write" access type, and the write lock.
+
+
+<h4>5.2.1     Operation</h4>
+A <TT>LOCK</TT> method invocation creates the lock specified by the Lock-Info header on the Request-URI. Lock method requests SHOULD NOT
+have a request body. A user-agent SHOULD submit an Owner header
+field with a lock request.
+
+<P>A successful response to a lock invocation MUST include Lock-Token and Time-Out headers.
+
+
+<h4>5.2.2     The Effect of Locks on Properties and Containers</h4>
+
+By default the scope of a lock is the entire state of the
+resource, including its body and associated properties. As a
+result, a lock on a resource also locks the resource's
+properties, and a lock on a property may lock a property's
+resource or may restrict the ability to lock the property's
+resource. Only a single lock token MUST be used when a lock
+extends to cover both a resource and its properties. Note that
+certain lock types MAY override this behavior.
+
+<P>For containers, a lock also affects the ability to add or remove
+members. The nature of the effect depends upon the type of access
+control involved.
+
+
+<h4>5.2.3     Locking Replicated Resources</h4>
+
+Some servers automatically replicate resources across multiple
+URLs. In such a circumstance the server MAY only accept a lock on
+one of the URLs if the server can guarantee that the lock will be
+honored across all the URLs.
+
+
+<h4>5.2.4     Locking Multiple Resources</h4>
+
+The <TT>LOCK</TT> method supports locking multiple resources
+simultaneously by allowing for the listing of several URIs in the
+<TT>LOCK</TT> request. These URIs, in addition to the Request-URI, are
+then to be locked as a result of the <TT>LOCK</TT> method's invocation.
+When multiple resources are specified the <TT>LOCK</TT> method only
+succeeds if all specified resources are successfully locked.
+
+<P>The Lock-Tree option of the lock request specifies that the
+resource and all its internal children (including internal
+collections, and their internal members) are to be locked. This
+is another mechanism by which a request for a lock on multiple
+resources can be specified.
+
+<P>Currently existing locks can not be extended to cover more or
+less resources, and any request to expand or contract the number
+of resources in a lock MUST fail with a 409 Conflict status code.
+So, for example, if resource A is exclusively write locked and
+then the same principal asked to exclusively write lock resources
+A, B, and C, the request would fail as A is already locked and
+the lock can not be extended.
+
+<P>A successful result will return a single lock token which
+represents all the resources that have been locked. If an <TT>UNLOCK</TT>
+is executed on this token, all associated resources are unlocked.
+
+<P>If the lock can not be granted to all resources, a 406 Conflict
+status code MUST be returned with a response entity body
+containing a <TT>multiresponse</TT> XML element describing which
+resource(s) prevented the lock from being granted.
+
+<h4>5.2.5     Interaction with other Methods</h4>
+
+The interaction of a <TT>LOCK</TT> with various methods is dependent upon
+the lock type. However, independent of lock type, a successful
+<TT>DELETE</TT> of a resource MUST cause all of its locks to be removed.
+
+
+<h4>5.2.6     Lock Compatibility Table</h4>
+
+The table below describes the behavior that occurs when a lock
+request is made on a resource.
+
+<table>
+<tr><th>Lock request<BR>Current lock state<Td>      Shared Lock<td>       Exclusive Lock</tr>
+<tr><TD>None<TD>                     True<TD>              True</TR>
+<TR><TD>Shared Lock<TD>              True<TD>              False</TR>
+<TR><TD>Exclusive Lock<TD>           False<TD>             False*</TR>
+</table>
+
+<p>
+Legend: True = lock MAY be granted.  False = lock MUST NOT be
+granted.  *=if the principal requesting the lock is the owner of
+the lock, the lock MAY be regranted.
+
+<P>The current lock state of a resource is given in the leftmost
+column, and lock requests are listed in the first row.  The
+intersection of a row and column gives the result of a lock
+request.  For example, if a shared lock is held on a resource,
+and an exclusive lock is requested, the table entry is "false",
+indicating the lock must not be granted.
+
+<P>If an exclusive or shared lock is re-requested by the principal
+who owns the lock, the lock MUST be regranted. If the lock is
+regranted, the same lock token that was previously issued MUST be
+returned.
+
+
+<h4>5.2.7     Status Codes</h4>
+
+
+<LI> 409 "Conflict" - The resource is locked, so the method has been
+rejected.
+
+
+<LI> 412 "Precondition Failed" - The included state-token was not
+enforceable on this resource or the request in the lock-info
+header could not be satisfied by the server.
+
+
+<h4>5.2.8     Lock-Info Request Header</h4>
+
+The Lock-Info request header specifies the scope and type of a
+lock for a <TT>LOCK</TT> method request. The syntax specification below is
+extensible, allowing new type and scope identifiers to be added.
+
+<PRE>
+LockInfo = "Lock-Info" ":" DAVLockType SP DAVLockScope [SP
+AdditionalLocks] [SP Lock-Tree]
+DAVLockType = "LockType" "=" DAVLockTypeValue
+DAVLockTypeValue = ("Write" | *(uchar | reserved))
+DAVLockScope = "LockScope" "=" DAVLockScopeValue
+DAVLockScopeValue = ("Exclusive" |"Shared" | *(uchar | reserved))
+AdditionalLocks = "AddLocks" "=" 1*("&lt;" URI "&gt;")
+Lock-Tree = "Lock-Tree" "=" ("True" | "False")
+</PRE>
+
+The LockType field specifies the access type of the lock.  At
+present, this specification only defines one lock type, the
+"Write" lock.  The LockScope field specifies whether the lock is
+an exclusive lock, or a shared lock.  The AddLocks field
+specifies additional URIs, beyond the Request-URI, to which the
+lock request applies.  The LockTree field is used to specify
+recursive locks.  If the LockTree field is "true", the lock
+request applies to the hierarchy traversal of the internal
+members resources of the Request-URI, and the AddLocks URIs,
+inclusive of the Request-URI and the AddLocks URIs. It is not an
+error if LockTree is true, and the Request-URI or the AddLocks
+URIs have no internal member resources. By default, the value of
+LockTree is "false", and this field MAY be omitted when its value
+is false.
+
+
+<h4>5.2.9     Owner Request Header</h4>
+
+
+<H4>5.2.9.1   Problem Description</H4>
+
+When discovering the list of owners of locks on a resource, a
+principal may want to be able to contact the owner directly. For
+this to be possible the lock discovery mechanism must provide
+enough information for the lock owner to be contacted.
+Additionally, programs may wish to be able to record structured
+information in the owner header so that other programs may be
+able to parse it later. Note, however, that these programs may
+not necessarily be coordinating so there need be no guarantee
+that the information can be parsed.
+
+
+<H4>5.2.9.2   Solution Requirements</H4>
+
+Not all systems have authentication procedures that provide
+sufficient information to identify a particular user in a way
+that is meaningful to a person. In addition, many systems that do
+have sufficient information, such as a name and e-mail address,
+do not have the ability to associate this information with the
+lock discovery mechanism. Therefore a means is needed to allow
+principals to provide authentication in a manner which will be
+meaningful to a person.
+
+<P>The From header (defined in RFC 2068), which contains only an
+email mailbox, is not sufficient for the purposes of quick
+identification. When desperately looking for someone to remove a
+lock, e-mail is often not sufficient. A telephone number (cell
+number, pager number, etc.) would be better. Furthermore, the
+email address in the From header only optionally includes the
+owners name and that name is often set to an alias anyway.
+Therefore a header more flexible than From is required.
+
+<P>The value also needs to be such that both man and machine can
+place values in it and later retrieve those values.
+
+
+<H4>5.2.9.3   Syntax</H4>
+
+<PRE>
+Owner = "Owner" ":" (Coded-XML  | quoted-string)
+Coded-XML = field-content    ; XML where any character which is
+  not legal in field-content (see section 4.2 of [Fielding et al.,
+  1997]) is XML encoded
+</PRE>
+
+The XML SHOULD provide information sufficient for either directly
+contacting the principal (such as a telephone number or e-mail
+URI), or for discovering the principal (such as the URL of a
+homepage) who owns the lock. The quoted string SHOULD provide a
+means for directly contacting the principal who owns the lock,
+such as a name and telephone number.
+
+<h4>5.2.10    Time-Out Header</h4>
+
+<H4>5.2.10.1  Problem Description</H4>
+
+In a perfect world principals take out locks, work on the
+resource, and then remove the lock when it is no longer needed.
+However, this process is frequently not completed, leaving active
+but unused locks. Reasons for this include client programs
+crashing and losing information about locks, users leaving their
+systems for the day and forgetting to remove their locks, etc. As
+a result of this behavior, servers need to establish a policy by
+which they can remove a lock without input from the lock owner.
+Once such a policy is instituted, the server also needs a
+mechanism to inform the principal of the policy.
+
+<H4>5.2.10.2  Solution Requirements</H4>
+
+There are two basic lock removal policies: administrator and time
+based removal. In the case of administrator based removal, a
+principal other than the lock owner has sufficient access rights
+to order the lock removed, even though they did not take it out.
+The second policy type is time based removal.  In this case, a
+timer is set as soon as the lock is created. Every time a method
+is executed on any resource covered by the lock, the timer is
+reset. If the timer runs out, the lock is removed.
+
+<P>User-agents MUST assume that locks may arbitrarily disappear at
+any time. If their actions require confirmation of the existence
+of a lock then the If-State headers are available.
+
+
+<H4>5.2.10.3  Syntax</H4>
+
+<PRE>
+TimeOut = "Time-Out" ":" 1#TimeType
+TimeType = ("Second-" DAVTimeOutVal | "Infinite" | Extend)
+DAVTimeOutVal = 1*digit
+Extend = RFC-Reg | URL "-" Token ; The URL format is used for
+unregistered TimeTypes
+RFC-Req = Token ; This is a TimeType that has been published as an RFC
+</PRE>
+
+
+Clients MAY include TimeOut headers in their <TT>LOCK</TT> requests.
+However the server is not required to honor or even consider the
+request. Clients MUST NOT submit a Time-Out request header with
+any method other than a <TT>LOCK</TT> method.
+
+<P>A Time-Out request header MUST contain at least one TimeType and
+MAY contain multiple TimeType entries. The purpose of listing
+multiple TimeType is to indicate multiple different values and
+value types that are acceptable to the client. The client lists
+the TimeType entries in order of preference.
+
+<P>The Time-Out response header MUST use a Second value, Infinite,
+or a TimeType the client has indicated familiarity with. The
+server MAY assume a client is familiar with any TimeType
+submitted in a Time-Out header.
+
+<P>The "Second" TimeType specifies the number of seconds that MUST
+elapse between granting of the lock at the server, and the
+automatic removal of the lock. A server MUST not generate a time
+out value for "Second" greater than 2^32-1.
+
+<P>The time out counter is restarted any time the client sends a
+method to any member of the lock, including unsupported methods,
+or methods which are unsuccessful. It is recommended that the
+<TT>HEAD</TT> method be used when the goal is simply to restart the time
+out counter.
+
+<P>If the timeout expires then the lock is lost. Specifically the
+server SHOULD act as if an <TT>UNLOCK</TT> method was executed by the
+server on the resource using the lock token of the timed-out
+lock, performed with its override authority. Thus logs,
+notifications, and other mechanisms that act as side effects to
+the granting and removal of a lock will be properly informed as
+to the disposition of the lock.
+
+<P>Servers are advised to pay close attention to the values
+submitted by clients, as they will be indicative of the type of
+activity the client intends to perform. For example, an applet
+running in a browser may need to lock a resource, but because of
+the instability of the environment within which the applet is
+running, the applet may be turned off without warning. As a
+result, the applet is likely to ask for a relatively small time-out value so that if the applet dies, the lock can be quickly
+harvested. However a document management system is likely to ask
+for an extremely long time-out because its user may be planning
+on going off-line.
+
+
+<h4>5.2.11    Lock Response</h4>
+
+A successful lock response MUST contain a Lock-Token response
+header, a Time-Out header and a <TT>Prop</TT> element in the response body
+which contains the value of the LockDiscovery property.
+
+
+<H4>5.2.11.1  Lock-Token Response Header</H4>
+
+If a resource is successfully locked then a lock-token header
+will be returned containing the lock token that represents the
+lock.
+
+<PRE>
+Lock-Token = "Lock-Token" ":" URI
+</PRE>
+
+
+<h4>5.2.12    Example - Simple Lock Request</h4>
+
+<PRE>
+LOCK /workspace/webdav/proposal.doc HTTP/1.1
+Host: webdav.sb.aol.com
+Lock-Info: LockType=Write LockScope=Exclusive
+Time-Out: Infinite; Second-4100000000
+Owner: &lt;?XML:Namespace href="http://www.ietf.org/standards/dav/" AS =
+"D"/&gt;
+ &lt;D:HREF&gt;http://www.ics.uci.edu/~ejw/contact.html&lt;/D:HREF&gt;
+</PRE>
+
+<PRE>
+HTTP/1.1 200 OK
+Lock-Token: OpaqueLockToken:xyz122393481230912asdfa09s8df09s7df08
+sd0f98a098sda
+Time-Out: Second-604800
+Content-Type: text/xml
+Content-Length: xxxxx
+</PRE>
+
+<PRE>
+&lt;?XML:Namespace href ="http://www.ietf.org/standards/dav/" AS = "D"/&gt;
+&lt;D:Prop&gt;
+     &lt;lockdiscovery&gt;
+          &lt;activelock&gt;
+               &lt;locktype&gt;write&lt;/locktype&gt;
+               &lt;lockscope&gt;exclusive&lt;/lockscope&gt;
+               &lt;addlocks/&gt;
+               &lt;owner&gt;
+     &lt;HREF&gt;http://www.ics.uci.edu/~ejw/contact.html&lt;/HREF&gt;
+               &lt;/owner&gt;
+               &lt;timeout&gt;Second-604800&lt;/timeout&gt;
+               &lt;locktoken&gt;
+                    &lt;HREF&gt;
+               OpaqueLockToken:xyz122393481230912asdfa09s8df09s7d
+               f08sd0f98a098sda
+                    &lt;/HREF&gt;
+               &lt;/locktoken&gt;
+          &lt;/activelock&gt;
+     &lt;/lockdiscovery&gt;
+&lt;/D:Prop&gt;
+</PRE>
+
+This example shows the successful creation of an exclusive write
+lock on resource
+http://webdav.sb.aol.com/workspace/webdav/proposal.doc. The
+resource http://www.ics.uci.edu/~ejw/contact.html contains
+contact information for the owner of the lock. The server has an
+activity-based timeout policy in place on this resource, which
+causes the lock to automatically be removed after 1 week (604800
+seconds). The response has a Lock-Token header that gives the
+state token URL for the lock token generated by this lock
+request.
+
+
+<h4>5.2.13    Example - Multi-Resource Lock Request</h4>
+
+<PRE>
+LOCK /workspace/webdav/proposal.doc HTTP/1.1
+Host: webdav.sb.aol.com
+Lock-Info: LockType=Write LockScope=Exclusive
+Addlocks=&lt;http://webdav.sb.aol.com/workspace/&gt;&lt;http://foo.bar/blah&gt;
+Time-Out: Infinite, Second-4100000000
+Owner: &lt;http://www.ics.uci.edu/~ejw/contact.html&gt;
+</PRE>
+
+<PRE>
+HTTP/1.1 409 Conflict
+Content-Type: text/xml
+Content-Length: xxxxx
+</PRE>
+
+<PRE>
+&lt;?XML:Namespace href =
+     "http://www.ietf.org/standards/dav/" As = "D"/&gt;
+&lt;D:MultiResponse&gt;
+     &lt;Response&gt;
+          &lt;HREF&gt;
+          http://webdav.sb.aol.com/workspace/webdav/proposal.doc
+          &lt;/HREF&gt;
+          &lt;HREF&gt;
+          http://webdav.sb.aol.com/workspace/webdav/
+          &lt;/HREF&gt;
+          &lt;Status&gt;HTTP/1.1 202 Accepted&lt;/Status&gt;
+     &lt;/Response&gt;
+     &lt;Response&gt;
+          &lt;HREF&gt;http://foo.bar/blah&lt;/HREF&gt;
+          &lt;Status&gt;HTTP/1.1 403 Forbidden&lt;/Status&gt;
+     &lt;/Response&gt;
+&lt;/D:MultiResponse&gt;
+</PRE>
+
+This example shows a request for an exclusive write lock on three
+resources,
+http://webdav.sb.aol.com/workspace/webdav/proposal.doc,
+http://webdav.sb.aol.com/workspace/, and http://foo.bar/blah.  In
+this request, the client has specified that it desires an
+infinite length lock, if available, otherwise a timeout of 4.1
+billion seconds, if available.  The Owner header field specifies
+the web address for contact information for the principal taking
+out the lock.
+
+<P>This lock request has failed, because the server rejected the
+lock request for http://foo.bar/blah.  The 409 Conflict status
+code indicates that the server was unable to satisfy the request
+because there is a conflict between the state of the resources
+and the operation named in the request.  Within the
+<TT>multiresponse</TT>, the 202 Accepted status code indicates that the
+lock method was accepted by the resources, and would have been
+completed if all resources named in the request were able to be
+locked.  The 403 Forbidden status code indicates that the server
+does not allow lock requests on this resource.
+
+<h3>5.3  Write Lock</h3>
+
+This section describes the semantics specific to the write access
+type for locks.  The write lock is a specific instance of a lock
+type, and is the only lock type described in this specification.
+
+
+<h4>5.3.1     Methods Restricted by Write Locks</h4>
+
+A write lock prevents a principal without the lock from
+successfully executing a <TT>PUT</TT>, <TT>POST</TT>, <TT>PATCH</TT>, <TT>PROPPATCH</TT>, <TT>MOVE</TT>,
+<TT>DELETE</TT>, <TT>MKCOL</TT>, <TT>ADDREF</TT> or <TT>DELREF</TT> on the locked resource. All other
+current methods, <TT>GET</TT> in particular, function independent of the
+lock.
+
+<P>Note, however, that as new methods are created it will be
+necessary to specify how they interact with a write lock.
+
+
+<h4>5.3.2     Write Locks and Properties</h4>
+
+While those without a write lock may not alter a property on a
+resource it is still possible for the values of live properties
+to change, even while locked, due to the requirements of their
+schemas. Only dead properties and live properties defined to
+respect locks are guaranteed to not change while write locked.
+
+<P>If a property is write locked then a <TT>LOCK</TT> request on the
+associated resource MUST fail with a 409 "Conflict". Note that a
+write lock on a property MAY be extended to include the
+associated resource without the principal having explicitly
+requested the extension.
+
+
+<h4>5.3.3     Write Locks and Null Resources</h4>
+
+It is possible to assert a write lock on a null resource in order
+to lock the name. Please note, however, that locking a null
+resource effectively makes the resource non-null as the resource
+now has lock related properties defined on it.
+
+
+<h4>5.3.4     Write Locks and Collections</h4>
+A write lock on a collection prevents the addition or removal of
+members of the collection. As a consequence, when a principal
+issues a request to create a new internal member of a collection
+using <TT>PUT</TT> or <TT>POST</TT>, or to remove an existing internal member of a
+collection using <TT>DELETE</TT>, this request MUST fail if the principal
+does not have a write lock on the collection.
+
+<P>However, if a write lock request is issued to a collection
+containing internal member resources that are currently locked,
+the request MUST fail with a 409 Conflict status code.
+
+
+<h4>5.3.5     Write Locks and <TT>COPY/MOVE</TT></h4>
+
+The owner of a write lock MUST NOT execute a <TT>MOVE</TT> method on a
+resource they have locked. This specification intentionally does
+not define what happens if a <TT>MOVE</TT> method request is made on a
+locked resource by the lock's owner.
+
+<P>A <TT>COPY</TT> method invocation MUST NOT duplicate any write locks
+active on the source.
+
+
+<h4>5.3.6     Re-issuing Write Locks</h4>
+
+If a principal already owns a write lock on a resource, any
+future requests for the same type of write lock, on the same
+resource, while the principal's previous write lock is in effect,
+MUST result in a successful response with the same lock token as
+provided for the currently existing lock. Two lock requests are
+defined to be identical if their Lock-Info headers are identical.
+
+
+<h4>5.3.7     Write Locks and The State-Token Header</h4>
+
+
+<H4>5.3.7.1   Problem Definition</H4>
+
+If a user agent is not required to have knowledge about a lock
+when requesting an operation on a locked resource, the following
+scenario might occur. Program A, run by User A, takes out a write
+lock on a resource. Program B, also run by User A, has no
+knowledge of the lock taken out by Program A, yet performs a <TT>PUT</TT>
+to the locked resource. In this scenario, the <TT>PUT</TT> succeeds
+because locks are associated with a principal, not a program, and
+thus program B, because it is acting with principal A's
+credential, is allowed to perform the <TT>PUT</TT>. However, had program B
+known about the lock, it would not have overwritten the resource,
+preferring instead to present a dialog box describing the
+conflict to the user. Due to this scenario, a mechanism is needed
+to prevent different programs from accidentally ignoring locks
+taken out by other programs with the same authorization.
+
+
+<H4>5.3.7.2   Solution Requirement</H4>
+
+The solution must not require principals to perform discovery in
+order to prevent accidental overwrites as this could cause race
+conditions.
+
+<P>The solution must not require that clients guess what sorts of
+locks might be used and use if-state-match headers with wildcards
+to prevent collisions. The problem with trying to "guess" which
+locks are being used is that new lock types might be introduced,
+and the program would not know to "guess them". So, for example,
+a client might put in an if-state-match header with a wildcard
+specifying that if any write lock is outstanding then the
+operation should fail. However a new read/write lock could be
+introduced which the client would not know to put in the header.
+
+
+<H4>5.3.7.3   State-Token Header</H4>
+
+The State-Token header, containing a lock token owned by the
+requesting principal, is used by the principal to indicate that
+the principal is aware of the existence of the lock specified by
+the lock token. It is used in the following way.
+
+<P>If the following conditions are met:
+     1.   a user-agent has authenticated itself as a principal,
+     2.   the user-agent is submitting a method request to a
+resource
+          on which the principal owns a write lock,
+     3.   the method is restricted by a write lock, as defined in
+the
+          section "Methods Restricted by a Write Lock",
+then the method request MUST include a State-Token header with
+the  lock token of the write lock, or the method fails with a 409
+Conflict status code. If multiple resources are involved with a
+method, such as a <TT>COPY</TT> or <TT>MOVE</TT> method, then the lock tokens, if
+any, for all involved resources, MUST be included in the State-Token request header.
+
+<P>For example, Program A, used by user A, takes out a write lock on
+a resource. Program A then makes a number of <TT>PUT</TT> requests on the
+locked resource, all the requests contain a State-Token header
+which includes the write lock state token. Program B, also run by
+User A, then proceeds to perform a <TT>PUT</TT> to the locked resource.
+However program B was not aware of the existence of the lock and
+so does not include the appropriate state-token header. The
+method is rejected even though principal A is authorized to
+perform the <TT>PUT</TT>. Program B can, if it so chooses, now perform
+lock discovery and obtain the lock token. Note that program A and
+B can perform GETs without using the state-token header because
+the ability to perform a <TT>GET</TT> is not affected by a write lock.
+
+<P>Having a lock state token provides no special access rights.
+Anyone can find out anyone else's lock state token by performing
+lock discovery. Locks are to be enforced based upon whatever
+authentication mechanism is used by the server, not based on the
+secrecy of the token values.
+
+
+<H4>5.3.7.3.1 Example</H4>
+
+<PRE>COPY /~fielding/index.html HTTP/1.1
+Host: www.ics.uci.edu
+Destination: http://www.ics.uci.edu/users/f/fielding/index.html
+State-Token: &lt;OpaqueLockToken:123AbcEfg1284h23h2&gt;
+&lt;OpaqueLockToken:AAAASDFcalkjfdas12312&gt;
+
+HTTP/1.1 200 OK
+</PRE>
+
+In this example, both the source and destination are locked so
+two lock tokens must be submitted. If only one of the two
+resources was locked, then only one token would have to be
+submitted.
+
+<h3>5.4  Lock Tokens</h3>
+
+<h4>5.4.1     Problem Description</h4>
+
+It is possible that once a lock has been granted it may be
+removed without the lock owner's knowledge. This can cause
+serialization problems if the lock owner executes methods
+thinking their lock is still active. Due to this, a mechanism is
+needed for a principal to predicate the successful execution of a
+message upon the continuing existence of a lock.
+
+
+<h4>5.4.2     Lock Token Introduction</h4>
+
+A lock token is a type of state token that describes a particular
+lock.  A lock token is returned by every successful <TT>LOCK</TT>
+operation, and can also be discovered through lock discovery on a
+resource.
+
+<P>There are two types of lock tokens, a generic lock token, which
+is unique only for a particular resource, and an opaque lock
+token, which is unique across all resources for all time.
+
+<P>Uniqueness for a particular resource prevents problems with long
+held outstanding lock tokens being confused with newer tokens.
+This uniqueness requirement is the same as for e-tags. Uniqueness
+across all resources for all time allows for tokens to be
+submitted across resources and servers without fear of confusion.
+
+<P>Generic lock tokens, because of their relaxed uniqueness
+requirements, are faster to generate than opaque lock tokens.
+
+
+<h4>5.4.3     Generic Lock Tokens</h4>
+
+Any valid URI can be used by the resource as a generic lock
+token. The only requirement is that the lock token MUST never
+have been issued previously on that resource. Because a lock
+token is only guaranteed to be unique on the resource that
+generated it, the lock token MUST NOT be submitted in a state-token request header or an if-state[-not]-match header on any
+resource but the resource that generated it.
+
+
+<h4>5.4.4     OpaqueLockToken Lock Token</h4>
+
+The opaquelocktoken scheme is designed to be unique across all
+resources for all time. Due to this uniqueness quality, a client
+MAY submit an opaque lock token in a state-token request header
+and an if-state[-not]-match header on a resource other than the
+one that returned it.
+
+<P>All resources MUST recognize the opaquelocktoken scheme and be
+able to, at minimum, recognize that the lock token was not
+generated by the resource. Note, however, that resources are not
+required to generate opaquelocktokens.
+
+<P>In order to guarantee uniqueness across all resources for all
+time the opaquelocktoken requires the use of the GUID mechanism.
+
+<P>Opaquelocktoken generators however have a choice of how they
+create these tokens. They can either generate a new GUID for
+every lock token they create, which is potentially very
+expensive, or they can create a single GUID and then add
+extension characters. If the second method is selected then the
+program generating the extensions MUST guarantee that the same
+extension will never be used twice with the associated GUID.
+
+<PRE>
+Opaque-Lock-Token = "OpaqueLockToken" ":" GUID [Extension]
+GUID = ; As defined in [LEACH]
+Extension = *urlc   ;urlc is defined in [Berners-Lee et al.,
+1997] (draft-fielding-url-syntax-07.txt)
+</PRE>
+
+<h3>5.5  <TT>UNLOCK</TT> Method</h3>
+
+<h4>5.5.1     Problem Definition</h4>
+
+The <TT>UNLOCK</TT> method removes the lock identified by the lock token
+in the State-Token header from the Request-URI, and all other
+resources included in the lock.
+
+
+<h4>5.5.2     Example</h4>
+
+<PRE><TT>UNLOCK</TT> /workspace/webdav/info.doc HTTP/1.1
+Host: webdav.sb.aol.com
+State-Token: OpaqueLockToken:123AbcEfg1284h23h2
+
+HTTP/1.1 200 OK
+</PRE>
+
+In this example, the lock identified by the lock token
+"OpaqueLockToken:123AbcEfg1284h23h2" is successfully removed from
+the resource http://webdav.sb.aol.com/workspace/webdav/info.doc.
+If this lock included more than just one resource, the lock is
+removed from those resources as well.
+
+
+<h3>5.6  Discovery Mechanisms</h3>
+
+<h4>5.6.1     Lock Capability Discovery</h4>
+
+<H4>5.6.1.1   Problem Definition</H4>
+
+Since server lock support is optional, a client trying to lock a
+resource on a server can either try the lock and hope for the
+best, or perform some form of discovery to determine what lock
+capabilities the server supports.  This is known as lock
+capability discovery. Lock capability discovery differs from
+discovery of supported access control types, since there may be
+access control types without corresponding lock types.
+
+<H4>5.6.1.2   SupportedLock Property</H4>
+
+Name: http://www.ietf.org/standards/dav/lock/supportedlock
+<BR>Purpose: To provide a listing of the lock capabilities supported
+by the resource.
+<BR>Schema: http://www.ietf.org/standards/dav/
+<BR>Values: An XML document containing zero or more LockEntry XML
+elements.
+<BR>Description: The SupportedLock property of a resource returns a
+listing of the combinations of scope and access types which may
+be specified in a lock request on the resource. Note that the
+actual contents are themselves controlled by access controls so a
+server is not required to provide information the client is not
+authorized to see. If SupportedLock is available on "*" then it
+MUST define the set of locks allowed on all resources on that
+server.
+
+<H4>5.6.1.3   LOCKENTRY XML Element</H4>
+
+Name: http://www.ietf.org/standards/dav/lockentry
+<BR>Purpose: Defines a DAVLockType/LockScope pair which may be
+legally used with a <TT>LOCK</TT> on the specified resource.
+<BR>Schema: http://www.ietf.org/standards/dav/
+<BR>Parent: A SupportedLock entry
+<BR>Values: LockType LockScope
+
+<H4>5.6.1.4   LOCKTYPE XML Element</H4>
+
+Name: http://www.ietf.org/standards/dav/locktype
+<BR>Purpose: Lists a DAVLockType
+<BR>Schema: http://www.ietf.org/standards/dav/
+<BR>Parent: LOCKENTRY
+<BR>Values: DAVLockTypeValue
+
+<H4>5.6.1.5   LOCKSCOPE XML Element</H4>
+
+Name: http://www.ietf.org/standards/dav/lockscope
+<BR>Purpose: Lists a DAVLockScope
+<BR>Schema: http://www.ietf.org/standards/dav/
+<BR>Parent: LOCKENTRY
+<BR>Values: DAVLockScopeValue
+
+<H4>5.6.1.6   Example</H4>
+
+<PRE>PROPFIND  /container/ HTTP/1.1
+Host: www.foo.bar
+Content-Length: xxxx
+Content-Type: text/xml
+</PRE>
+
+<PRE>&lt;?XML:Namespace href =
+     "http://www.ietf.org/standards/dav/" AS = "D"/&gt;
+&lt;D:PROPFIND&gt;
+     &lt;prop&gt;&lt;SupportedLock/&gt;&lt;/prop&gt;
+&lt;/D:PROPFIND&gt;
+</PRE>
+
+<PRE>
+HTTP/1.1 207 Multi-Response
+Content-Type: text/xml
+Content-Length: xxxxx
+
+&lt;?XML:Namespace href ="http://www.ietf.org/standards/dav/" AS = "D"/&gt;
+&lt;D:MultiResponse&gt;
+     &lt;Response&gt;
+          &lt;Prop&gt;
+               &lt;SupportedLock&gt;
+                    &lt;LockEntry&gt;
+                         &lt;LockType&gt;Write&lt;/LockType&gt;
+                         &lt;LockScope&gt;Exclusive&lt;/LockScope&gt;
+                    &lt;/LockEntry&gt;
+                    &lt;LockEntry&gt;
+                         &lt;LockType&gt;Write&lt;/LockType&gt;
+                         &lt;LockScope&gt;Shared&lt;/LockScope&gt;
+                    &lt;/LockEntry&gt;
+               &lt;/SupportedLock&gt;
+          &lt;/Prop&gt;
+          &lt;Status&gt;HTTP/1.1 200 Success&lt;/Status&gt;
+&lt;/Response&gt;
+&lt;/D:MultiResponse&gt;
+</PRE>
+
+<h4>5.6.2     Active Lock Discovery</h4>
+
+<H4>5.6.2.1   Problem Definition</H4>
+
+If another principal locks a resource that a principal wishes to
+access, it is useful for the second principal to be able to find
+out who the first principal is.
+
+<H4>5.6.2.2   Solution Requirements</H4>
+
+The lock discovery mechanism should provide a list of who has the
+resource locked, what locks they have, and what their lock tokens
+are. The lock tokens are useful in shared lock situations where
+two principals may want to guarantee that they do not overwrite
+each other. The lock tokens are also useful for administrative
+purposes so that an administrator can remove a lock by referring
+to its token.
+
+<H4>5.6.2.3   LOCKDISCOVERY Property</H4>
+
+Name: http://www.ietf.org/standards/dav/lockdiscovery
+<BR>Purpose: To discover what locks are active on a resource
+<BR>Schema: http://www.ietf.org/standards/dav/
+<BR>Values= An XML document containing zero or more ActiveLock XML
+elements.
+
+<P>Description: The LOCKDISCOVERY property returns a listing of who
+has a lock, what type of lock they have, the time out type and
+the time remaining on the time out, and the associated lock
+token. The server is free to withhold any or all of this
+information if the requesting principal does not have sufficient
+access rights to see the requested data. A server which supports
+locks MUST provide the LOCKDISCOVERY property on any resource
+with locks on it.
+
+<H4>5.6.2.4   ACTIVELOCK XML Element</H4>
+
+Name: http://www.ietf.org/standards/dav/activelock
+<BR>Purpose: A multivalued XML element that describes a particular
+active lock on a resource
+<BR>Schema: http://www.ietf.org/standards/dav/
+<BR>Parent: A LOCKDISCOVERY entry
+<BR>Values= LOCKTYPE LOCKSCOPE [ADDLOCKS] OWNER TIMEOUT LOCKTOKEN
+
+<H4>5.6.2.5   OWNER XML Element</H4>
+
+Name: http://www.ietf.org/standards/dav/lock/owner
+<BR>Purpose: Returns owner information
+<BR>Schema: http://www.ietf.org/standards/dav/
+<BR>Parent: ACTIVELOCK
+<BR>Values= XML:REF | {any valid XML string}
+<H4>5.6.2.6   TIMEOUT XML Element</H4>
+
+Name: http://www.ietf.org/standards/dav/timeout
+<BR>Purpose: Returns information about the timeout associated with
+the lock
+<BR>Schema: http://www.ietf.org/standards/dav/
+<BR>Parent: ACTIVELOCK
+<BR>Values= TimeType
+
+<H4>5.6.2.7   ADDLOCKS XML Element</H4>
+
+Name:     http://www.ietf.org/standards/dav/addlocks
+<BR>Purpose: Lists additional resources associated with this lock, if
+any.
+<BR>Schema: http://www.ietf.org/standards/dav/
+<BR>Parent: ACTIVELOCK
+<BR>Values= 1*HREF
+
+<H4>5.6.2.8   LOCKTOKEN XML Element</H4>
+
+Name: http://www.ietf.org/standards/dav/statetoken
+<BR>Purpose: Returns the lock token
+<BR>Schema: http://www.ietf.org/standards/dav/
+<BR>Parent: ACTIVELOCK
+<BR>Values= HREF
+<BR>Description: The HREF contains a Lock-Token-URL.
+
+
+<H4>5.6.2.9   Example</H4>
+
+<PRE>
+PROPFIND  /container/ HTTP/1.1
+Host: www.foo.bar
+Content-Length: xxxx
+Content-Type: text/xml
+</PRE>
+
+<PRE>&lt;?XML:Namespace href =
+     "http://www.ietf.org/standards/dav/" AS = "D"/&gt;
+&lt;D:PROPFIND&gt;
+     &lt;prop&gt;&lt;lockdiscovery/&gt;&lt;/prop&gt;
+&lt;/D:PROPFIND&gt;
+</PRE>
+
+<PRE>
+HTTP/1.1 207 Multi-Response
+Content-Type: text/xml
+Content-Length: xxxxx
+
+&lt;?XML:Namespace href ="http://www.ietf.org/standards/dav/" AS = "D"/&gt;
+&lt;D:MultiResponse&gt;
+     &lt;Response&gt;
+          &lt;Prop&gt;
+               &lt;lockdiscovery&gt;
+                    &lt;activelock&gt;
+                         &lt;locktype&gt;write&lt;/locktype&gt;
+                         &lt;lockscope&gt;exclusive&lt;/lockscope&gt;
+                         &lt;addlocks&gt;
+                              &lt;HREF&gt;http://foo.com/doc/&lt;/HREF&gt;
+                         &lt;/addlocks&gt;
+                         &lt;owner&gt;Jane Smith&lt;/owner&gt;
+                         &lt;timeout&gt;Infinite&lt;/timeout&gt;
+                         &lt;locktoken&gt;
+                              &lt;HREF&gt;iamuri:unique!!!!!&lt;/HREF&gt;
+                         &lt;/locktoken&gt;
+                    &lt;/activelock&gt;
+               &lt;/lockdiscovery&gt;
+          &lt;/Prop&gt;
+          &lt;Status&gt;HTTP/1.1 200 Success&lt;/Status&gt;
+&lt;/Response&gt;
+&lt;/D:MultiResponse&gt;
+</PRE>
+
+This resource has a single exclusive write lock on it, with an
+infinite time out. This same lock also covers the resource
+http://foo.com/doc/.
+
+
+<h2>6    Version Control</h2>
+
+[TBD]
+
+
+<h2>7    Internationalization Support</h2>
+
+[TBD]
+
+
+<h2>8    Security Considerations</h2>
+
+[TBD]
+
+
+<h2>9    Copyright</h2>
+
+Copyright (C) The Internet Society October 13, 1997. All Rights
+Reserved.
+
+<P>This document and translations of it may be copied and furnished
+to others, and derivative works that comment on or otherwise
+explain it or assist in its implementation may be prepared,
+copied, published and distributed, in whole or in part, without
+restriction of any kind, provided that the above copyright notice
+and this paragraph are included on all such copies and derivative
+works.  However, this document itself may not be modified in any
+way, such as by removing the copyright notice or references to
+the Internet Society or other Internet organizations, except as
+needed for the purpose of developing Internet standards in which
+case the procedures for copyrights defined in the Internet
+Standards process must be followed, or as required to translate
+it into languages other than English.
+
+<P>The limited permissions granted above are perpetual and will not
+be revoked by the Internet Society or its successors or
+assignees.
+
+<P>This document and the information contained herein is provided on
+an "AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET
+ENGINEERING TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTY THAT THE USE
+OF THE INFORMATION HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY
+IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR
+PURPOSE.
+
+
+<h2>10   Acknowledgements</h2>
+
+Terry Allen, Harald Alvestrand, Alan Babich, Dylan Barrell,
+Bernard Chester, Dan Connolly, Jim Cunningham, Ron Daniel, Jr.,
+Jim Davis, Keith Dawson, Mark Day, Martin Duerst, David Durand,
+Lee Farrell, Chuck Fay, Roy Fielding, Mark Fisher, Alan Freier,
+George Florentine, Jim Gettys, Phill Hallam-Baker, Dennis
+Hamilton, Steve Henning, Alex Hopmann, Andre van der Hoek, Ben
+Laurie, Paul Leach, Ora Lassila, Karen MacArthur, Steven Martin,
+Larry Masinter, Michael Mealling, Keith Moore, Henrik Nielsen,
+Kenji Ota, Bob Parker, Glenn Peterson, Jon Radoff, Saveen Reddy,
+Henry Sanders, Christopher Seiwald, Judith Slein, Mike Spreitzer,
+Einar Stefferud, Ralph Swick, Kenji Takahashi, Robert Thau, John
+Turner, Sankar Virdhagriswaran, Fabio Vitali, Gregory Woodhouse,
+Lauren Wood
+
+
+<h2>11   References</h2>
+
+<P>[Berners-Lee, 1997] T. Berners-Lee, "Metadata Architecture."
+Unpublished white paper, January 1997.
+<A HREF="http://www.w3.org/pub/WWW/DesignIssues/Metadata.html">http://www.w3.org/pub/WWW/DesignIssues/Metadata.html</A>.
+
+<P>[Bradner, 1997] S. Bradner, "Key words for use in RFCs to
+Indicate  Requirement Levels."  RFC 2119, BCP 14. Harvard
+University.  March, 1997.
+
+
+<P>[Bray, Sperberg-McQueen, 1997] T. Bray, C. M. Sperberg-McQueen,
+"Extensible Markup Language (XML): Part I. Syntax", WD-xml-lang.html, <A HREF="http://www.w3.org/pub/WWW/TR/WD-xml-lang.html">http://www.w3.org/pub/WWW/TR/WD-xml-lang.html</A>.
+
+<P>[Connolly et al, 1997] D. Connolly, R. Khare, H.F. Nielsen, "PEP - an Extension Mechanism for HTTP", Internet draft, work-in-progress. draft-ietf-http-pep-04.txt,
+<A HREF="ftp://ds.internic.net/internet-drafts/draft-ietf-http-pep-04.txt">ftp://ds.internic.net/internet-drafts/draft-ietf-http-pep-04.txt</A>.
+
+<P>[Fielding et al., 1997] R. Fielding, J. Gettys, J. Mogul, H.
+Frystyk, T. Berners-Lee, "Hypertext Transfer Protocol --HTTP/1.1." RFC 2068. U.C. Irvine, DEC, MIT/LCS.  January, 1997.
+<A HREF="ftp://ds.internic.net/rfc/rfc2068.txt">ftp://ds.internic.net/rfc/rfc2068.txt</A>
+
+<P>[Lasher, Cohen, 1995] R. Lasher, D. Cohen, "A Format for
+Bibliographic Records," RFC 1807. Stanford, Myricom. June, 1995.
+<A HREF="ftp://ds.internic.net/rfc/rfc1807.txt">ftp://ds.internic.net/rfc/rfc1807.txt</A>
+
+<P>[Maloney, 1996] M. Maloney, "Hypertext Links in HTML." Internet
+draft (expired), work-in-progress, January, 1996.
+
+<P>[MARC, 1994] Network Development and MARC Standards, Office, ed.
+1994. "USMARC Format for Bibliographic Data", 1994. Washington,
+DC: Cataloging Distribution Service, Library of Congress.
+
+<P>[Miller et al., 1996] J. Miller, T. Krauskopf, P. Resnick, W.
+Treese, "PICS Label Distribution Label Syntax and Communication
+Protocols" Version 1.1, W3C Recommendation REC-PICS-labels-961031. <A HREF="http://www.w3.org/pub/WWW/TR/REC-PICS-labels-961031.html">http://www.w3.org/pub/WWW/TR/REC-PICS-labels-961031.html</A>.
+
+<P>[Slein et al., 1997] J. A. Slein, F. Vitali, E. J. Whitehead,
+Jr., D. Durand, "Requirements for Distributed Authoring and
+Versioning on the World Wide Web." Internet-draft, work-in-progress, draft-ietf-webdav-requirements-04.txt,
+<A HREF="ftp://ds.internic.net/internet-drafts/draft-ietf-webdav-requirements-04.txt">ftp://ds.internic.net/internet-drafts/draft-ietf-webdav-requirements-04.txt</A>.
+
+<P>[WebDAV, 1997] WEBDAV Design Team. "A Proposal for Web Metadata
+Operations." Unpublished manuscript.
+<A HREF="http://www.ics.uci.edu/~ejw/authoring/proposals/metadata.html">http://www.ics.uci.edu/~ejw/authoring/proposals/metadata.html</A>
+
+<P>[Weibel et al., 1995] S. Weibel, J. Godby, E. Miller, R. Daniel,
+"OCLC/NCSA Metadata Workshop Report."
+<A HREF="http://purl.oclc.org/metadata/dublin_core_report">http://purl.oclc.org/metadata/dublin_core_report</A>.
+
+<P>[Yergeau, 1997] F. Yergeau, "UTF-8, a transformation format of
+Unicode and ISO 10646", Internet Draft, work-in-progress, draft-yergeau-utf8-rev-00.txt, <A HREF="http://www.internic.net/internet-drafts/draft-yergeau-utf8-rev-00.txt">http://www.internic.net/internet-drafts/draft-yergeau-utf8-rev-00.txt</A>.
+
+
+<h2>12   Authors' Addresses</h2>
+<pre>
+
+Y. Y. Goland
+Microsoft Corporation
+One Microsoft Way
+Redmond, WA 98052-6399
+Email yarong@microsoft.com
+
+E. J. Whitehead, Jr.
+Dept. Of Information and Computer Science
+University of California, Irvine
+Irvine, CA 92697-3425
+Email: ejw@ics.uci.edu
+
+A. Faizi
+Netscape
+685 East Middlefield Road
+Mountain View, CA 94043
+Email: asad@netscape.com
+
+S. R Carter
+Novell
+1555 N. Technology Way
+M/S ORM F111
+Orem, UT 84097-2399
+Email srcarter@novell.com
+
+D. Jensen
+Novell
+1555 N. Technology Way
+M/S ORM F111
+Orem, UT 84097-2399
+Email dcjensen@novell.com
+</PRE>
+</BODY>
+</HTML>

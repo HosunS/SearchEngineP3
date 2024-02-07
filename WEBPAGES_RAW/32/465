@@ -1,0 +1,444 @@
+/* 
+$Id$
+
+Copyright (C) 2007 by The Regents of the University of California
+
+Redistribution of this file is permitted under
+the terms of the *GNU* Public License (*GPL*) 	
+
+Date: 04/08/2007
+Author: Yiming Lu <yimingl@ics.uci.edu>
+*/
+
+#include <fstream>
+#include <iostream>
+
+#include "gram.h"
+
+using namespace std;
+
+//------------------------------------------------------------
+// Constructor
+//------------------------------------------------------------
+StringPosition::StringPosition():position(0),
+                                 actualCnt(0),
+                                 sizeOfStringIDs(1)
+{
+    this->stringIDs = new unsigned[sizeOfStringIDs];	
+}
+
+StringPosition::StringPosition(unsigned stringID, unsigned short position):
+                               position(position),
+                               actualCnt(1),
+                               sizeOfStringIDs(1)
+{
+    this->stringIDs = new unsigned[sizeOfStringIDs];
+    this->stringIDs[0] = stringID;
+}
+
+void StringPosition::addStringID(unsigned stringID)
+{
+    actualCnt++;
+    /* if the array is full, then we need to allocate new 
+     * space for the new stringID
+     */
+     if(actualCnt > sizeOfStringIDs)
+     {
+     	unsigned newSizeOfStringIDs = sizeOfStringIDs+1;
+        unsigned *newStringIDs = new unsigned[newSizeOfStringIDs];
+        for(unsigned i = 0; i < sizeOfStringIDs; i++)
+        {
+            newStringIDs[i] = stringIDs[i];
+        }
+        delete[] stringIDs;
+        stringIDs = newStringIDs;
+        sizeOfStringIDs  = newSizeOfStringIDs;
+     }
+     stringIDs[actualCnt-1] = stringID;
+}
+
+ostream &operator << (ostream & output, const StringPosition & stringPos)
+{
+    //position
+    output << stringPos.position <<" ";
+    //num of stringIDs
+    output << stringPos.actualCnt <<" ";
+    //string IDs
+    for(unsigned i = 0; i < stringPos.actualCnt; i++) {
+    	output << stringPos.stringIDs[i]<<" ";
+    }
+    return output;
+}
+
+istream &operator >> (istream &input, StringPosition & stringPos)
+{
+    //position
+    input >> stringPos.position;
+    //num of stringIDs
+    unsigned size;
+    input >> size;
+    //string IDs
+    for(unsigned i = 0; i < size; i++) {
+    	unsigned stringID;
+    	input >> stringID;
+    	stringPos.addStringID(stringID);
+    }
+    return input;
+}
+
+//------------------------------------------------------------
+// Destructor
+//------------------------------------------------------------
+StringPosition::~StringPosition()
+{
+    delete[]  this->stringIDs;
+}
+
+//------------------------------------------------------------
+// Constructor
+//------------------------------------------------------------
+GroupStringPosition::GroupStringPosition():
+                     length(0),
+                     actualCnt(0),
+                     sizeOfPositions(1)
+{
+    this->positions = new StringPosition*[sizeOfPositions];
+}
+
+GroupStringPosition::GroupStringPosition(unsigned short length,
+                                         unsigned stringID,
+                                         unsigned short position):
+                                         length(length),
+                                         actualCnt(1),
+                                         sizeOfPositions(1)
+{
+    this->positions = new StringPosition*[sizeOfPositions];
+    
+    StringPosition *strPos = new StringPosition(stringID, position);
+    this->positions[0] = strPos;
+}
+
+GroupStringPosition::GroupStringPosition(unsigned short length,
+                                         StringPosition *strPos):
+                                         length(length),
+                                         actualCnt(1),
+                                         sizeOfPositions(1)
+{
+	this->positions = new StringPosition*[sizeOfPositions];
+    
+    this->positions[0] = strPos;
+}
+
+
+void GroupStringPosition::insertIntoPositions( unsigned strID,
+                                               unsigned short pos )
+{
+    //Use binary search to find the location to insert the new stringID
+    signed left = 0;
+    signed right = (signed)actualCnt - 1;
+    signed mid = 0;
+    while(left <= right)
+    {
+        mid = (left+right)/2;
+        if( pos > (positions[mid])->getPosition() )
+        {
+            left = mid + 1;
+        }
+        else if( pos < (positions[mid])->getPosition() )
+        {
+            right = mid - 1;
+        }
+        else
+	    {
+	        (positions[mid])->addStringID(strID);
+	        return;
+	    }
+    }
+    
+    //Check whether it is necessary to allocate new space
+    actualCnt++;
+    if(actualCnt > sizeOfPositions)
+    {
+        unsigned newSizeOfPositions = sizeOfPositions+1;
+        StringPosition **newPositions = new StringPosition*[newSizeOfPositions];
+        for(unsigned i = 0; i < sizeOfPositions; i++)
+        {
+            newPositions[i] = positions[i];
+        }
+        delete[] positions;
+        positions = newPositions;
+        sizeOfPositions  = newSizeOfPositions;
+    }
+    
+    //insert the new position
+    StringPosition *position = new StringPosition(strID, pos);
+    for(signed i = (signed)actualCnt-1; i > (right+1); i--)
+    {
+        positions[i] = positions[i-1];
+    }
+    positions[right+1] = position;
+    return;	
+}
+
+void GroupStringPosition::appendToPositions(StringPosition *strPos)
+{
+    //Check whether it is necessary to allocate new space
+    actualCnt++;
+    if(actualCnt > sizeOfPositions)
+    {
+        unsigned newSizeOfPositions = sizeOfPositions+1;
+        StringPosition ** newPositions = new StringPosition*[newSizeOfPositions];
+        for(unsigned i = 0; i < sizeOfPositions; i++)
+        {
+            newPositions[i] = positions[i];
+        }
+        delete[] positions;
+        positions = newPositions;
+        sizeOfPositions  = newSizeOfPositions;
+    }
+    positions[actualCnt - 1] = strPos;
+}
+
+
+ostream &operator << (ostream &output, const GroupStringPosition & group)
+{
+    //length
+    output << group.length <<" ";
+    //num of positions
+    output << group.actualCnt <<" ";
+    //positions
+    for(unsigned i = 0; i < group.actualCnt; i++) {
+    	output << (*(group.positions[i]))<<" ";
+    }
+    return output;
+}
+
+
+istream &operator >> (istream &input, GroupStringPosition & group)
+{
+    //length
+    input >> group.length;
+    //num of positions
+    unsigned size;
+    input >> size;
+    //positions
+    for(unsigned i = 0; i < size; i++) {
+        StringPosition *strPosPtr = new StringPosition();
+        input >> (*strPosPtr);
+        group.appendToPositions(strPosPtr);
+    }
+    return input;	
+}
+
+GroupStringPosition::~GroupStringPosition()
+{
+    for(unsigned i = 0; i < actualCnt; i++)
+    {
+        delete positions[i];
+    }
+    delete [] positions;
+}
+
+
+//------------------------------------------------------------
+// Constructor
+//------------------------------------------------------------
+LengthBucket::LengthBucket():actualCnt(0), sizeOfGroups(1)
+{
+    this->groups = new GroupStringPosition*[sizeOfGroups];
+}
+
+LengthBucket::LengthBucket(unsigned stringID,
+                           unsigned short position,
+                           unsigned short length):
+                           actualCnt(1),
+                           sizeOfGroups(1)
+{
+    GroupStringPosition *groupStrPos = new GroupStringPosition(length, 
+                                                                stringID, 
+                                                                position);
+    
+    this->groups = new GroupStringPosition*[sizeOfGroups];
+    this->groups[0] = groupStrPos;
+}
+
+//------------------------------------------------------------
+// Destructor
+//------------------------------------------------------------
+LengthBucket::~LengthBucket()
+{
+    for(unsigned i = 0; i < actualCnt; i++)
+    {
+        delete groups[i];
+    }
+    delete [] groups;
+}
+
+void LengthBucket::insertIntoGroups(unsigned stringID,
+                                    unsigned short position,
+                                    unsigned short length)
+{
+    //Use binary search to find the location to insert
+    signed left = 0;
+    signed right = (signed)actualCnt - 1;
+    signed mid = 0;
+    while(left <= right)
+    {
+        mid = (left+right)/2;
+        
+        if( length > (groups[mid])->getLength() )
+        {
+            left = mid + 1;
+        }
+        else if( length < (groups[mid])->getLength() )
+        {
+            right = mid - 1;
+        }
+        else
+        {
+            (groups[mid])->insertIntoPositions(stringID, position);
+            return;
+        }
+    }
+    
+    //Check whether it is necessary to allocate new space
+    actualCnt++;
+    if( actualCnt > sizeOfGroups )
+    {
+        unsigned newSizeOfGroups = sizeOfGroups+1;
+        GroupStringPosition ** newGroups = 
+        new GroupStringPosition*[newSizeOfGroups];
+        for(unsigned i = 0; i < sizeOfGroups; i++)
+        {
+    	     newGroups[i] = groups[i];
+        }
+        delete[] groups;
+        groups = newGroups;
+        sizeOfGroups  = newSizeOfGroups;
+    }
+    
+    //insert the new group
+    GroupStringPosition *groupStrPos = new GroupStringPosition(length,
+	                                                           stringID,
+	                                                           position);
+    for(signed i = (signed)actualCnt-1; i > (right+1); i--)
+    {
+        groups[i] = groups[i-1];
+    }
+    groups[right+1] = groupStrPos;
+    return;									
+}
+
+void LengthBucket::appendToGroups(GroupStringPosition *groupStrPos)
+{
+    actualCnt++;
+    if( actualCnt > sizeOfGroups )
+    {
+        unsigned newSizeOfGroups = sizeOfGroups+1;
+        GroupStringPosition ** newGrops = 
+        new GroupStringPosition*[newSizeOfGroups];
+        for(unsigned i = 0; i < sizeOfGroups; i++)
+        {
+            newGrops[i] = groups[i];
+        }
+        delete[] groups;
+        groups = newGrops;
+        sizeOfGroups  = newSizeOfGroups;
+    }
+    groups[actualCnt-1] = groupStrPos;
+}
+
+ostream &operator << (ostream &output, const LengthBucket & bucket)
+{
+    //num of group
+    output << bucket.actualCnt <<" ";
+    //GroupStringPosition
+    for(unsigned i = 0; i < bucket.actualCnt; i++) 
+    {
+    	output << (*(bucket.groups[i]))<<" ";
+    }
+    return output;
+}
+
+istream &operator >> (istream &input, LengthBucket & bucket)
+{
+    //num of groups
+    unsigned size;
+    input >> size;
+    //GroupStringPosition
+    for(unsigned i = 0; i < size; i++) 
+    {
+        GroupStringPosition *groupPosPtr = new GroupStringPosition();
+        input >> (*groupPosPtr);
+        bucket.appendToGroups(groupPosPtr);
+    }
+    return input;		
+}
+
+CountTable::CountTable():MAXCOUNT( 100000 )
+{
+    patternId = -1;
+    stringCount = 0;
+}
+
+CountTable::CountTable(const CountTable & countTable): MAXCOUNT( 100000 )
+{
+    this->patternId = countTable.patternId;
+    this->stringCount = countTable.stringCount;
+}
+
+CountTable::CountTable(const unsigned patternId, 
+                       const unsigned count):  MAXCOUNT( 100000 )
+{
+    this->patternId = patternId;
+    this->stringCount = count;
+}
+
+CountTable::~CountTable()
+{
+}
+
+unsigned CountTable::addCount(unsigned patternId) 
+{
+    //If the patternId is the previous one, just increase the count.
+    if ( this->patternId == patternId )
+    {
+        ++stringCount;
+    }
+	//Otherwise reset the count to 0
+	else 
+	{
+	    this->patternId = patternId;
+	    stringCount =1;
+    }
+    return stringCount;
+}
+
+unsigned CountTable::getCount(unsigned patternId) 
+{
+    //If the patternId is the previous one, just increase the count.
+    if ( this->patternId == patternId )
+    {
+        return stringCount;
+    } 
+    //Otherwise reset the count	to 0
+	else  
+    {
+        this->patternId = patternId;
+        stringCount = 0;
+        return 0;
+    }
+}
+
+void CountTable::resetCount(unsigned patternId)
+{
+    if ( this->patternId == patternId )
+    {
+        stringCount = MAXCOUNT;
+    }
+    else
+    {
+	    this->patternId = patternId;
+	    stringCount = MAXCOUNT;
+    }
+}

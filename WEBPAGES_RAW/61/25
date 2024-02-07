@@ -1,0 +1,269 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="GENERATOR" CONTENT="Globetrotter 1.1.1">
+<META HTTP-EQUIV="AUTHOR" CONTENT="David G. Kay">
+<META HTTP-EQUIV="UPDATED" CONTENT="Monday, December 6, 2004 6:57 AM">
+<TITLE>Vectors of Vectors</TITLE>
+<META HTTP-EQUIV="X-GLOBETROTTERDATA" CONTENT="D06B02B3">
+<META HTTP-EQUIV=KEYWORDS CONTENT="Scheme, two-dimensional arrays, images">
+<META HTTP-EQUIV="DESCRIPTION" CONTENT="Narrative example of creating two-dimensional arrays (vectors of vectors) in Scheme, using a rectangular array of pixels as the problem domain.">
+<META HTTP-EQUIV="COPYRIGHT" CONTENT="Copyright &#169; 2004 by David G. Kay.  All rights reserved.">
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+<FONT FACE="Goudy Old Style">Informatics 41 * Fall 2010 * David G. Kay *
+UC Irvine</FONT>
+<P><b><font size="6" face="Goudy Old Style">Vectors Containing Vectors</font></b></P>
+<P>
+<FONT FACE="Goudy Old Style"><B>Nested data structures:  </B>By now, everyone
+should be comfortable with the idea that an expression in Scheme can be
+any type&mdash;a number, a string, a list, a vector, a function&mdash;and that if
+you can have a list of numbers, you can also have a list of structures,
+a list of lists, a list of vectors, and so on.  Of course, you can also
+do the same with vectors:  You can have a vector of numbers, a vector of
+structures, a vector of lists, and a vector of vectors.</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style"><B>Two-dimensional tables:</B>  A vector of
+vectors forms a two-dimensional table, with rows and columns.  This organization
+models many real-world situations, such as enrollment statistics (a row
+for each major, with columns for the number of freshman, sophomore, junior,
+and senior students in the major), a weekly schedule (a row for each hour-long
+block of time and a column for each day of the week), or a gradebook (a
+row for each student and a column for each assignment).  The score arrays
+we handled in the homework were arranged differently:  We had a vector for
+each assignment, containing all the students&#39; scores on that assignment,
+and then a list of assignment vectors.  But we could have had a vector of
+assignment vectors, which would have been a two-dimensional structure with
+a row for each assignment and a column for each student, just a rotated
+version of the gradebook described above.  Try drawing pictures of these
+if you&#39;re having trouble visualizing them.</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style"><B>Processing nested data structures:  </B>When
+we process a complex structure (a list of structures, a vector of lists),
+we handle it one layer at a time.  With a list of restaurants, we have functions
+that manipulate a single restaurants and other functions that manipulate
+the list.  (If each restaurant contains a menu, a list of dishes, we would
+have a third, lower layer for manipulating the list and possibly a fourth
+for manipulating a single dish.)  We should approach two-dimensional tables
+the same way:  Consider operations on the vector representing a row, and
+then consider operations on the vector of rows.  We&#39;ll see that in the
+example below.  We&#39;ll also see that the two-dimensional structure allows
+us to operate vertically on a single column.</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style"><B>The fixed structure of vectors:</B>  One
+of the characteristics of vectors, including two-dimensional vectors, is
+that their structure exists independently of the data.  We wouldn&#39;t
+normally think of setting up a list of 20 restaurants without having the
+restaurants to fill the list, but with vectors, we might create those 20
+slots and fill them later; the same might go for a two-dimensional table.
+ In fact, we know this is true down at the memory level of the machine:
+ The system allocates space for a vector all at once, contiguously in memory;
+the space is there whether we fill it or not.</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style"><B>An example:</B>  A color is </FONT><FONT FACE="Courier New" SIZE=2>(define-struct
+color (red green blue))</FONT><FONT FACE="Goudy Old Style">, where each
+field is a number from 0 to 255.  We can define the function </FONT><FONT FACE="Courier New" SIZE=2>create-line</FONT><FONT FACE="Goudy Old Style">
+that builds a vector of colors; that vector could represent one line of
+pixels; stacking similar lines on top of each other could create a rectangular image. [Note that in this set of examples, we're producing graphics pixel by pixel. This is at a lower level than the graphics we produced using the Picturing Programs library—that library let us build rectangles and other shapes directly, but underneath, it's doing the kind of thing described here.]  </FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; create-line: number color -&gt; vector-of-color<br>
+</FONT><FONT FACE="Courier New" SIZE=2>;; Return a vector with the specified number
+of elements; each element is a color<br>
+</FONT><FONT FACE="Courier New" SIZE=2>(define create-line<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160; (lambda (width color)<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;   (build-vector width (lambda(i)
+color))))</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style">If we say </FONT><FONT FACE="Courier New" SIZE=2>(define
+my-line (create-line 500 (make-color 0 0 0)))</FONT><FONT FACE="Goudy Old Style">,
+giving us a line of 500 black pixels, we can write a Scheme expression that
+returns the 17th color in </FONT><FONT FACE="Courier New" SIZE=2>my-line</FONT><FONT FACE="Goudy Old Style">:
+ </FONT><FONT FACE="Courier New" SIZE=2>(vector-ref my-line 16)</FONT><FONT FACE="Goudy Old Style">.
+ (Remember that vectors start counting from zero.  We need to keep this
+fact in mind whenever we code with vectors (in Java as well as Scheme);
+a vector whose length is <I>n</I> has elements numbered 0 through <I>n</I>&ndash;1.)
+ We could set the first pixel on the line to white with </FONT><FONT FACE="Courier New" SIZE=2>(vector-set!
+my-line 0 (make-color 255 255 255))</FONT><FONT FACE="Goudy Old Style">.
+ [Exercise:  Write a function to take a line, a number n, and a color, and
+set the first n pixels on the line to the specified color.  <A HREF="Vectors_of_Vectors_files/vectors.html">Solution</A>]</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style">Next, we can define the function </FONT><FONT FACE="Courier New" SIZE=2>create-image</FONT><FONT FACE="Goudy Old Style">
+that builds a vector of lines (as defined above), representing a rectangular
+image.<A NAME="_14_4197"></A></FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; create-image: number number color -&gt;
+vector-of-lines<br>
+</FONT><FONT FACE="Courier New" SIZE=2>;; Return a vector; the first argument is
+its size.  The remaining arguments<br>
+</FONT><FONT FACE="Courier New" SIZE=2>;; are used to create each element of the
+vector (i.e., a line from create-line)<br>
+</FONT><FONT FACE="Courier New" SIZE=2>(define create-image<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160; (lambda (height width color)<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160; (build-vector height
+(lambda (i) (create-line width color)))))</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style">If we say </FONT><FONT FACE="Courier New" SIZE=2>(define
+my-image (create-image 300 500 (make-color 0 0 0)))</FONT><FONT FACE="Goudy Old Style">,
+we get an image that&#39;s 300 pixels tall and 500 pixels wide, all black.
+ The expression </FONT><FONT FACE="Courier New" SIZE=2>(vector-ref my-image
+22)</FONT><FONT FACE="Goudy Old Style"> returns the 23rd line in </FONT><FONT FACE="Courier New" SIZE=2>my-image</FONT><FONT FACE="Goudy Old Style">.</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style">The pixel in the upper left corner of the image
+is </FONT><FONT FACE="Courier New" SIZE=2>(vector-ref (vector-ref my-image
+0) 0)</FONT><FONT FACE="Goudy Old Style">; the inner </FONT><FONT FACE="Courier New" SIZE=2>vector-ref</FONT><FONT FACE="Goudy Old Style">
+gives us the first line, and the outer one takes the first pixel from that
+line.  [Exercise:  Write a function </FONT><FONT FACE="Courier New" SIZE=2>image-ref</FONT><FONT FACE="Goudy Old Style">
+that takes an image and two numbers, representing a row and column, and
+returns the corresponding pixel from an image, so that </FONT><FONT FACE="Courier New" SIZE=2>(image-ref
+my-image 0 0)</FONT><FONT FACE="Goudy Old Style"> would be the upper left
+pixel and </FONT><FONT FACE="Courier New" SIZE=2>(image-ref my-image 0 499)</FONT><FONT FACE="Goudy Old Style">
+would be the pixel in the upper right.  Then, write </FONT><FONT FACE="Courier New" SIZE=2>image-set!</FONT><FONT FACE="Goudy Old Style">
+that takes an image, a row number, a column number, and a color, and sets
+the specified pixel to that color.  <A HREF="Vectors_of_Vectors_files/_image-ref_vector_numbe.html">Solution</A>]</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style">With </FONT><FONT FACE="Courier New" SIZE=2>image-ref</FONT><FONT FACE="Goudy Old Style">
+and </FONT><FONT FACE="Courier New" SIZE=2>image-set!</FONT><FONT FACE="Goudy Old Style">,
+we can manipulate our pixels in many ways.  The point here is less about
+the graphics than it is to illustrate the techniques for processing vectors,
+so try to understand how the code does what it does.</FONT><BR>
+</P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; draw-vertical: image number color -&gt;
+side effect, changing image<br>
+</FONT><FONT FACE="Courier New" SIZE=2>;; Draw a vertical line in the image, along
+the specified column, <br>
+</FONT><FONT FACE="Courier New" SIZE=2>;; using the specified color.<br>
+</FONT><FONT FACE="Courier New" SIZE=2>(define draw-vertical<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160; (lambda (image column color)<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160; (local ((define draw-vertical-aux <br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+&#160;  &#160; (lambda (image row column color)<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+&#160;  &#160;  &#160; (cond<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+&#160;  &#160;  &#160;  &#160; ((&lt; row 0) image)<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+&#160;  &#160;  &#160;  &#160; (else (begin<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (image-set!
+image row column color)<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (draw-vertical-aux
+image (sub1 row) column color)))))))<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160; (draw-vertical-aux
+image (sub1 (vector-length image)) column color))))</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style">Here in </FONT><FONT FACE="Courier New" SIZE=2>draw-vertical</FONT><FONT FACE="Goudy Old Style">,
+we start at the last row, which is </FONT><FONT FACE="Courier New" SIZE=2>(sub1
+(vector-length image))</FONT><FONT FACE="Goudy Old Style">, and count down
+to the first row (row 0).</FONT><BR>
+</P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; draw-horizontal: image number color -&gt;
+side effect, changing image<br>
+</FONT><FONT FACE="Courier New" SIZE=2>;; Draw a horizontal line in the image,
+along the specified row,<br>
+</FONT><FONT FACE="Courier New" SIZE=2>;; using the specified color.<br>
+</FONT><FONT FACE="Courier New" SIZE=2>(define draw-horizontal<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160; (lambda (image row color)<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160; (local ((define draw-horizontal-aux<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+&#160;  &#160; (lambda (image row column color)<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+&#160;  &#160;  &#160; (cond<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;  &#160;  &#160;  &#160;  &#160;
+&#160;  &#160;  &#160;  &#160; ((&lt; column 0) image)<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+&#160;  &#160;  &#160;  &#160; (else (begin<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (image-set!
+image row column color)<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+&#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (draw-horizontal-aux <br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+image row (sub1 column) color)))))))<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160; (draw-horizontal-aux <br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160; image <br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160; row <br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160; (sub1
+(vector-length (vector-ref image 0))) ; length of first row<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160; color))))</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style">In </FONT><FONT FACE="Courier New" SIZE=2>draw-horizontal</FONT><FONT FACE="Goudy Old Style">,
+we follow the same approach, starting at the right edge (which we find by
+taking the length of one of the rows in </FONT><FONT FACE="Courier New" SIZE=2>(sub1
+(vector-length (vector-ref image 0)))</FONT><FONT FACE="Goudy Old Style">)
+and counting down to the first column (column 0).</FONT><BR>
+</P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; draw-diagonal: image color -&gt; side
+effect, changing image<br>
+</FONT><FONT FACE="Courier New" SIZE=2>;; Draw a diagonal line starting in the
+upper left corner of the image,<br>
+</FONT><FONT FACE="Courier New" SIZE=2>;; using the specified color.<br>
+</FONT><FONT FACE="Courier New" SIZE=2>(define draw-diagonal<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160; (lambda (image color)<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160; (local ((define limit <br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160; (sub1 (min (vector-length image)                   ; number
+of rows<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  (vector-length
+(vector-ref image 0))))) ; num of columns<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+&#160; (define draw-diagonal-aux<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+&#160;  &#160; (lambda (image color current-row-col)<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160; (cond                           ; The drawing actually
+ENDS at<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160; ((&lt; current-row-col 0) image) ; the upper
+left corner.<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+&#160;  &#160;  &#160;  &#160; (else (begin<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (image-set!
+image current-row-col current-row-col color)<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+&#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (draw-diagonal-aux <br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+image color (sub1 current-row-col))))))))<br>
+</FONT><FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160; (draw-diagonal-aux
+image color limit))))</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style">In </FONT><FONT FACE="Courier New" SIZE=2>draw-diagonal</FONT><FONT FACE="Goudy Old Style">,
+we also count backwards from the end of the diagonal to the upper left corner
+(row 0, column 0).  Because our image may not be square, we have to find
+the endpoint by finding the lesser of the number of rows and the number
+of columns.  Then we use the same subscript (</FONT><FONT FACE="Courier New" SIZE=2>current-row-col</FONT><FONT FACE="Goudy Old Style">)
+for both the row and column number, giving us the diagonal.</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style">You can contemplate a wide range of enhancements
+here:  Draw lines wider than one pixel; draw lines that start or end at
+a specified row or column; draw a border around the edge of the image; instead
+of passing a color, pass a function that takes the original color and changes
+it somehow; draw rectangles, triangles, or circles.</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style">We can manipulate images like this using the</FONT><FONT FACE="Courier New" SIZE=2>image.ss</FONT><FONT FACE="Goudy Old Style"> or the </FONT><FONT FACE="Courier New" SIZE=2>picturingprograms.rkt</FONT><FONT FACE="Goudy Old Style"> </FONT><FONT FACE="Goudy Old Style">teachpack; refer  to the  documentation for more details.  That package gives us access
+to pixels stored in lists, however, not in vectors.  [Exercise:  Write the
+function </FONT><FONT FACE="Courier New" SIZE=2>color-list-&gt;image-vector</FONT><FONT FACE="Goudy Old Style">
+that takes a list of colors, a number of rows, and a number of columns,
+and converts the list into one of our two-dimensional image vectors.  Then
+write </FONT><FONT FACE="Courier New" SIZE=2>image-vector-&gt;color-list</FONT><FONT FACE="Goudy Old Style">
+that goes the other way.  <A HREF="Vectors_of_Vectors_files/_color-list-_image-vecto.html">Solution</A>]</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style">All the code in this example is available in
+one file, </FONT><FONT FACE="Courier New" SIZE=2><A HREF="http://www.ics.uci.edu/~kay/scheme/imagevectors.scm">http://www.ics.uci.edu/~kay/scheme/imagevectors.scm</A></FONT><FONT FACE="Goudy Old Style">
+.</FONT><BR CLEAR=ALL>
+</P>
+<HR>
+<address>
+<FONT FACE="Palatino"><A HREF="http://www.ics.uci.edu/~kay/">David G. Kay</A>,</FONT><a href=mailto:kay@uci.edu><font face="Goudy Old Style"> </font>kay@uci.edu</A>
+</address>
+<P>
+<FONT FACE="Palatino" SIZE=1>Monday, December 6, 2004 -- 6:57 AM</FONT></P>
+</BODY>
+</HTML>

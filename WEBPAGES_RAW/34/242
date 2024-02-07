@@ -1,0 +1,356 @@
+<HTML>
+<HEAD>
+  <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1252">
+  <META NAME="Generator" CONTENT="Microsoft Word 97">
+  <META NAME="Template" CONTENT="C:\PROGRAM FILES\MICROSOFT OFFICE\OFFICE\html.dot">
+  <TITLE>Life in a TP... [Seventh Heaven #1]</TITLE>
+</HEAD>
+<BODY LINK="#0000ff" VLINK="#800080" BGCOLOR="#ffffff">
+<H1>
+  Life in a TP...
+</H1>
+<P>
+In the finest tradition of software project management, the Payroll team
+is focusing on processing the Employee database records against the latest
+tax regulations and the Accounting team reads in those reports to issue payments
+to banks' direct-deposit networks. Interconnecting the two is a separate
+integration step: but how?
+<P>
+They could just communicate by processing batch files, like the previous
+release -- that ran on a single mainframe. Today, they could use a distributed
+file system, email the check records, pull them off of a Web server, or write
+yet another custom message transfer protocol. In each case, there are different
+tradeoffs between latency, reliability, security, and a hundred other details.
+That is why a thousand Internet-scale messaging systems have bloomed: Telnet
+for duplex bytestreams, File Transfer Protocol (FTP) for pulling files, Simple
+Mail Transfer Protocol (SMTP) for reliable email messages, Network News Transfer
+Protocol (NNTP) for pushing email, HyperText Transfer Protocol (HTTP) for
+pulling Web pages, and a host of other tolls in the same vein, from Finger
+to Network File System (NFS).
+<P>
+<I>Seventh Heaven</I> is column about those choices. Application-layer protocols,
+the seventh layer of the OSI stack, proliferate in myriad forms every time
+a developer wires together software components across the Internet. The
+Applications Area at the Internet Engineering Task Force (IETF) is growing
+rapidly under the strain of divergent efforts, in stark contrast to the relative
+stability of TCP/IP. Bookstore shelves groan under the load of books cataloging
+each different species of transfer protocols (TPs) separately; this column
+will develop a common framework to navigate among them.
+<P>
+Each month, we will focus on setting one of these TPs in context. They have
+evolved to adapt to the vagaries of network topology, performance, economics,
+and standards-body politics. Understanding their history is key to charting
+their future as new contenders like HTTP-NG (Next Generation) take form.
+Our maiden voyage, though, sets forth our ontology in general -- our vocabulary
+for describing and classifying TPs.
+<H4>
+  What's in a TP?
+</H4>
+<P>
+Just as lower levels of the network stack discuss transport protocols like
+TCP and TP4, application-layer designers work with message transfer protocols.
+There are three major components of any such TP: <I>addresses</I> to identify
+participating nodes; <I>distribution</I> rules controlling transfers; and
+the <I>messages</I> themselves. Admittedly, this framework is not explicitly
+in the design rationale of any TPs to date -- the RFCs emphasize <I>how</I>
+they work almost to the exclusion of <I>why</I> -- but I hope it proves a
+useful synthesis on our tour.
+<CENTER>
+  <TABLE CELLSPACING="5" CELLPADDING="0" ALIGN="Center">
+    <CAPTION ALIGN=Bottom>
+      Three key aspects of the Transfer Protocols (TPs) <I>Seventh Heaven</I> will
+      cover in&nbsp;1998
+    </CAPTION>
+    <TR>
+      <TH COLSPAN=2 VALIGN="TOP"><B>Transfer Protocol</B></TH>
+      <TD></TD>
+      <TH COLSPAN=2 VALIGN="TOP">Addressing</TH>
+      <TD></TD>
+      <TH COLSPAN=3 VALIGN="TOP">Distribution</TH>
+      <TD></TD>
+      <TH VALIGN="TOP">Content</TH>
+    </TR>
+    <TR>
+      <TD COLSPAN=2 VALIGN="TOP">
+	  <HR>
+      </TD>
+      <TD></TD>
+      <TD COLSPAN=2 VALIGN="TOP">
+	  <HR>
+      </TD>
+      <TD></TD>
+      <TD COLSPAN=3 VALIGN="TOP">
+	  <HR>
+      </TD>
+      <TD></TD>
+      <TD VALIGN="TOP">
+	  <HR>
+      </TD>
+    </TR>
+    <TR>
+      <TD VALIGN="TOP">Terminal</TD>
+      <TD VALIGN="TOP">Telnet</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	Host</TD>
+      <TD><P ALIGN="CENTER">
+	Port</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	1-1</TD>
+      <TD><P ALIGN="CENTER">
+	Sync</TD>
+      <TD><P ALIGN="CENTER">
+	Both</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	Bytestream w/interrupts</TD>
+    </TR>
+    <TR>
+      <TD VALIGN="TOP">Filesystem</TD>
+      <TD VALIGN="TOP">FTP</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	Host</TD>
+      <TD><P ALIGN="CENTER">
+	Path</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	1-1</TD>
+      <TD><P ALIGN="CENTER">
+	Sync</TD>
+      <TD><P ALIGN="CENTER">
+	Both</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	Text / Binary Files</TD>
+    </TR>
+    <TR>
+      <TD VALIGN="TOP">E-mail</TD>
+      <TD VALIGN="TOP">SMTP</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	Mailbox</TD>
+      <TD><P ALIGN="CENTER">
+	Msgid</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	1-N</TD>
+      <TD><P ALIGN="CENTER">
+	Async</TD>
+      <TD><P ALIGN="CENTER">
+	Push</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	822 + MIME</TD>
+    </TR>
+    <TR>
+      <TD VALIGN="TOP">Usenet</TD>
+      <TD VALIGN="TOP">NNTP</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	Newsgroup</TD>
+      <TD><P ALIGN="CENTER">
+	Msgid</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	N-N</TD>
+      <TD><P ALIGN="CENTER">
+	Async</TD>
+      <TD><P ALIGN="CENTER">
+	Push</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	822 + MIME</TD>
+    </TR>
+    <TR>
+      <TD VALIGN="TOP">Web</TD>
+      <TD VALIGN="TOP">HTTP</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	Host</TD>
+      <TD><P ALIGN="CENTER">
+	URL Path</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	1-N</TD>
+      <TD><P ALIGN="CENTER">
+	Sync</TD>
+      <TD><P ALIGN="CENTER">
+	Pull</TD>
+      <TD></TD>
+      <TD VALIGN="TOP"><P ALIGN="CENTER">
+	822 + MIME + HTTP caching</TD>
+    </TR>
+  </TABLE>
+</CENTER>
+<P>
+Several ilities of TPs, such as reliability, latency, and maintainability
+can be explained as consequences of variation along these three axes. Email,
+for example, has reliable handoffs at each step, but does not establish a
+direct mailbox-to-mailbox connection, so actual delivery can take a while,
+usually without delivery notification. Furthermore, each handoff is traceable
+through <TT>Received:</TT> headers for debugging. HTTP, in contrast, is a
+synchronous request-reply protocol which requires direct, online connections.
+Transport-layer security can be directly composed with HTTP to encrypt the
+end-to-end connection; email's hop-by-hop transfers cannot.
+<H4>
+  Names &amp; Addresses
+</H4>
+<P>
+The first things a TP must define are its <I>addresses</I> for the nodes
+it transfer messages between, and the <I>names</I> for the entities it transfers.
+For many TPs, the endpoints are network interfaces on the connected Internet,
+so they use domain names or IP addresses directly. Sometimes, the endpoints
+are logical concepts, like individual users' mailboxes or globally-distributed
+newsgroups. &nbsp;The entities they purport to transfer have to be represented
+as messages, so their names identify the message at hand. Names are more
+intimately tied to the semantics of the service: Telnet provides a Network
+Virtual Terminal (NVT) to some port on a host; FTP and HTTP servers can be
+queried for the value of particular pathnames; and SMTP and NNTP refer to
+messages by their globally-unique RFC-822 <TT>msgid</TT>s.
+<P>
+Sometimes there are additional relations between these two. An &nbsp;HTTP
+caching proxy uses names that include the original host address (e.g.
+<TT>http://cache/http://.../...</TT>). Similarly, an FTP mirror site maintains
+a copy of the same file at a different host, possibly with a derived name
+(e.g. a prefix like <TT>/mirrors/sumex-aim/...</TT>). However, after fetching
+a file, its name is the local filesystem pathname; FTP does not use metadata
+to bind it to its "original" name.
+<H4>
+  Push &amp; Pull
+</H4>
+<P>
+Traditionally, various TPs' distribution rules are seen as their most salient
+classification. There are two levels of such description, though. At the
+mechanical level, they are all built atop TCP, so it is natural for clients
+to initiate the process. However, we can speak of a more abstract intent
+in deployed applications: for senders to push data at their will, or for
+receivers to pull data at theirs. traditional Web clients can only fetch
+data from servers; but FTP service usually allows up- and down-loading, so
+the net effect can be push <I>or</I> pull (although FTP service built-in
+to those Web browsers cannot upload!).
+<P>
+Another significant point about the distribution rules are their topologies.
+Again, while TCP/IP is a point-to-point service, the net effect of message
+delivery can vary. Telnet is a strictly one-on-one service; but email, with
+its intermediate relays and multiply-'name'd envelopes, can provide broadcast
+messaging. Similarly, though HTTP connections are one-on-one, the net effect
+of publishing a URL is also to broadcast the data. Multicasting experiments,
+such as Newscaster and Self-Organizing Multicast Transfer Protocol [1] are
+changing these rules.
+<P>
+Finally, the choice of synchronicity determines whether and how TP services
+can be proxied by other parties. As opposed to simple tunneling, proxy service
+implies reprocessing of a message by an intermediate node. Synchronous
+conversations like HTTP can only be chained, while asynchronous handoffs
+can form an asymmetric loop, as in email routing. Synchronous one-to-many
+broadcasting can also cause 'ACK implosions', which explains why real-time
+broadcasting is designed to accommodate loss rather than process acknowledgments.
+<H4>
+  Meatdata &amp; Metadata
+</H4>
+<P>
+Messages are where the rubber meets the road in TP design. First, most TPs
+are designed with a particular type of content in mind, and optimized to
+that end. Second, the elemental Protocol Data Units (PDUs) in these systems
+are messages that combine an envelope, the command and metadata about the
+entity, and a concrete representation of the entity itself.
+<P>
+Message content affects the choice of transport in TPs: login emulation with
+Telnet requires the URGent delivery flag in TCP segments; delivery of open-ended
+streaming data motivates a separate TCP connection for each HTTP/1.x operation;
+and time-critical multimedia content may use UDP datagrams directly.
+<P>
+The bytes on the wire of a message usually combine the commands of the
+distribution algorithm and the contents (FTP, though, separates its control
+and data channels). Messages combine the 'meatdata', some snapshot of the
+resource itself, and metadata. Typically, the source and destination addresses
+and transaction logs describe the command; content-type, content-name, and
+content-lifetime information (for caching) describe the entity. Traditional
+Remote Procedure Call (RPC) and distributed-object protocols also exchange
+lightweight messages, but such caching and reflection support has been unknown
+to date. Furthermore, advanced TPs also leverage interactions between such
+metadata and the distribution commands, as with HTTP's content-negotiation
+and cache-validation GETs.
+<H4>
+  Ascending to Seventh Heaven
+</H4>
+<P>
+Application layer developers, like our friends from Personnel, have a new
+pivot point for deciding how to transfer messages between their software
+modules. What classically was a single-necked hourglass of Internet development
+-- common interoperability of IP packets -- is becoming a double-necked hourglass
+with application-layer consensus around URIs for naming and addressing and
+MIME-like messages for envelopes and data[2].<P>
+<CENTER>
+  <TABLE BORDER CELLPADDING="2" ALIGN="Center">
+    <CAPTION ALIGN=Bottom>
+      The double-necked hourglass
+    </CAPTION>
+    <TR>
+      <TD>Business cards</TD>
+      <TD>Price lists</TD>
+      <TD>Bill payments</TD>
+      <TD>Photographs</TD>
+      <TD>...</TD>
+    </TR>
+    <TR>
+      <TD COLSPAN=5><P ALIGN=Center>
+	<I>URIs + MIME-like message 'tagging &amp; bagging'</I></TD>
+    </TR>
+    <TR>
+      <TD>HTTP</TD>
+      <TD>FTP</TD>
+      <TD>SMTP</TD>
+      <TD>NNTP</TD>
+      <TD>...</TD>
+    </TR>
+    <TR>
+      <TD COLSPAN=5><P ALIGN=Center>
+	<I>TCP/IP channels</I></TD>
+    </TR>
+    <TR>
+      <TD>Ethernet</TD>
+      <TD>Token-Ring</TD>
+      <TD>SONET</TD>
+      <TD>LEO Satellites</TD>
+      <TD>...</TD>
+    </TR>
+  </TABLE>
+</CENTER>
+<P>
+Of course, where Sir Issac&nbsp;Newton claimed "If I have seen further, it
+is by standing upon the shoulders of Giants," Digital researcher Brian Ried
+quipped, "In Computer Science, we stand on each other's feet" -- what have
+we learned from the evolution of TPs over the last fifteen years? Consider
+FoRK, the mailing list of an electronic community of <I>Friends of Rohit
+Khare</I>: each message is available as email, in a local newsgroup, as an
+archived web page (both at my own site and at Findmail.com, with different
+URL paths), and as FTP'able mailbox files. Why should the same resource --
+words in an ongoing conversation -- have to adopt a half-dozen different
+names and addresses to reach different people? Why isn't there a stable
+identifier and storage format which might bridge them all, to become more
+future-proof? To say nothing of integrating references to a realtime video
+chat room...
+<P>
+In Jewish mysticism, the first level of heaven is the sky and clouds, then
+the planets, and on through the stars, up to the ultimate nature of the Divine
+[3]. <I>Seventh Heaven</I> is also aimed at understanding the truth of the
+seventh layer: if you have any secret seals bearing the true name of God,
+or just comments on this taxonomy, please feel free to contact me! 
+  <HR>
+Rohit Khare [4] is a graduate student at the University of California at
+Irvine and a principal of 4K Consulting.
+<P>
+  <HR>
+<P>
+[1] A rough proposal of Newscaster circa October 1995 is at
+http://user.cs.tu-berlin.de/~nilss/som/newscast.htm
+<P>
+[2] MIME instigator Einar Stefferud popularized this metaphor
+<P>
+[3] http://www.acs.ucalgary.ca/~elsegal/Shokel/891103_7th_Heaven.html 
+<P>
+[4] http://www.ics.uci.edu/~rohit
+</BODY></HTML>

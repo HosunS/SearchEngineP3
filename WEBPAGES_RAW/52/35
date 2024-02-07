@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>33. Design Decisions</title>
+<META NAME="description" CONTENT="33. Design Decisions">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node273.html">
+<LINK REL="previous" HREF="node252.html">
+<LINK REL="up" HREF="cplusprog.html">
+<LINK REL="next" HREF="node270.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node268.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="cplusprog.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node270.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node268.html">32.11 Parameter Aliases/Shortcuts</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="cplusprog.html">OEChem - C++ Theory</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node270.html">33.1 Atoms, Bond, Conformers,</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION0036000000000000000000">
+33. Design Decisions</A>
+</H1>
+
+<P>
+This chapter builds upon important concepts introduced in the previous
+section entitled <i>Getting Started with OEChem Molecule</i> found in the
+introductory chapter as well as the chapters entitled <i>OEMols and
+OEGraphMols</i> and <i>OEQMols and Queries in OEChem</i>.  It may be beneficial to review those section before
+proceeding.
+
+<P>
+As you have seen throughout this manual, the OEMol, OEGraphMol and OEQMol
+are the
+concrete classes which handle most molecular function in OEChem.  The
+OEGraphMol's API is defined in the OEMolBase abstract base-class, the
+OEMol's API is defined by the OEMolBase and OEMCMolBaseT abstract base-classes,
+and the OEQMol's API is defined by the OEMolBase and OEQMolBase abstract base-
+classes.  The
+OEMCMolBaseT class publicly inherits from the OEMolBase class, which in
+turn inherits from the OEBase class.  Similarly, the OEQMolBase class publicly
+inherits from the OEMolBase class, which again inherits from the OEBase class.
+An OEGraphMol,  can be passed to any
+function which takes an OEMolBase argument.  An OEMol can be passed to any
+function which takes an OEMCMolBaseT or OEMolBase argument, and an OEQMol can
+be passed to any function which takes an OEQMolBase or OEMolBase argument.
+
+<P>
+<dl><dd><pre class="verbatim">Simplistic OEChem inheritance scheme:
+                OEBase
+                  |
+                  |
+             -- OEMolBase ---------------- OEGraphMol
+             |    |
+             |    |
+             |  OEMCMolBaseT ------------- OEMol
+          OEQMolBase --------------------- OEQMol
+&lt;- indicates inheritance
+-- indicates API correspondence without inheritance
+</pre></dl>
+
+<P>
+This paragraph requires some previous knowledge of the C++ factory and
+smart-pointer idioms.  It is standard practice when working with abstract
+base-classes, such as OEMolBase or OEMCMolBaseT, to define a function which
+returns a pointer one of these objects.  These functions, called factories,
+give library users access to concrete objects even when only the abstract
+base-class is exposed in the public API.  The problem with factory
+functions is that they require the user to manage the object's memory.
+When the factory function returns a pointer to an abstract base-class, it
+also passes ownership of the memory to the programmer.  To alleviate the
+problems associated with memory management introduced by factories, the C++
+smart-pointer idiom is often used.  Simply put, a smart-pointer holds a
+real pointer to an object, and deallocates the pointer's memory when the
+smart-pointer goes out of scope (<I>e.g.</I> in it's destructor).  In OEChem,
+OEGraphMols and OEMols fulfill the function of both factories and
+smart-pointers.  This gives the user access to multiple OEMolBase and
+OEMCMolBase implementations without the need of worrying about memory
+management.  The OEGraphMol and OEMol constructors allow the user to specify
+which OEMolBase or OEMCMolBaseT implementation they would like (<I>i.e.</I> -
+factory function), and the OEGraphMol and OEMol objects themselves act as
+smart-pointers, cleaning up the implementation pointers when the molecules
+go out of scope.  The relationship between the OEQMolBase class and the
+OEQMol class is similar.
+
+<P>
+
+<p><hr>
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></a>
+
+<UL CLASS="ChildLinks">
+<LI><A href="node270.html">33.1 Atoms, Bond, Conformers, and Molecules</a>
+<LI><A href="node271.html">33.2 Objects and Free-Functions</a>
+<LI><A href="node272.html">33.3 Programming Layers:  The Deep and Twisted Path</a>
+</ul>
+<!--End of Table of Child-Links-->
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node268.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="cplusprog.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node270.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node268.html">32.11 Parameter Aliases/Shortcuts</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="cplusprog.html">OEChem - C++ Theory</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node270.html">33.1 Atoms, Bond, Conformers,</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

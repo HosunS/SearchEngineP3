@@ -1,0 +1,234 @@
+
+import java.util.*;
+import awt.*;
+import browser.*;
+import browser.audio.*;
+
+
+class SwitchButton extends Applet implements Runnable
+{
+   /*  The images displayed by the applet. The normal image is displayed when
+    *  the button is in its normal state - before the user has done anything
+    *  to it. The pressed image is displayed when the user has clicked the
+    *  mouse on the button. The anim_ images are displayed when the user has
+    *  activated the button and before the button's action is performed.
+    */
+   private Image normal_;
+   private Image pressed_;
+   private Image active_;
+   private Image done_;
+   private Image[] anim_;
+   private int max_w_, max_h_;
+   
+   private Image current_;
+   
+   /*  A sound can optionally be played along with the animation
+    *
+    *  THIS IS NOT YET IMPLEMENTED
+    */
+   private AudioData sound_;
+   
+   /*  The animation thread
+    */
+   private Thread thread_;
+   private int delay_;
+   private static int DEFAULT_DELAY = 200;
+   
+   /*  Flags recording the state of user interaction
+    */
+   private boolean button_active_;
+   private boolean button_pressed_;
+   
+   
+   //--------------------------------------------------------------------------
+   
+   
+   /*  Override the getImage method to also record the maximum height and 
+    *  width of images used by this applet
+    */
+   public Image getImage( String img_str )
+   {
+      Image img = super.getImage(img_str);
+      if( img != null )
+      {
+         max_w_ = ( img.width > max_w_ ? img.width : max_w_ );
+         max_h_ = ( img.height > max_h_ ? img.height : max_h_ );
+      }
+      return img;
+   }
+   
+   /*  Parse the FRAMES attribute and load the Images for the animation frames
+    *  into the anim_ array.
+    */
+   private void getFrames( String str )
+   {
+      int start = 0;
+      int end = 0;
+      StringTokenizer tokenizer = new StringTokenizer( str, "|" );
+      Vector vec = new Vector();
+      String base = getAttribute( "FRAMEBASE" );
+      
+      while( tokenizer.hasMoreTokens() )
+      {
+         String frame = tokenizer.nextToken();
+         if( base != null ) frame = base + frame;
+         
+         Image im = getImage( frame );
+         if( im != null )
+         {
+            vec.addElement( im );
+         }
+      }
+      vec.trimToSize();
+      
+      anim_ = new Image[vec.size()];
+      vec.copyInto(anim_);
+   }
+   
+   
+   /*  Override this in subclasses to do something useful when the button is
+    *  pressed.
+    */
+   protected void action()
+   {
+      current_ = ( button_active_ ? active_ : normal_ );
+      current_ = done_;
+      repaint();
+   }
+   
+   public void init()
+   {
+      String attr;		// String used for getting attributes
+      int frames;		// Number of animation frames
+      
+      /*  Initialise members
+       */
+      max_w_ = 0; max_h_ = 0;
+      normal_ = null; pressed_ = null; active_ = null; done_ = null;
+      anim_ = null; 
+      current_ = null;
+      sound_ = null;
+      thread_ = null;
+      delay_ = DEFAULT_DELAY;
+      button_active_ = false;
+      button_pressed_ = false;
+      
+      /*  Get attributes
+       */
+      attr = getAttribute( "NORMAL" );
+      if( attr != null ) normal_ = getImage(attr);
+      
+      attr = getAttribute( "PRESSED" );
+      if( attr != null ) pressed_ = getImage(attr);
+      if( pressed_ == null ) pressed_ = normal_;
+      
+      attr = getAttribute( "ACTIVE" );
+      if( attr != null ) active_ = getImage(attr);
+      if( active_ == null ) active_ = normal_;
+     
+      attr = getAttribute( "DONE" );
+      if( attr != null ) done_ = getImage(attr);
+      if( done_ == null ) done_ = normal_;
+ 
+      attr = getAttribute( "FRAMES" );
+      if( attr != null ) getFrames( attr );
+      
+      attr = getAttribute( "DELAY" );
+      if( attr != null ) try
+      {
+         delay_ = Integer.parseInt(attr);
+      }
+      catch( NumberFormatException e )
+      {
+         delay_ = DEFAULT_DELAY;
+      }
+      
+      /*  Set the initial image and display-size
+       */
+      current_ = normal_;
+      resize( max_w_, max_h_ );
+   }
+   
+   public void start()
+   {
+      current_ = normal_;
+      repaint();
+   }
+   
+   public void stop()
+   {
+      thread_ = null;	// Kill the thread
+      button_pressed_ = false;
+      button_active_ = false;
+   }
+   
+   public void destroy()
+   {
+   }
+   
+   public void paint( Graphics g )
+   {
+      if( current_ != null ) g.drawImage( current_, 0, 0 );
+   }
+   
+   
+   
+   /*  Play the animation and then do some action. The action is defined by the
+    *  subclass (or resets the button by default).
+    */
+   public void run()
+   {
+      for( int i = 0; i < anim_.length; i++ )
+      {
+         current_ = anim_[i];
+         repaint();
+         Thread.sleep( delay_ );
+      }
+      action();
+      thread_ = null;	// Kill the current thread
+   }
+   
+   
+   /*  Handle user interaction
+    */
+   public void mouseEnter()
+   {
+      button_active_ = true;
+      if( thread_ == null )
+      {
+         button_active_ = true;
+         current_ = ( button_pressed_ ? pressed_ : active_ );
+      }
+   }
+   public void mouseExit()
+   {
+      button_active_ = false;
+      button_pressed_ = false;		// because of wierd mouse handling
+      if( thread_ == null )
+      {
+         current_ = normal_;
+      }
+   }
+   public void mouseDown( int x, int y )
+   {
+      if( thread_ == null )
+      {
+         button_pressed_ = true;
+         current_ = pressed_;
+      }
+   }
+   public void mouseUp( int x, int y )
+   {
+      if( thread_ == null )
+      {
+         if( button_pressed_ && button_active_ ) 
+         {
+            thread_ = new Thread(this);
+            thread_.start();
+         }
+         button_pressed_ = false;
+      }
+      showStatus( "" );
+   }
+}
+

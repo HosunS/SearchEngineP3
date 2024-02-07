@@ -1,0 +1,507 @@
+		Fundamentals of Memory and Memory Management
+
+
+Memory Hierarchies: Speed/Size/Cost Tradeoffs
+
+To start, we will discuss hierarchies in memory, including tradeoffs between
+their speeds, sizes, and costs. First, we will discuss the following prefixes
+for sizes/speeds, which every computer scientist should be familiar with.
+
+    kilo  x 10^3	      milli  x 10^-3
+    mega  x 10^6	      micro  x 10^-6
+    giga  x 10^9	      nano   x 10^-9
+    tera  x 10^12	      pico   x 10^-12
+    peta  x 10^15	      femto  x 10^-15
+    exa   x 10^18	      atto   x 10^-18
+
+So, 1 gigabyte is 10^9 bytes. The following might become relevant for your life
+
+    zetta x 10^21	      zepto  x 10^-21
+    yotta x 10^24	      yoxto  x 10^-24
+
+There are three standard locations for memory: on the CPU chip (also known as
+cache memory), in special memory chips (main memory), and external memory (disk
+drives, DVDs, USB, etc.). Each is slower than the previous, but its size is
+bigger and its cost/byte is lower. CPU chips act as a cache for main memory;
+and main memory often acts as a cache for external memory (some external memory
+devices, like disk drives, also have their own dedicated caches).
+
+A book by Van Loan/Fan (Insight Through Computing) made some of these numbers
+concrete.
+
+  1 megabyte: A 500 page novel; 1 minute of MP3 music
+  1 gigabyte: The human genome; 20 minute of a DVD
+  1 terabyte: A University library; photos of all US Airline passengers (1 day)
+  1 petabyte: The amount of text in the Library of Congress; he says that
+              printing it would take 50x10^6 trees
+
+------------------------------------------------------------------------------
+
+External Memory/Disk Drives:
+
+Note that disk drives/DVDs are modeled by a spinning platter that has
+concentric circles that each store data; there is a "read head" that can move
+between concentric circles. To read a specific word of data, the read head seeks
+the correct circle and waits for the data to rotate into the correct position
+under it. A typical rotation speed is 7,200 rpm. This is roughly 100
+revolutions/second, meaning that it takes about 10 milliseconds to complete one
+full rotation; this is called the "rotational delay". The read head takes about
+the same amount of time to move into position over the correct circle (called
+"seek time"). Note that a processor executing 1 billion operations per second
+can execute 10 million instructions in 10 milliseconds, while the read head
+seeks and the platter rotates to the needed position, so it can do a lot of
+work between setting up for the read and actually receiving the data..
+
+We will look at algorithms that measure their efficiency not by the number of
+instructions executed, but by the number of times they must seek data on an
+external memory device, because the time waiting for data will dominate the
+time spent in the number of instructions executed.
+
+We often talk about the terms "latency" and  "bandwidth" when discussing
+memory access (and transmitting information over networks as well). Latency is
+the time it takes from a request for data until the first information arrives.
+Bandwidth is the throughput (data rate) starting when the first data begins to
+arrive. The latency for a disk drive/DVD can be large (see the 10 millisecond
+numbers above), because it involves moving something physical: the read head
+and the platter; but once the read head/platter are in the right position, with
+the right data is under it, the quickly spinning platter (storing data densely)
+can transfer all the data on the circle very quickly. Historically, data
+transfer rates on standard hard drives are ~70 megabytes per second.
+
+Because external memory typically has high latency (a long time, measured in
+machine instructions that can execute before the first piece of data arrives)
+and high bandwidth (after that, lots of data can be delivered quickly), we
+typically use every memory request to transfer a BLOCK of memory, not a single
+word of memory. The expectation is that the subsequent information will be
+needed soon (certainly the case when reading a sequential file).
+
+So, when reading information from a file stored on a disk drive, instead of
+just reading one character at a time, many characters (tens of thousands to
+millions) are read and cached in main memory (or the disk drive's dedicated
+cache; these caches can transfer data to memory at the rate of 3 gigabytes per
+second -much faster than information can be read as the disk rotates).
+
+So, for many subsequent character reads, the information is retrieved directly
+from memory and the computer doesn't have to perform any more disk operations.
+Such a cache has a special name, a "buffer". When the buffer is exhausted (all
+characters read from it), the next character read initiates another block
+transfer. As we saw, it might take 10 millisecond to move the read head and
+wait for the data to rotate on the platter under the read head, but it will
+take little time to read tens of thousands to millions more characters. Another
+way to look at this: to get one character takes 10 milliseconds, but to get
+100,000 characters requires only 10 + 1 = 11 milliseconds (at 100 megabytes/sec:
+a round number that is a bit more,than the 70 quoted above as the transfer
+rate). So, the amortized cost of reading one of the 100,000 characters is
+11/100,000 milliseconds/character or about .11 microseconds/character (an
+overall rate of almost 10 million characters/second). If we read 1,000,000
+characters into the buffer, the rate would be 20/1,000,000 or about
+.02 microseconds/character, an overall rate of 50 million characters/second).
+
+This analysis is a bit like what we did for putting N values in an ArrayQueue,
+which doubles its size. Some adds are very quick, but a few require much more
+time, when the array size doubles. But if you take a look at lots of adds, the
+average cost is very cheap. Likewise, when reading blocks of characters, reading
+every new block takes lots of time, but most characters will then be in the
+memory buffer for quick reading.
+
+Here are some current sizes and relative speeds for CPU Chip, main, and
+external memory (these are very approximate).
+
+  CPU Chip ~1-10 Mb  10-100 times faster than main memory
+  Main     ~1-10 Gb  100K - 1M times faster than external memory (latency)
+  External ~1- ? Tb 
+
+As a rule of thumb, each step up increases the size by a factor of 1,000 and
+decreases the speed and cost/byte by a similar factor.
+
+When we have analyzed algorithms earlier in this course, we have assumed that
+all data is in main memory. In fact, often most of the data is on the CPU chip
+memory, and its performance is often an important practical consideration for
+determining the time an algorithm will take. With effective caching, often 9 of
+10 memory access will occur in the CPU Chip memory, not the main memory. This
+can speed up the execution by a factor of 10-100. We will briefly discuss the
+interplay between CPU chip and main memory below, using CPU chip memory to cache
+information from main memory.
+
+------------------------------------------------------------------------------
+
+Data Access patterns and the CPU Cache:
+
+Access patterns for data often exhibits two kinds of locality.
+
+ Temporal locality: if data is being accessed now, it is likely to be accessed
+          soon in the future; for example, a loop index (or more generally, a
+          cursor) is accessed frequently during the execution of a loop (its
+          value is initialized, checked, and updated in each loop iteration).
+
+ Spatial  locality: if data is being accessed now, data near it is likely to be
+          accessed soon in the future; for example, if we are accessing an
+          ARRAY at position i, it is likely we will access it at position i+1
+          in the near future (when scanning an array, not doing a binary search
+          in an array). This effect is similar, but not quite as pronounced in
+          linked lists/trees whose nodes were allocated at a similar time (and
+          therefore initially in memory locations that are close by).
+
+Scanning all the values in an array, using an index variable, exhibits both
+temporal (the index variables) and spatial (the array elements) locality. If
+we can rewrite our program (or write it in machine code) so that it can 
+completely fit in CPU chip memory, it can run much faster than a slightly
+bigger amount of code that cannot fit in CPU chip memory.
+
+The following algorithm is implemented in hardware. It is used whenever the
+CPU needs to access data. Here we use the term cache for the CPU Chip memory.
+The cache starts out empty.
+
+ 1) If the data is already in the cache, use it
+
+ 2) If the data is not already in the cache
+      a) Retrieve it (and other data near it: some block of memory)
+         As with external memory, there is high latency to get the data, but
+         there is high bandwidth to transfer a block of data from main memory
+         to the cache, so it accesses/transfers blocks of data
+      b) If the cache is not full, add the new block of data to it
+      c) If the cache is full, determine which block of data to remove and
+           add the new block of data to replace it
+
+In the future, all memory addresses in the cache can be accessed quickly; an
+address outside the cache must go through the process above.
+
+We need a policy dictating which old data block to remove from a filled
+cache. Three standard and well-studied policies are Random, First in first out
+(FIFO), and Least Recently Used (LRU). Any policy must be fairly simple,
+otherwise it could not be directly implemented in hardware (because of the
+speeds needed, cache replacement algorithms must be implemented in hardware).
+
+The idea is to leave inside the cache any data that is expected to be accessed
+soon in the future. Random does not bring anything relevant into the decision,
+but it is simple/cheap to implement (no extra storage). FIFO seems a reasonable
+strategy: if something was brought in a long time ago, it is less likely to be
+used compared to something that was brought in more recently (it requires only
+a simple queue to keep track of which block to replace next). But, LRU gets
+more to the heart of temporal locality: if something has been used recently, it
+is more likely to be used in the near future (regardless of when it was
+initially used, which is what FIFO monitors). While LRU is harder to implement
+in hardware (it uses something like a priority queue), it can be implemented
+there and it is a better predictor of what to remove and what to leave in the
+cache.
+
+Because the time needed to locate and transfer a block of data is large (while
+waiting for the data to arrive, the computer could execute many instructions),
+choosing a replacement policy like LRU that is less efficient (takes more time
+to determine what block to remove) but better (determines more accurately which
+block won't be used in the future) is likely to provide better performance
+overall.
+
+The concept of "prefetching" works for Main->CPU or External->Main memory.
+If as programmers we know that some data is expected to be used in the near
+future (but not needed yet) we can prefetch it (touch it so that it loads into
+the cache). Then, while the computer is doing other things, before the data is
+actually needed, it will be brought from the slower to the faster memory. 
+
+The maintenance of caches is an important part of chip design. Cache design
+becomes even more interesting when multiple cores/processors access the same
+memory. For example, if 4 CPUs each cache some main memory that they share,
+and one CPU changes the value (in its cache) the other CPUs that are caching
+that same memory have to be updated (and main memory as well, eventually).
+
+When new cache mechanisms are proposed, they are often evaluated by using
+previously collected "memory traces" showing which memory locations actual
+"important" programs generate, and determining how well the caching mechanism
+works in these cases. Such memory traces can constitute billions, trillions
+(even more) of memory references of a running program; recall machines can
+execute billions of operations per second.
+
+Likewise, using the concept of "virtual memory" we can consider main memory to
+act as a cache for external memory. Using virtual memory, we can solve huge
+problems by just pretending that the computer's memory is as large as its
+disk-drive's memory (terabytes not gigabytes). Then we use the main memory
+as a cache for external memory (just as we discussed above using a CPU
+Chip's memory as a cache for main memory, including replacement policies).
+
+Using virtual memory we can "easily" solve problems that do not fit into a
+computer's main memory, but unless the data structures and algorithms
+processing the data structures exhibit strong temporal/spatial locality, the
+run time can be enormously larger (thousands to millions of time longer, as
+data is shuttled between main and externall memory). In the next two lectures
+we will discuss data structures and algorithms for fast searching and sorting,
+when using huge amounts of external memory.
+
+Gordon Bell (a famous computer designer) has written a book called "Total
+Recall: How the E-Memory Revolution will change Everything" (Dutton, 2009). In
+the book he posits that in the future, everyone can have everything that they
+ever see and hear (e.g., every conversation that they have), every web-page
+that they look at, etc. stored in memory and indexed for retrieval. Here is a
+quote from page  9, early in the book.
+
+  In fact, digital storage capacity is increasing faster than our
+  ability to pull information back out. Once upon a time, you had
+  to be extremely judicious and stingy about which pieces of data
+  you hung on to. You had to be thrifty with your electronic pieces
+  of information, or bits, as we call them. But starting around 2000
+  it became trivial and cheap to sock away tremendous piles of data.
+  The hard part is no longer deciding what to hold on to, but how to
+  efficiently organize it, sort it, access it, and find patterns and
+  meaning in it. This is a primary challenge for the engeineers
+  developing the software that will fully unleash the power of Total
+  Recall.
+
+Basically, Moore's Law (http://www.intel.com/technology/mooreslaw/) postulated
+by Gordon Moore (Intel) says that the number of transistors in a given area
+will double every 18 months. This typically translated into computer speed
+doubling as well, but not now. It requires too much power to speed up
+computers. So instead, we use the extra transistors to create more cache memory
+and more cores (CPUs) on a single chip. They all run at a "slow" speed, but if
+programmed correctly, to work together, they can accomplish as much as a faster
+chip. How to coordinate cores is still a problem (some say the biggest practical
+problem facing computing today).
+
+External memory is still growing at a slightly faster pace than predicted by
+Moore's law; typically every couple of years you can buy twice the amount of
+external memory for about the same price (with no speed degradation, but also
+not a lot of speed improvements). Solid state external memory is gaining (cost
+and performance) on hard disk drives.
+
+------------------------------------------------------------------------------
+
+Stacks and Heaps:
+
+Most computer programming languages use memory in two special ways: as a stack
+and as a heap (NOT the same kind of binary heaps used for efficient priority
+queues; here the same name is used for something very different). Main memory
+is really just a giant array of words. A 32 bit word stores an int or a
+reference; it can also be divided into four, 8-bit bytes, where each byte can
+store a single ASCII character.
+
+Think of all available memory (once the program has been stored in memory) as
+being divided between stacks and heaps, with the stack on the left growing 
+towards the right, and the heap on the right growing towards the left
+
+ Memory
++---------+----------------------+
+| program | Stack ->      <- Heap|
++---------+----------------------+
+
+We have seen that stacks are used for method calls -including recursive method
+calls- to store parameters and locals variables; stacks are also used to
+evaluate arithmetic expressions. Stacks grow and shrink with no "holes":
+each method call increases the stack size (adds to it) by N locations (storing
+N parameters and local variables) and each method return decreases the stack
+(removes from it) by the same N locations.
+
+We use heaps for objects constructed by "new". Heaps can have a holes. For
+example, if we store a Set in an array, initially we allocate an array of a
+certain size to store the Set; later we might double the length of tha array,
+allocating another array whose size is twice as big as the first (coming from
+heap space to the left of the original array). Now the original array is
+garbage (there will be no references from the program pointing to it) creating
+a hole in the heap space (that can be reused if we delete [] it: also see the
+section on garbage collection below). Thus, it is more difficult for
+programming languages to manage (allocate and reuse garbage) heap space.
+
+------------------------------------------------------------------------------
+
+Basics of (Heap) Memory Management:
+
+Whether programmers do their own memory management (as in the C and C++
+languages, where they explicitly must "delete" memory they no longer need)
+or whether an Automatic Garbage Collector (really, a "recycler") does it for
+us, we can discuss various needs and strategies for recycling memory. First, a
+free block of memory is a contiguous number of free memory locations.
+
+Typically each memory block allocated in the heap has a few words reserved for
+memory management information. A minimal amount would allows us to store
+the address and size of each free block of memory and a reference to the next
+free block of memory (keeping all the free blocks in a linear linked list).
+Initially we would have a list with one huge block of free memory. When a block
+of memory is freed (either  explicitly because we delete it, or because an
+automatic garbage collector -in Languages like Python and Java- finds it) we
+can add it to the linked list of free memory blocks.
+
+If we need to allocate a block of memory, before going to the remaining memory
+in the heap (or after going there and not finding enough memory), we can check
+whether we can reallocate a block of memory from this linked list of free
+memory blocks that were previously allocated but garbage collected. We will
+discuss four strategies below, using the concept of "fragmentation". Memory is
+fragmented if there are many small blocks (as opposed to a few large free
+blocks). If memory is fragmented, it is likely to take longer to search for a
+free block of the necessary size.
+
+Here are four policies that decide which memory block to use from the linked
+list of free memory blocks.
+
+  1) First-fit: Search the linked list starting at the begining and stop at the
+       first memory block with enough space.
+
+  2) Next-fit: Search the linked list starting wherever the last reclaimed
+       block came from, and stop at the first block with enough space (if we
+       run off the end of the list, start at the front: e.g., circular list).
+
+  3) Best-fit: Search the entire linked list and find the smallest block with
+       enough space (or keep the the list sorted by size, or use a hash-like
+       stucture with all blocks 1-2 words, 3-4 words, 5-8 words, 9-16 words,
+       17-32 words, etc. linked together: bin 30 is holding memory objects
+       whose size is a gigabyte: 2^30).
+
+  4) Largest: Use the largest free memory block (sometimes called "worst fit",
+       but not a pejorative).
+
+After allocating a memory block of the needed size, the remaining memory in
+that block goes back on the the linked list of free memory blocks (with a
+smaller size). So, regardless of the policy, if we need 100 words of memory to
+allocate for an object, and we decide to use a block that stores 300 words of
+memory, we allocate the 100 and put the remaining 200 back into free memory.
+
+  1) First-fit: initially fast, but can create lots of small memory blocks at
+     at the front of the linked list, slowing down searching.
+
+  2) Next-fit: improves on first-fit by spreading fragmentation throughout the
+     linked list (not always at the front).
+
+  3) Best-fit wastes little extra space, but tends to create very small memory
+     blocks, possibly unallocatable (because they are too small to be useful)
+     at the front of the linked list. Must search a lot.
+
+  4) Largest: can be fast (we can use a priority queue where the largest memory
+     block has the highest priority), and puts the largest memory blocks (thus
+     more easily allocatable in the future) put back in the priority queue.
+
+Computer Scientists have created lots of models for managing recycled memory
+and collected lots of data (in the form of memory-use traces) to simulate and
+evaluate all sorts of memory recycling policies.
+
+Note that when a block memory is deleted, it is a good idea (but it takes a bit
+of time) to discover whether it is adjacent to another free block, and if so,
+combining the two blocks into one bigger block.
+
+------------------------------------------------------------------------------
+
+Garbage Collection:
+
+When programmers manage free memory, their code is often prone to error (even
+good/experienced programmers), creating memory leaks: memory that the program
+is not using (and no longer has access to) but is also not on a free list for
+future use: truly garbage that cannot be recycled. Smart pointers in C++ are
+used to minimize these kinds of mistakes.
+
+Sometimes such programs must be stopped and restarted because they run out of
+memory. There are some mission critical programs that do not allow the use of
+"new" (after setting up initial data structures) because of the possible memory
+leaks. During the first Gulf War, a memory leak was found in an anti-missle
+weapon which would not function well after operating for days (ir was designed
+to be used in a "fast European war" and not expected to have to work
+continuously for days at a time). Until the software was fixed, the operators
+were instructed to shut down and restart the software every few days (of
+course, when to shut it down was problematic, as the system was inoperable
+during the minutes required for a shutdown and restart). As I said above, it
+was designed to operate in Europe, where antimissile batteries would go on
+alert for just hours at a time, therefore testing it under these conditions
+failed to show any problems with running it 24/7 (as was needed during the
+first Gulf War).
+
+By using an automatic Garbage Collector (GC) we avoid explicit deallocation;
+our code calls "new" when it needs memory but not "delete" (typically the code
+just makes some variable refer to a different object; then the original object
+it referred to -if no other variables refer to it- become garbage/reycleable).
+
+Such systems can find all the memory blocks not currently used by a program
+and put them all on the linked list of free memory blocks. Note that languages
+like Lisp had automatic garbage collection as early as the 1960s. Note too that
+for a program that doesn't exhaust memory, automatic garbage collection (which
+doesn't occur) can be faster than manual garbage collection, since manual
+garbage collection requires doing some work on disposing of some memory,
+while automatic garbage collection does no work on disposal, but possibly more
+work on recycling garbage when there is no more free memory in the heap; if an
+application can run without garbage collection, it can take less time.
+
+Simple garbage collection can be accomplished by storing reference counts to
+data, so we know that when a count goes to 0 it can be recycled. Although, a
+circular structure can have each of its nodes with a non-zero reference count
+yet no variable refers to any part of the circular structure.
+
+Mark and Sweep garbage collectors are fairly standard and simple to understand,
+but there are many different algorithms for this universally useful task. We
+will discuss some briefly.
+
+In the Mark phase, the GC first finds all the pointers in a program: initially,
+these are all pointer variables stored in the stack, representing pointers to
+objects in the heap (from global variables, and parameter, and local variables
+in executing methods). The GC follows these references to the objects that they
+refer to and marks these objects as "live" (often there is a bit in an extra
+word associated with each free block of memory to mark whether or not it is
+live).
+
+From these live objects, the GC follows their pointer instance variables to
+the objects that they refer to in the heap, and marks these objects live as
+well. The GC continues this process (which is like searching a graph of
+objects -which point to other objects- for "reachability") until it has marked
+every object object live that can be reached from parameter/local variables
+active in the code. There are some very clever algorithms that use the extra
+space in these live objects to store the data structures needed to reach all
+the live objects, so we don't need much extra memory during garbage collection
+(because at that time we don't have much extra memory!).
+
+In the sweep phase, the GC sweeps through the heap memory and puts on the
+linked list of free memory blocks all those memory blocks that it enoucounters
+that are NOT marked as live. If possible, it will compact two adjacent free
+memory blocks into one larger one. More sophisticated "compacting" GC
+algorithms can also change live pointers so that their data occurs on the far
+right of the heap space, with all free heap space to the left (as per the
+diagram above).
+
+Finally, note that in Java (or any automatic GC language) when we are storing
+pointer data in an array (say a Set) and we perform a "clear" operation,
+typically we set used to 0 AND store nullptr in every previously used location
+in the array. This ensures that objects with pointers to them currently stored
+in the array can be garbage collected (if there are no other references to
+them). Even though WE know know that no array positions store useful data, the
+garbage collector thinks every pointer in an array is live. If we left those
+pointers stored in the array, the garbage collector would consider all
+pointers in the array as live when doing the Mark phase, and not garbage
+collect those object. Of course the code works correctly either way, but if we
+don't set object reference to nullptr, we may eventually run out of space. So
+clear becomes O(N) instead of O(1) if we must remove pointers.
+
+Garbage collectors have problems as well: they run at unpredictable times
+and take an unpredictable amount of time to run (although we can determine
+limits on their run time).  So, there are some mission critical real-time
+programs that do not allow the use of "new" because of this unpredictability.
+For example, in real-time applications (such as software flying an airplane),
+we would like to ensure that garbage collection does not take place during a
+critical phase (like landing). So, some real-time software prohibits the use of
+heap memory.
+
+There are ways around this unpredictability. We can run an "incremental" GC at
+the same time as the program to minimize the frequency and length of pauses in
+actual code. Say, every 100 milliseconds the GC runs for a few milliseconds,
+doing some of it work. The result is that the program executes a few percent
+slower (typically not a big problem on fast CPUs), but garbage collection runs
+more predictably. When it is required, much of its work has been accomplished.
+
+In fact, with multi-core CPUs, we can always run a GC on one of the cores to
+minimize the impact of automatical garbage collection.
+
+------------------------------------------------------------------------------
+
+A Class Doing its own Memory Management
+
+A class can do its own memory management. Imagine a linked list of LN for
+some application (say in a hash table implementing a Map). When we erase an
+item, instead of deleting its LN, we could put it on a free list: allocated LN
+objects that are no longer needed. Then, when we need to allocate a new LN, we
+first look on that free list; if it contains at least one LN, we use it. If it
+doesn't we call "new" to get the LN we need.
+
+The main problem with this approach is that if we have multiple data structures
+and each has its own free list, a data structure needing a new LN can find only
+those it is controlling; it cannot easily use LNs on the free list controlled
+by another data structure. By using "delete" instead, all free storage ends up
+controlled by the same mechanism, so any sized data structure can be allocated.
+
+
+Final Words:
+
+One lecture on the material described above and below is not enough to get a
+truly intuitive feeling for the information. The course ICS 51 (Introductory
+Computer Organization) covers these topics in much more depth. Read about
+these terms on the internet as well (e.g., Wikipedia). Use the names provided
+here.

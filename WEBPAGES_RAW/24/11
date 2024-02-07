@@ -1,0 +1,91 @@
+CS 261, Spring 2013, Homework 8, Due Thursday, June 6
+
+1. In the lecture we described a linear-time algorithm for finding the
+Cartesian tree for an array of numbers, but we also described a more
+general definition of a Cartesian tree from another tree, that applies
+to the problem of finding maximum-bandwidth paths. Prove that it is not
+always possible to construct the Cartesian tree of a tree in linear time
+(in a comparison model of computation) by showing that, if you could do
+that, you could use the construction to sort arbitrary sets of n numbers
+in linear time.
+
+    Given a set of n numbers as input, construct a tree T with one root
+    vertex connected to n leaves, with the given numbers as edge weights.
+    The Cartesian tree of T is just a path with the minimum weight
+    edge at its root and with the edges listed in sorted order by weight
+    along the path. Therefore, if you could construct a Cartesian tree
+    of T in linear time, you could sort n numbers in linear time
+    by constructing T, constructing its Cartesian tree, and reading
+    off the numbers from the path. Since sorting takes time
+    Omega(n log n) (in a comparison model of computation) so does
+    Cartesian tree construction.
+
+    (To correctly answer the homework you don't need to describe how
+    to construct the Cartesian tree. It is possible to construct the
+    Cartesian tree of a given tree T in time O(n log n) but this
+    was not part of the problem.)
+
+
+2. In a binary tree (that is, a tree where each node may have at most
+one parent, at most one left child, and at most one right child),
+suppose that we wish to route a message from node u to node v. Describe
+how to use lowest common ancestor queries to determine in constant time
+which of the three neighbors of u is the one on the shortest path to v.
+
+    if (LCA of v and left child of v == left child of v):
+        the shortest path goes through the left child
+    else if (LCA of v and right child of v == right child of v):
+        the shortest path goes through the right child
+    else
+        the shortest path goes through the parent
+
+    (There is also a fourth case, that u == v, but you didn't need
+    to include that case to answer the problem correctly.)
+
+
+3. A queue data structure has two update operations (enqueue and
+dequeue) and one query operation (top). The sequence of values returned
+by top as dequeue operations are made should be the same as the sequence
+in which the same values were added to the queue by enqueue operations.
+A non-persistent queue can be represented by two pointers (head and
+tail) into a collection of nodes that each have "data" and "next"
+instance variables, and in which the condition of being an empty queue
+is represented by the tail pointer being null. To perform an enqueue
+operation in an empty queue, a new node is created with the given data
+value and with next=null, and head and tail are both set to point to it.
+To perform an enqueue operation in a non-empty queue, tail.next is set
+to be a new node, with the given data value and with next=null, and then
+tail is set to point to the new node. To perform a dequeue operation, head is set
+to head.next, and if this is null then tail is also set to null. To
+perform a top operation, head.top is returned.
+
+Now suppose that we want to make a queue persistent. Which of the two
+techniques (fat nodes or path copying) would be more effective for this
+representation of a queue? Explain why.
+
+    Fat nodes are better.
+
+    Path copying works with tree structures, where each node has
+    pointers to its children (but not to its parent or siblings),
+    and replaces all the nodes on a path from the root to a changed node.
+    The queue structure described here can be thought of as a tree
+    where the root is at the head and the "next" pointer is a child,
+    and path copying works correctly with this interpretation,
+    but not efficiently, because the changed node is always at
+    the other end of the queue (the step in an enqueue where we
+    set tail.next is a change to that node) so we always need
+    to replace every node in the whole data structure.
+
+    In contrast, fat nodes work correctly and reasonably efficiently
+    for this data structure. They work especially well for partial
+    persistence, because in this case every node only ever needs
+    to store two versions (the one before and after its next pointer
+    is changed). If we store the head and tail pointers together with
+    the version number as part of a version identifier, rather than
+    making them fat as well, the time per operation is O(1).
+    Even if we use a fat object to store the head and tail, the
+    time per operation is still only O(log n) and the space per
+    update is O(1).
+
+    a version of a data structure by its head and tail pointers
+    together with a version number. 

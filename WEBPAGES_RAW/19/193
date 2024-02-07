@@ -1,0 +1,316 @@
+				Graphs
+
+The mathematical theory of graphs was first developed by the famous Swiss
+mathematician Leonard Euler (pronounced like "Oiler") in 1735. It was motivated
+by a desire to solve the "Bridges of Konigsberg" problem. A brief introduction
+to this problem and a graphic for it appears first in the graph.pdf
+accompanying this lecture. We will start our discussion of Graphs by
+introducing this problem, learning to represent it as a graph, and then
+partially solving the problem.
+
+  In Konigsberg, Germany, a river ran through the city such that in its center
+  was an island, and after passing the island, the river broke into two parts.
+  Seven bridges were built so that the people of the city could get from one
+  part to another (see graphic). The people wondered whether or not one could
+  walk around the city in a way that would involve crossing each bridge exactly
+  once. It doesn't matter where the people started and stopped.
+
+Euler proved that no such tour (now called an Euler tour or Euler path) was
+possible in Konigsberg. A similar problem is known as "The Traveling Salesman"
+problem, in which the traveler must end up at the same place he/she started
+(and visit every node exactly once: that is called a hamiltonian path): often it
+also involves another criteria: minmizing the distance traveled.
+
+Using some of the terminology that we will learn below, the relevant theorems
+are:
+
+Theorem 1: If an undirected graph has more than two nodes with an odd degree,
+      then it does not have an Euler path.
+ 
+Theorem 2: If an undirected graph has two nodes or fewer with an odd degree,
+      then it has at least one Euler path. 
+
+It is interesting that local properties (the degrees of the nodes) determine
+whether or not some global property (Euler path) is possible. Although this
+information tells whether or not a Euler tour exist, it does not tell us how
+to actually construct a tour: an algorith to do so has complexity O(E) where
+E is the number of edges.
+
+Mathematically, Graph theory is a sub-area in the Topology (which generalizes
+Geometry): topology is concerned less with distance and angles and more with
+connectedness; for example, the triangle inequality for distance (d is the
+distance function) - d(a,b) + d(b,c) >= d(a,c) - is not necessarily true in
+graphs.
+        10
+    a----->c
+     \     ^		d(a,b) + d(b,c) = 5
+    2 \   /3   		d(a,c)          = 10
+       v /
+        b
+
+Fundamentally Graphs consists of node (aka vertices) and edges (aka arcs).
+Nodes are typically labelled by some string that identifies them; edges are
+often labelled by the value of the edge. For example, we can construct a graph
+of airline fares, where each node is an aiport and each edge is the cost from
+flying from the origin airport to the destination airport. Such a structure
+would be useful to determine the (minimum) cost of a trip between any 2
+airports, whether or not they are directly connected (get from A to B by taking
+flights whose total cost is minimized: note that cost to travel from airport A
+to B, and then B to C, might be less than the cost to traver directly from A to
+C, which shows the triangle inequality -see above- doesn't necessarily hold for
+graphs).
+
+We can omit the edge values if we are concerned only whether or not we can fly
+from the origin airport to the destination airport: represented by whether or
+not there is an edge between them). Likewise we can use an edge value that is a
+pair<Time,Time> where each element in the pair gives a departure and arrival
+time (so that we can actually schedule trips through intermediate airports by
+choosing particular flightsd whose times allow connections to be made). So,
+although edge values that are single numbers are important, edge values can be
+more general.
+
+Many problems can be encoded into graphs that represent them, and the solved by
+using well-known graphs algorithms. There are large books written entirely on
+the subject of graph theory and graph algorithms, and UCI has an advanced ICS
+course (CS 163) on graphs and graph algorithms.
+
+------------------------------------------------------------------------------
+
+Technical Terms
+
+Let's pause here to define some more important graph terms, beyond the nodes
+and edges discussed above.
+
+In a "directed graph" (aka digraph, the kind we will mostly study), edges have a
+distinguishable "origin" and "destination" node; an edge is written as an arrow
+from its origin to its destination. A digraph might contain just one edge
+between two nodes, or it might contain two: one from the first to the second,
+and one back from the second to the first (with each edge associated with its
+own value). For example, in a graph whose nodes are street corners and whose
+edge values are the times to travel between them (a digraph: something a GPS
+must represent and use to solve minimum-time route problems) a one-way street
+will have one edge between the nodes; a two-way street will have two edges (one
+going each way: travel times might be different, if not always, at different
+times of the day because of commuter traffic).
+
+The in-degree of a node is a count of the number of edges having this node as
+their destination; likewise, the out-degree of a node is a count of the number
+of edges having this node as their origin. The degree of a node is the sum of
+its in-degree and out-degree. A node is considered a "source" in a graph if it
+has in-degree of 0 (no nodes have a source as their destination); likewise, a
+node is considered a "sink" in a graph if it has out-degree of 0 (no nodes have
+a sink as their origin). 
+
+In an "undirected graph", there can be only one edge/value between any pair of
+nodes: each node serves as both the origin and destination of that edge. For an
+undirected graph, the in-degree, out-degree, and degree are all the same. We can
+use a digraph to represent an undirected graph by using two edges (each with
+the same value) to connect nodes.
+
+A directed graph is "weakly-symmetric" if when there is an edge from node1 to
+node2, then there also is an edge from node2 to node1; likewise, a directed
+graph is "strongly-symmetric" if when there is an edge from node1 to node2,
+then there also is an edge from node2 to node1 with the associated values for
+these edges equal.
+
+A "subgraph" of a graph contains a subset of its nodes and edges. The "natural
+subgraph" of a graph (containing a certain subset of nodes) includes all the
+edges in the graph that have a node in this subset as both an origin and
+destination node. The "natural subgraph" of a graph (containing a certain
+subset of edges) includes all the nodes in the graph that are endpoint of any
+edge is the subset.
+
+We have used graphs, informally, in programming assignment #1. There, we
+represented a digraph by a map whose key is the name of a node and whose value
+is the set of nodes that it reaches. In this representation, we omitted the
+value for the edges and it was not easy to find the nodes leading into a node.
+Both of these deficiencies are removed in the actual graph classes we will
+implement.
+
+A "path" in a graph is a sequence of nodes n1, n2, ..., nx, such that there is
+an edge from n1 to n2, from n2 to n3, etc. to nx.
+
+The "transitive closure" of a graph is a graph with the same nodes, such that if
+there is ANY path from node1 to node2 in the original graph, there is an edge
+directly connecting node1 to node2 in the transitive closure graph; the value
+on this edge is often related to the values on the path: one useful way to do
+this is to assign the value of this edge to be the minimum sum of the edge
+values, representing the minimim-sum path between the nodes.
+
+A graph is called "cyclic" if it has at least one path in the graph that
+contains the same node twice. Such a path is called a "cycle". Likewise, if a
+graph contains no cycles, the graph is called "acyclic" (aka "noncyclic").
+
+A graph is "connected" if there is a path between any two nodes. Typically we
+discuss connectedness in terms of an undirected graph. If a graph is not
+connected, it can be decomposed into its "connected components": each component
+is the largest subgraph that is connected. Connectedness is an Equivalence
+relation: (1) every node is connected to itself; (2) if node a is connected to
+node b then node b is connected to node a; (3) if node a is connected to node b
+and node b is connected to node c, then node a is connected to node c. This
+means that if two components include an edge between any of their nodes, then
+they can be merged into a larger component. When we discuss how to compute
+connected components, the Equivalence data type that we have discussed (and you
+will implement in a quiz) will play a major part.
+
+A "spanning tree" is an acyclic/connected graph that represents an N-ary tree;
+we can choose any node as the root. Typically, there are many spanning trees
+for a graph. A "minimum spanning tree" is the spanning tree that minimizes the
+sum of the values associated with all the edges contained in the spanning tree.
+We can represent a project to lay fiber optic cables between N cities by a
+graph: each city is a node and the edges between cities are the cost of laying
+the fiber optic cable. The minimum spanning tree is the minimum cost to lay
+enough fiber optic cable so that there is a path between any two cities. We
+will discuss an algorithm to solve this problem easily, relying on efficient
+implementations of the PriorityQueue and Equivalence data types.
+
+------------------------------------------------------------------------------
+
+An Example Graph
+
+The second example in the graph.pdf accompanying this lecture represent some
+airports and the edges represent flights from one airport to another. The edge
+values represent the mileage for each flight (or, they could represent
+the cost of an airplane ticket for that flight, the amount of time each flight
+takes, etc). This graph is strongly symmetic; rather than showing two edges
+connecting each pair of nodes, we show only one (double-arrowed) edge. While
+mileage has this property, other edge values (cost, travel time, etc.) might
+not. This graph is taken from the excellent book: Goodrich (a faculty member at
+UCI) and Tamassia, Data Structures and Algorithms in Java, John Wiley & Sons,
+2010.
+
+Let's state some facts about this tree using some of the terminology defined
+above.
+
+There is a node named SFO.
+
+There is an edge from the node named SFO (origin) to the node named BOS
+(destination) -and vice versa- that has the value 2704.
+
+The graph is stongly symmetric (so, really an undirected graph).
+
+The graph is cyclic; in fact, not only does it have many cycles, it is
+connected: there is a path from every node to every other node.
+
+It has a natural subgraph (for ORD, PVD, JFK) that is is also connected; it has
+a natural subgraph (SFO, MIA, PVD) that is not connected: in fact, such a
+natural subgraph contains no edges.
+
+A similar but much more extensive graph is used as the underlying data
+structure in Mapquest or GoogleMaps, web sites that plan minimal travel routes,
+including computing the expected amount of travel time.
+
+Note that real graphs might model one-way streets (so there may be an edge
+-a street that one can travel- from corner1 to corner2 but not vice versa).
+Also, some roads may be partitioned into more lanes going one way than the
+other, so although there are edges going each way, their values might be
+different. These program can take into account what time you are traveling (in
+some places, traffic patterns vary tremendously from the norm during rush
+hours); in fact, if billions of sensors are placed on roads throughout the US,
+they could report traffic slowdowns to these programs, which could contact you
+in your car, and automatically reroute you to avoid such delays. Or, if cars
+(or the cell phones of occupants) report their position and speed to a website,
+we would not need road sensors.
+
+Graphs can also easily model the servers (nodes) and transmission lines (edges,
+with their transmission speeds/capacities -bandwidth- indicated by their
+values) of the internet. We can ask questions like what is the minimum time it
+would take to transmit a large number of web pages from one server to another
+using all the paths available, not exceeding the bandwidth of any transmission
+line. This problem, a bit beyond the scope of this course, was originally
+solved by the Ford-Fulkerson algorithm, and improved by the Edmonds-Karp
+algorithm, whose complexity class is O(n e^2), where n is the number of nodes
+and e is the number of edges respectively in the graph. 
+
+------------------------------------------------------------------------------
+
+Graph Metrics
+
+We will discuss that the minimum and maximum number of edges in a graph with
+N nodes (the minimum is 0 edges - no nodes connected; the maximum is N^2 edges
+- every node has an edge to every node, including itself), and use the terms
+"sparse" and "dense" to discuss graphs with O(N) and O(N^2) edges respectively.
+
+Also, we can ask how many structurally different graphs there are with N nodes
+(we asked this same questions for linked lists and trees): for directed graphs
+that allow an edge from a node to itself, there are (2^N)^N different graphs,
+or 2^(N^2): Each node in an N-node directed graph has 2^N different possible
+patterns of out-edges (yes/no to each of the other N-1 nodes and itself) and
+there are N nodes each having its own pattern. Think of the pattern for node 0
+as representing one subset of the values 1 through N (a number is in the subset
+if node 0 has an out edge to that node): there are 2^N different subsets of N
+numbers.
+
+For example, a 4 node graph (say nodes A, B, C, and D) a given node A, can have
+one way of no out-edges, 4 ways of 1 out-edges (to A, B, C, or D), 6 ways of 2
+out-edges (to A and B, to A and C, to A and D, to B and C, to B and D, or to C
+and D), 4 ways of 3 out edges (to A, B, and C, to A, B, and D, to A, C, and D,
+and to B, C, and D), and 1 way of 4 out edges (to A, B, C, and D) for a total
+of 16 (= 2^4). Each of the 4 nodes can have the same 16 possible patterns of
+out-edges, so there are 16^4 (63,536) different graphs, which is also 2^16
+(= (2^4)^4.
+
+So for 10 nodes there are 2^100 different graphs or (2^10)^10 or about 10^30
+different graphs. For 1000 nodes there are 2^1,000,000 different graphs or
+(2^10)^100,000, or about 10^300,000 different graphs (recall there are about
+10^68 to 10^72 atoms of matter in the known universe; so, 10^300,000 is
+unimagineably larger). So, the number of graphs grow much faster than the
+number of lists (all N value lists are the same) and the number of trees
+(4^N/sqrt(pi*N^3)) whose exponent is just N not N^2.
+
+------------------------------------------------------------------------------
+
+Storing/Manipulating Graphs
+
+The most fundamental question we can ask about a graph is (a) whether there is
+an edge from node A to node B (and if there is, what is its value). Another
+important question is, (b) given node A, what are all the edges whose source is
+A (or edges whose destination is A).
+
+There are a few standard way to store information about a graph so that we can
+answer these questions efficiently.
+
+1) A MATRIX, with N rows and N colums (one for each node in the graph) whose
+values (Ath row and Bth column) stores nothing (there is no edge) or the value
+on the edge from node A to B in this graph. In a directed graph we would store
+all N^2 values, and the value in row A and column B might be different than the
+value in row B and column A. In an undirected graph, we could just store the
+"upper triangular part" since the value at row A and column B is the same as
+the value in row B and column A: so lookup the value in row min(A,B) and column
+max(A,B). To answer question (a) is O(1) and to answer question (b)
+is O(N) - scan one entire row or column in the matrix. Note that a matrix
+requires O(N^2) storage, even if the graph is sparse and contains only O(N)
+edges.
+
+2) An array with N rows (one for each node in the graph) with each index i
+storing a linked list of edges values/destination nodes whose origin node is
+numbered i. This is called an ADJACENCY LIST: each node stores a reference to
+a list of nodes reachable from it. To answer question (a) we go to the index
+for node A and traverse all the values in the linked list looking for B. So to
+answer question (a) is O( out-degree(A) ) and to answer question (b) is O(1)
+since the reference in a row stores a list to exactly those nodes that are
+destinations of node A. In a sparse graph out-degree(i) is O(1) and in a dense
+graph out-degree(i) is O(N).
+
+3) A HashMap with M keys (M is the number of edges in the graph; each key is a
+pair of nodes) and each key is associated with the value of the edge between
+those nodes; and, a second HashMap with N keys (one for each node in the graph)
+and each key is associated with a set of edges having that node as their origin.
+To answer question (a) we just do a map lookup of the edge, which is O(1). To
+answer question (b) we do a map lookup of the node, which again is O(1).
+
+We will add a Graph class to our standard Data Types that has many more
+interesting commands and queries. To implement most efficiently, we will store a
+variety of sets in the map from nodes to "information" connected to a node:
+in/out edges and in/out nodes) to allow quick execution of these useful
+methods. This will be done in a HashGraph, which is Programming Assignment #5.
+
+Here is a quick overview of what we will be able to do with Graphs:
+
+add a node, add an edge, remove a node, remove an edge
+get a count of the nodes and a count of the edge
+check whether a graph has a node, has an edge, and get the value of an edge
+find the in-degree, out-degree, and the degree of a node
+iterate over all nodes and all edges in the graph
+iterate over all out-nodes, in-nodes, out-edges, and in-edges of any given node
+print a graph into a file and load a graph from a file

@@ -1,0 +1,199 @@
+<!-- This document automatically created using nb2html -->
+<!--         nb2html is Copyright T.D.Robb 1994        -->
+<H1><CENTER>
+Algorithms for Egyptian Fractions
+</CENTER></H1>
+<P>
+<HR><H2><IMG SRC="mmaSection.gif" ALT="o">
+Reverse Greedy Methods
+</H2>
+<P>
+<H3><IMG SRC="mmaSubSection.gif" ALT="+">
+The Basic Reverse Greedy Method
+</H3>
+<P>
+The idea behind this algorithm (due to K.S. Brown in an email forwarded to me by Milo Gardner) is to generate the Egyptian fraction in "reverse" order, from larger denominators to smaller.  At each step, we expand our fraction x/y = x'/y' + 1/u in an attempt to make the new denominator y' as small as possible.  We always know y' &lt; y is possible from the continued fraction method.  In general this method reduces the denominator faster than continued fractions and hopefully produces fewer terms.
+<P>
+The basic idea is to first choose d=xy'-x'y, then solve for y' and x'.  Some analysis simplifies the search for d.  First, suppose some prime p divides d and doesn't divide y.  Then since u=yy'/d, we know that p divides y'.  Further, since x'=(xy'-d)/y, p divides x' and x'/y' is not in least terms.  We can ignore such solutions.  Similarly, if p divides y exactly c times, and p divides d 2c+k times, we know that p^(c+k) divides y' and p^k divides x'.  So it is always safe to assume d is a divisor of y^2.  Conversely, every divisor of y^2 leads to a unit fraction 1/u, but for some of them x'/y' is negative or y' is zero.  We filter those divisors to include only those d leading to a valid fraction x'/y'.
+<BLOCKQUOTE><PRE><B>
+ERGChoices[x_,y_] :=
+	Select[Divisors[y*y],
+		   ((# * PowerMod[x,-1,y]) ~Mod~ y) * x &gt; # &amp;];
+    
+EgyptReverseGreedy[q_Integer] := If[q==0,{},{q}];
+EgyptReverseGreedy[Rational[x_,y_]] :=
+	If[x==1,{x/y},
+	   EgyptPairList[Append[EgyptReverseGreedy[x/y-#],#]]&amp; @
+	   ((# * x) ~Mod~ y / (# * y) &amp; @
+	   Min[(ERGChoices[x,y]*PowerMod[x,-1,y]) ~Mod~ y])];
+</B></PRE></BLOCKQUOTE>
+<P>
+<A HREF="conflict.html#pair">EgyptPairList</A> is needed to avoid duplicate fractions; for instance otherwise this method would produce 1/11+1/231+1/231 for 23/231.  Because of this, it is hard to bound the denominators in the representations this method produces.  The number of terms is clearly O[y]; it produces fewer terms in practice but it is unclear whether one can prove bounds on the number of terms that are even as good as the continued fraction method.
+<BLOCKQUOTE><PRE><B>
+EgyptReverseGreedy[31/311]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+ 1   1    1     1
+{--, --, ---, -----}
+ 16  28  688  93611
+</PRE></BLOCKQUOTE>
+<H3><IMG SRC="mmaSubSection.gif" ALT="+">
+Small-Unit Reverse Greedy
+</H3>
+<P>
+One simple variation on the reverse greedy strategy is to choose the unit fraction with smallest denominator to remove at each step, among those unit fractions reducing the denominator of the remainder.
+<BLOCKQUOTE><PRE><B>
+ERGFrac[x_,y_,d_] :=
+	d/((d*PowerMod[x,-1,y]) ~Mod~ y)
+
+EgyptSmallUnit[q_Integer] := If[q==0,{},{q}];
+EgyptSmallUnit[Rational[x_,y_]] :=
+	If[x==1,{x/y},
+	EgyptPairList[Append[EgyptSmallUnit[(x-#)/y],#/y]]&amp; @
+    Max[ERGFrac[x,y,#]&amp; /@ ERGChoices[x,y]]];
+</B></PRE></BLOCKQUOTE>
+<P>
+This leads to representations with smaller denominators, but also may reduce the number of terms.
+<BLOCKQUOTE><PRE><B>
+EgyptReverseGreedy[10/143]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+ 1    1    1     1
+{--, ---, ----, ----}
+ 15  435  1247  6149
+</PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE><B>
+EgyptSmallUnit[10/143]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+ 1   1   1   1
+{--, --, --, --}
+ 36  60  65  99
+</PRE></BLOCKQUOTE>
+<P>
+<A NAME="smallden"><H3><IMG SRC="mmaSubSection.gif" ALT="+">
+Small Denominator Reverse Greedy
+</H3>
+<P>
+</A>One drawback of the small unit method (as a way of generating fractions with small denominators) is that it can sometimes choose a unit fraction very close to x/y, leaving a relatively small remainder.  It seems more appropriate in this case to balance the two denominators of u and y'.
+<BLOCKQUOTE><PRE><B>
+ArgMin[l_,f_] := (Position[#,Min[#]]&amp; @ (f /@ l))[[1,1]];
+
+ERGMaxDen[x_,y_,l_] :=
+	l[[ ArgMin[l,Max[Denominator[#/y],
+					 Denominator[(x-#)/y]]&amp;] ]];
+	
+EgyptSmallDen[q_Integer] := If[q==0,{},{q}];
+EgyptSmallDen[Rational[x_,y_]] :=
+	If[x==1,{x/y},
+	EgyptPairList[Append[EgyptSmallDen[(x-#)/y],#/y]]&amp; @
+	ERGMaxDen[x,y,ERGFrac[x,y,#]&amp; /@ ERGChoices[x,y]]];
+</B></PRE></BLOCKQUOTE>
+<P>
+This can often do a good job of keeping all denominators small.
+<BLOCKQUOTE><PRE><B>
+EgyptSmallUnit[17/180]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+ 1   1
+{--, --}
+ 12  90
+</PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE><B>
+EgyptSmallDen[17/180]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+ 1   1
+{--, --}
+ 15  36
+</PRE></BLOCKQUOTE>
+<P>
+<A NAME="smallnum"><H3><IMG SRC="mmaSubSection.gif" ALT="+">
+Small Numerator Reverse Greedy
+</H3>
+<P>
+</A>This idea combines the reverse greedy method (which reduces denominators) with the standard greedy method (which reduces numerators).  The idea is simply to choose, among all the choices of x/y=x'/y'+1/u, the one with the smallest value of x'.  To break ties we choose the smallest value of u since that seems to lead to better representations.
+<BLOCKQUOTE><PRE><B>
+ERGGoodNum[x_,y_,l_] :=
+	l[[ ArgMin[l,Numerator[(x-#)/y] - #/y &amp;] ]];
+	
+EgyptSmallNum[q_Integer] := If[q==0,{},{q}];
+EgyptSmallNum[Rational[x_,y_]] :=
+	If[x==1,{x/y},
+	EgyptPairList[Append[EgyptSmallNum[(x-#)/y],#/y]]&amp; @
+	ERGGoodNum[x,y,ERGFrac[x,y,#]&amp; /@ ERGChoices[x,y]]];
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE><B>
+EgyptSmallNum[10/143]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+ 1   1    1
+{--, --, ---}
+ 22  65  110
+</PRE></BLOCKQUOTE>
+<H3><IMG SRC="mmaSubSection.gif" ALT="+">
+Big Divisor Reverse Greedy
+</H3>
+<P>
+Another variant of the reverse greedy method simply chooses the largest value in ERGChoices.  Heuristically this is likely to lead to much cancellation and a unit fraction with small denominator.
+<BLOCKQUOTE><PRE><B>
+EgyptBigDiv[q_Integer] := If[q==0,{},{q}];
+EgyptBigDiv[Rational[x_,y_]] :=
+	If[x==1,{x/y},
+	EgyptPairList[Append[EgyptSmallNum[(x-#)/y],#/y]]&amp; @
+	ERGFrac[x,y,Last[ERGChoices[x,y]]]];
+</B></PRE></BLOCKQUOTE>
+<P>
+This is often the same as EgyptSmallUnit, but occasionally differs, and even sometimes results in smaller denominators.
+<BLOCKQUOTE><PRE><B>
+EgyptReverseGreedy[23/231]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+ 1    1     1
+{--, ---, -----}
+ 11  116  26796
+</PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE><B>
+EgyptSmallUnit[23/231]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+ 1   1   1    1
+{--, --, --, ---}
+ 21  40  56  110
+</PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE><B>
+EgyptSmallNum[23/231]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+ 1   1    1
+{--, --, ---}
+ 15  35  231
+</PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE><B>
+EgyptSmallDen[23/231]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+ 1   1   1
+{--, --, --}
+ 22  33  42
+</PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE><B>
+EgyptBigDiv[23/231]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+ 1   1   1
+{--, --, --}
+ 22  33  42
+</PRE></BLOCKQUOTE>
+<P>
+<P><HR><P><A HREF="http://www.ics.uci.edu/~eppstein/numth/egypt/">Egyptian Fractions,
+</A><A HREF="http://www.ics.uci.edu/~eppstein/numth/">Number Theory,
+</A><A HREF="http://www.ics.uci.edu/~eppstein/">David Eppstein,
+</A><A HREF="http://www.ics.uci.edu/">ICS,
+</A><A HREF="http://www.uci.edu/">UC Irvine
+</A><P><SMALL>Formatted by
+<A HREF="http://www.hallym.ac.kr/~physics/education/Math/tdr/nbks/sourceCode.html">nb2html</A> and
+<A HREF="http://www.ics.uci.edu/~eppstein/pubs/filter.html">filter</A>.
+<!--#config timefmt="%d %h %Y, %T %Z" -->Last update:
+<!--#flastmod file="egypt.ma" -->.
+</SMALL>

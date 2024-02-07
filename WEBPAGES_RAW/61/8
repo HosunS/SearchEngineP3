@@ -1,0 +1,44 @@
+/*
+    $Id: jd.cc 1109 2007-04-17 00:04:26Z rvernica $
+
+    Copyright (C) 2007 by The Regents of the University of California
+
+    Redistribution of this file is permitted under the terms of the
+    GNU Public License (GPL).
+
+    Date: 03/24/2007
+    Author: Rares Vernica <rvernica@ics.uci.edu>
+*/
+
+#include "jd.h"
+
+#include <algorithm>
+
+#include "gram.h"
+
+using namespace std;
+
+float jd(const string &s1, const string &s2, const unsigned q)
+{
+  unsigned
+    n = s1.length(), 
+    m = s2.length();
+
+  if (n == 0 || m == 0)
+    return 1;
+
+  set<string> s1Gram, s2Gram, sInt, sUni;
+  str2grams(s1, s1Gram, q);
+  str2grams(s2, s2Gram, q);
+
+  set_intersection(s1Gram.begin(), s1Gram.end(),
+                   s2Gram.begin(), s2Gram.end(), 
+                   inserter(sInt, sInt.begin()));
+
+  set_union(s1Gram.begin(), s1Gram.end(),
+            s2Gram.begin(), s2Gram.end(), 
+            inserter(sUni, sUni.begin()));
+
+  return 1 - static_cast<float>(sInt.size()) / sUni.size();
+}
+

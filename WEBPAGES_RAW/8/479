@@ -1,0 +1,92 @@
+<HTML><HEAD>
+<TITLE>implementation details</TITLE>
+</HEAD><BODY>
+<H2>some implementation details</H2>
+
+Two cards, X and Y, of the same suit in one hand are
+<I>rank-equivalent</I>
+if none of the other 3 players have any cards in that
+suit with rank in between those of X and Y.
+Dynamic rank equivalence can be implemented by maintaining an
+array of length 52, one cell for each of the cards in the deck,
+with each cell containing a value from the set {N,E,W,S,none}
+indicating which (if any) of the players holds that card in his hand.
+For purposes of determining equivalence, it is important
+that this array is not updated at the time a player plays a card!
+The array must be updated only at the conclusion of a trick.
+<P>
+<I>Node isomorphism</I> refers to the situation in which
+two nodes correspond to identical hand configurations
+with equal number of tricks taken by N/S.
+Node isomorphism can be implemented by maintaining a list
+of configurations and their associated values,
+indicating which partnership, N/S or E/W, will prevail
+starting from that configuration.
+When encountering a configuration, C, the list is checked
+to determine whether C is listed.
+If it is, then the value of configuration C
+can be obtained from the stored value, thereby avoiding the
+necessity of expanding the entire tree of possibilities.
+If it is not, then the pair [C,unknown] is entered onto the list
+and, after C has been evaluated (say, to find that N/S will prevail)
+then this entry is updated (to become [C,N/S]).
+<P>
+For difficult problems, the number of encountered configurations
+can be so large that there will not be enough space to store
+all of them.  In that situation, it is effective to store
+the configurations that will have the most impact in avoiding
+tree expansion.   Also, for speed considerations, it is important
+that the list be searchable very rapidly.  These various concerns
+can be addressed efficiently and effectively by using a variant
+of <I>Robin Hood hashing</I>.  For very difficult problems,
+additional speed enhancements might be possible by use of a
+<I>Bloom filter</I>.
+<P>
+To obtain the greatest benefit,
+it is best that the hash table have the largest size possible.
+The size of the table is not the number of bytes stored
+in the table -- it is the maximum number of entries that can
+be stored in the table.  It is true that increasing the number of bytes
+available for the table will increase the number of entries.
+But equally effective, and even more important for speed considerations,
+is the fact that decreasing the number of bytes required for one
+entry will increase the maximum number of entries that can be held
+by a table having capacity of a fixed number of bytes.
+<P>
+I encode a configuration in 8 bytes.
+When it is possible that an output tree will be produced,
+each configuration requires an additional 4 bytes.
+Also, producing an output tree necessitates the use of
+a rather large stack, typically allowed 1-2 Megs.
+<P>
+The stack contains the body of what will ultimately be the tree file.
+The tree file format is roughly as follows.
+There is a primary header,
+which describes the initial state of the program
+(number of cards per player, who are the "goodguys",etc.)
+a secondary header,
+which describes the contents of the 4 hands,
+and the body, which contains one word that gives the number of
+words in the rest of the body and then a series of cells
+that are stored in depth-first search order.
+A cell describes a trick.  It contains:
+<UL> For Versions 1,2:  
+ <LI> in one word: the round number, the leader, the winner, the 4 cards
+ <LI> if a duplicate position has been reached then the next 2 words
+      contain:  ZERO,  pointer to identical position cell
+</UL>
+<UL> For Versions 3,4:
+ <LI> in one word: the round number, the leader, the 4 card equivalents,
+      and indication as to whether a duplicate position has been reached
+ <LI> if a duplicate position has been reached then
+      the next word contains:   pointer to identical position cell
+<P>
+<HR>
+<ADDRESS>
+Dan Hirschberg<BR>
+Computer Science Department<BR>
+University of California, Irvine, CA 92697-3425<BR>
+</ADDRESS>
+<tt>dan at ics.uci.edu</tt><br>
+Last modified: July 1, 1996
+</BODY></HTML>

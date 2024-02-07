@@ -1,0 +1,84 @@
+/*
+    $Id: input.cc 1109 2007-04-17 00:04:26Z rvernica $
+
+    Copyright (C) 2007 by The Regents of the University of California
+
+    Redistribution of this file is permitted under the terms of the
+    GNU Public License (GPL).
+
+    Date: 02/16/2007
+    Author: Rares Vernica <rvernica@ics.uci.edu>
+*/
+
+#include "input.h"
+
+#include <fstream>
+#include <iostream>
+
+void readString(vector<string> &data, 
+                 const string filenameData, 
+                 const unsigned count)
+{
+  ifstream fileData(filenameData.c_str());
+  if (!fileData) {
+    cerr << "can't open input file \"" << filenameData << "\"" << endl;
+    exit(EXIT_FAILURE);
+  }
+
+  const unsigned maxLineLen = 256;
+  char line[maxLineLen];
+
+  while (true) {
+    fileData.getline(line, maxLineLen);
+    if (fileData.eof())
+      break;
+    if (fileData.fail()) {
+      cerr << "open reading input file \"" << filenameData << "\"" << endl
+           << "line length might exceed " << maxLineLen << " characters" << endl;
+      exit(EXIT_FAILURE);
+    }
+    data.push_back(string(line));
+    if (count != 0 && data.size() == count)
+      break;
+  }
+
+  fileData.close();
+}
+
+void readUnsignedBin(vector<unsigned> &data, 
+                       const string filenameData)
+{
+  ifstream fileData(filenameData.c_str(), ios::in | ios::binary);
+  if (!fileData) {
+    cerr << "can't open input file \"" << filenameData << "\"" << endl;
+    exit(EXIT_FAILURE);
+  }
+
+  unsigned e;
+  while (true) {
+    fileData.read(reinterpret_cast<char*>(&e), sizeof(unsigned));
+    if (fileData.eof())
+      break;
+    data.push_back(e);
+  }
+    
+  fileData.close();
+}
+
+bool existFileBin(const string &filename)  
+{
+  ifstream file(filename.c_str(), ios::in | ios::binary);
+  if (!file) 
+    return false;
+  file.close();
+  return true;
+}
+
+bool existFile(const string &filename) 
+{
+  ifstream file(filename.c_str(), ios::in);
+  if (!file) 
+    return false;
+  file.close();
+  return true;
+}

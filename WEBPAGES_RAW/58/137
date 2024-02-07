@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC
+ "-//W3C//DTD XHTML 1.1//EN"
+ "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<link rel="stylesheet" href="../../course.css" type="text/css" />
+
+<title>ICS 32 Winter 2017, Notes and Examples: URLs and HTTP</title>
+
+</head>
+
+<body>
+
+<div class="navbar">
+
+<p>
+ICS 32 Winter 2017 |
+<a href="../../index.html">News</a> |
+<a href="../../CourseReference.html">Course Reference</a> |
+<a href="../../Schedule.html">Schedule</a> |
+<a href="../../ProjectGuide">Project Guide</a> |
+<a href="../../Notes">Notes and Examples</a> |
+<a href="http://www.ics.uci.edu/~thornton/">About Alex</a>
+</p>
+
+<hr />
+
+</div>
+
+<div class="header">
+
+<p>ICS 32 Winter 2017<br />
+   Notes and Examples: URLs and HTTP</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Background</p>
+
+<p>Thus far in this course and the preceding one, you've written Python programs that read data from text files and that exchange data over a network via sockets, which are two big steps that push outward the boundaries around what we can accomplish in Python.  However, there is an elephant in the room, so to speak.  If we think about where most of the interesting data on the Internet resides, it's on the web.  <i>Web sites</i> display content and allow human users to interact with web-based data, while <i>web services</i> provide a similar ability to other programs.</p>
+
+<p>Both web sites and web services are organized around the same fundamentals we've already seen: A connection is initiated by a <i>client</i> connecting to a <i>server</i> (quite often on the server's port 80) and a protocol is followed that governs what the conversation looks like.  So if we want to interact with web data &mdash; the simplest example of which is to download the content of a web page &mdash; we need to know enough about that protocol to be able to implement the conversation.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">URLs</p>
+
+<p>When we use a browser to visit a web page, all we need to do is tell the browser where we want to go and it handles the rest.  The notion of "where you want to go" is encapsulated by a <i>URL (Uniform Resource Locator)</i>, which specifies a few things:</p>
+
+<ul>
+  <li>What protocol should be used to download the web page?</li>
+  <li>From what host (i.e., an IP address or the name of a machine, like <b>www.ics.uci.edu</b>) should the web page be downloaded?  Occasionally, we also specify the port, when we want it to be something other than the default.</li>
+  <li>What page on that machine should be downloaded?</li>
+</ul>
+
+<p>One of the earlier code examples included a link to a short Python module called <b>oops.py</b>.  The complete URL for that link is: <a href="http://www.ics.uci.edu/~thornton/ics32/Notes/ExceptionsAndFiles/oops.py">http://www.ics.uci.edu/~thornton/ics32/Notes/ExceptionsAndFiles/oops.py</a>.  Here's what that URL means:</p>
+
+<ul>
+  <li>The first few characters (preceding the colon) indicate what protocol should be used for the network conversation.  For most web pages, that protocol will be listed as <b>http</b>, which means that we'd like to use the protocol called HTTP (HyperText Transfer Protocol).  Another common alternative is <b>https</b>, which uses HTTP over a secure connection, which provides the dual benefits of making eavesdropping very difficult and of validating that you're really connecting to the server that you think you are.</li>
+  <li>After the colon and the two slashes is the host.  In this case, that host is listed as <b>www.ics.uci.edu</b>, which is the machine on which the ICS web site is hosted.  It is possible also to specify a port, by following the host with a colon and a port number (e.g., <b>www.ics.uci.edu:8080</b>).  The default port number for HTTP traffic is 80; for HTTPS, it's 443.  Since most web sites use these default port, port numbers are not usually specified in a browser except in the rare instances that they're something other than the default.  Web services (consumed by programs, as opposed to human users) often use alternative ports, though.</li>
+  <li>The rest of the URL specifies what web page we'd like to download from the given host using the given protocol.  In this case, that page is <b>/~thornton/ics32/Notes/ExceptionsAndFiles/oops.py</b>, which is a page in the web directory that's under my control.</li>
+</ul>
+
+<p>Given that information, a browser will know just what it needs to do:</p>
+
+<ul>
+  <li>Initiate a socket connection to port 80 on www.ics.uci.edu.</li>
+  <li>Use HTTP to request the page <b>/~thornton/ics32/Notes/ExceptionsAndFiles/oops.py</b>.</li>
+  <li>Parse the HTTP response and draw the page in the browser window.</li>
+</ul>
+
+<p>But browsers aren't the only programs that can have conversations using HTTP; our Python programs can do it, too.  But we need to know a little bit about HTTP in order to do so effectively.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Some background on HTTP</p>
+
+<p><i>HTTP (HyperText Transfer Protocol)</i> is the protocol with which most web traffic on the Internet is transacted.  Its latest version is HTTP/2.0, though it's still in the early stages of worldwide adoption; we'll stick with the more broadly-used (and easily-understood) HTTP/1.1 for now.</p>
+
+<p>HTTP is a <i>request-response protocol</i>, which means that its conversations go something like this:</p>
+
+<ul>
+  <li>Client initiates connection to server</li>
+  <li>Server accepts connection</li>
+  <li>Client makes a request</li>
+  <li>Server sends a response</li>
+</ul>
+
+<p>After that single request and response, both sides close the connection. (I should note that there are performance optimizations available that let a client specify that the connection should be kept open if, for example, the client knows that it needs not just a web page's text but also several images from the same server.  For our purposes, we'll stick with a single request and response per connection.)</p>
+
+<p>Python programs can make these requests and parse these responses, but that requires us to know a little bit about the format of each.  HTTP requests come in a few flavors, but the most common of them is called a <i>GET</i>, which means that the client would like to "get" a resource (a web page, an image, etc.) from the server.  (We may see other alternatives later if we find a need for them.)  A GET request in HTTP/1.1 looks like this.</p>
+
+<blockquote><pre>
+GET /~thornton/ics32/Notes/ExceptionsAndFiles/oops.py HTTP/1.1
+Host: www.ics.uci.edu
+</pre></blockquote>
+
+<p>The first line of a GET request begins with the word <b>GET</b>, is followed by the web resource you want to download (the part of the URL that follows the protocol and host), and finally is followed by <b>HTTP/1.1</b>, as a way to indicate what protocol we expect to be using for the conversation.  Notice that there are spaces separating the word <b>GET</b> and the resource, and also between the resource and the <b>HTTP/1.1</b>.  Because these spaces are part of the protocol &mdash; and because the presence of spaces elsewhere could make this more difficult for a server to handle &mdash; note that URLs are not permitted to contain spaces.</p>
+
+<p>The second and subsequent lines contain what are called <i>headers</i>, which allow us to specify a variety of supplementary information that the server can use to figure out how to send us a response.  In our case, we've included just one, a header called <b>Host:</b>, which specifies the name or IP address of the host we think we're connecting to; this is useful in the case that the same machine has multiple names (e.g., more than one web site being served up by the same machine), and is generally required in most HTTP requests.  Additional headers include specifying what browser (and what version) is being used &mdash; so, for example, a server can send back different output for a small-sized screen like an iPhone than to a larger-sized screen like a laptop or desktop &mdash; or a variety of performance optimizations that are available, or security-related information (such as a password or an access token that grants access to a page that might otherwise be hidden).</p>
+
+<p>A blank line following the last header informs the server that there are no more headers.  At that point, the request is complete.</p>
+
+<p>Using PuTTY (Windows) or Telnet (Mac), connect yourself to <b>www.ics.uci.edu</b> on port 80 and try sending the request above (plus a blank line following it, so the server will know there are no more headers) and you should get back a response very much like this one (some details left out here for brevity).</p>
+
+<blockquote><pre>
+HTTP/1.1 200 OK
+Date: Sun, 29 Jan 2017 07:56:07 GMT
+Server: Apache/2.2.15 (CentOS)
+...
+...
+Content-Length: 435
+Content-Type: text/plain; charset=UTF-8
+
+# oops.py
+#
+# ICS 32 Winter 2017
+# Code Example
+...
+...
+if __name__ == '__main__':
+    f()
+</pre></blockquote>
+
+<p>The first line of the response indicates that the server agrees to have an HTTP/1.1 conversation (that's the <b>HTTP/1.1</b> part), followed by what's called a <i>status code</i> (in this case, <b>200</b>) and a <i>reason phrase</i> (in this case, <b>OK</b>).  There are forty or so status codes that are defined as part of the HTTP/1.1 standard; the two most common ones are:</p>
+
+<ul>
+  <li>200 (OK), which means that everything went as planned, the server's way of saying "Okay, cool, here's the web page you asked for!"</li>
+  <li>404 (Not Found), which means that the server doesn't have the page that you asked to download.  (If you've ever seen "404" show up in a browser during your travels around the web, this is why; it's an HTTP status code, "geekspeak" for a web page that doesn't exist.)</li>
+</ul>
+
+<p>The first line of the response is followed by <i>headers</i>, just as the first line of the request is.  The server determines what headers to send, and the details there are too numerous to list, but I've included a few of the more interesting ones in the example above:</p>
+
+<ul>
+  <li><b>Date</b> is the date/time at which the response was generated.</li>
+  <li><b>Server</b> specifies what type of server is being run and what version.  As of this writing, the ICS web server is running version 2.2.15 of a server called Apache (which is quite common on the web).</li>
+  <li><b>Content-Length</b> specifies the length, in bytes, of the content that will be sent back.  This allows the client to know when the content has ended.</li>
+  <li><b>Content-Type</b> specifies what kind of content is being sent back (e.g., a web page, a text file, audio, video, etc.).  Browsers respond to the content type by deciding what to do with the content: web pages are shown in the browser, video is often displayed in a video plugin or an external media player, etc.  If a browser isn't sure what to do with content, it generally just asks you if you want to save the file somewhere on your hard drive.</li>
+</ul>
+
+<p>After the last header is a blank line, followed by the desired content &mdash; in this case, the contents of the file <b>oops.py</b> that is linked from one of my code examples.</p>
+
+<p>For those of you who are interested in the full details of HTTP, the <a href="http://www.w3.org/Protocols/rfc2616/rfc2616.html">specification</a> for it can be found here.  Don't feel obligated to read through it unless you're interested; it's not a part of the course.  But if you want to get an idea of the complexity level of HTTP, and why we should be so quick to want to find a library that implements all of that complexity for us, take a quick look through it (and note that one of the main authors of the specification, Roy Fielding, was completing his Ph.D. here at UCI at the time it was written).</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The <b>urllib.request</b> module in the Python standard library</p>
+
+<p>Unlike the protocols we've implemented in this course, which had a fairly straightforward sequence of what needed to be sent from client to server and vice versa, HTTP is anything but simple.  It is used for everything from fetching a simple web page, implementing the "guts" of the conversations happening behind the scenes while you use full-featured web sites like Gmail, and even for allowing non-browsers to interact with web data (e.g., programs that can send tweets via Twitter).  While we could certainly implement an HTTP conversation using the techniques we've seen so far &mdash; opening a socket connection to a server's port 80, constructing and sending a GET request, parsing the response &mdash; this is a very complex task.  In order to do the job right, we would need to implement the entire specification, which weighs in (when printed) at 114 pages.</p>
+
+<p>Happily, HTTP support is something so fundamental to the needs of so many programmers, many programming language libraries include HTTP support; Python is no exception.  Python's library includes a number of modules that implement different parts of the HTTP specification, with the main trick being to understand which module you need in a given circumstance.</p>
+
+<p>Our job in lecture was simple: we just wanted to download the contents of a single web page in a Python program, given its URL.  Your task in <a href="../../ProjectGuide/Project3">Project #3</a> is similar: given the URL to information on the web that your program will need, you just want to download and use that information.  More complex interactions require more complex tools, but the interactions we've needed thus far are the simplest ones, so the simplest part of the library will suffice.  That module is called <b>urllib.request</b>.</p>
+
+<p>The <b>urllib.request</b> module has one function that we're interested in: <b>urllib.request.urlopen()</b>.  Looking through its documentation reveals many more details than we need to know if we only want to download a web page using a GET request; downloading one page can be done in the interpreter by doing just this:</p>
+
+<blockquote><pre>
+&gt;&gt;&gt; import urllib.request
+&gt;&gt;&gt; response = urllib.request.urlopen('http://www.ics.uci.edu/~thornton/ics32/Notes/ExceptionsAndFiles/oops.py')
+</pre></blockquote>
+
+<p>The <b>urlopen()</b> function returns an object called an <b>HTTPResponse</b>, which provides a few useful attributes and methods, the most important of which is the <b>read()</b> method, which retrieves all of the content from the response (i.e., the contents of the web page you asked for) and returns a <b>bytes</b> object containing those contents.  Continuing the previous example in the interpreter:</p>
+
+<blockquote><pre>
+<i>Reading the content of the response (i.e., the data following the headers)</i>
+&gt;&gt;&gt; data = response.read()
+
+<i>The data comes back as a <b>bytes</b> object, as opposed to a string</i>
+&gt;&gt;&gt; data
+b"# oops.py\r\n#\r\n# ICS 32 Winter 2017\r\n# Code Example\r\n#\r\n......."
+
+<i>Once we're done reading from the response, we should close it</i>
+&gt;&gt;&gt; response.close()
+
+<i>We can decode the bytes into a string the same way we've done before
+assuming that we know that the data is text and can be decoded this way.
+The only way we can be absolutely sure is to use the information in the
+HTTP response headers, particularly the <b>Content-Type</b> header, but
+that's beyond the scope of this example.</i>
+&gt;&gt;&gt; string_data = data.decode(encoding = 'utf-8')
+
+<i>This will give us a single string containing all of the data</i>
+&gt;&gt;&gt; string_data
+"# oops.py\r\n#\r\n# ICS 32 Winter 2017\r\n# Code Example\r\n#\r\n......."
+
+<i>We can then split the string into lines using the <b>str.splitlines()</b> method.
+<b>str.split()</b> will work, too, but <b>str.splitlines()</b> automatically handles the
+differences in line endings between operating systems (e.g., Windows uses
+'\r\n', while Mac, Unix, and Linux use '\n').</i>
+&gt;&gt;&gt; lines = string_data.splitlines()
+
+<i>And that will give us a list of strings, in which each string is one line of text</i>
+&gt;&gt;&gt; lines
+['# oops.py', '#', '# ICS 32 Winter 2017', '# Code Example', '#', .......]
+</pre></blockquote>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The code</p>
+
+<p>Below is a link to a short program that asks the user to type a URL, as well as a path on their local hard drive, then downloads the contents of that URL and saves it into a file at the specified path, using the techniques demonstrated above.</p>
+
+<ul>
+  <li><a href="download_file.py">download_file.py</a></li>
+</ul>
+
+</div>
+
+</body>
+</html>

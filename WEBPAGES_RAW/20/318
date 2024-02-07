@@ -1,0 +1,83 @@
+CS 261, Spring 2013, Homework 2 Solutions
+
+1. Prove that tabulation hashing is not 4-independent, by finding a set
+of four keys for which all 4-tuples of indexes are not equally likely.
+
+ANSWER:
+
+Let x and y be two different byte values (e.g. 0 and 1).
+Then the four keys with bytes (0,0,x,x), (0,0,x,y), (0,0,y,x), (0,0,y,y)
+have hash values with the property that
+hash(0,0,x,x) xor hash(0,0,x,y) xor hash(0,0,y,x) xor hash(0,0,y,y) = 0,
+because each of the table values H1(0), H2(0), H3(x), H3(y), H4(x), and
+H4(y) contributes either two or four times to the total xor, cancelling
+itself out. So not every four-tuple of hash values is possible: the
+four-tuples that don't xor to zero have probability zero of being
+chosen, and the remaining four-tuples have higher probability than they
+otherwise would.
+
+(Some choices in this example were arbitrary, and could have been made
+equally well in other ways: for instance, we could have varied a
+different two bytes than the last two, we could have used two different
+pairs of byte values in the variable bytes, or we could have used a
+different byte value than zero in the other two bytes.)
+
+
+
+2. Suppose that we are performing hash chaining, using a hash table with
+N cells, that n key-value pairs are already stored in the hash table,
+and that we wish to add a new key-value pair (k,v) to the table.
+
+(a) Using the standard hashing assumption that all hash functions are
+equally likely to be chosen, write a formula for the probability that
+(k,v) collides with exactly x other keys. (Hint: how many ways are there
+of choosing x other keys to collide with? What is the probability that
+that precise collision occurs?)
+
+(b) Assuming a constant load factor, how big must x be for the
+probability from part (a) to be less than 1/n? Express your answer using
+O-notation as a function of n.
+
+(Hint: find a simpler approximation to your answer from part (a), use
+http://en.wikipedia.org/wiki/Stirling's_approximation and take
+logarithms).
+
+Note: since there are n different keys, each of which may collide with
+some number of other keys, the answer to part (b) tells you how big the
+largest chain is likely to be.
+
+ANSWER:
+
+(a) (n choose x) (1/N)^x (1 - n/N)^{n-x}
+It would also be ok to expand the binomial coefficient into factorials.
+
+(b) O(log n / log log n)
+
+
+3. In class we described a way of preventing infinite loops in the set
+algorithm of cuckoo hashing, by counting steps and stopping when the
+count gets too large. But this method has a problem, that you need to
+know the constant factor to use in the Theta(log n) bound on the number
+of steps. Describe an alternative method of preventing infinite loops,
+without counting, by detecting a loop whenever it happens. Ideally, your
+solution should
+- Use a constant amount of additional memory
+- Only perform a constant amount of additional work per step of the set
+  algorithm
+- Not use a step counter
+- Detect any loop within a number of steps proportional to the number of
+  keys involved in the loop
+- Only report that there is a loop when the set algorithm really has an
+  infinite loop
+
+(Hint: consider what happens to the key given as the original argument
+to the set algorithm during a loop.)
+
+ANSWER: Keep a pointer to the key originally given as an argument to the
+search routine, and a counter of how many times we have tried to place
+that key into a cell. If we ever try to place the starting key three
+times, then we are in a loop.
+
+(There are probably other correct answers as well, and if so they should
+get full credit, but this is the one I had in mind when I wrote the
+problem.)

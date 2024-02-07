@@ -1,0 +1,231 @@
+<html>
+<head>
+<title>  Interfaces </title>
+</head>
+<body>
+<h1> Interfaces </h1>
+ Problem: Suppose we have a collection of shapes and
+ we want to sort them by their area.
+
+<p> Solution 1:   expand the definition of shape 
+
+<pre>
+  abstract class Shape
+     { 
+       double area();
+       double perimeter();
+       boolean lessThan(Shape shape)
+     {
+       return area() < shape.area() ;  // don't forget about implicit this.
+     }
+       void sort(Vector of shapes)
+      {
+          code for sorting
+       }
+     }
+   No changes to other code.
+</pre>
+
+<p>This will work, but now we can only sort shapes. Our same
+sort routine will not work for  addresses or any other objects.
+
+<p> The C++ solution would be to allow multiple inheritance, 
+  but Java doesn't have multiple inheritance.
+
+<p>  The Java solution is to use interfaces, which 
+    provide a limited type of multiple inheritance.
+
+<h2> Sketch of Java Solution using interfaces </h2>
+
+<pre>
+     interface Sortable
+    {   
+     boolean lessThan(Sortable o);
+     void sort(Sortable objects);
+    }
+     class Shape implements Sortable
+    {
+        
+        
+      ..as before
+      boolean lessThan(Sortable s)
+      {
+         return area() < s.area() ;
+      }
+  
+     no change to other classes
+     }
+</pre>
+
+<h3> Interface Summary </h3>
+<ul>
+   <li> Interfaces support programming by contract, one of the
+    principles in object-oriented design.
+   <li> Interfaces are design artifacts, while classes mix design
+     and implementation.
+   <li> An interface has no member or static member functions, only
+   function prototypes.
+   <li> An interface may have data members, which are automatically
+  static and final but some compilers may require you to declare this.
+   <li> Interfaces provide a limited form of multiple inheritance.
+   <li> Interfaces collect partial similarities between dissimilar objects.
+    It is would be strange to force all sortable objects into a hierarchy.
+   <li> Provides contracts for concrete classes to implement.
+   <li> Promotes hiding of irrelevant procedures.
+   <li> Promotes uniformity of code, increasing simplicity. 
+   <li> A class can <em> implement </em> any number of interfaces.
+   <li> You cannot inherit methods from an interface.
+   <li> An interface may extend other interfaces.
+</ul>
+<h3> Standard Interface Enumeration </h3>
+ This interface is in java.util.*.
+  <pre>
+
+     public abstract interface Enumeration
+  {
+     public abstract boolean hasMoreElements();
+     public abstract Object nextElement() throws NoSuchElementException;
+  }
+ </pre>
+<h3> Example use of Enumeration </h3>
+
+ <pre>
+      Vector v = new Vector();
+      ... fill up v with Shape objects
+      Enuermation e = v.elements();
+      while (e.hasMoreElements())
+        {
+          Shape temp = (Shape) v.nextElement();  // note cast
+          ... process temp
+        }
+ </pre>
+   
+
+<ul>
+  <li> Interfaces permit increased comprehensibility and code sharing.
+  <li>Any class that implements this interface needs to define the
+   two methods above. 
+  <li> StringTokenizer implements Enumeration
+  <li> Vector has a method elements() which returns an Enumeration.
+</ul>
+<h3>Complete Sortable Example  </h3>
+This code illustrates appropriate commenting style. Comments of
+the form //.. are explanatory and should not be included in the usual
+code. This code also illustrates a few of the javadoc commands. Javadoc
+commands are embedded in the comments and are preceded by @. This will
+generate documentation similar to that of Sun's Java.api's.
+
+<pre>
+package DataStructures;   //.. this allows you bundle related class 
+                         //.. and access them via import
+public interface Sortable
+{
+  /**
+  * Returns 0 if objects equal,
+  * Returns value less than 0, if object is < tobeCompared
+  * Returns value greater than 0, if object is > tobeCompared
+  * @param toBeCompared is the object to be compared
+ */
+
+  public double compare(Sortable toBeCompared);
+}
+
+package DataStructures;
+import java.util.Vector;   //.. that's all were using from java.util
+
+public class Sort
+{
+  /*
+   * Sorts a vector using bubbleSort.
+   * Bubble sort is best if number of elements is small or
+   * is elements are "almost" sorted.
+   * In worst case, bubble-sort is quadratic in number of elements.
+   * @param toBeStored is vector of sortable objects.
+  */
+public static void swap(Object o1, Object o2)
+{
+    Object temp = o1.clone();  //.. Why  necessary? Efficiency? 
+    o1 = o2;
+    o2 = temp;
+}
+
+public static void bubbleSort(Vector toBeSorted)
+{
+  int n = tobeSorted.size();
+  for (int i = 0; i < n;  i++)
+     for (int j = i+1; j < n; j++)
+       if ( toBeSorted.elementAt(j).compare(toBeSorted.elementAt(i) ) < 0)  
+              swap(toBeSorted.elementAt(i),toBeSorted.element(j));
+}
+    
+package DataStructures;
+ /*
+ * Class that implements sortable double
+ */
+
+public class SortDouble implements Sortable
+{
+  /* Constructs a SortDouble  object
+   * @param val is double value
+  */
+
+  public SortDouble(double val)
+  {
+     this.value = val;
+  }
+  public double val()
+ {
+    return value;
+ }
+
+ public double compare(Sortable toBeCompared)
+ {
+   return value - ((SortDouble) toBeCompared).val());
+ }
+
+ public boolean equals(Object toBeCompared)
+ {
+  return value == ((SortDouble) toBeCompare).val();
+ }
+
+}
+</pre>
+
+<h3> Packages </h3>
+ <ul>
+    <li> A package is a collection of (usually) related classes and interfaces.
+    <li> The package name must be the same as the directory name, and
+      packages follow the directory structure. 
+    <li> At  most one package per directory.
+    <li> If you do not define classes to belong to a package, then
+      they belong to an anonymous package common to the current  directory.
+    <li> The java compiler automatically imports the package java.lang.*
+    and the anonymous package.
+    <li> Packages are the method by which Java implements namespaces.
+    <li> The package java.util.* contains a number of miscellaneous
+     useful functions.
+    <li> Packages are created by prepending the line
+<br>   package packagename;
+ <br> before your class definition.
+    <li> To use classes provided in JDK, you begin your code with
+      <br> import packagename;
+    <li> For example, the Date class is in java.util. To use this
+    class in your code, you use:
+  <br> import java.util.*;
+    <li> Any class which is designated as belonging to a package X
+    has access to all other classes of package X. It is as if
+    "package X;" expanded to "import X; package X;".
+   <li> The package java.lang.* contains the classes for
+  Object, Process, String, System, Thread, Wrappers, Boolean, Character, etc.
+  Since these classes are almost always used, java automatically
+   loads this package.
+  <li> Import is not the same as include in C or C++. Import defines
+    where to look for class definitions; none are loaded unless used.
+  <li> In order to share classes that you have created, you need
+   to properly set your CLASSPATH variable. This will be covered in
+  the lab as it is system dependent.
+  </ul>
+
+
+
+</body>

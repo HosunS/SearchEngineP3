@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>2.4 Generating a SMILES from a Molecule</title>
+<META NAME="description" CONTENT="2.4 Generating a SMILES from a Molecule">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="previous" HREF="node12.html">
+<LINK REL="up" HREF="node9.html">
+<LINK REL="next" HREF="node14.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node12.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node9.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node14.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node12.html">2.3 Creating a Molecule</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node9.html">2. Manipulating Molecules</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node14.html">3. Reading and Writing</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION005400000000000000000">
+2.4 Generating a SMILES from a Molecule</A>
+</H1>
+
+<P>
+To produce a SMILES string from a molecule, use OEChem's
+OECreateCanSmiString. OECreateCanSmiString converts the given OEMolBase
+into a canonical SMILES string and returns the result in a C++ string
+(as defined by C++'s STL).  Note the slight asymmetry: Many OEChem
+functions take <code>const char *</code> as incoming arguments, but return STL
+<code>strings</code> as results.  This usage makes the ownership of the strings
+explicit.  The should never be a difficulty as C and C++ strings may be
+easily inter-converted using standard STL functions.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+#include &lt;string&gt;
+
+using namespace OEChem;
+using namespace std;
+
+int main()
+{
+  string str;
+  OEMol mol;
+
+  if (OEParseSmiles(mol,"c1ccccc1"))
+  {
+    OEAssignAromaticFlags(mol);
+    OECreateCanSmiString(str,mol);
+    cout &lt;&#60; "Canonical SMILES is " &lt;&#60; str &lt;&#60; endl;
+  }
+  else cerr &lt;&#60; "SMILES string was invalid!" &lt;&#60; endl;
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch3-7.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+The following slightly more complicated example reads SMILES from cin
+and writes their canonical SMILES to cout.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+#include &lt;string&gt;
+
+using namespace OEChem;
+using namespace std;
+
+int main()
+{
+  char buffer[1024];
+  string str;
+  OEMol mol;
+
+  while (cin.getline(buffer,1024))
+  {
+    mol.Clear();
+    if (OEParseSmiles(mol,buffer))
+    {
+      OEAssignAromaticFlags(mol);
+      OECreateCanSmiString(str,mol);
+      cout &lt;&#60; str &lt;&#60; endl;
+    }
+    else cerr &lt;&#60; buffer &lt;&#60; " is an invalid SMILES!" &lt;&#60; endl;
+  }
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch3-8.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+Notice that this example makes use of the <code>OEMolBase::Clear</code> function to
+reuse the molecule.  The behavior of OEParseSmiles is to <i>add</i> the given
+smiles to the current molecule.  If the line <code>mol.Clear()</code> were removed
+from the program, the output would contain longer and longer SMILES
+containing disconnected fragments.
+
+<P>
+The above program could also have been written to construct and destruct
+molecules and strings:
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+#include &lt;string&gt;
+
+using namespace OEChem;
+using namespace std;
+
+int main()
+{
+  char buffer[1024];
+
+  while (cin.getline(buffer,1024))
+  {
+    OEMol mol;
+    if (OEParseSmiles(mol,buffer))
+    {
+      string str;
+      OEAssignAromaticFlags(mol);
+      OECreateCanSmiString(str,mol);
+      cout &lt;&#60; str &lt;&#60; endl;
+    }
+    else cerr &lt;&#60; buffer &lt;&#60; " is an invalid SMILES!" &lt;&#60; endl;
+  }
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch3-9.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node12.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node9.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node14.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node12.html">2.3 Creating a Molecule</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node9.html">2. Manipulating Molecules</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node14.html">3. Reading and Writing</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

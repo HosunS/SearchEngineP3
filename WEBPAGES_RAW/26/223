@@ -1,0 +1,223 @@
+<HTML>
+<HEAD>
+  <META NAME="GENERATOR" CONTENT="Adobe PageMill 2.0 Mac">
+  <TITLE> Chimera Concepts - Viewers</TITLE>
+</HEAD>
+<BODY LINK="#0000ff" VLINK="#ff0000" ALINK="#00bb00" BGCOLOR="#ffffff">
+
+<P><CENTER><TABLE BORDER="1" CELLSPACING="0" CELLPADDING="2">
+<CAPTION ALIGN="TOP">Local Site Map</CAPTION>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="index.html">Overview</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><B>Viewers</B></TD>
+<TD WIDTH="34%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="objects.html">Objects</A></TD></TR>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="views.html">Views</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="anchors.html">Anchors</A></TD>
+<TD WIDTH="34%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="links.html">Links</A></TD></TR>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="attributes.html">Attributes</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="clients.html">Clients</A></TD>
+<TD WIDTH="34%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="hyperwebs.html">Hyperwebs</A></TD></TR>
+</TABLE>
+</CENTER></P>
+
+<P><CENTER><HR></CENTER></P>
+
+<H1><CENTER>Viewers</CENTER></H1>
+
+<P><TABLE BORDER="0" CELLSPACING="2" CELLPADDING="0">
+<TR>
+<TH></TH>
+<TH>Example Viewers include...</TH></TR>
+<TR>
+<TD ROWSPAN="2">Viewers are the fundamental components of the Chimera universe. Without
+viewers, users are unable to access Chimera's services. Viewers generate
+the graphical displays of <A HREF="objects.html">objects</A>. These <A 
+HREF="views.html">views</A> allow users to browse and, in some cases, edit
+the underlying information. It is within these views that <A HREF="anchors.html">anchors</A>
+reside. An anchor is a logical &quot;end-point&quot;, a hook if you will,
+for Chimera's <A HREF="links.html">links</A>.</TD>
+<TD ALIGN="CENTER"><IMG SRC="../../images/frame.gif" WIDTH="71" HEIGHT="49" NATURALSIZEFLAG=
+"3" ALIGN="BOTTOM"></TD></TR>
+<TR>
+<TD ALIGN="CENTER"><B>... Document Processors,...</B></TD></TR>
+<TR>
+<TD ALIGN="CENTER"><IMG SRC="../../images/photo.gif" WIDTH="115" HEIGHT="50" NATURALSIZEFLAG=
+"3" ALIGN="BOTTOM"></TD>
+<TD ROWSPAN="2">Viewers are typically focused beasts. They often can display only one type
+of information. They are completely responsibile for the creation, manipulation,
+and persistence of the information within their domain. Chimera makes no
+assumptions about the format or storage of a viewer's data. Rather, Chimera
+depends on the viewer to provide the bridge between its information and
+Chimera's hypermedia services.</TD></TR>
+<TR>
+<TD ALIGN="CENTER"><B>... Image Manipulators, ...</B></TD></TR>
+<TR>
+<TD ROWSPAN="2">Viewers are responsible for the display of anchors within their views. They
+transform the logical abstraction of an anchor into a specific region or
+widget within their user-interface. In addition, a viewer is responsible
+for providing a user with access to hypermedia operations which allow them
+to create and delete anchors. Operations for adding anchors to links and
+initiating traversal should also be provided. An advanced viewer will provide
+functions to search <A HREF="hyperwebs.html">hyperwebs</A>, create and select
+links, and modify existing anchors.</TD>
+<TD ALIGN="CENTER"><IMG SRC="../../images/file.gif" WIDTH="70" HEIGHT="50" NATURALSIZEFLAG=
+"3" ALIGN="BOTTOM"></TD></TR>
+<TR>
+<TD ALIGN="CENTER"><B>... and Database Managers.</B></TD></TR>
+</TABLE>
+</P>
+
+<P>It is important to separate the notion of viewers from the related notion
+of <A HREF="clients.html">clients</A>. Clients are executable programs which
+contain viewers. Typically, a client contains only a single viewer. This
+one-to-one relationship often leads to confusion between the two. However,
+there is nothing preventing a client from harboring two or more viewers
+within itself. As an example, consider a client such as Microsoft Excel.
+Excel contains viewers which manipulate and display worksheets, macros,
+charts, and other data types. Each viewer within Excel has to fulfill viewer
+responsibilities while Excel as a whole must fulfill <A HREF="clients.html#obligations">client
+obligations</A>. By working together, the client and its associated viewers
+provide the user with a hypermedia-enabled application.</P>
+
+<P>In addition to the responsibilities discussed above, a viewer must fulfill
+the following <A NAME="obligations"></A>obligations:</P>
+
+<UL>
+  <LI>Register itself with the Chimera server.
+  <LI>Register the MIME types of the objects it displays.
+  <LI>Register its (in)ability to handle multiple views at once.
+  <LI>Register interest in the set of Chimera events it handles.
+  <LI>Notify the Chimera server when it is active within its client.
+  <LI>Notify the Chimera server of the views it is displaying.
+</UL>
+
+<P>All of the these responsibilities will be highlighted in the <A HREF=
+"../../dev/tutorial/index.html">Chimera 2.0 tutorial</A>. However, the notion
+of multiple views deserves further consideration. Chimera supports a form
+of traversal known as <I>delayed link traversal</I>. A delayed link traversal
+occurs when the Chimera server determines that a link traversal event must
+be sent to a viewer which is currently not available. In this situation,
+the server stores the link traversal event and invokes the desired viewer.
+Once the viewer has initialized, the Chimera server forwards the delayed
+event to it and the link traversal finally completes. The rules for determing
+when a viewer is unavailable are closely related to whether a viewer supports
+multiple views. The rules are as follows:</P>
+
+<UL>
+  <LI>Determine if an active viewer is displaying the destination view of
+  the link traversal. If so, send the event to that viewer.
+  <LI>Determine if a viewer which can display the destination view is active.
+  If so, check to see if it has any active views. If not, send the event
+  to that viewer. If so, only send the event to the viewer if it supports
+  multiple views.
+  <LI>Repeat step two for all such potential viewers until the event is sent.
+  <LI>If all potential active viewers have been exhausted, delay the event
+  and invoke the desired viewer.
+</UL>
+
+<P>The upshot of these rules is to underscore the importance of a viewer
+indicating whether or not it can display multiple views. Viewers which can
+support multiple views improve the overall efficiency of the system since
+operating system resources are saved from the burden of invoking multiple
+instances of the same viewer.</P>
+
+<H2>Developer Information</H2>
+
+<P>The available operations on views are listed below. For more information
+see the <A HREF="../../dev/docs/index.html">on-line documentation</A>.</P>
+
+<P><CENTER><TABLE BORDER="1" CELLSPACING="2" CELLPADDING="4">
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>activeViewer(viewer)</B></TD>
+<TD VALIGN="TOP">Informs the Chimera server that the specified viewer is active within its
+client.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>addMIMEtype(viewer, String)</B></TD>
+<TD VALIGN="TOP">Adds the specified MIME type to the list of MIME types the specified viewer
+supports.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>createViewer(String)</B></TD>
+<TD VALIGN="TOP">Creates a new viewer with the specified name in the active hyperweb.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>deleteViewer(viewer)</B></TD>
+<TD VALIGN="TOP">Delete's the specified viewer from the active hyperweb. Note, the Chimera
+server proactively maintains the consistency of the Chimera hyperweb, thus
+this operation will also remove any views which contain the specified viewer,
+which in turn will delete any anchors associated with those views, etc.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>deregisterInterest(viewer, event)</B></TD>
+<TD VALIGN="TOP">Informs the Chimera server that the specified viewer is no longer interested
+in the specified event.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>getMIMEtypes(viewer)</B></TD>
+<TD VALIGN="TOP">Returns a list of the MIME types supported by the specified viewer.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>getViewer(String)</B></TD>
+<TD VALIGN="TOP">Returns the viewer with the specified name.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>getViewer(viewer)</B></TD>
+<TD VALIGN="TOP">Returns the viewer with the specified viewer id.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>getViewerName()</B></TD>
+<TD VALIGN="TOP">Returns the name of the specified viewer.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>getViewers()</B></TD>
+<TD VALIGN="TOP">Returns all of the viewers for the active hyperweb.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>inactiveViewer</B></TD>
+<TD VALIGN="TOP">Informs the Chimera server that the specified viewer is no longer active
+within its client.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>numberOfViewers()</B></TD>
+<TD VALIGN="TOP">Returns the number of viewers contained in the active hyperweb.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>registerInterest(viewer, event)</B></TD>
+<TD VALIGN="TOP">Informs the Chimera server that the specified viewer is interested in the
+specified event.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>setMultipleViews(viewer, boolean)</B></TD>
+<TD VALIGN="TOP">Indicates to the Chimera server whether or not the specified viewer can
+support the display of more than one view at a time.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>supportsMultipleViews(viewer)</B></TD>
+<TD VALIGN="TOP">Returns an indication of whether or not the specified viewer can support
+the display of more than one view at a time.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>supportsType(viewer, String)</B></TD>
+<TD VALIGN="TOP">Returns whether or not the specified viewer supports the specified MIME
+type.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>viewerExists(String)</B></TD>
+<TD VALIGN="TOP">Checks to see if a viewer exists with the specified name.</TD></TR>
+<TR VALIGN="TOP">
+<TD VALIGN="TOP" NOWRAP><B>viewerExists(viewer)</B></TD>
+<TD VALIGN="TOP">Checks to see if a viewer exists with the specified viewer id.</TD></TR>
+</TABLE>
+</CENTER></P>
+
+<P><CENTER><HR SIZE="1" NOSHADE> <TABLE BORDER="1" CELLSPACING="0" CELLPADDING=
+"2" HEIGHT="66">
+<CAPTION ALIGN="TOP">Local Site Map</CAPTION>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER" HEIGHT="21"><A HREF="index.html">Overview</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><B>Viewers</B></TD>
+<TD WIDTH="34%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="objects.html">Objects</A></TD></TR>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER" HEIGHT="21"><A HREF="views.html">Views</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="anchors.html">Anchors</A></TD>
+<TD WIDTH="34%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="links.html">Links</A></TD></TR>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER" HEIGHT="21"><A HREF="attributes.html">Attributes</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="clients.html">Clients</A></TD>
+<TD WIDTH="34%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="hyperwebs.html">Hyperwebs</A></TD></TR>
+</TABLE>
+</CENTER></P>
+
+<P><B>This page is part of the <A HREF="http://www.ics.uci.edu/pub/chimera/">Chimera</A>
+web site.<BR>
+Send feedback and questions to <A HREF="mailto:kanderso@ics.uci.edu">Ken
+Anderson</A>.</B>
+</BODY>
+</HTML>

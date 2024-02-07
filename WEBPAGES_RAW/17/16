@@ -1,0 +1,184 @@
+import org.junit.*;
+import static org.junit.Assert.*;
+
+// ProgramStateTest.java
+//
+// ICS 22 / CSE 22 Spring 2010
+// Code Example
+//
+// This is a JUnit test case class that includes some tests for a hypothetical
+// implementation of the ProgramState class from the Facile project.  Note that
+// there's nothing special about a JUnit test case class except for what you
+// put into it (JUnit test methods); it's otherwise a fairly normal class.
+
+
+// You'll need to include these imports at the top of each of your JUnit
+// test case classes.
+
+
+
+
+public class ProgramStateTest
+{
+	// You'll notice something peculiar about the methods in this class;
+	// they have strange markings above them.
+	//
+	// Methods (and lots of other things) can be marked with "annotations" in
+	// Java.  Annotations have names that begin with an "@" symbol, and are
+	// useful in a variety of ways.  JUnit recognizes several annotations.
+	// Examples include:
+	//
+	//    @Test     Marks a method as being a test.
+	//    @Before   Marks a method as being one that should be called before
+	//                  each test in its class is executed.
+	//    @After    Marks a method as being one that should be called after
+	//                  each test in its class is executed.
+	//    @Ignore   Causes the subsequent method to not be run. This allows
+	//              to run only a subset of test methods in the class.
+	//
+	// There are a number of others, but these are the only ones you're
+	// likely to need -- and even @After is something you probably won't
+	// find that you need often, if at all.
+
+
+
+	// This method is marked with a @Before annotation, because we want
+	// JUnit to call it before calling *each* of the tests in this class.
+	// The reason for a @Before method is simple: if you have many
+	// test methods that are testing the same class, it's likely that they'll
+	// all need the same code to set certain things up ahead of time.  In our
+	// case, since we're testing ProgramState, they'll all need code to create
+	// a new ProgramState.  So, by moving that code into a @Before method, we
+	// won't need to duplicate it in each of the test methods.
+	//
+	// You can have as many of these @Before methods as you want; JUnit will
+	// call all of them before each test, though you can't be sure what order
+	// they'll be called in.
+	@Before
+	public void createProgramState()
+	{
+		state = new ProgramState();
+	}
+
+
+	// This field is required because we need to save the ProgramState created
+	// by the createProgramState() method so that it can be used in a subsequent test
+	// method.
+	private ProgramState state;
+
+
+
+	// Each test method is marked by the @Test annotation.  Test methods can
+	// be named anything you want, though it's usually best to choose a name
+	// that states what condition or behavior the method is testing for.  (You
+	// may not feel the need to write names as long as mine, but you'll surely
+	// be able to find descriptive names, even if they're short.)  JUnit will
+	// automatically find and execute all of the methods that it finds with
+	// the @Test annotation.
+	//
+	// Other similarities about all of these test methods are that they are
+	// public, void, and take no parameters.  They're all public so that JUnit
+	// can call them.  They take no parameters because JUnit wouldn't know
+	// what parameters to pass to them; in some sense, our tests are self-
+	// contained, including the inputs and expected outputs within the code,
+	// so that parameters aren't necessary.  They return void because JUnit
+	// doesn't use the return value of a test method to distinguish between
+	// success and failure.  Instead, it uses exceptions:
+	//
+	//    * If a test method does not throw an exception, the test is
+	//      considered to be successful.
+	//
+	//    * If a test method does throw an exception, the test is considered
+	//      to have failed.
+	//
+	// Each of these tests makes use of a method called assertEquals(), which
+	// is a way of saying "At this point, these two values should be the same."
+	// If they are, nothing happens; if they aren't, assertEquals() throws an
+	// exception called an AssertionError, which will cause JUnit to consider
+	// the test to have failed.  Slick, huh?
+	//
+	// There are other assert methods that you can call, such as assertTrue(),
+	// assertFalse(), and so on, which all have the nice property of being
+	// fairly self-explanatory.  For example, if you write something like this:
+	//
+	//     assertTrue(collection.contains(song));
+	//
+	// your test reads almost as clearly as English, which aids clarity.
+
+
+	@Test
+	public void setVariableFollowedByGetReturnsCorrectValue()
+	{
+		state.setValue('D', 3);
+		assertEquals(3, state.getValue('D'));
+
+		// Notice the order in which I passed parameters to assertEquals().
+		// First I passed the expected value (3), then I passed the result
+		// of testing the getVariableValue() method.  This ordering turns
+		// out to be important, because of the way that JUnit shows its
+		// results: it assumes that the first parameter to assertEquals()
+		// is the expected value and that the second parameter is the
+		// test result.  If you pass the parameters backward, you'll have
+		// a little more trouble understanding the error message.
+	}
+
+
+	@Test
+	public void setFirstVariableFollowedByGetReturnsCorrectValue()
+	{
+		state.setValue('A', 9);
+		assertEquals(9, state.getValue('A'));
+	}
+
+
+	@Test
+	public void setLastVariableFollowedByGetReturnsCorrectValue()
+	{
+		state.setValue('Z', 8);
+		assertEquals(8, state.getValue('Z'));
+	}
+
+
+	// Suppose that the setVariableValue() method throws a particular
+	// kind of exception, NoSuchVariableException, if passed a non-
+	// existent variable name.  (Remember that, in Facile, only
+	// uppercase letters are valid variable names.)  If we don't tell
+	// JUnit to expect this exception, it'll think that the exception
+	// indicates test failure.  But in this case, we *want* the
+	// exception to be thrown, and, in fact, we want the test to be
+	// considered a failure if the exception is *not* thrown.
+	//
+	// Solving this kind of problem is easy with JUnit: add the
+	// "expected" parameter to the @Test annotation, which tells JUnit
+	// that this test is expected to throw a particular kind of exception.
+	// If that exception is thrown by the test, JUnit will consider the
+	// test to be a success; otherwise, it will consider it to be a
+	// failure.
+	//
+	// Note the syntax here, which is a little different from the
+	// syntax used to pass a parameter to a method.  Also, notice the
+	// ".class" that follows the name of the exception's class.  This
+	// is absolutely required.  (The reason why is a long story.)
+	
+	@Test(expected = NoSuchVariableException.class)
+	public void settingNonExistentVariableCausesException()
+	{
+		state.setValue('?', 8);
+	}
+	
+
+	@Test
+	public void variablesHaveValueZeroInitially()
+	{
+		for (char c = 'A'; c <= 'Z'; c++)
+			assertEquals(0, state.getValue(c));
+
+		// There's no reason why you can't assert more than one thing in
+		// a test method.  In this case, I'm asserting that the value of
+		// each of the variables from 'A' to 'Z' is initially zero.
+		// Still, it's a good idea to test one kind of behavior in each
+		// test method; there are 26 assertions here, but they're all
+		// asserting that one of the variables has the right initial
+		// value.
+	}
+}

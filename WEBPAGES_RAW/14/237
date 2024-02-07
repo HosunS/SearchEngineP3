@@ -1,0 +1,106 @@
+// Test of closest pair algorithms
+// David Eppstein, UC Irvine, 19 Apr 1997
+//
+// Sorted array subroutine for conga line data structure subset sizes
+// Since there are few (O(log n)) subsets, we are best off avoiding
+// complicated binary search trees etc, and just using a sorted array.
+//
+// This is an object that acts like a normal array, except that
+// after changing an array entry you are supposed to call Update(),
+// and it will allow you to look up the min. array element or the
+// pair of elements having sizes with the smallest ratio.
+// For technical reasons involving the constructor of CongaLine,
+// the SortedArray constructor does little; instead call Allocate later.
+
+#include "SortedArray.h"
+#include "Error.h"
+
+// perform array lookup w/bounds checking
+unsigned long & SortedArray::operator[] (unsigned long i)
+{
+	if (i >= array_size) error("SortedArray: index out of bounds");
+	return values[i];
+}
+
+// swap sorted array indices at posns i and i+1
+void SortedArray::Swap(unsigned long i)
+{
+	unsigned long temp = sorted_indices[i];
+	sorted_indices[i] = sorted_indices[i+1];
+	sorted_indices[i+1] = temp;
+	where_are_the_values[sorted_indices[i]] = i;
+	where_are_the_values[sorted_indices[i+1]] = i+1;
+}
+
+// reorder array after changing a value
+void SortedArray::Update(unsigned long i)
+{
+	i = where_are_the_values[i];	// translate to sorted array index
+	while (i < array_size - 1 &&
+		   values[sorted_indices[i]] > values[sorted_indices[i+1]])
+	{
+		Swap(i);
+		i++;
+	}
+	while (i > 0 &&
+		   values[sorted_indices[i-1]] > values[sorted_indices[i]])
+	{
+		Swap(i-1);
+		i--;
+	}
+}
+
+// find index with smallest value
+unsigned long SortedArray::MinValue()
+{
+	return sorted_indices[0];
+}
+
+// What is size ratio of positions i, i+1?
+double SortedArray::SizeRatio(unsigned long i)
+{
+	return ((double) values[sorted_indices[i+1]]) /
+		   ((double) values[sorted_indices[i]]);
+}
+
+// find pair of indices closest in size
+// or, among equal choices, take indices w/smallest size
+void SortedArray::MinRatio(unsigned long & i, unsigned long & j)
+{
+	unsigned long k = 0;
+	while (values[sorted_indices[k]] == 0 && k < array_size - 1) k++;
+	if (k < array_size - 1) {
+		double r = SizeRatio(k);
+		for (unsigned long x = k+1; x < array_size - 1; x++) {
+			double xr = SizeRatio(x);
+			if (xr < r) {
+				r = xr;
+				k = x;
+			}
+		}
+	}
+	i = sorted_indices[k];
+	j = sorted_indices[k+1];
+}
+
+// set up and zero array
+void SortedArray::Allocate(unsigned long newsize)
+{
+	if (array_size > 0) {
+		delete values;
+		delete sorted_indices;
+		delete where_are_the_values;
+	}
+	array_size = newsize;
+	if (array_size == 0) return;
+	values = new unsigned long[array_size];
+	sorted_indices = new unsigned long[array_size];
+	where_are_the_values = new unsigned long[array_size];
+	if (values == 0 || sorted_indices == 0 || where_are_the_values == 0)
+		error("SortedArray: unable to allocate arrays");
+	for (unsigned long i = 0; i < array_size; i++) {
+		values[i] = 0;
+		sorted_indices[i] = i;
+		where_are_the_values[i] = i;
+	}
+}

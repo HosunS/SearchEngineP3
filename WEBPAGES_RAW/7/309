@@ -1,0 +1,628 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC
+ "-//W3C//DTD XHTML 1.1//EN"
+ "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<link rel="stylesheet" href="../../course.css" type="text/css" />
+
+<title>ICS 45C Fall 2016, Project #2: Letter Never Sent</title>
+</head>
+
+<body>
+
+<div class="navbar">
+
+<p>
+ICS 45C Fall 2016 |
+<a href="../../index.html">News</a> |
+<a href="../../CourseReference.html">Course Reference</a> |
+<a href="../../Schedule.html">Schedule</a> |
+<a href="../../ProjectGuide">Project Guide</a> |
+<a href="../../Notes">Notes and Examples</a> |
+<a href="http://www.ics.uci.edu/~thornton/">About Alex</a>
+</p>
+
+<hr />
+
+</div>
+
+<div class="header">
+
+<p>ICS 45C Fall 2016<br />
+   Project #2: <i>Letter Never Sent</i></p>
+   
+</div>
+
+<div class="section">
+
+<p class="center"><b>Due date and time:</b> <i>Monday, October 31, 11:59pm</i></p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Introduction</p>
+
+<p>Over my years of teaching, I've become quite fond of a grading scale that I jokingly refer to as the "Whatever I Want" scale.  Of course, it's not quite as open-ended as my glib joke about it; it's a fair scale in the sense that any two students who perform at a particular level will receive the same grade &mdash; though it is neither a straight scale nor a curve, requiring me instead to decide, at the end of the quarter, where to set <i>cutpoints</i> that divide the students who receive one grade from the students who receive another.  This is the grading scale that I'll employ at the end of the quarter in this course.</p>
+
+<p>This project asks you to write a utility program that is given input via the standard input (i.e., <b>std::cin</b>) describing the set of graded artifacts for a course, the students enrolled in the course, and their scores on the various artifacts.  Additionally, it is given a sequence of <i>cutpoint sets</i> describing the cutpoints (i.e., the number of total points necessary) to achieve various grade levels.  The program's output is twofold: the <i>total score</i> received by each student in the course and, for each cutpoint set, final course grades for each student.  The idea is for a tool like this to be used by a person to look at a few possible outcomes, to determine whether the outcomes are fair.  The program makes no determination about that fairness, though; it provides the raw materials for a person to analyze.</p>
+
+<p>Not surprisingly, you will need to write the program in C++, though there are some fairly heavy restrictions on what parts of C++ you're permitted to use, as we're still early in the process of learning it and I'd like you to gain some experience with some of the lower-level abstractions (most notably arrays, <b>new</b>, <b>delete</b>, and <b>delete[ ]</b>) before we layer less error-prone abstractions on top of them.  Our goal in the early part of this course is to develop an understanding of what is happening behind the scenes in a C++ program, and it's impossible to develop this understanding if you sit at too high of a level of abstraction.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Getting started</p>
+
+<p>As with the <a href="../Project1">previous project</a>, you'll need to complete some chores before you can start working on this project.  <i>Be sure you read these instructions and follow them completely before proceeding.</i></p>
+
+<p class="subtitle">Refreshing your ICS 45C VM environment</p>
+
+<p>Even if you previously downloaded your ICS 45C VM, you may need to refresh its environment before proceeding with this project, so that you have a copy of the <b>project2</b> project template that you'll need for this project.</p>
+
+<p>Log into your VM and issue the command <b>ics45c version</b> to see what version of the ICS 45C environment you currently have stored on your VM.  Note, in particular, the timestamp; if you see a version with a timestamp older than the one listed below, you'll want to refresh your environment by running the command <b>ics45c refresh</b> to download the latest one before you proceed with this project.</p>
+
+<blockquote><pre>
+2016-10-13 16:03:00
+Project #2 template added
+</pre></blockquote>
+
+<p>Note that you can instead use the <b>ics45c refresh_local</b> technique described in the <a href="../Project1">Project #1</a> write-up, if you're unable to make your outgoing Internet connection work from within the ICS 45C VM.</p>
+
+<p class="subtitle">Creating your project directory on your ICS 45C VM</p>
+
+<p>A project template has been created specifically for this project.  It includes a <b>gather</b> script for preparing your files for submission when you're finished, support for running the memory-checking tool <b>valgrind</b> to test the memory usage of your proram, as well as a sample input for your program (the same input that is specified in the project write-up), to prevent you from having to type it repeatedly.</p>
+
+<p>Decide on a name for your project directory, then issue the command <b>ics45c start <i>PROJECT_NAME</i> project2</b> to create your new project directory using the <b>project2</b> template.</p>
+
+<p><i>Do not use the <b>basic</b> or <b>project1</b> templates for this project!  You may find that they are missing some new tools that you'll be needing in order to complete your work!</i></p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The input</p>
+
+<p>The program's input is to be read from the standard input (i.e., <b>std::cin</b>).  It is separated into four sections:</p>
+
+<ul>
+  <li>A description of a course's <i>graded artifacts</i>, defining both a <i>number of points possible</i> and a <i>relative weight</i> for each.</li>
+  <li>A description of the students in the course, listing a <i>student ID</i>, a <i>grade option</i>, and a <i>name</i> for each.</li>
+  <li>A list of the raw scores received on each graded artifact by students in the course.</li>
+  <li>A list of <i>cutpoint sets</i>, describing the total score required to receive an A, B, C, or D, respectively.  (This project assumes that there are no +/- modifiers on grades, and that there are no other kinds of grades such as Incomplete, though we will support Pass/NotPass grades; see below.)</li>
+</ul>
+
+<p>Each section is described in more detail below.</p>
+
+<p class="subtitle">Graded artifacts</p>
+
+<p>The section describing graded artifacts begins with a positive integer, alone on a line, specifying the number of graded artifacts.  This is followed, on another line, by a sequence of positive integers separated by spaces, indicating the total points possible on each graded artifact.  Finally, on one more line, there will be a sequence of positive integers separated by spaces, indicating the relative weight of each graded artifact.  An example of this section would be:</p>
+
+<blockquote><pre>
+7
+15 15 15 15 15 50 50
+12 12 12 12 12 15 25
+</pre></blockquote>
+
+<p>This example describes seven graded artifacts, the first five having 15 points possible and relative weights of 12, the sixth having 50 points possible and a relative weight of 15, and the last having 50 points possible and a relative weight of 25.  Note that, in this example, the relative weights add up to 100; in general, however, this will not always be the case.</p>
+
+<p class="subtitle">Students</p>
+
+<p>The next section of input describes the students enrolled in the course.  It begins with a positive integer, alone on a line, specifying the number of students enrolled.  Given that positive integer <i>n</i>, there will be <i>n</i> additional lines, each consisting of a non-negative integer <i>student ID</i>, followed by a space, followed by the student's <i>grade option</i> (G for "letter grade" or P for "Pass/NotPass"), followed by another space, followed by the student's name.  Every character on the line after the grade option and space is considered to be part of the student's name.  (It's important to note that the space following the grade option is <i>not</i> part of a student's name.)  An example of this section would be:</p>
+
+<blockquote><pre>
+5
+123 G Alex Thornton
+234 G Boo Thornton
+345 G Jane Student
+456 P Joe Student
+567 G Too-Many Courses
+</pre></blockquote>
+
+<p>Student IDs do not necessarily have to be three digits, and they do not necessarily all have to be the same number of digits.</p>
+
+<p class="subtitle">Raw scores</p>
+
+<p>The next section of input describes the raw scores earned by students on each graded artifact.  The section begins with a positive integer, alone on a line, specifying the number of students for which raw scores are listed.  Given that positive integer <i>n</i>, there will be <i>n</i> additional lines, each consisting of a sequence of non-negative integers separated by spaces, the first of which is a student ID, and the rest of which are raw scores for each graded artifact.  If there are <i>m</i> graded artifacts, you can assume each of these lines will contain <i>m</i> + 1 integers (one student ID, followed by <i>m</i> raw scores), and that the scores correspond, in order, to the graded artifacts listed in the first section.  Example:</p>
+
+<blockquote><pre>
+5
+345 14 14 14 14 14 45 45
+123 13 10 8 14 12 50 37
+456 12 9 15 13 11 38 26
+234 15 15 15 15 15 50 50
+567 8 4 0 10 0 24 12
+</pre></blockquote>
+
+<p>It is possible for a student to be listed in the previous section but <i>not</i> to be listed in this section.  In that case, assume that the student's raw scores are all 0.  It is also possible for a student to be listed in this section who does not appear in the previous section; in that case, ignore the student's raw scores, as the student is assumed to have dropped the course.</p>
+
+<p>It is also possible for a raw score to be higher than the number of points possible on a graded artifact.  This is to be interpreted as extra credit, and fits into the formula below as-is.</p>
+
+<p class="subtitle">Cutpoint sets</p>
+
+<p>The last section of input is the <i>cutpoint sets</i>.  This section begins with a positive integer, alone on a line, specifying the number of cutpoint sets.  Given that positive integer <i>n</i>, the next <i>n</i> lines will consist of four non-negative numeric values (possibly including a decimal point and additional digits) that specify, respectively, the total points required for an A, B, C, or D in the course.  Example:</p>
+
+<blockquote><pre>
+3
+90.0 80.0 70.0 60.0
+85.0 75.0 65.0 55.0
+80.0 70.0 60.0 50.0
+</pre></blockquote>
+
+<p>Note that these are not percentages, necessarily; they indicate a total number of points necessary &mdash; this is described in more detail later in this write-up.</p>
+
+<p>You may assume that each of the cutpoint values can safely be read into a variable of type <b>double</b>, and that the cutpoint values on each line will be non-ascending (e.g., the total points required for a higher grade like A will never be less than the total points required for a lower grade like B or C).</p>
+
+<p class="subtitle">A complete example input</p>
+
+<p>A complete example input for the program follows.  It should be possible to copy and paste this into a shell window, or to save this into a file and use redirection to send the file's contents into your program as input.  Additionally, this exact input file is provided in the <b>project2</b> project template, so you should find a copy of it in your project directory in a directory called <b>inputs</b>.  (You might want to create other test inputs and place them in that directory, as well.  You absolutely should be testing your program with inputs other than the provided one, as we will be when we grade it.  However, we won't be providing additional test scenarios.  It's up to developers of programs to develop their own tests; that's part of the job.)</p>
+
+<blockquote><pre>
+7
+15 15 15 15 15 50 50
+12 12 12 12 12 15 25
+5
+123 G Alex Thornton
+234 G Boo Thornton
+345 G Jane Student
+456 P Joe Student
+567 G Too-Many Courses
+5
+345 14 14 14 14 14 45 45
+123 13 10 8 14 12 50 37
+456 12 9 15 13 11 38 26
+234 15 15 15 15 15 50 50
+567 8 4 0 10 0 24 12
+3
+90.0 80.0 70.0 60.0
+85.0 75.0 65.0 55.0
+80.0 70.0 60.0 50.0
+</pre></blockquote>
+
+<p>Note that there is nothing that explicitly separates one section of the input from the next, though you will always be able to tell from context (e.g., the number of graded artifacts, the number of students, etc.) where one section ends and the next begins.</p>
+
+<p class="subtitle">Other requirements about the input</p>
+
+<p>The program must not print prompts (e.g., "Enter the number of students") or any other output <i>except</i> for what is specified in the section titled <i>The output</i> below.</p>
+
+<p>It is reasonable for your program to assume that the program's input will always be structured as specified here.  It is fine for your program to misbehave or even crash if given input that does conform to these specifications.</p>
+
+<p>It is safe to assume that all integers will be small enough that they will fit into an <b>unsigned int</b> or <b>int</b> variable (using the ICS 45C VM and the tools we're using on it, the largest value that would fit in both of these kinds of variables is 2,147,483,647).</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Calculating the total points</p>
+
+<p>The program's output is largely determined by the <i>total score</i> earned by each student in the course.  In order to complete the program, you'll need to understand the correct formula to use.</p>
+
+<p>In the example input above, there are seven graded artifacts defined:</p>
+
+<ol>
+  <li>15 points possible, with a relative weight of 12</li>
+  <li>15 points possible, with a relative weight of 12</li>
+  <li>15 points possible, with a relative weight of 12</li>
+  <li>15 points possible, with a relative weight of 12</li>
+  <li>15 points possible, with a relative weight of 12</li>
+  <li>50 points possible, with a relative weight of 15</li>
+  <li>50 points possible, with a relative weight of 25</li>
+</ol>
+
+<p>From this example, we can see that simply adding together the raw scores on the various graded artifacts won't work, because, for example, artifact #6 is being graded on a 50-point scale, but is worth only slightly more, overall, than aritfact #5, which is being graded on a 15-point scale.  Summing the raw scores would give too much weight to artifact #6.  So we'll need to scale each of the raw scores, so that their relative weights are respected, then add the scaled scores together.</p>
+
+<p>The total relative weight of all graded artifacts in this example is 100, which means that the total score for each student will range from 0.0 to 100.0.  (It won't always be like this; we don't assume necessarily that all courses have a 100-point scale.)  We calculate this by multiplying the <i>percentage of points earned</i> on each graded artifact by its relative weight, then summing the results.  For example, suppose a student received these scores:</p>
+
+<ol>
+  <li>14</li>
+  <li>13</li>
+  <li>15</li>
+  <li>12</li>
+  <li>10</li>
+  <li>40</li>
+  <li>45</li>
+</ol>
+
+<p>The calculations would proceed as follows:</p>
+
+<ol>
+  <li>(14 / 15) * 12 = 11.2</li>
+  <li>(13 / 15) * 12 = 10.4</li>
+  <li>(15 / 15) * 12 = 12.0</li>
+  <li>(12 / 15) * 12 = 9.6</li>
+  <li>(10 / 15) * 12 = 8.0</li>
+  <li>(40 / 50) * 15 = 12.0</li>
+  <li>(45 / 50) * 25 = 22.5</li>
+</ol>
+
+<p>Summing these together would yield a total of 11.2 + 10.4 + 12.0 + 9.6 + 8.0 + 12.0 + 22.5 = 85.7.  So this student's <i>total score</i> is 85.7 out of a possible 100.</p>
+
+<p>Scores that include extra credit (i.e., a raw score higher than the number of points possible on a graded artifact) do not need to be treated differently; they should be plugged into the formula the same way as any other.</p>
+
+<p>Negative raw scores are not permitted in the input, as described above, so they don't factor into this formula at all.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Determining final course grades</p>
+
+<p>The final course grade for a student is determined by comparing the <i>total score</i> earned by that student to the cutpoints for an A, B, C, or D.</p>
+
+<ul>
+  <li>If a student's total score is greater than or equal to the A cutpoint, the student's final course grade is A</li>
+  <li>Otherwise, if a student's total score is greater than or equal to the B cutpoint, the student's final course grade is B</li>
+  <li>Otherwise, if a student's total score is greater than or equal to the C cutpoint, the student's final course grade is C</li>
+  <li>Otherwise, if a student's total score is greater than or equal to the D cutpoint, the student's final course grade is D</li>
+  <li>Otherwise, the student's final course grade is F</li>
+</ul>
+
+<p>Note that students whose grade option is P (Pass/NotPass) are handled a bit differently.  In their case, determine what their letter grade would have been (as described above) and then assign them one of these two grades:</p>
+
+<ul>
+  <li>If the student's letter grade would have been A, B, or C, the student's final course grade is P (i.e., passing)</li>
+  <li>If the student's letter grade would have been D or F, the student's final course grade is NP (i.e., not passing)</li>
+</ul>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The output</p>
+
+<p>While reading the input, there are specified points at which output will be generated and printed to the standard output (i.e., <b>std::cout</b>).  These are specified, along with the format of that output, below.</p>
+
+<p class="subtitle">Student roster</p>
+
+<p>After reading the raw scores on all graded artifacts, but before reading the next section of the input, total scores are printed for all students.  The format for this output is as follows:</p>
+
+<ul>
+  <li>The words <b>TOTAL SCORES</b>, alone on a line</li>
+  <li>For each student enrolled in the course, the student ID, followed by a space, followed by the student's name, followed by a space, followed by the student's total score</li>
+</ul>
+
+<p>Example:</p>
+
+<blockquote><pre>
+TOTAL SCORES
+123 Alex Thornton 79.1
+234 Boo Thornton 100
+345 Jane Student 92
+456 Joe Student 72.4
+567 Too-Many Courses 30.8
+</pre></blockquote>
+
+<p>It is not necessary to format the total score to a particular number of decimal places, though you should not truncate it or round it to an integer.  Whatever way the C++ <b>iostream</b> library formats a <b>double</b> value by default is fine here.</p>
+
+<p class="subtitle">Course grades</p>
+
+<p>After reading <i>each</i> cutpoint set, but before reading the next part of the input, final course grades for that cutpoint set are printed.  For the purposes of this output, cutpoint sets are numbered consecutively starting from 1.  The format of this output is as follows:</p>
+
+<ul>
+  <li>The words <b>CUTPOINT SET <i>n</i></b>, alone on a line, where <i>n</i> is replaced by the cutpoint set number (1 for the first cutpoint set, 2 for the second, and so on)</li>
+  <li>For each student enrolled in the course, the student ID, followed by a space, followed by the student's name, followed by a space, followed by the student's grade</li>
+</ul>
+
+<p>Example:</p>
+
+<blockquote><pre>
+CUTPOINT SET 1
+123 Alex Thornton C
+234 Boo Thornton A
+345 Jane Student A
+456 Joe Student P
+567 Too-Many Courses F
+</pre></blockquote>
+
+<p class="subtitle">Output timing</p>
+
+<p>Do not store all of the output in memory and print it to the standard output only at the end of the program.  Instead, you will be required to write output to the standard output at the points in time specified above.</p>
+
+<p class="subtitle">Output formatting</p>
+
+<p>Your output should be formatted exactly as specified above, including spacing, capitalization, spelling, and so on.  Note that we will be testing your programs in an automated fashion, so we will need these details to match the requirements precisely in order for our tests not to fail.</p>
+
+<p>A complete example of the exact proper output for the provided sample input file will appear in your project directory in a directory called <b>outputs</b>, in which you'll find a file called <b>sample.out</b>.</p>
+
+<p>One more note about output format: As in previous projects, I've indented the example inputs and outputs in this project write-up to set them apart from the text that surrounds them, but neither inputs nor outputs should be indented (e.g., the first line of the output should be <b>TOTAL SCORES</b>, alone on a line and <i>not</i> indented).  The only way your output is allowed to differ from ours is in the number of digits after decimal places in students' total scores, which is fine, so long as all of your total scores are within 0.1% of what we expect in every case (which is more than enough of a buffer to account for inaccuracies introduced by the use of floating-point types like <b>float</b> or <b>double</b>).</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">A complete example of program execution</p>
+
+<p>The following is a complete example of program execution from the Linux shell, demonstrating how input and output are interleaved.  Input is shown in a regular font weight; output is shown in <b>bold</b>.</p>
+
+<blockquote><pre>
+7
+15 15 15 15 15 50 50
+12 12 12 12 12 15 25
+5
+123 G Alex Thornton
+234 G Boo Thornton
+345 G Jane Student
+456 P Joe Student
+567 G Too-Many Courses
+5
+345 14 14 14 14 14 45 45
+123 13 10 8 14 12 50 37
+456 12 9 15 13 11 38 26
+234 15 15 15 15 15 50 50
+567 8 4 0 10 0 24 12
+<b>TOTAL SCORES
+123 Alex Thornton 79.1
+234 Boo Thornton 100
+345 Jane Student 92
+456 Joe Student 72.4
+567 Too-Many Courses 30.8</b>
+3
+90.0 80.0 70.0 60.0
+<b>CUTPOINT SET 1
+123 Alex Thornton C
+234 Boo Thornton A
+345 Jane Student A
+456 Joe Student P
+567 Too-Many Courses F</b>
+85.0 75.0 65.0 55.0
+<b>CUTPOINT SET 2
+123 Alex Thornton B
+234 Boo Thornton A
+345 Jane Student A
+456 Joe Student P
+567 Too-Many Courses F</b>
+80.0 70.0 60.0 50.0
+<b>CUTPOINT SET 3
+123 Alex Thornton B
+234 Boo Thornton A
+345 Jane Student A
+456 Joe Student P
+567 Too-Many Courses F</b>
+</pre></blockquote>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Some rules and limitations</p>
+
+<p>Because we're beginning our exploration of C++ by building our knowledge from some of its lowest-level abstractions, there are some fairly strict limitations on what features of the language you'll be permitted to use in this project.  Those limitations will lift quickly as we move forward this quarter, so don't be concerned that you'll always be put into a tiny box, but this project has some very particular goals.  If you have prior experience with C++, you may find that there are other techniques that you'd prefer to use &mdash; and it's quite possible that you're right that they'd be better techniques, in general &mdash; but you'll need to stick with what's allowed this time, because there are particular learning objectives here.</p>
+
+<p>Here are the rules and limitations governing your work on this project.</p>
+
+<ul>
+  <li>Other than <b>iostream</b>, <b>sstream</b>, and <b>string</b> &mdash; which you'll need for processing input and generating output &mdash; you are not permitted to include any C or C++ standard library headers in your program.  Aside from standard input/output (using, for example, <b>std::cin</b>, <b>std::cout</b>, and <b>std::endl</b>), the <b>std::string</b> class, and stringstreams (<b>std::istringstream</b> and <b>std::ostringstream</b>), the standard library is off-limits (e.g., you cannot use collections like <b>std::vector</b>).</li>
+  <li>Use arrays to store and manipulate data within your program.  Note, too, that you won't know the correct sizes for these arrays at compile time (because the sizes are specified in the program's input), so you will find that you need to use dynamically-allocated arrays extensively.</li>
+  <li>You are permitted to use <b>struct</b>s (in the C sense, i.e., implicitly public member variables with <i>no member functions, constructors, destructors, etc.</i>), but <b>class</b>es are off-limits until the next project, as our exploration of object-oriented techniques still lies ahead of us.</li>
+  <li>Even though this is what you might call a "batch mode" program (i.e., it reads input, processes it, generates output, and then ends), you are still required to explicitly delete any memory that you dynamically allocate using <b>new</b> before the program ends.  This is a habit that is vital to build in C++, so this will always be a requirement in this course.  (While the symptoms of leaking memory are often invisible, we'll use tools in this course to make them visible; more about that below.)</li>
+</ul>
+
+<p>From a design perspective, you are again required to break large functions into smaller ones (where each has a single, straightforward responsibility), and to arrange your functions into multiple source files (where each source file encompasses a set of strongly related functions).  Any source file that needs to "export" things (e.g., functions) to other source files should also include its own separate header file.</p>
+</ul>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Redirection (or, How to avoid re-typing the input every time you run your program)</p>
+
+<p>When you use the <b>run</b> script to execute your program &mdash; and, generally, by default in Linux &mdash; the standard input and standard output are connected to the shell window where you executed the program.  The program's input is typed into that shell window; the program's output is written to that shell window.</p>
+
+<p>However, you can also use a technique called <i>redirection</i> to connect the standard input and/or standard output to other devices &mdash; most importantly for us, to files! &mdash; instead of the default.  For example, the contents of an existing file may be redirected into the standard input, so that your program will read its input from the file instead of from the shell window; similarly, the standard output can be redirected into a file, meaning that all of the output printed to <b>std::cout</b> will be saved into that file, rather than being displayed in the shell window.</p>
+
+<p>The typical mechanism for redirection is to use the &lt; and &gt; operators on the command line, like this:</p>
+
+<blockquote><pre>
+SomeProgramYouWantToRun &lt;FileContainingStdInput.txt &gt;FileToStoreStdOutput.txt
+</pre></blockquote>
+
+<p>You don't have to use both; you can use only &lt; (in which case the standard input is read from a file, but the standard output is written to the shell window) or only &gt; (in which case the standard input is read from the shell window, but the standard output is written to a file).  It's up to you.</p>
+
+<p class="subtitle">Using redirection to avoid re-typing test input</p>
+
+<p>This can be a handy technique to use in your testing, to avoid the problem of having to re-type the program's input every time you run it.  If you used the <b>project2</b> project template &mdash; and you should have! &mdash; when creating your project, you should see a directory called <b>inputs</b> in your project directory; in the <b>inputs</b> directory, you should see a file <b>sample.in</b>, which contains the sample input from this project write-up.  If you want to run your program using the same input, issue this command (from your project directory):</p>
+
+<blockquote><pre>
+./run &lt;inputs/sample.in
+</pre></blockquote>
+
+<p>The effect is that the contents of the <b>sample.in</b> file in the <b>inputs</b> directory will be redirected into your program's standard input, in lieu of you having to type it.  You might also want to write other test files for yourself in that same <b>inputs</b> directory, then use a similar technique to redirect them into the standard input of your program.  You can avoid a lot of re-typing this way!</p>
+
+<p class="subtitle">A note about output timing</p>
+
+<p>Note that the redirection technique will not give you an accurate view of whether your program is printing the right output at the right times, as specified in the requirements above, but it will tell you whether your program is generating the correct answer.  You can enter the input manually sometimes when you want to test the timing of the output.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Using Valgrind to check your memory usage</p>
+
+<p>Valgrind is a program that you can use to detect a variety of otherwise difficult-to-find problems in C and C++ programs.  It consists of a set of <i>tools</i>, each of which detects a certain kind of problem.  For our work here, we'll be interested in a tool in Valgrind called <b>Memcheck</b>, which watches a program while it runs, tracking the dynamic allocations and deallocations it does, along with every other memory access that takes place.  When the program finishes, it reports a summary of memory leaks and other memory-related issues that it found.  So, for example, if the program allocated an object dynamically using <b>new</b>, but never deallocated the object, the memory allocated to that object would be reported as a leak.  On the other hand, if you had a dangling pointer and you dereferenced it, it would be reported as a use of memory that had been deallocated already.  In this way, problems that would otherwise be hidden from you will become brightly visible.</p>
+
+<p>As an example of what Memcheck can do, consider the following short C++ program that contains a memory leak &mdash; the array allocated dynamically using <b>new</b> is never deallocated using <b>delete[ ]</b>.  (Along the left-hand column, line numbers are shown; they are not part of the program.)</p>
+
+<blockquote><pre>
+1     #include &lt;iostream&gt;
+2
+3
+4     int main()
+5     {
+6         std::cout << "Hello Boo!" << std::endl;
+7
+8         int* a = new int[10];
+9
+10        for (int i = 0; i < 10; ++i)
+11        {
+12            a[i] = i;
+13        }
+14
+15        std::cout << "Goodbye!" << std::endl;
+16
+17        return 0;
+18    }
+</pre></blockquote>
+
+<p>When I compiled and ran that program on the ICS 45C VM using the Memcheck tool, I received the following output.</p>
+
+<blockquote><pre>
+==4173== Memcheck, a memory error detector
+==4173== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
+==4173== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
+==4173== Command: /home/ics45c/projects/memchecktest/out/bin/a.out.app
+==4173==
+Hello Boo!
+Goodbye!
+==4173==
+==4173== HEAP SUMMARY:
+==4173==     in use at exit: 72,744 bytes in 2 blocks
+==4173==   total heap usage: 3 allocs, 1 frees, 73,768 bytes allocated
+==4173==
+==4173== 40 bytes in 1 blocks are definitely lost in loss record 1 of 1
+==4173==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4173==    at 0x4EB6D09: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/libc++.so.1.0)
+==4173==    by 0x4011D0: main (main.cpp:8)
+==4173==
+==4173== LEAK SUMMARY:
+==4173==    definitely lost: 40 bytes in 1 blocks
+==4173==    indirectly lost: 0 bytes in 0 blocks
+==4173==      possibly lost: 0 bytes in 0 blocks
+==4173==    still reachable: 0 bytes in 0 blocks
+==4173==         suppressed: 72,704 bytes in 1 blocks
+==4173==
+==4173== For counts of detected and suppressed errors, rerun with: -v
+==4173== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
+</pre></blockquote>
+
+<p>The lines beginning in <b>==4173==</b> emanate from Memcheck.  (The 4173 changes from one run to the next; it's the <i>process identifier</i> or <i>pid</i>, a number associated with the program to differentiate it from all of the others currently running on the system.)  Notice that we see a preamble from Memcheck before any of the program's output.  Then we see all of the program's output.  Finally, we see a report from Memcheck detailing any problems that it found.  Sometimes, we'll see messages appear along the way while the program runs.  In general, every message we see is an issue with our usage of memory (e.g., failing to deallocate memory, using pointers to unallocated memory, using values of variables that have not been initialized, and so on).</p>
+
+<p>In this case, the report tells us of a block of 40 bytes that had been allocated but never deallocated.  In Memcheck's estimation, they are <i>definitely lost</i>, which means that these are bytes that were definitely noted as having been allocated and definitely noted as never having been deallocated before the program ended.  What's more, we were given the line of code on which the allocation took place, which was <b>main.cpp:8</b> (line 8 of main.cpp) in the function <b>main</b>:</p>
+
+<blockquote><pre>
+==4173==    by 0x4011D0: main (main.cpp:8)
+</pre></blockquote>
+
+<p>(Note that we're shown the entire stack trace at the point where the allocation happened, but your best bet is to find the topmost line of the stack trace that describes a location in your code; anything above it is likely library code you're calling into, in this case the code that dynamically allocates an array when we said <b>new int[10]</b>.)</p>
+
+<p>Looking back at our program, we see that line 8 is where the array was allocated dynamically using <b>new</b>.  That array is the one that was never deallocated.  Why was the block 40 bytes?  Because each <b>int</b> value was 4 bytes (the size of an <b>int</b> on the ICS 45C VM and using our particular set of tools) and there were 10 of them.  4 * 10 = 40.</p>
+
+<p>Updating the program to include this line, just after the <b>for</b> loop, so that the dynamically-allocated array will be deleted:</p>
+
+<blockquote><pre>
+delete[] a;
+</pre></blockquote>
+
+<p>causes Memcheck to generate a report that ends like this instead:</p>
+
+<blockquote><pre>
+==4228== HEAP SUMMARY:
+==4228==     in use at exit: 72,704 bytes in 1 blocks
+==4228==   total heap usage: 3 allocs, 2 frees, 73,768 bytes allocated
+==4228==
+==4228== LEAK SUMMARY:
+==4228==    definitely lost: 0 bytes in 0 blocks
+==4228==    indirectly lost: 0 bytes in 0 blocks
+==4228==      possibly lost: 0 bytes in 0 blocks
+==4228==    still reachable: 0 bytes in 0 blocks
+==4228==         suppressed: 72,704 bytes in 1 blocks
+==4228==
+==4228== For counts of detected and suppressed errors, rerun with: -v
+==4228== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
+</pre></blockquote>
+
+<p>This is Memcheck's version of a "clean bill of health."  The only memory leaks that Memcheck detected were <i>suppressed</i>, which is to say that they aren't things that we're interested in.  (I've configured Memcheck to ignore certain leaks that are present in the C++ Standard Library, but that are not caused by your work.)</p>
+
+<p>Other than what was suppressed, as far as Memcheck is concerned, and no other messages were generated other than the preamble and the clean bill of health at the end.  When we grade your project, we'll use Memcheck and we'll expect a clean bill of health, so if you're getting any messages from it, you'll need to investigate the underlying issues and fix them.  (If you're not sure what they mean, we're happy to help.)</p>
+
+<p>Try the same program yourself with Memcheck.  Experiment with adding and removing the use of <b>delete[ ]</b>, and try changing it to <b>delete</b> (without the brackets) instead, and see how Memcheck's report changes.  This will help you start to gain an understanding of what Memcheck can do for you as you work on your project.</p>
+
+<p class="subtitle">A deeper look at Memcheck</p>
+
+<p>A deeper look at what kinds of problems Memcheck can find and how it will report on its findings can be found in Memcheck's user manual at this link.</p>
+
+<ul>
+  <li><a href="http://valgrind.org/docs/manual/mc-manual.html">Memcheck user maunal</a></li>
+</ul>
+
+<p>Don't feel the need to internalize every detail, but do scan through it to get a feel for what kinds of things will be reported to you.</p>
+
+<p class="subtitle">Running your program using Memcheck</p>
+
+<p>The usual <b>run</b> script, which you use to run your program after building it, has an option that lets you run the program using Memcheck.  If you run your program with this command:</p>
+
+<blockquote><pre>
+./run --memcheck
+</pre></blockquote>
+
+<p>then Memcheck will observe your program as it runs and report its findings.  You'd type in the input as usual and would see the output appear as usual, but Memcheck's preamble will be displayed when your program starts, its final report will be displayed when your program ends, and you may see additional warnings while the program runs.</p>
+
+<p>Note, too, that you can combine this with redirection:</p>
+
+<blockquote><pre>
+./run --memcheck &lt;inputs/sample.in
+</pre></blockquote>
+
+<p>if you want to run the program with Memcheck but avoid typing the input by hand.</p>
+
+<p>We will be running your program using Memcheck as part of the grading process, and expect it to generate a clean report (i.e., no memory leaks and no memory-related issues while the program runs, other than the things that we intentionally suppressed) to receive full credit, so you'd be well-served to use Memcheck periodically as you work, and to fix issues as they arise.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Deliverables</p>
+
+<p>After using the <b>gather</b> script in your project directory to gather up your C++ source and header files into a single <b>project2.tar.gz</b> file, submit that file (and only that file!) to Checkmate.</p>
+
+<p>Follow <a href="../SubmittingProjects.html">this link</a> for a discussion of how to submit your project via Checkmate.  Be aware that I'll be holding you to all of the rules specified in that document, including the one that says that you're responsible for submitting the version of the project that you want graded.  We won't regrade a project simply because you submitted the wrong version accidentally.  (It's not a bad idea to look at the contents of your tarball on your host operating system before submitting it.)</p>
+
+<p class="subtitle">Can I submit after the deadline?</p>
+
+<p>Yes, it is possible, subject to the late work policy for this course which is described in the section titled <i>Late work</i> at <a href="../index.html">this link</a>.</p>
+
+</div>
+
+<div class="history">
+
+<hr />
+
+<ul class="nomarker">
+  <li>Clarifications about Memcheck and supppression of reporting added by Alex Thornton, Fall 2016.</li>
+  <li>Additional clarifications and requirement tweaks by Alex Thornton, Fall 2015.</li>
+  <li>Some tweaks to requirements and some additional clarifications by Alex Thornton, Fall 2014.</li>
+  <li>A few clarifications added by Alex Thornton, Winter 2014.</li>
+  <li>Requirements tweaked and reorganized for ICS 45C VM by Alex Thornton, Fall 2013.</li>
+  <li>Originally written by Alex Thornton, Fall 2012.</li>
+</ul>
+
+</div>
+
+</body>
+</html>

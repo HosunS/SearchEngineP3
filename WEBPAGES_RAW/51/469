@@ -1,0 +1,737 @@
+	Analysis of Algorithms (Complexity Classes and Big-O Notation)
+
+
+Analysis of Algorithms is a mathematical area of Computer Science in which we
+analyze the resources (mostly time, but sometimes space) used by algorithms to
+solve problems. An algorithm is a precise procedure for solving a problem,
+written in any notation that humans understand (so that we can carry-out the
+algorithm): if we write an algorithm as code in some programming language, then
+a computer can execute it too. The analysis we do should be independent of any
+technology: e.g., compiler or processor.
+
+The main tool that we use to analyze algorithms is big-O notation: it means
+"bounded above by growth on the order of". We use big-O notation to bound from
+above the performance of an algorithm by placing it in a complexity class (most
+often based on its WORST-CASE behavior -but sometimes on its AVERAGE-CASE
+behavior) when solving a problem of size N: we will learn how to characterize
+the size of a problem, which is most often as simple as "N is the number of
+values in" an array, file, vector, linked list, etc. Once we know the
+complexity class of an algorithm, we have a good handle on understanding its
+actual performance (within certain limits). Thus, in AA we don't necessarily
+compute the exact resources needed, but typically an approximate upper bound
+on the resources, based on just the problem size (not the details of the data).
+
+------------------------------------------------------------------------------
+
+Getting to Big-O Notation: Throwing away Irrelevant Details
+
+Here is a simple C++ function for computing the maximum of a array (or throwing
+and exception if there are no values in the array).
+
+int maximum(int a[], int N) { //N is the length of the array
+    if (N == 0)
+      throw "empty array";
+    int answer = a[0];
+    for (int i=1; i<N; ++i)
+      if (a[i] > answer)
+        answer = a[i];
+    return answer;
+}
+
+Often, the problem size is the number of values processed: e.g., the number of
+values in an array, file, linked list, tree, etc. But we can use other metrics
+as well: e.g., it can be the count of number of digits in an integer value, when
+looking at the complexity of multiplication based on the size of the numbers.
+Thus, there is no single measure of size that fits all problems: instead, for
+each problem we try to choose a measure that makes sense and is natural for
+that problem.
+
+C++ compiles functions like maximum into a sequence of machine language
+instructions that the computer executes. To solve a problem, the computer
+always executes an integer number of instructions. For simplicity, we will
+assume that all instructions take the same amount of time to execute. So to
+compute the amount of time it takes to solve a problem is equivalent to
+computing how many instructions the computer must execute to solve it (which
+depends on the compiler technology we are using), which we can divide by the
+number of instructions/second the machine executes to compute the time taken
+(which changes as technology changes).
+
+Again, we typically look at the worst case behavior of algorithms. For maximum,
+the worst case occurs if the array value are stored in increasing order. In
+this case, each new value examined in the array will be bigger than the
+previous answer, so the if statement's condition will always be true, which
+always requires executing the code that updates the answer. If any value was
+lower, it wouldn't have to update the answer and thus would execute fewer
+instructions and take less time to execute.
+
+It turns out that for an array of N values, on a certain C++ compiler for a
+certain processor, the computer executes 14N + 9 instructions in the worst case
+for this function. You may need to know more CS than you do at this time to
+determine this formula, but you will get there by ICS 51; and if you have taken
+ICS-51, you should understand the machine instructions that such a program
+might be translated into.
+
+A simple way to think about this formula is that there are 14 computer
+instructions that are executed each time the body of the for loop is executed,
+and 9 instructions that are executed only once: they deal with starting
+and terminating the loop and the entire function. We can say I(N) = 14N + 9 for
+the worst case of the maximum function, where I(N) is the number of
+instructions the computer executes when solving a problem on an array with N
+values. Or to be more specific we would write Imaximum(N) = 14N + 9.
+
+I would like to argue now that if simplify this function to just Imaximum(N)
+= 14N, we get a simpler function; although we lose some information, we don't
+lose much. Specifically, as N gets bigger (i.e., we are dealing with very big
+problems - the kinds computers are used to solve), 14N and 14N+9 are relatively
+close: as N gets bigger the loop accounts for most of the instructions executed)
+Let's look at the result of this function vs. the original as N gets for values
+of N increasing by a factor of 10.
+
+    N     |   14N + 9  |    14N     | error: (14N+9 - 14N)/(14N+9) as a % of N
+ ---------+------------+------------+---------------------------
+        1 |         23 |         14 |   61%         or 39%       accurate
+       10 |        149 |        140 |    6%            94%       accurate
+      100 |       1409 |       1400 |     .6%          99.4%     accurate
+     1000 |      14009 |      14000 |     .06%         99.94%    accurate
+     ...
+1,000,000 | 14,000,009 | 14,000,000 |     .00006%      99.99994% accurate
+     ...
+
+Each line shows the % error of computing 14N when the true answer is 14N + 9.
+So by the time we are processing an array of 1,000 values, using the formula
+14N instead of 14N+9 is 99.94% accurate. For computers solving real problems,
+an array of 1,000 values is tiny: an array of millions is more normal. For
+1,000,000 values 14N is off by just 9 parts in 14 million. So the 9 doesn't
+affect the formula much. Almost all the time is spent in the loop.
+
+Analysis of Algorithms really should be referred to as ASYMPTOTIC Analysis of
+Algorithms, as it is mostly concerned with the performance of algorithms as
+the problem size gets very big (N -> infinity). We see here that as N->infinity
+14N is a better and better approximation to 14N+9: dropping the extra 9 becomes
+less and less important.
+
+A simple function for sorting is the following. This is much simpler than the
+real sort method in C++ (and the simplicity results in the function taking much
+more time for large N, but it is a good starting point for understanding
+sorting now). If you are interested in how this function accomplishes sorting,
+hand simulate it working on an array of 5-10 values (try arrays with increasing
+values, decreasing values, values in random order): basically each execution of
+the outer loops mutates the array so that the next value in the array is in the
+correct position. We will spend a few lectures studying sorting more formally
+towards the end of the quarter.
+
+void sort(int a[], int N) { //N is the length of the array
+  for (int base=0; base<N; ++base)
+    for (int check=base+1; check<N; ++check)
+       if (a[base] > a[check])
+         std::swap(a[base], a[check]);
+}
+
+It turns out that for an array of N values, the computer executes 8N^2 + 12N + 6
+instructions in the worst case for this function. The outer loop executes N
+times and inner loop on average executes N/2 times (when base is 0 it executes
+N-1 times; when base is N-1 it executes 0 times), so the if statement in the
+inner loop is executed a quadratic number of times. So Isort(N) = 8N^2+12N+6
+for the worst case of the sort function, where Isort(N) is again the number of
+instructions that the computer executes. Or to be more specific we would write
+Isort(N) = 8N^2 + 12N  + 6.
+
+I would like to argue in the same way that if simplify this function to just
+Isort(N) = 8N^2, we get a much simpler function but we have not lost much
+information. Let's look at the result of this this function vs. the original as
+N gets bigger and bigger
+
+    N     | 8N^2+12N+6 |      8N^2   | error: (12N+6)/(8N^2+12N+6) as a % of N
+ ---------+------------+-------------+---------------------------
+        1 |         26 |           8 |   70%      or 30%    accurate
+       10 |        926 |         800 |   14%         86%    accruate
+      100 |     81,206 |      80,000 |    1.5%       98.5%  accurate
+     1000 |  8,012,006 |   8,000,000 |     .15%      99.85% accurate
+
+So by the time we are processing an array of 1,000 values, using the formula
+8N^2 instead of 8N^2 + 12N + 6 is 99.85% accurate. For 1,000,000 values
+(10^6), 8N^2 is 8*10^12 so 8N^2 + 12N + 6 is 8*10^12 + 12*10^6 + 6; the
+simpler formula is 99.999985% accurate. Note the difference in the powers of
+10 for the first and second terms: 10^12 and 10^6.
+
+CONCLUSION (though not proven): If the real formula I(N) is a sum of a bunch of
+terms, we can drop any term that doesn't grow as quickly as the most quickly
+growing term. As N->infinity, we can neglect the effects from all these lower
+order terms without losing much accuracy. In computing the maximum, the linear
+term 14N grows more quickly than the next term, the constant 9, which doesn't
+grow at all (as N grows) so we drop the 9 term. In sorting, the quadratic term
+8N^2 grows more quickly than the next two terms, the linear term 12N and the
+constant 6, so we drop the 12N and 6 terms.
+
+    In fact note that we can prove that the Limit as N->infinity of 12N/8N^2 = 
+    3/(2N) -> 0, which means we can discard the 12N term as growing more slowly
+    than the 8N^2 term. Similarly, the Limit as N->infinite of 6/8N^2 -> 0.
+
+The result is a simple function (constant times some function of N) that is
+still an accurate approximation of the number of computer instructions executed
+for arrays of various large sizes.
+
+    But also note, if the formula were something like N^2 + 1,000,000N (with the
+    coefficient of N one million times greater than the coefficient of N^2), at
+    N = 1,000,000 the N^2 term is the same size as 1,000,000N term, so the
+    percent error would be 50%. Of course if we increase N to a billion or
+    trillion, N^2 becomes much bigger. In most algorithms, the coefficients
+    are of the same magnitude, so throwing away lower-order terms is still
+    accurate for moderate-sized N.
+
+We now will explain a rationale for dropping the constant in front of N (in
+Imaximum) and N^2 (in Isort), and classifying these algorithms as O(N) bounded
+by linear growth, and O(N^2) bounded by quadratic grow5th. Again O means
+"bounded by growth on the order of", so O(N) means bounded by growthon the
+order of N and O(N^2) means bounded by growth on the order of N^2.
+
+1) If we assume that every instruction in the computer takes the same amount
+   of time to execute. Then the time taken for maximum is about 14N/speed and
+   time for sort is about 8N^2/speed. We should really think about these
+   formulas as (14/speed)N and (8/speed)N^2. We know the 14 and 8 came from
+   the number of instructions inside loops that C++ needed to execute: but a
+   different C++ compiler (or a different language) might generate a different
+   number of instructions and therefore a different constant. Thus, this number
+   is based on technology, and we want our analysis to be independent of
+   technology. And, of course, "speed" changes based on technology too.
+
+Since we are trying to come up with a "science" of algorithms, we don't want
+our results to depend on technology, so we are also going to drop the constant
+in front of the biggest term as well. For the reason explained above (relating
+to instructions generated by C++ and the speed of the machine), this number
+is based solely on technology.
+
+Here is another justification for not being concerned with the constant in
+front of the biggest term.
+
+2) The fundamental question that we want answered about any algorithm is, "how
+   much MORE resources does it need when solving a problem TWICE AS BIG". In
+   maximum, when N is big (so we can drop the +9 without losing much accuracy)
+   the ratio of time to solve solve a problem of size 2N to the time to solve a
+   problem of size N is easily computed:
+
+    Imaximum(2N)     14(2N)
+   -------------- ~ -------- ~ 2
+    Imaximum(N)      14 N
+
+   The ratio is a simple number (no matter how many instructions are in the
+   loop, since the constant 14 appears as a multiplicative factor in both the
+   numerator and denominator, and cancels itself out).  So, we know for this
+   code, if we double the size of the array, we double the number of
+   instructions that maximum executes to solve the problem, and thus double the
+   amount of time (for whatever the speed of the computer is).
+
+   Thus, the constant 14 is irrelevant when asking this "doubling" question. 
+
+   Likewise, for sorting we can write
+
+    Isort(2N)     8(2N)^2
+   ----------- ~ ---------- ~ 4
+    Isort(N)      8 N^2
+
+   Again, the ratio is a simple number, with the constant (no matter what it
+   is), disappearing.  So, we know for this code that if we double the size of
+   the array, we increase by a factor of 4 the number of instructions that are
+   executed, and thus increase by a factor of 4 the amount of time (for
+   whatever the speed of the computer is).
+
+   Thus, the constant 8 is irrelevant when asking this "doubling" question. 
+
+   Note if we didn't simplify, we'd have
+
+    Isort(2N)     8(2N)^2 + 12(2N) + 6       32N^2 + 24N + 6
+   ----------- = ---------------------- = -------------------
+    Isort(N)      8N^2 + 12N + 6              8N^2 + 12N + 6
+
+   which doesn't simplify easiy; although, as N->infinty, this ratio gets
+   closer and closer to 4 (and is very close even for relatively small-sized
+   problems, because the coefficients are the same magnitude).
+
+As with air-resistance and friction in physics, typically ignoring the
+contribution of these negligible factors (for big, slow-moving objects) allows
+us to quickly and easily solve an approximately correct problem.
+
+Using big-O notation, we say that the complexity class of the code to find the
+maximum is O(N). The big-O means "bounded by growth on the order of" N, which
+means a linear growth (double the input size, double the time). For the sorting
+code, its complexity class is O(N^2), which means "bounded by growth on the
+order of N^2", which means a quadratic growth rate (double the input size,
+quadruple the time).
+
+----------
+IMPORTANT: A Quick way to compute the complexity class of an algorithm
+
+To analyze a C++ function's code and compute its complexity class, we
+approximate the number of times the most frequently executed statement is
+executed, dropping all the lower (more slowly growing) terms and dropping the
+constant in front of the most frequently executed statement (the fastest
+growing term). We will show how to do this much more rigorously in the next
+lecture.
+
+Here is how we apply this simple rule to the maximum code: it executes the if
+statement N times, so it is O(N). The sorting code executes the if statement
+N(N-1)/2 times (we will justify this number below), which is N^2/2 - N/2, so
+dropping the lower term and the constant 1/2, yields a complexity class of
+O(N^2).
+
+In the next lecture we will generalize this method of calculating the complexity
+class of C++ code.
+----------
+
+------------------------------------------------------------------------------
+
+Comparing Algorithms by their complexity classes
+
+Primarily from this definition we know that if two algorithms, a and b, both
+solve some problem, and a is in a lower complexity class than b, then for all
+BIG ENOUGH N, Ta(N) < Tb(N): here Ta(N) means the Time it takes for algorithm
+a to solve the problem. NOTE THAT NOTHING HERE IS SAID ABOUT SMALL N; which
+algorithms uses fewer resources on small problems depends on the actual
+constants that we dropped (and even on the additive terms that we dropped), so
+COMPLEXITY CLASSES HAVE LITTLE TO SAY FOR SMALL PROBLEM SIZES.
+
+For example, if algorithm a is O(N) with a constant of 100, and algorithm b
+is O(N^2) with a constant of 1, then for values of N in the range [1,100],
+
+   Tb(N) = 1N^2 <= 100N = Ta(N)
+
+but for all values bigger than 100,
+
+   Ta(N) = 100N <= 1N^2 = Tb(N)
+
+As a second example, if algorithm a is O(N) with a constant of 1, and algorithm
+b is O(N^2) with a constant of 10, then for all values of N
+
+   Ta(N) = 1N <= 10N^2 = Tb(N)
+
+So in some cases, a lower complexity class can be worse (for small N), and in
+some cases it can be better for all N. We need determine which is faster for
+small N by going beyond our understanding of complexity classes.
+
+But it is guaranteed that FOR ALL SIZES BEYOND SOME VALUE OF N, the algorithm
+in the lower complexity class will run faster.
+
+Again, we use the term "asymptotic" analysis of algoritms to indicate that we
+are mostly concerned with the time taken by the code when N gets very large
+(going towards infinity). In both cases, because of their complexity classes,
+algorithm a will be better.
+
+What about the constants? Are they likely to be very different in practice? It
+is often the case that the constants of different algorithms are close. (They
+are often just the number of instructions in the main loop of the code, so code
+will small loops will have similar constants). So the complexity classes are a
+good indication of faster vs slower algorithms for all but the smallest problem
+sizes.
+
+Although all possible mathematical functions might represent complexity classes
+(and many strange ones do), we will mostly restrict our attention to the
+following complexity classes. Note that complexity classes can interchangably
+represent computing time, the # of machine operations executed, and such more
+nebulous terms as "effort" or "work" or "resources".
+
+As we saw before, a fundamental question about any algorithm is, "What is the
+time needed to solve a problem twice as big". We will call this the DOUBLING
+SIGNATURE of the complexity class (knowing this value empirically -which we can
+determine by running the program on various problem sizes- often allows us to
+deduce the complexity class as well).
+
+Class   |  Algorithm Example				| Doubling Signature
+--------+-----------------------------------------------+----------------------
+O(1)	| pass argument->parameters/copying a pointer   | T(2N) = T(N)
+O(LogN) | binary searching of a sorted array		| T(2N) = c + T(N)
+O(N)	| linear searching an array    			| T(2N) = 2T(N)
+O(NLogN)| Fast sorting					| T(2N) = cN + 2T(N)
+
+  Fast algorithms come before here; NLogN grows a bit more slowly than linearly
+  (because logarithms grow so slowly compared to N) and nowhere near as fast as
+  O(N^2)
+
+O(N^2) | Slow sorting; scanning N times array size N    | T(2N) = 4T(N)
+O(N^3) | Slow matrix multiplication		        | T(2N) = 8T(N)
+O(N^m) | Graph algorithms, for some fixed m: 4, 5, ...	| T(2N) = 2^mT(N)
+
+  Tractable algorithms come before here; their work is polynomial in N.
+  In the complexity class below, N is in an exponent.
+
+O(2^N) | Finding boolean values that satisfy a formula  | T(2N)=2^N T(N)
+
+For example, for an O(N^2) algorithm, doubling the size of the problem
+quadruples the time required: T(2N) ~ c(2N)^2 = c4N^2 = 4cN^2 = 4T(N).
+
+Note that in Computer Science, logarithms are mostly taken to base 2. (Remember
+that algorithms and logarithms are very different terms). So when we write
+logarithms, they are implicitly to base 2 (e.g., Log N = Log2 N). You should
+memorize and be able to use the following facts to approximate logarithms
+without a calculator.
+
+Log 1000 ~ 10
+  Actually, 2^10 = 1,024, 2^10 is approximatley 1,000 with < a 3% error.
+
+Log a^b = b Log a, or more usefully, Log 1000^N = N Log 1000; so ...
+  Log 1,000,000     = 20 : 1,000,000     = 1,000^2; Log 1000^2 = 2*Log 1000
+  Log 1,000,000,000 = 30 : 1,000,000,000 = 1,000^3; Log 1000^3 = 3*Log 1000
+
+So note that Log is a very slowly growing function. When we increase from
+Log 1,000 to Log 1,000,000,000 (the argument grows by a factor of 1 million)
+the result only grows by from 10 to 30 (by a factor or 3). That represents a
+very flat curve, with a slope is decreasing assympotically toward 0 (the
+constant function).
+
+In fact, we can compute these logarithms on any calculator that computes Log
+in any base. For example,
+
+Log (base b) X = Log (base a) X / Log (base a) b
+
+So, Log (base b) X is just a constant (1/Log (base a) b) times Log (base a) X,
+so logarithms to any base really all specify the SAME COMPLEXITY CLASS
+(regardless of the base) because they differ only by a multiplicative constant
+(which we ignore when writing complexity classes). For example,
+
+Log(base 10) X = Log(base 2) X  /  Log(base 2) 10 ~ .3 Log(base 2) X
+
+
+----------
+IMPORTANT:
+
+ Determining the Complexity Class Empirically from a Doubling Signature
+
+If we can demonstrate that doubling the size of the input approximately
+quadruples the time of an algorithm, then the algorithm is O(N^2). We can use
+the doubling signatures shown above for other complexity classes as well. Thus,
+even if we cannot mathematically analyze the complexity class of an algorithm
+based on inspecting its code (something we will highlight in the next lecture),
+if we can measure it running on various sized problems (doubling the size over
+and over again), we can use the doubling signature information to approximate
+its complexity class. In this approach we don't have to understand (or even
+look at) the code.
+----------
+
+------------------------------------------------------------------------------
+
+Computing Running Times from Complexity Classes
+
+We can use knowledge of the complexity class of an algorithm to predict its
+actually running time on a computer as a function of N easily. For example, if
+we know the complexity class of algorithm a is O(N^2), then we know that
+Ta(N) ~ cN^2 for large N and some constant c. The constant c represents the
+"technology" used: the language, compiler, machine speed, etc.; the N^2 (from
+O(N^2)) represents the "science/math" part: the complexity class. Now, given
+this information, we can time the algorithm for some large value N. Let's say
+for N = 10,000 (which is actually a pretty small N these days) we find that
+Ta(10,000) is 4 seconds.
+
+First, if I asked you to estimate Ta(20,000) you'd  immediately know it is
+about 16 seconds (doubling the input of an O(N^2) algorithm approximately
+increases the running time by a factor of 4). Second, if we solved the equation
+for Ta(N) above for c, we have
+
+  Ta(N) ~ cN^2, substituting 10,000 for N and 4 for Ta(N) (by actually running
+  the code and timing it) we have 4 ~ c 10,000^2 (from the formula); so solving
+  for the technology constant we have c ~ 4x10^-8.
+
+So, by measuring the run-time of this code once, we can calculate the constant
+"c", which involves all the technology (language, compiler, computer speed,
+etc). Roughly, we can think of c as being the amount of time it takes to do one
+loop (# of instructions per loop/speed of executing instructions) where the
+algorithm requires N^2 iterations through the loop to do all its work.
+
+Therefore, Ta(N) ~ 4x10^(-8) x N^2. So, if asked to estimate the time to
+process 1,000,000 (10^6) values (100 times more than 10,000), we'd have
+
+  Ta(10^6) ~ 4x10^(-8) x (10^6)^2
+  Ta(10^6) ~ 4x10^(-8) x 10^12
+  Ta(10^6) ~ 4x10^4, or about 40,000 seconds (about 1/2 a day)
+
+Notice that solving a problem 100 times as big takes 10,000 (which is 100^2)
+times as long, which is based on the signature for an O(N^2) algorithm when
+we increase the problem size by a factor of 10. If we go back to our sorting
+example,
+
+    Isort(100N)    8(100N)^2
+   ----------- ~ ------------- ~ 10,000
+    Isort(N)       8 N^2
+
+In fact, while we often analyze code to determine its complexity class, if we
+don't have the code (or find it too complicated to analyze) we can run the
+code, doubling the input sizes a few times, plot the result, and then check
+whether we can "fit the resulting times" to any of the standard doubling
+signatures to estimate the complexity class of the algorithm. We should do this
+for some N that is as large as reasonble (taking some number of seconds to
+solve on the computer).
+
+Note for an O(2^N) algorithms, if we double the size of the problem from 100
+to 200 values the amount of time needed goes up by a factor of 2^100, which is
+~ 1.3x10^30. Notice that adding one more value to process doubles the time:
+this "exponential" time is the inverse function of logarithmic time, in terms
+of its growth rate: it grows incredibly quickly while logarithms grow incredible
+slowly.
+
+------------------------------------------------------------------------------
+
+Mathematical Definition of big-O Notation
+
+Mathematically, we say that f(n) is O(g(n)) -meaning the function f has an
+order of growth that is BOUNDED by g- if we can find values n0 and c such that
+for all n > n0, f(n) <= c g(n): read this as, "for all n greater than n0, f(n)
+is less than or equal to c times g(n)." We don't care about small values of n
+that are <= n0.
+
+This definition allows us to do precisely what we did above more intuitively:
+find the upper-bound on the complexity class of an algorithm by computing how
+often the most frequently executed statement is executed (the f(n)), and
+throwing away lower order terms and constant coefficients: the result is a
+simpler function g(n) that characterizes the complexity class.
+
+Let's use this defintion to prove that certain functions are in certain
+complexity classes: recall a complexity class is a single term involving n
+(no lower order terms and no constant multiplier).
+
+Finally, recall that n is typically an integer (often the size of some data
+structure: e.g., an array or linked list). So there is no n = .5, etc.
+
+First, note that
+
+  (1) 1 <= n, 1 <= n^2  whenever n>0
+  (2) log n <= n        whenever n>0 (log is undefined if n<=0)
+  (3) n <= n^2          whenever n>=0
+  (4) n log n <= n^2    whenever n>0 (by multiplying each side in (2) by n)
+
+So, let's formally prove thta f(n) = 5n^2 + 3nlogn + 2n + 5 is O(n^2). That
+means we must find an n0 and c such that
+
+  5n^2 + 3nlogn + 2n + 5 <= c n^2 for all n>n0
+
+Note from (4) 3n log n <= 3n^2  for n > 0,
+          (3) 2n       <= 2n^2  for n > 0, and
+          (1) 5        <= 5n^2  for n > 0
+
+  and trivially 5n^2 <= 5n^2 for all n.
+
+so we can add each term on the left and add each term on the right (with each
+term on the left being <= each term on the right for n > 0) with the result
+5n^2 + 3nlogn + 2n + 5 <= 5n^2 + 3n^2 + 2n^2 + 5n^2 for all n>0 (because
+each term on the left is less than its corresponding term on the right for
+n>0). We can simplify all the terms on the right (they are all constants times
+n^2) to be (5 + 3 + 2 + 5)n^2 or just 15n^2.
+
+So, we have proven f(n) = 5n^2 + 3nlogn + 2n + 5 <= 15n^2 for all n>0,
+therefore 5n^2 + 3nlogn + 2n + 5 is O(n^2) (with c = 15 and n0 = 0).
+
+
+Likewise, we can see that for f(n) = 2n + 100log n, f(n) is O(n) because
+
+ 100log n <= 100n (for n>0) -multiply each side of (2) by 100, and
+ 2n + 100logn <= 2n + 100n = 102n for all n>0 - add 2n to each side.
+
+
+Likewise, we can see that for f(n) = 2n^2 - 100n + 50, f(n) is O(n^2) because
+
+  f(n) <= f(n)+100n (for all n>0) = 2n^2+50 <= 2n^2+50n^2 = 52n^2 (for all n > 0)
+
+By a similar "addition trick" we can can drop/ignore all negative terms that
+are in a formula f when computing its complexity class.
+
+ 
+Finally, we can see that for f(n) = 2n + 10, f(n) is O(n) because
+
+  10 <= 10n (for n>0)  -multiply each side of (1) by 100, so
+  2n + 10 <= 12n for n>0
+
+-------
+There is more than one way to compute the c and n0 (which are not independent:
+they depend on each other, in interesting ways). For example, there are many
+other ways to show that for f(n) = 2n + 10, f(n) is O(N). Originally we chose
+c = 12, and found f(n) < 12n, for n>0. But, we can also choose c = 4, and use
+that value to find for what n0, f(n) = 2n + 10 <= 4n.
+
+  2n + 10 <= 4n
+  10      <= 2n		subtract 2n from each side
+   5      <= n		divide each side by 2
+
+and see that this inequality holds when n>=5. So, we have c=4 and n0 = 4 as
+another demonstration that f(n) is O(n).
+
+If we choose c = 2.001, we can solve for when
+
+  2n + 10 <= 2.001n
+  10      <= .001n	subtract 2n from each side
+  10,000  <= n		divide each side by .001
+
+and see that this inequality holds when n>=10,000. So, we have c = 2.001 and
+n0 = 9,999 as another demonstration that f(n) is O(n).
+
+So, there are MULTPLE PROOFS (multiple cs and n0s) that meet the requirement
+stated at the beginning. If can choose a large c, we can choose a small n0; if
+we choose a smaller c, we will need to choose a larger n0.
+
+Note that we must choose a c bigger than 2.0 (even a tad bigger: .001 as was
+shown above, or even .0000001). The inequality
+
+  2n + 10 <= 2n
+
+has no solution that makes sense for non-negative problem sizes n0; the
+solution to the inequality
+
+  2n + 10 <= 1.5n
+  10      <= -.5n	subtract 2n from each side
+  -20     >= n		divide each side by -.5 (inequality changes <= to >=)
+
+is meaningless: it isn't in the form, n >= something. It concerns problem
+sizes less than -20, and -20 is not a legal problem size!
+-------
+
+Finally, notice that if f(n) is O(n^2) then f(n) -by the definition- is also
+O(n^3). Here is the proof. If f(n) is O(n^2) then we know
+
+  for all n > n0, f(n) <= c n^2
+
+but we also know n^2 <= n^3 for n>=0 (and n is an integer and always >= 0)
+
+so for all n > n0, f(n) <= cn^3 (the same c as above), so f(n) is O(n^3).
+
+IMPORTANT: Saying f(n) is O(g(n)) is telling us just that g(n) is an UPPER
+BOUND on how fast the function f(n) grows. In practice, we always try to get a
+"tight" upper bound (the smallest growing function g(n) for which f(n) is
+O(g(n))), but big-O notation says NOTHING ABOUT "TIGHTNESS", just inequality.
+
+When we talk about the big Theta and big Omega notation in a later lecture, we
+will see how to bound f(n) from below as well as from above. If the bounding
+complexity classes (both big O and big Omega) are both g(n), then we will have
+a tight bound on f(n) and pronounce it big Theta(g(n)). More on this in the
+next lecture.
+
+------------------------------------------------------------------------------
+
+Odds and Ends:
+
+It is important to be able to analyze the following code. Notice that the upper
+bound of the inner loop (i, in j<i) is defined/incremented in the outer loop
+(i=0;;++i). Here body is just some sequence of statements inside the loop.
+
+for (int i=0; i<N; ++i)
+  for (int j=0; j<i; ++j)
+    body
+
+How many times does the "body" of the loop get executed? When the outer loop
+index i is 0, "body" gets executed 0 times; when the outer loop index i is 1,
+"body" gets executed 1 time; when the outer loop index i is 2, "body" gets
+executed 2 times; .... when the outer loop index i is N-1 (as big as i gets),
+"body" gets executed N-1 times. So, in totality, "body" gets executed
+0 + 1 + 2 + 3 + ... + N-1 times, or dropping the 0, just 1 + 2 + 3 + ... + N-1
+times. Is there a simpler way to write this sum?
+
+There is a simple, general closed form solution of adding up consecutive
+integers. Here is the proof that 0 + 1 + 2 + 3 + ... + N =N*(N+1)/2. This is a
+direct proof, but this relationship can also be proved by induction.
+
+Let
+
+S = 0 + 1 + 2 + 3 + ... + N-1 + N.
+
+Since the order in which we add the numbers makes no difference in the sum, we
+can also write this sum reversed, as
+
+S = N + N-1 + ... + 3 + 2 + 1 + 0.
+
+If we add the left and right side (column by column) we have
+
+S   =   0  +    1  +   ...  +   N-1  +  N
+S   =   N  +   N-1 +   ...  +    1   +  0
+---------------------------------------------
+2S  =   N  +    N  +   ...  +   N    +  N
+
+That is, each pair in a column sums to N, and there are N+1 pairs to sum.
+Since there are N+1 pairs, each summing to N, the right hand side can be
+simplified to just N+1 terms, each with values N: (N+1)*N. So
+
+2S = (N+1)*N, therefore S = (N+1)*N/2 = N^2/2 + N/2
+
+Thus, S is O(N^2): with a constant of 1/2 and an additive term of N/2 that is
+dropped (because its order, N, is lower than that N^2). Note that either N or
+N+1 must be an even number, so dividing their product by 2 is always an integer,
+as it must be, for the sum of integers: 0+1+2+3+4+5+6 = 6*7/2 = 21.
+
+Looking back at the example of the code above, the total number of times the
+body gets executed is 0 + 1 + 2 + ... + N-1, so plugging N-1 in for N we have
+(N-1+1)*(N-1)/2 = 
+N^2/2 - N/2 which is smaller, but still O(N^2), using the same reasoning.
+
+We can easily apply this formula to the task of reading N values from a file
+(one at a time) and putting them in a linked list IN THE SAME ORDER. This is
+the same as putting N values at the end of a linked list that is initially
+empty (and has no cache pointer to the last node). To put in the 1st value
+requires skipping 0 nodes; to put in the 2nd value requires skipping 1 node; to
+put in the 3rd value requires skipping 2 nodes; ... to put in the Nth value
+requires skipping N-1 nodes. So the number of nodes skipped is
+0 + 1 + ... + N-1, which by the formula is (N-1)N/2: so building a linked list
+in this way is in the O(N^2) complexity class.
+
+There are two other ways to accomplish this same task. We can use a cache
+pointer, which is O(N) since we insert N values at the end of the list and
+each insertion requires O(1) work (changing a fixed number of pointers). We 
+can also build a linked list in the "reverse" order by adding each value to
+the front of the list; for a reason similar to caching, that requires O(N) work.
+We can then reverse the linked list using the algorithm we hand-simlated in
+class, which visits every node once, doing a constant amount of work for each
+node, so the entire process is O(N) + O(N) = O(2N) = O(N); again, we always
+ignore multiplicative constants.
+
+
+Fast Searching and Sorting:
+
+Simple algorithms for searching an array are in the complexity class O(N) and 
+sorting an array are in the complexity class O(N^2). But, there are surprisingly
+faster algorithms for these tasks: searching an array can be O(Log N) if the
+array is sorted (by the "binary search" algorithm); and sorting values in an 
+array can be in O(N Log N) by various algorithms that we will study.
+
+In lecture, I will briefly discuss the binary searching algorithm, for searching
+a sorted array: its complexity class is O(Log N). In fact, if we are measuring
+the number of comparisons made, the constant is 1. That means that when
+searching an array of 1,000,000 values, we must access the array at most about
+20 times to either (a) find the index of the value in the array or
+(b) determine the value is not in the array. This is potentially 50,000
+times faster than a simple for loop checking one index after another (which we
+must do if the array is not sorted, and we must do in a linked list)! On large
+problems, algorithms in a lower complexity class typically execute much faster.
+Also note that when increasing the size of the array by 1,000 (to 1 billion
+values) the maximum number of comparisons for binary searching goes from 20 only
+to 30.
+
+You should know that C++'s standard sorting method on arrays is O(N Log N). We
+will discuss the algorithm (and many other sorting algorithms) later in the
+quarter.
+
+Note that we CANNOT perform binary searching efficiently on linked lists,
+because we cannot quickly find the middle of a linked list (for arrays we just
+compute the middle index and access the array there, which is O(1); for linked
+lists we would have to scan over N/2 values, which is O(N)). In fact, we will
+soon see another self-referential data structure, trees, that can be used to
+perform efficient searches. 
+
+Sorting is one of the most common tasks performed on computers. There are
+hundreds of different sorting algorithms that have been invented and studied. 
+Many small and easy to write sorting algorithms are in the O(N^2) complexity
+class (see the sorting code above, for example). Complicated but efficient 
+algorithms are often in the O(N Log N) complexity class. We will study sorting
+in more detail in ICS-46, including a few of these efficient algorithms.
+
+For now, memorize that fast (binary) searching is in the O(Log N) complexity
+class and fast sorting algorithms are in the O(N Log N) complexity class. If
+you are ever asked to analyze the complexity class of a task that requires
+sorting data as part of the task, assume the sorting function/method for that
+part is in the O(N Log N) complexity class.
+
+
+Closing:
+
+To close for now, finding an algorithm to solve a problem in a lower complexity
+class is a big accomplishment; a more minor accomplishment might be decreasing
+the constant for an algorithm in the same complexity class (certainly useful,
+but often based more on technology than science). By knowing the complexity
+class of an algorithm, we know a lot about the performance of the algorithm as
+the problem size gets big. We can measure the time it takes to solve certain
+(big) sized problems, and using this information we can accurately predict the
+time to solve other (big) sized problems. Finally, we can also invert the
+process, and use a few measurements, doubling the size of the (big) problem
+each time, to approximate the complexity class of an algorithm.

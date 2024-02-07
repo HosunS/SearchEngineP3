@@ -1,0 +1,181 @@
+
+<html>
+<head>
+<title>  Applets </title>
+</head>
+<h1> Applets </h1>
+<body>
+<h3> The hierarchy </h3>
+<pre>
+   Object -> Component -> Container -> Panel -> Applet ->  your program
+                              \
+                                 -->  Window -> Frame : for applications
+</pre>
+Note: Applets can open windows and frames also.
+<h3> Words Applet </h3>
+Here we display words at random on the screen.
+<br> Suppose the file name is  Words.java.
+
+<pre>
+ import java.applet.*;
+ import java.awt.*;
+
+public class Words extends Applet 
+ {
+   int random(int i)
+ {
+   return Math.round(Math.random()*i) ;  // calls to class methods
+ }
+
+   public void paint(Graphics g)       // overriding paint
+ {
+   String fontName = getParameter("font");  // taking parameters from html file
+   Font f = new Font(fontName, Font.BOLD,18)
+   g.setFont(f);
+   for (int i = 0; i<10; i++)
+      g.drawString(random(200),random(100),"Don't touch"); // graphics upside down
+ }  
+}
+
+</pre>
+
+<h3> Corresponding html file </h3>
+<pre>
+ < HTML >
+    < HEAD >
+    < TITLE > Whatever < /TITLE >
+    < /HEAD >
+    < BODY >
+    < APPLET CODE="Words.class" WIDTH=283 HEIGHT=190 >
+    < PARAM NAME=font VALUE="Helvetica" > 
+    < /APPLET >
+    < /BODY >
+< /HTML >
+</pre> 
+
+<h3> Applet Syntax </h3>
+  <ul>
+    <li> Just like an application an applet is
+   a collection of classes.
+     <li> Rules for execution and definition
+     of classes are the same, except for the driver class
+and reading of html files.
+     <li> You also need to define an associated html file.
+     <li> The browser first reads the html file.
+     <li> Parameters can be passed from the html file to
+     the applet via getParameter(...).
+      <li> After reading the html file, loading the
+applet and executing any static expressions and blocks, then
+ the applet is executed.
+     <li> The driver class for an applet is a class
+      which extends applet and is called first by the
+      browser or appletviewer.
+     <li> Typically applets respond to events. We will discuss
+    event-driven programming later, as they have another model
+   of interpretation.
+     <li> Browsers have  security managers which place various
+     restrictions on Applets for obvious reasons. Typically you
+    are not allowed to read or write files.
+     </ul>
+<h3> Applet Methods </h3>
+Applets are event-driven. The most basic event is visiting
+the html page on which the applet resides. We will discuss
+other events later.
+<ul>
+  <li>void  init() Trigger Event: first visit to html page.
+ <br> This is the first method that is executed.
+   Typically one creates all the needed visual objects and other
+objects here. This method is only executed once and behaves much like a constructor.
+  <li> void start() Trigger Event: every visit to html page.
+ <br> This method is called after init and everytime the
+  user revisits the page. This <b> resumes </b> the computation.
+  <li> void stop() Trigger Event: moving off the page.
+ <br> The default suspends the applet from running. So this can be
+     executed multiple times, just like start().  
+ <li>void destroy() Trigger Event: Browser closes applet.
+<br> This behaves somewhat like a destructor in C++ in that
+     all resources associated with the applet are now released. Before
+    it is executed, stop() is called for the last time.
+</ul>
+
+<h3> Graphic Methods inherited from Component </h3>
+ Graphics objects are measured in pixels.
+  <ul>
+  <li>public void paint(Graphics g):
+ <br> This method must be executed to render anything on the
+  display. It does the drawing.
+  <li>public void repaint():
+<br> This schedules update(), i.e.
+  puts update into the task list.
+   Multiple calls to repaint() may yield only one call to update().
+  <li>public void update(Graphics g):
+ <br> The default method redraws
+the background and calls paint() on each of the visual components.  By
+overriding this method you can selectively update the display, which is useful
+for animation.
+</ul>
+<h3> Another Applet Example </h3>
+<pre>
+/*
+   Simple fractal program that illustrates recursion.
+   Recall that the vector <-y,x> is perpendicular to the vector <x,y>.
+   Check the dot product.
+ */
+
+import java.awt.*;
+import java.applet.*;
+
+public class Fractal extends Applet {
+
+	public void init()
+	{
+           resize(600,400);
+	}	
+	
+	Point addPoints(Point one, Point two)
+	{
+	    return new Point (one.x+two.x,one.y+two.y);
+	}
+	
+	Point up(Point one, Point two, double scale)
+	{
+	     int x = (int) (scale*(two.x-one.x));
+	     int y = (int) (scale*(two.y-one.y));
+	     return addPoints(one, new Point(x,y));
+	}
+	
+	Point rotate(Point one,Point two)
+	{
+	    Point p = up(one,two, 1.0/2);
+	    int y = (int)((one.x - two.x)/4.0 );
+	    int x = (int) ((two.y- one.y)/4.0);
+	    return addPoints( p, new Point(x,y));
+	}   
+	    
+	public void drawFractal(Point b,Point e, int d, Graphics g)
+	{
+	    if (d == 0) g.drawLine(b.x,b.y,e.x,e.y);
+	      else
+	     {
+	        Point next = up(b,e,1.0/4);
+	        Point mid = rotate(b,e);
+	        Point last = up(b,e,3.0/4);
+	        drawFractal(b,next, d-1,g);
+	        drawFractal(next,mid,d-1,g);
+	        drawFractal(mid,last,d-1,g);
+	        drawFractal(last,e,d-1,g);
+	   	 }
+	}
+	
+	public void paint(Graphics g)
+	{
+	  g.setColor(Color.blue);
+	  Point begin = new Point(100,200);
+	  Point end = new Point(500,200);
+	  int depth = 4;     // How deep is too deep?
+	  drawFractal(begin,end,depth, g );
+	}
+}
+</pre>
+
+</body>

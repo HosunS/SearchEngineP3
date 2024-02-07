@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PatternCountScreen: Screens by Functional Groups</title>
+    <meta charset="utf-8"> 
+    <!-- Include JQuery for tabs and UI plugins -->     
+    <script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.unserialize.js"></script>
+    <script type="text/javascript" src="/js/jquery-ui-1.8.16.custom.min.js"></script>    
+    <script type="text/javascript" src="/js/jquery.colorbox-min.js"></script>
+    <script type="text/javascript" src="/js/jquery.ui.selectmenu.js"></script>  
+    <script type="text/javascript" src="/js/chemdb.js"></script>
+    <!-- Include styling -->
+    <link rel="stylesheet" type="text/css" href="/css/chemdb.css" />
+    <link rel="stylesheet" type="text/css" href="/css/colorbox.css" /> 
+    <link type="text/css" href="/css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="/css/jquery.ui.selectmenu.css" />
+
+    <script type="text/javascript">
+    $(document).ready(function(){
+        // Initialize buttons, and selects
+        $("#upload-file-link").button({
+            icons: {
+                primary: "ui-icon-newwin",
+                secondary: "ui-icon-folder-open"
+            }
+        }); 
+        $(".select").selectmenu({style:"dropdown"});
+        
+        // Bind function to form submission event
+        $("#PatternCountScreenWeb").submit(function(){
+            // Load molecule images into results div
+            var url = $(this).attr("action");
+            var params = $(this).serialize();
+            $.post(url, params, function(data){
+                // Populate data and add shadows
+            	$("#results").html($(data).find("#results").contents());
+                $("#results").find("img").addClass("shadow");                 
+                
+                // Initialize button
+            	$(".view-button").button({
+            		icons: {
+                        primary: "ui-icon-newwin"
+                    }
+                }); 
+            });
+            $(".hide").show();
+            return false;
+        });
+        
+        // Use the same form but submit to Smi2Depict
+        $("#Smi2DepictWeb").live("click",function(){
+        	var url = $("#products").attr("action");
+            var params = $("#products").serialize()+ "&Smi2DepictWeb=View%20Structures%20in%20New%20Window";
+            var jqxhr = $.post(url, params, function(data){
+                $("#img-results").html($(data).find("#molecule-images").contents());
+                $("#img-results").find("img").addClass("shadow");                               
+                $("#Smi2DepictWeb").colorbox({inline:true, open:true, width:"900px", height:"500px"});
+            })
+            .error(function() { 
+                $("#dialog").dialog({
+                    modal: true,
+                    buttons: {
+                        Ok: function() {
+                            $( this ).dialog( "close" );
+                        }
+                    }
+                }); 
+            });
+            return false;
+        });
+    });
+    </script>
+</head>
+
+<body>
+<div id="background">           
+    <div id="content">
+        <div id="header">
+            <div id="chemdb-logo"></div>
+            <span>PatternCountScreen: Screens by Functional Groups</span>
+            <div id="top-nav">
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Tools</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/BabelWeb.py">Babel</a></li>
+                        <li><a href="/cgibin/Mass2Structure.py">Mass2Structure</a></li>                        
+                        <li class="odd"><a href="/cgibin/tools/MolInfoWeb.py">MolInfo</a></li>
+                        <li><a href="/cgibin/MSFragment.py">MSFragment</a></li>
+                        <li class="odd"><a href="/cgibin/PatternCountScreenWeb.py">Pattern Count Screen</a></li>
+                        <li><a href="/cgibin/PatternMatchCounterWeb.py">Pattern Match Counter</a></li>
+                        <li class="odd"><a href="/cgibin/Smi2DepictWeb.py">Smi2Depict</a></li>
+                        <li><a href="/cgibin/reaction/ReactionProcessorWeb.py">Reaction Processor</a></li>
+                        <li class="odd"><a href="/cgibin/tools/AquaSolWeb.py">AquaSol</a></li>
+                    </ul>
+                </div>                                                                          
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Applications</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/ChemicalIndexWeb.py">Chemical Search</a></li>
+                        <li><a href="http://cosmos.igb.uci.edu/">COSMOS</a></li>
+                        <li class="odd"><a href="/cgibin/tutorial/ReactionTutorialSetupWeb.py">Reaction Explorer</a></li>
+                        <li><a href="http://reactions.igb.uci.edu/">Reaction Predictor</a></li>                        
+                        <li class="odd"><a href="/cgibin/reaction/VirtualSpaceWeb.py">Virtual Chemical Space</a></li>
+                    </ul>
+                </div>
+            </div>   
+            <div id="crumbs"><!-- <a class="breadcrumb" href="../index.htm" target="_top">ChemDB</a>
+ --><a href="/">Home</a> <img class="crumb-arrow" src='/images/arrow.png' /> <a class="breadcrumb" href="#">PatternCountScreen</a></div>
+        </div>
+        
+        <div id="loadingDiv"><img src="/images/loading.gif" /></div>
+        <div class="hidden">
+            <div id="img-results"></div>
+        </div>
+        <form id="PatternCountScreenWeb" name="PatternCountScreenWeb" action="PatternCountScreenWeb.py" method=post>
+            <div class="ui-widget-header">Screening Input</div>
+            <div class="module">
+                    <div>
+                        <div class="module-sub-header">Molecule Format</div>
+                        <select id="moleculeFormatSelect" name="moleculeFormatSelect" class="select" style="width:350px;">
+                            <option value="1">SMI - SMILES, Absolute</option>
+<option value="10">CAN - Canonical SMILES</option>
+<option value="7">ISM - Isomeric SMILES</option>
+<option value="9">SDF - MDL SD File</option>
+<option value="2">MDL - MDL Mol File</option>
+<option value="4">MOL2 - Tripos Sybyl mol2 file</option>
+<option value="8">MOL2H - Sybyl mol2 with explicit hydrogens</option>
+<option value="3">PDB - Protein Databank PDB file</option>
+<option value="5">BIN - Old Style OEBinary</option>
+<option value="11">MF  - Molecular Formula (Hill order)</option>
+<option value="12">XYZ - XMol XYZ format</option>
+<option value="13">FASTA - FASTA protein sequence</option>
+<option value="14">MOPAC - MOPAC file format(s)</option>
+<option value="15">OEB - New Style OpenEye OEBinary</option>
+
+                        </select>
+                    </div>
+                    
+                    <div>                                            
+                        <span class="module-sub-header float-left margin-top-big">SMILES</span>
+                        <a class="sketch-button float-right" href="JMEPopupWeb.py?parentForm=PatternCountScreenWeb&smilesField=molecules&JMEPopupWeb=True">Sketch <IMG SRC="../resource/edit.gif" style="width:19; height:17; border:0" alt="Draw structure"></a>
+                        <textarea rows=10 style="width:100%;" id="molecules" name="molecules" wrap=off>CCCCO       1
+OCCCCCN     2
+CCCCC(=O)O  3
+NC(O)C(=O)O    4
+NC(C)C(=O)NC(Cc1ccc(O)cc1)C(=O)O    5
+CC(=O)OCC(=O)OCC(=O)O  6
+</textarea>
+                    </div>
+                    
+                    <div class="margin-top">
+                        <span class="module-sub-header">SMARTS Pattern String Counts</span>
+                        <textarea rows=10 style="width:100%;" name="smarts" wrap=off>O=C[OH]   CarboxylicAcid
+[NH2]   PrimaryAmine   0
+O=C[NH] Amide    0
+[CX4][OH]   Alcohol   0
+O=COC   Ester    2
+</textarea>                                               
+                    </div>
+                    
+                    <input type="hidden" name="PatternCountScreenWeb" value="Screen Molecules" />
+                    <button class="convert-button margin-top float-right clear" type="submit" name="PatternCountScreenWeb">Screen</button>                
+            </div>
+        </form>
+        
+        <div id="results" class="hide">
+            <form id="products" name="Products" action="Smi2DepictWeb.py" target="_blank" method=post>
+                <div class="ui-widget-header">Screened Molecules</div>
+                <div class="module">
+                    <textarea rows=10 style="width:100%;" name="smiles" wrap=off></textarea>
+                    <div class="margin-top float-left"><a id="Smi2DepictWeb" href="#img-results" class="view-button">View Structure</a></div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

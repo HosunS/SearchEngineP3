@@ -1,0 +1,150 @@
+<html>
+<head>
+    <title>Ucigame - Gallery - ClickAndClack</title>
+<link href="../stylesheet.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+
+<center><h2>Ucigame - Gallery - ClickAndClack</h2></center>
+
+<h4>
+<a href="../index.html">Home</a> |
+<a href="../getting-started.html">Getting Started</a> |
+<a href="../reference.html">Reference</a> |
+<a href="../java.html">Introduction to Java</a> |
+<a href="../gallery.html">Gallery</a>
+</h4>
+
+<p>
+<table>
+<tr>
+<td width="300" valign="top">
+<applet
+   code="ClickAndClack.class"
+   codebase="."
+   archive="../ucigame.jar"
+   width="250"
+   height="250"
+   border="0"
+>
+Your browser cannot show Java applets.
+</applet>
+</td>
+<td width=600 valign="top" halign="center">
+This simple program demonstrates the four methods that are
+called in response to mouse activity:
+onMousePressed(), onMouseMoved(), onMouseDragged(), and onMouseReleased().
+Open the browser's Java Console to see the output of the println()
+statements.
+</td>
+</tr>
+<tr>
+<td colspan=2>
+<br>
+<b>ClickAndClack.java</b>
+<br>
+<pre>
+import ucigame.*;
+import java.util.Date;
+
+public class ClickAndClack extends Ucigame
+{
+    Sprite car1, car2;
+    Sprite ball;
+    Sprite paddle;
+    boolean car1OnTop = true;
+
+    public void setup()
+    {
+        car1 = makeSprite(getImage("images/car1.png"));
+        car2 = makeSprite(getImage("images/car2.png"));
+
+        window.size(250, 250);
+        window.title("Click and Clack");
+        framerate(20);
+
+        canvas.background(100, 200, 200);
+
+        car1.position(10, 10);
+        car2.position(75, 125);
+
+        ball = makeSprite(getImage("images/ball.gif", 255));
+        paddle = makeSprite(getImage("images/paddle.png"));
+
+        ball.position(100, 100);
+        ball.motion(random(1,3), random(1,3));
+        paddle.position(200, 200);
+        paddle.motion(random(2,4), random(2,4));
+
+        keyboard.typematicOff();
+    }
+
+    public void draw()
+    {
+        canvas.clear();  // draw background
+
+        ball.move();
+        ball.bounceIfCollidesWith(TOPEDGE, LEFTEDGE, RIGHTEDGE, BOTTOMEDGE);
+        paddle.move();
+        paddle.bounceIfCollidesWith(TOPEDGE, LEFTEDGE, RIGHTEDGE, BOTTOMEDGE);
+
+        if (car1OnTop)
+        {
+            car2.draw();
+            car1.draw();
+        }
+        else
+        {
+            car1.draw();
+            car2.draw();
+        }
+        ball.draw();
+        paddle.draw();
+    }
+
+    public void onMousePressed()
+    {
+        println((new Date()) + " Mouse pressed, sprite = " + getName(mouse.sprite()));
+    }
+
+    public void onMouseMoved()
+    {
+        println((new Date()) + " Mouse moved, sprite = " + getName(mouse.sprite()));
+    }
+
+    public void onMouseDragged()
+    {
+        println((new Date()) + " Mouse dragged, sprite = " + getName(mouse.sprite()));
+    }
+
+    public void onMouseReleased()
+    {
+        println((new Date()) + " Mouse released, sprite = " + getName(mouse.sprite()));
+    }
+
+    public void onKeyPress()
+    {
+        if (keyboard.isDown(keyboard.SHIFT))
+            car1OnTop = !car1OnTop;
+    }
+
+    public String getName(Sprite s)
+    {
+        if (s == car1) return "car1";
+        if (s == car2) return "car2";
+        if (s == ball) return "ball";
+        if (s == paddle) return "paddle";
+        if (s == null) return "null";
+        return "????";  // this shouldn't happen
+    }
+}
+</pre>
+</td>
+</tr>
+</table>
+
+<br>
+<br>
+
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Minutes, April, 1998 Los Angeles IETF WEBDAV Working Group Meeting</title>
+  </head>
+
+  <body>
+<CENTER>
+<h2>MINUTES</h2>
+<h2>IETF WEBDAV Working Group Meeting</h2>
+<h3>Los Angeles, CA IETF<BR>April 2, 1998</h3>      
+</center>
+
+<P>A WEBDAV WG meeting was held at the Los Angeles IETF, on April 2,
+1998, with approximately 45 people in attendance.  Jim Whitehead
+chaired the meeting, Rohit Khare, Del Jensen, and Jim Davis were
+notetakers. Final minutes were prepared by Jim Whitehead from these
+notes. The meeting began with a review of the agenda, followed by a
+presentation on WG status by Jim Whitehead. The WEBDAV Distributed
+Authoring Protocol document will be revised based on comments from the
+second working group last call, producing revision -08, and will be
+sent to the IESG for Last Call and review as soon as the -08 draft is
+in the Internet-Drafts directory. A WEBDAV interim working group
+meeting will take place June 15-17, 1998, in Redmond, WA, to discuss
+advanced collections functionality, versioning, and access
+control. Many thanks to Yaron Goland and Microsoft for hosting this
+meeting.
+
+<P>Following the WG status report, Keith Swenson,
+&lt;<A HREF="mailto:kswenson@netscape.com">kswenson@netscape.com</A>&gt;,
+&lt;URL:<A HREF="http://people.netscape.com/kswenson/http_workflow">
+http://people.netscape.com/kswenson/http_workflow</A>&gt;, gave a brief
+presentation on an HTTP-based workflow standardization effort that is
+just starting up. The purpose of this effort is develop an
+interoperability protocol for invoking and controlling an asynchronous
+process via HTTP. Elements of the protocol include simple process
+control (e.g., start, pause, resume), and the ability to start
+external systems, such as a backup process. A key element of the
+proposal is that it doesn't have to hold open a connection, since the
+initial design idea is to start a process, receiving in return an
+identifier URL for the process, which can then be used in subsequent
+operations. There will be an initial open meeting for interested
+participants on May 4, 5, 1998, in Costa Mesa, California. The group's
+initial goal is to release a preliminary specification in six months.
+
+<P>After Keith's presentation, the question was asked, "How is this
+different from telnet?" The reply was this protocol does not require
+an open connection, and isn't intended to be a login-based
+protocol. The siimilarity between this work and IPP was noted, since
+IPP also uses HTTP, and isn't login-based.  Following this question,
+there was brief discussion on the similarity between the notifications
+being discussed in IPP, PIPR, and the notifications being discussed
+for workflow support.
+
+<P>Jim Davis next led a discussion of the advanced collections
+requirements document, and this discussion lasted for the remainder of
+the session. The goals of the discussion were to generate shared
+understanding, and hopefully consensus on the requirements (goals),
+but not to do any design work. The presentation began with a review of
+terminology, then launched into a step by step overview of each
+requirement in the advanced collections requirements draft,
+draft-ietf-webdav-acreq-01.txt. The notes below are organized by
+requirement number.
+
+<P>A few questions were asked during the discussion which don't neatly
+fit underneath an existing requirement.  These are:
+
+<UL>
+<LI>Can one have a reference to a reference?
+<LI>Can a reference have more than one target (e.g., this might be
+useful in the context of content negotiation)?
+</UL>
+
+<P>Requirements-related discussion and outcome.  Agreement represents
+the rough consensus of the attendees at the meeting, and this
+consensus is provisional pending discussion on the mailing list.
+
+<P><B>Requirements for Referential Collection Members:</B>
+
+<P>3.1.1 The same resource may be referenced by referential members of
+multiple collections.
+
+<P>Agreed.
+
+<P>3.1.2 The same resource may be referenced by more than one referential
+member of the same collection.
+
+<P>Agreed.
+
+<P>3.1.3 It is possible for the same resource to be an internal member of
+a collection and also to be referenced by one or more referential
+members of that same collection.
+
+<P>Agreed.
+
+<P>Requirement 3.1.3 sparked a discussion on circular
+references. Specifically, should WebDAV allow, disallow, or be silent
+about circular references? It was noted that a reference can point to
+any other resource, including a collection. Early WebDAV drafts do
+exempt servers from having to detect circular refereces.
+
+<P>3.1.4 Operations on a referential member do not affect the resource
+it references.
+
+<P>Agreed.
+
+<P>Discussion of 3.1.4 led to one suggested new requirement:
+
+<P>N.1 Operations on a target do not affect the reference(s)
+
+<P>No consensus was recorded on this new requirement.
+
+<P>Requirement 3.1.4 also led to a discussion of preserving
+referential integrity of references. Participants asked whether
+deleting a referenced resource would result in deletion of the
+reference.  Similarly for a move, would the reference be updated if
+its destination were moved? It was noted that in the general case,
+where the referred-to resource is on a different server, maintaining
+referential integrity is impossible. However, some participants
+expressed a desire for a reference whose integrity would be
+guaranteed, even if that meant the server would limit the potential
+destinations of the reference.  The two kinds of references were
+called "strong" (integrity-enforced) and "weak" (no integrity
+enforcement).
+
+<P>3.1.5 For any referential member of a collection, it is possible to
+obtain the URI of the resource it references.
+
+<P>Agreed.
+
+<P>3.1.6 It is possible to add a referential member to a collection.
+
+<P>Agreed.
+
+<P>3.1.7 It is possible to remove a referential member from a collection.
+
+<P>Agreed.
+
+<P>3.1.8 It is possible for a referential member of a collection to
+carry its own properties, distinct from those of the resource it
+refers to.
+
+<P>An example of this is the author, or "who added" property.
+
+<P>Agreed.
+
+<P>3.1.9 A referential member of a collection also inherits the
+properties of the resource it refers to.
+
+<P>There was wide opposition to this, on the following grounds:
+
+<OL>
+<LI>Assuming that the properties are copied when the reference is
+created, it is unclear what access rights to use when doing the
+PROPFIND.  Documents and references have different access rights, 
+and sometimes one is wider than the other.
+
+<LI>After the properties are copied, the owner of the target resource
+no longer has means to control access on the properties.
+
+<LI>ACAP has had problems with 'inheritance'.
+
+<LI>Referential members are like symbolic links.  But symbolic links
+do not in general have the 'properties' of their target.  Their
+owner, size, and date modified all differ.
+<BR>
+<BR>
+In addition:<BR>
+<BR>
+<LI>If the properties are copied, they could be become out of date
+afterwards. In particular, one participant vehemently complained
+that inherit-by-lookup is out since it requires one server to 
+track another.
+</OL>
+
+<P>Another participant raised the question: isn't this easily
+excisable -- since no other requirements build up on it, the minimum
+set of requirements could exclude it safely.
+
+<P>3.1.10 A listing of the members of a collection shows both the
+internal members and the referential members.
+
+<P>Agreed.
+
+<P>3.1.11 Servers are encouraged to maintain referential integrity for
+referential members as far as possible, but are not required to do so.
+
+<P>No agreement.  This requirement led to a re-opening of the
+integrity issues of 3.1.4. One participant noted that this requirement
+is like a "should" maintain integrity, but isn't should too weak to be
+useful? Some applications really care whether referential integrity
+will be maintained. The issue of cross-server integrity maintenance
+was raised, and what this implies for the scope of integrity
+maintenance. The discussion led to the following requirement:
+
+<P>N.2 It is possible to request creation of a referential member that
+the server will guarentee to have referentially integrity.
+
+<P>Some ideas on how this might be implemented were raised during the
+discussion, and include using a header to inform the server to create
+the reference only if it could guarantee the integrity. A property can
+be used to query the integrity maintenance capabilities of the
+reference.
+
+<P>There was agreement on this new requirement.
+
+<P>N.3 It is possible to discover whether or not a referential member
+has such 'integrity protection'.
+
+<P>Proposed, but no agreement reached.  Needs discussion.
+
+<P>N.4 Is is possible to discover whether a resource is the target of
+such a 'protected referential member'.
+
+<P>Proposed, but no agreement reached.  Needs discussion.
+
+<P>3.1.12 For any member of a collection, it is possible to discover
+whether it is an internal or a referential member.
+
+<P>Agreed.
+
+<P><B>Requirements for Ordered Collections:</B>
+
+<P>3.2.1 The ordering mechanism is sufficiently standardized that
+different applications and servers can operate on the same ordering
+without private agreement.
+
+<P>Agreed, with change in wording: "Ordering is sufficiently
+standardized..." (i.e., remove "the" and "mechanism"), due to concern
+over the word 'mechanism', and its precise meaning and implications.
+
+<P>3.2.2 The semantics of an ordering are discoverable.
+
+<P>Agreed, but only after much discussion. There was general concern
+over the meaning of "ordering semantics", since it can be read pretty
+broadly. There was discussion of proposals to replace "semantics" with
+"operational characteristics" or with "ordering methodology", but in
+the end the original wording prevailed. However, an action item was
+recorded to discuss the meaning of "ordering semantics" on the list.
+
+<P>3.2.3 When a client requests a listing of the members of a
+collection, it can specify the ordering to be applied, and the server
+will apply that ordering to its response.
+
+<P>Agreed, with the addition that "The server may decline to support
+the requested ordering".
+
+<P>3.2.4 It is possible to order the members of a collection in an
+arbitrary way, not necessarily based on property values.
+
+<P>Agreed, with the word "arbitrary" changed to "client-specified".
+One way we got into trouble here is that since the ordering might well
+be stored in a property, it's hard to think of an ordering that is NOT
+based on a property value.  Also, there was much sentiment that DASL
+should support sorting on property values, and that orderings based on
+property values alone should be left to DASL and not addressed here.
+
+<P>There were some dissenting comments which noted that this feature
+should be optional, and not required.  Also, some parts of a server
+may not be able to support ordering.
+
+<P>3.2.5 Internal and referential members may by intermixed in the
+same ordering.
+
+<P>Agreed.
+
+<P>3.2.6 It is possible to impose multiple orderings on the same
+collection.
+
+<P>No agreement.  No one at the meeting was able to propose a scenario
+that actually requires more than one ordering.  The scenario in the
+requirements document was discredited, on the claim that the two
+instructors should instead each create their own collections, using
+referential members, and impose the ordering they wished.
+
+<P>There was general agreement with a proposal to remove 3.2.6. As a
+result of this change, 3.2.4 becomes a labeling issue, and there was
+strong sentiment that 3.2.3 and 3.2.7 should be removed as well, since
+this preserves a model where there are collections with preserved
+order and DASL capability for sorting.  Furthermore, there was some
+discussion about whether 3.2.8 should also be removed.
+
+<P>3.2.7 An ordering is not required to contain all members of the
+collection.
+
+<P>No agreement, for the same reasons discussed in 3.2.6.
+
+<P>3.2.8 A collection member may belong to the same ordering more than once.
+
+<P>No agreement, for the same reasons discussed in 3.2.6.
+
+<P>3.2.9 It is possible to modify an existing ordering efficiently.
+
+<P>No agreement.  One participant noted that this seemed strange,
+since it's like a "motherhood" statement.
+
+<P>There was significant participant uncertainty from the discussion
+of 3.2.6 until the end of the session.
+
+<P>There was insufficient time to discuss the "Issues" from the
+advanced collections requirements draft.
+
+<P>*** Meeting Adjourned ***
+</body>
+</html>

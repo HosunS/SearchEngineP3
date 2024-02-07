@@ -1,0 +1,132 @@
+/*
+** filter file based on keyword argument
+** David Eppstein / UC Irvine / 14 Oct 1995
+**
+** calling convention: filter key <file
+**
+** copies one line at a time from input to output
+** except for lines starting with backslash:
+**
+** \+	  start copying lines
+** \-	  stop copying lines
+** \!key  toggle copying iff key on line matches argument
+**	  (exact match, or line can be pref* where * matches any continuation)
+** \@     send line through in angle brackets
+**        (to protect HTML directives from other filters such as nb2html.
+**	  note: there will be no newline after the bracketed text.)
+** \#	  comment line
+** \.     send line through without a newline
+** \\	  send through a single backslash
+**
+** For use as CGI, would need to change calling convention
+** to parse input file and key from getenv("QUERY_STRING"),
+** or write a separate script to call this program.
+** Input file for that application should include content-type,
+** similarly to the output produced below when argc is wrong.
+*/
+
+#include <stdio.h>
+
+void bad()
+{
+    printf("Content-type: text/html\n\n");
+    printf("<HTML><HEAD><TITLE>Bad filter input</TITLE></HEAD>\n");
+    printf("<BODY>\nBad input to keyword filter program,\n");
+    printf("unable to process request.\n</BODY></HTMl>\n");
+    exit(0);
+}
+
+main(ac,av)
+int ac;
+char **av;
+{
+    int c;
+    int copying = 1;
+    char * keyptr = 0;
+    enum {
+	text, dot, bracket, newline, keytest, comment, backslash
+    } state = newline;
+
+    if (ac != 2) bad();
+
+    while ((c = getchar()) != EOF) switch(state) {
+     case text:			/* in middle of line */
+	if (copying) putchar(c);
+	if (c == '\n') state = newline;
+	break;
+
+     case dot:			/* like text but w/o copying newline itself */
+	if (c == '\n') state = newline;
+	else if (copying) putchar(c);
+	break;
+
+     case bracket:
+	if (c == '\n') {
+	    if (copying) putchar('>');
+	    state = newline;
+	} else if (copying) putchar(c);
+	break;
+
+     case newline:		/* at start of line, test for backslash */
+	if (c == '\\') state = backslash;
+	else {
+	    if (copying) putchar(c);
+	    if (c != '\n') state = text;
+	}
+	break;
+
+     case keytest:		/* testing key and if equal toggling copying */
+	if (c == '\n') {	/* newline marks end of key */
+	    state = newline;
+	    if (keyptr != 0 && *keyptr == '\0')
+		copying = !copying;
+	} else if (c == '*') {	/* got to a star, found partial match */
+	    state = comment;	/* ignore rest of line and toggle copying */
+	    copying = !copying;
+	}
+	else if (keyptr != 0 && *keyptr == c) keyptr++;
+	else state = comment;	/* didnt match, ignore rest of line */
+	break;
+
+     case comment:		/* ignoring chars till newline */
+	if (c == '\n') state = newline;
+	break;
+
+     case backslash:
+	switch(c) {
+	 case '\\':		/* send through a backslash */
+	    if (copying) putchar(c);
+	    state = text;
+	    break;
+
+	 case '+':		/* start copying */
+	    copying = 1;
+	    state = comment;
+	    break;
+
+	 case '-':		/* stop copying */
+	    copying = 0;
+	    state = comment;
+	    break;
+
+	 case '.':		/* copy line w/o newline */
+	    state = dot;
+	    break;
+
+	 case '@':		/* protect angle bracket */
+	    if (copying) putchar('<');
+	    state = bracket;
+	    break;
+
+	 case '!':		/* test key and if equal toggle copying */
+	    state = keytest;
+	    keyptr = av[1];
+	    break;
+
+	 case '#':		/* comment */
+	 default:
+	    state = comment;
+	    break;
+	}
+    }
+}

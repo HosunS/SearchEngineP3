@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>CircadiOmics</title>
+        <meta name="keywords" content="Circadian rhythm,metabolomics,circadian metabolome,liver metabolome,clock and metabolism,omics data integration,circadian omics"/>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=9" />
+        <!-- Load stylesheets -->
+        <link rel="StyleSheet" href="/css/jqac.css" type="text/css" />
+        <link rel="StyleSheet" href="/css/index.css" type="text/css" />
+        <!-- Load Javascript -->
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+        <script type="text/javascript">
+            google.load('visualization', '1.0', {packages: ['corechart']});
+            google.load('visualization', '1', {packages: ['table']});
+        </script>
+        <style>
+          #biocyclebutton {
+                background-color: #FF8C00; /* Blue */
+                border: none;
+                color: white;
+                padding: 15px 32px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 16px;
+                border-radius: 12px;
+            }
+        #biocyclebutton:hover {
+                box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
+            }
+        </style>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+        <script type="text/javascript" src="/js/src/jquery.autocomplete.js"></script>
+        <script type="text/javascript" src="/js/browserDetect.js"></script>
+        <script type="text/javascript">
+			function toggle_visibility(obj_id){
+	            var obj = $("#"+obj_id+"-wrapper");
+	            if ( obj.is(":visible") ){
+					// Hide content
+	            	obj.hide();
+	            	// Remove transparent layer
+	            	$('#transparent-layer').hide();
+	            }
+	            else{
+					// Hide everything else
+					$('#example-wrapper').hide();
+					$('#data-sources-wrapper').hide();
+					$('#help-wrapper').hide();
+					$('#contact-wrapper').hide();
+
+		            // Show content
+	            	obj.show();
+
+	            	// Add transparent layer
+	            	$('#transparent-layer').show();
+	            }
+			}
+
+            /***************************************/
+            // Define Global Vars
+            /***************************************/
+            var node_json_datas = Array();
+            /***************************************/
+
+            // Set and return options depending on what type (table/chart)
+            function setOptions(type, colors, title){
+                var options = {
+                    enableEvents: true,
+                    enableInteractivity: true,
+                    focusTarget: 'category',
+                    series: colors,
+                    allowHtml: true,
+                    legend: {
+                        position: 'none'
+                    }
+                }
+                if (type == "chart"){
+                	options['title'] = title;
+                	options['titleTextStyle'] = {fontSize: 20}
+                    options['width'] = 500;
+                    options['height'] = 300;
+                    options['vAxis'] = {title: 'Scaled Intensity'};
+                    options['hAxis'] = {title: 'Time'};
+                    options['curveType'] = 'function';
+
+                }
+                else if(type == "table"){
+                    options['width']=900;
+                    options['height']=null;
+                }
+                return options;
+            }
+
+            // Draw chart, view can be google visualization data or a view
+            function drawChart(view, chart_elements, colors, title) {
+                // Create and draw the visualization
+                $.each(chart_elements, function(index,chart_element){
+                    gchart = new google.visualization.LineChart(chart_element);
+                    options = setOptions("chart", colors, title);
+                    gchart.draw(view, options);
+                });
+            }
+
+            // Define toggle visible chart lines function
+            function toggleLines(gtable_id, data, columns, colors, title){
+                var table_id = gtable_id.split("-");
+                var chart_id = "chart-" + table_id[1];
+
+                // Create copy of data as view
+                var chartdata = new google.visualization.DataTable(data);
+                var chartview = new google.visualization.DataView(chartdata);
+                var hidden_cols = new Array();
+                var color_idxs = new Array();
+                for (column in columns){
+                    // Add line data index for hidding
+                    col_id = parseInt(columns[column])
+                    hidden_cols.push(col_id);
+                    color_idxs.push( (col_id-1) / 3 );
+
+                    // Add interval data index for hidding
+                    hidden_cols.push(col_id + 1 );
+                    hidden_cols.push(col_id + 2 );
+                }
+
+                // Parse colors and only copy over visible colors
+                var visible_colors = Array();
+                for (color in colors){
+                    if ($.inArray(parseInt(color),color_idxs) < 0){
+                        visible_colors.push(colors[color]);
+                    }
+                }
+
+                // Hide unchecked columns
+                chartview.hideColumns(hidden_cols);
+                // Draw chart with only visible colors and hidden columns
+                drawChart(chartview, $.find('#'+chart_id+":first"), visible_colors, title);
+            }
+
+            $(document).on("change", "#tissue", function () {
+                var bioelement = $("#bioelement").val();
+                var tissue = $(this).val();
+                $(".paper-wrapper").each(function() { $(this).css("display", "none"); });
+                if ($("#" + bioelement + "-" + tissue + "-paper").length!=0) {
+                  $("#" + bioelement + "-" + tissue + "-paper").css("display", "block");
+                } else {
+                  $("#" + tissue + "-paper").css("display", "block");
+                }
+                if (tissue != "all") { $("#search-img").removeClass("disabled"); $("#submit").removeClass("disabled"); }
+                else { $("#search-img").addClass("disabled"); $("#submit").addClass("disabled"); }
+                $("#select_tissue").hide();
+            });
+
+            function renderElement(){
+                var bioelement = $(this).val();
+                $("#tissue").find("option").each(
+                  function (i, x) {
+                    $("#tissue option[value='"+x.value+"']").attr("disabled", "disabled");
+                  });
+                $("#tissue").find("."+bioelement).each(
+                  function (i, x) {
+                    $("#tissue option[value='"+x.value+"']").removeAttr("disabled");
+                  });
+                var selected = $("#tissue").find(":selected").first();
+                if (selected.val() != "all" && !selected.hasClass(bioelement)) {
+                  var first_valid_tissue = $("#tissue").find("."+bioelement).first().val();
+                  $("#tissue").val(first_valid_tissue);
+                }
+                $("#tissue").trigger("change");
+            };
+
+            $(document).on("change", "#bioelement", renderElement);
+            $(document).on("ready", renderElement);
+
+            // Draw table with all data (table data and corresponding chart data) and all colors
+            function drawTable(json_data, table_elements, colors, title) {
+                // Init data object
+                var data = new google.visualization.DataTable(json_data.tabledata);
+
+                // Create and draw the visualization
+                $.each(table_elements, function(index,table_element){
+                    // Make a working copy of data and hide the index column
+                    var view = new google.visualization.DataView(data);
+                    // Hide index column
+                    view.hideColumns([1]);
+
+                    // Draw the table with view and options
+                    var options = setOptions("table", colors, "");
+                    var gtable = new google.visualization.Table(table_element);
+                    gtable.draw(view, options);
+
+                    google.visualization.events.addListener(gtable, 'select', function() {
+                        // Grab row that was clicked and toggle Plot boolean
+                        selection = gtable.getSelection();
+                        if (selection.length > 0){
+                            var row = selection[0].row
+                            if (data.getValue(row, 0) == false){
+                                data.setValue(row, 0, true);
+                            }
+                            else{
+                                data.setValue(row, 0, false);
+                            }
+
+                            // Make a working copy of data
+                            var view = new google.visualization.DataView(data);
+                            // Hide the index column
+                            view.hideColumns([1]);
+
+                            var hidden_cols = new Array;
+                            for (var i=data.getNumberOfRows(); i>0; i--){
+                                if (!data.getValue(i-1, 0)){
+                                    // Add line data index for hiding
+                                    hidden_cols.push(data.getValue(i-1, 1));
+                                }
+                            }
+
+                            // Define additional table options
+                            var options = setOptions("table", colors, "");
+
+                            // Re-Draw table with view and options (losses any previous column sort!)
+                            gtable.draw(view, options);
+                            toggleLines($(table_element).attr("id"), json_data.chartdata, hidden_cols, colors, title);
+                        }
+                    });
+                });
+            }
+
+            // Print out all the meta data into the meta DOM element
+            function drawMeta(data, meta_elements, comp_id){
+                $.each(meta_elements, function(index, meta_element){
+                    $.each(data, function(key, value){
+                    	var index = value[0];
+                    	var item = value[1];
+                    	if (index=="networkurl"){
+                        	if (item.length > 0){
+                                var networkurl_elements = $(meta_element).find(".networkurl");
+                                $(networkurl_elements).eq(0).append("<a target='_blank' href='"+ item +"'>View Network</a>");
+                        	}
+                        }
+                        else{
+                            var meta_p_elements = $(meta_element).find("p");
+                            $(meta_p_elements).eq(0).append("<label>"+index+"</label>: "+item+"<br />"); }
+                    });
+                });
+            };
+
+            // $("#biocyclebutton").click(function() {
+            //   $("#biocyclefrm").submit();
+            // });
+
+            // When DOM elements are ready...
+            $(document).ready(function() {
+                google.setOnLoadCallback(function() {
+                    $(function() {
+                    	//BrowserDetect.init();
+                    	detectBrowserVersion();
+                        $("#blank_search").hide();
+                        $("#select_tissue").hide();
+
+                    	//Dissable tissue on live site
+                    	if (false){
+                    		if ( 'None' == 'muscle' ){
+                    			$("#bioelement option[value='acetylome']").hide();
+                    			$("#bioelement option[value='gene']").hide();
+                    			// Disable "all" option
+                    			$("#tissue option[value='all']").attr("disabled","disabled");
+                    			// Hide "liver" option
+                    			$("#tissue option[value='liver']").hide();
+                    		}
+                    		else if ( 'None' == 'acetylome' ){
+                    			// Disable "all" option
+                    			$("#tissue option[value='all']").attr("disabled","disabled");
+                    			// Hide "muscle" option
+                    			$("#tissue option[value='muscle']").hide();
+                    			// Show crick link to acetylome network
+                    			$("#acetylome_network").show();
+                    		}
+                    		else if ( 'None' == 'highfat' ){
+                    			$("#bioelement option[value='acetylome']").hide();
+                    		}
+                    	    else{
+                    	    	//Do not hide anything
+                    	    }
+                    	}
+                    	else{
+                    		//$("#tissue option[value='muscle']").attr("disabled","disabled");
+                    		$("#logout_link").hide();
+                    	}
+
+                    	// Set selected bioelement
+                        $("#bioelement").val('gene');
+                        // Set selected tissue
+                        if ('all' != "all")
+                           $("#submit").removeAttr("disabled");
+                        $("#tissue").val('all');
+                        $("#bioelement").trigger("change");
+                        $("#tissue").trigger("change");
+                        if ("all" == "all") { $("#search-img").addClass("disabled"); $("#submit").addClass("disabled"); }
+
+                        function initNodeData(element) {
+                            var comp_id = element.attr("id");
+                            $.getJSON('/?comp_id='+comp_id+"&bioelement="+$('#bioelement').val()+"&tissue="+$('#tissue').val(), function(data) {
+                                // Init data object
+
+                                // Draw Chart
+                                var chartdata = new google.visualization.DataTable(data.chartdata);
+                                var chart_element = element.children(".chart").eq(0);
+                                google.setOnLoadCallback(drawChart(chartdata, chart_element, data.colors, data.name));
+
+                                // Draw Table
+                                var table_element = element.children(".table").eq(0);
+                                google.setOnLoadCallback(drawTable(data, table_element, data.colors, data.name));
+
+                                // Draw Meta data
+                                var meta_element = element.children(".meta").eq(0);
+                                google.setOnLoadCallback(drawMeta(data.metadata, meta_element, comp_id));
+                            }).fail(function () {
+                                element.hide()
+                                console.log(element.attr("id") + " failed to load node data.");
+                            });
+
+                            return true
+                        }
+                        $('#bioelement').change(function() {
+                            switch($(this).attr('value')) {
+                                case "gene":
+                                    $("#element_search_text" ).text("Search transcriptome by official gene symbol or REFSEQ");
+                                    break;
+                                case "metabolite":
+                                    $("#element_search_text" ).text("Search metabolome by bioechemical name or KEGG ID");
+                                    break;
+                                case "acetylome":
+                                    $("#element_search_text" ).text("Search acetylome by official gene symbol or REFSEQ");
+                                    break;
+                                case "proteome":
+                                    $("#element_search_text" ).text("Search proteome by official gene symbol");
+                                    break;
+                            }
+                        });
+                        $( "#submit" ).click(function() {
+                            console.log("submit1");
+                            if ($("#search-img").hasClass("disabled")) {
+                                if(!($('#select_tissue').is(":visible"))) {
+                                    $('#select_tissue').toggle();
+                                }
+                            } else if($("#search").attr('value') == "") {
+                                if(!($('#blank_search').is(":visible"))) {
+                                    $('#blank_search').toggle();
+                                }
+                            } else {
+                                document.searchfrm.submit();
+                            }
+                        });
+                        $(document).on("submit", function () {
+                            console.log("submit2");
+                            if ($("#search-img").hasClass("disabled")) {
+                                if(!($('#select_tissue').is(":visible"))) {
+                                    $('#select_tissue').toggle();
+                                }
+                                return false;
+                            } else if($("#search").attr('value') == "") {
+                                if(!($('#blank_search').is(":visible"))) {
+                                    $('#blank_search').toggle();
+                                }
+                                return false;
+                            } else {
+                                return true;
+                            }
+                        });
+                        // Bind toggle to menu links
+                        $("#menu-links a").click(function(){
+                        	var this_class = $(this).attr('class');
+                        	toggle_visibility(this_class);
+                        });
+
+                        // Initialize each node by pulling data and displaying charts
+                        $(".node-data").each(function(index, node){
+                            var success = initNodeData($(node));
+                        	// Hide the loading gif after everything has been loaded
+                            if (success){
+                            	$(node).children(".loading").eq(0).hide();
+                            }
+                        });
+
+                        // Initialize autocomplete on search input
+                        $( "#search" ).autocomplete({
+                            url: '/?get=search-vals',
+                            minChars: 2,
+                            useCache: true,
+                            maxCacheLength: 5,
+                            remoteDataType: "json",
+                            queryParamName: "search",
+                            filterResults: true,
+                            matchInside: false,
+                            maxItemsToShow: 1000,
+                            maxCacheLength: 5,
+                            extraParams: {"bioelement":'gene'}
+                        });
+                        var ac = $("#search").data("autocompleter");
+
+                        // Set extra parameter for autocomplete to pass via AJAX call
+                        $('#bioelement').change(function() {
+                            ac.setExtraParam('bioelement', $('#bioelement').val());
+
+                            if ($('#bioelement').val() != 'Select bioelement'){
+                                $('#search').removeAttr('disabled');
+                            }
+                            else{
+                                $('#search').attr('disabled', true);
+                            }
+                        });
+                	});
+                });
+            });
+        </script>
+
+        <!-- Google Analytics -->
+        <script type="text/javascript">
+            if ('None' == 'acetylome'){
+            	var _gaq = _gaq || [];
+            	_gaq.push(['_setAccount', 'UA-1004168-11']);
+            	_gaq.push(['_trackPageview']);
+
+            	(function() {
+            	    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            	    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            	    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            	})();
+            }
+            else{
+                var _gaq = _gaq || [];
+                _gaq.push(['_setAccount', 'UA-1004168-10']);
+                _gaq.push(['_setDomainName', 'igb.uci.edu']);
+                _gaq.push(['_setAllowLinker', true]);
+                _gaq.push(['_trackPageview']);
+
+                (function() {
+                    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+                })();
+            }
+        </script>
+    </head>
+
+    <body>
+    	<div id="transparent-layer"></div>
+   		<div id="menu-content-wrapper">
+		    <div id="menu-wrapper">
+	   			<div class="float-left menu-pad">CircadiOmics</div>
+		    	<div id="menu-links" class="menu-pad">
+                    <span id="logout_link"><a href="?login=false">Logout</a> |</span>
+			    	<a class="example">Example</a> |
+			    	<a class="data-sources">Data</a> |
+			    	<a class="help">Help</a> |
+			    	<a class="contact">Contact</a>
+		    	</div>
+		    </div>
+
+    		<div id="example-wrapper" class="content-wrapper">
+    			<div id="example">
+	    			<div class="hide-content" style="width: 800px" onclick="toggle_visibility('example')">[X]</div>
+				    <img id="example-img" src="/images/example.png"/>
+    			</div>
+			</div>
+
+			<div id="data-sources-wrapper" class="content-wrapper center-menu-blocks">
+				<div id="data-sources">
+	    			<div class="hide-content" onclick="toggle_visibility('data-sources')">[X]</div>
+	    			<div class="grey-content-bubble">
+			    		<img class="float-left" src="/images/circadian_metabolome_logo.png"/>
+                        <p>Data download has been disabled currently, please check back shortly.</p>
+<!-- 				    	<div class="float-right" style="width: 400px">
+				    		<p>Metabolite profiles from Wild-Type and Clock-deficient livers:</p>
+				    		<p><a href="/downloads/CircadiOmics_Liver_Metabolome_WT_ClockKO.xlsx" target="_blank">Download Data</a></p>
+				    	</div>
+                        <div class="float-left">
+                            <p>For a complete list of data sources currently integrated into CircadiOmics click <a href="/downloads/Data_Sources.pdf" target="_blank">here</a>.</p>
+                        </div> -->
+			    	</div>
+				</div>
+			</div>
+
+			<div id="help-wrapper" class="content-wrapper center-menu-blocks">
+				<div class="hide-content" onclick="toggle_visibility('help')">[X]</div>
+				<div id="help">
+                    <div class="grey-content-bubble">
+                        <b>Browser Test</b>
+                        <p>To test if your web browser is compatible, Click <a href="/?network=data/liver_MOUSE_gene/6427.xgmml" target="_blank">here</a> to open the UPP2 network.</p>
+                    </div>
+					<div class="grey-content-bubble">
+						<b>Search:</b>
+						<ul>Enter a metabolite name or KEGG ID. Click on the search symbol. All metabolites containing the search term will appear. If necessary, scroll down the page or advance through several pages to find the desired metabolite.</ul>
+                        <p>Please use Chrome 22, FireFox 15, Safari 6.0, IE 9.0 or higher</p>
+					</div>
+					<div class="grey-content-bubble">
+						<b>Metabolite Information:</b>
+						<ul>
+							<li>All metabolites presented in CircadiOmics were identified via ultra-high performance liquid chromatography/mass spectrometry from the indicated bioelements.</li>
+							<li>Line plots to the left depict the scaled intensity of the metabolite at different zeitgeber times (ZT3, ZT9, ZT15, and ZT21). Blue lines indicate relative abundance of the metabolite in wild-type bioelement and orange lines indicate relative metabolite abundance in Clock-deficient bioelement. </li>
+							<li>To the right of each metabolite graph, further information is listed about the compound, including the KEGG ID, the metabolic pathway to which it is most closely associated, as well as the compound mass.</li>
+							<li>To view the network assembled for the metabolite, click on "View Network". How the metabolite links to enzymes and transcription factors is depicted*. Networks are composed of data from KEGG, CIRCA, MotifMap and other sources. More information regarding the methods used for generating these networks can be found in the paper.</li>
+							<p>*be aware that large networks may take longer to load</p>
+
+						</ul>
+						See <a onclick="toggle_visibility('example');">Example</a> for more details.
+					</div>
+					<div class="grey-content-bubble">
+						<b>Statistical Analysis:</b><br />
+						<ul>
+							<li>The tables located under each metabolite graph show two-way ANOVA results as well as the fold change numbers for the relative metabolite abundance between wild-type and circadian mutant bioelements at a given zeitgeber time.</li>
+
+							<li>Time and genotype are the two variables in the Two-way ANOVA
+							analysis. P- and q-values are shown here.</li>
+
+							<li>'Fold Change' (the ratio of the metabolite level in Clock-deficient to the
+							metabolite level in WT) is reported at different zeitgeber time. The p-
+							and q-value statistics are shown.</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+
+			<div id="contact-wrapper" class="content-wrapper center-menu-blocks">
+				<div class="hide-content" onclick="toggle_visibility('contact')">[X]</div>
+				<div id="contact">
+					<div class="grey-content-bubble"><p><b>The CircadiOmics project is developed by:</b></p>
+						<div class="indent">
+							<div class="half-size float-left">
+								<a target="_blank" href="http://www.faculty.uci.edu/profile.cfm?faculty_id=5402">Paolo Sassone&ndash;Corsi</a><br /><br />
+								<a trget="_blank" href="mailto:mahank@uci.edu">Kristin Eckel&ndash;Mahan</a>
+							</div>
+								<div class="half-size float-left">
+								<a target="_blank" href="http://www.igb.uci.edu/~pfbaldi">Pierre Baldi</a><br /><br />
+								<a target="_blank" href="http://www.ics.uci.edu/~vishalrp">Vishal Patel</a>
+							</div>
+						</div>
+					</div>
+					<div class="grey-content-bubble"><p><b>For Questions/Support:</b></p>
+						<div class="float-left indent">
+                            <p>If you have a genome-wide dataset that you would like to see integrated into CircadiOmics, please email
+                            <a href="mailto:circadiomics@ics.uci.edu">circadiomics@ics.uci.edu</a>.</p>
+                        </div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+        <div id="content">
+        	<div id="header"><a href="/"><img src="/images/title-header.png" /></a></div>
+            <div id="browser-message">
+            	CircadiOmics is best viewed with:<br />
+            	<a target="_blank" href="http://www.google.com/chrome">Chrome 22+</a>
+            	<a target="_blank" href="http://www.mozilla.com/firefox">Firefox 15+</a>
+            	<a target="_blank" href="http://www.apple.com/safari/download/">Safari 6+</a>
+            	or <a target="_blank" href="http://windows.microsoft.com/en-US/internet-explorer/downloads/ie-9/worldwide-languages">Internet Explorer 9+</a>
+            </div>
+            <div id="search-wrapper">
+              <form id="searchfrm" name="searchfrm" action="" method="get">
+                <div id="info">
+                  <div id="element_search_text" class="label">Search transcriptome by official gene symbol or REFSEQ</div>
+	          <div id="input-wrapper">
+	            <select id="bioelement" name="bioelement" >
+  		      <option value="gene">Transcriptome</option>
+  		      <option value="metabolite">Metabolome</option>
+              <option value="acetylome">Acetylome</option>
+  		      <option value="proteome">Proteome</option>
+
+	            </select>
+                    <select id="tissue" name="tissue">
+                      <option value="all">Select tissue</option>
+                      <optgroup label="LIVER">
+                        <option value="liver_48h" class="gene">48hr time-course (Hughes et al, 2009)</option>
+                        <option value="liver_panda" class="gene">Wildtype (Panda et al, 2002)</option>
+                        <option value="liver_wt" class="gene">Wildtype Time course (Miller et al, 2007)</option>
+                        <option value="liver" class="metabolite gene acetylome">Normal Chow vs. High-Fat (Eckel-Mahan et al, 2013)</option>
+                        <option value="liver_old" class="metabolite">ClockKo vs. WT (Eckel-Mahan et al, 2012)</option>
+                        <option value="SIRT1" class="metabolite gene">Sirt1 WT vs. KO (Masri et al, 2014)</option>
+                        <option value="SIRT6" class="metabolite gene">Sirt6 WT vs. KO (Masri et al, 2014)</option>
+                        <option value="liver_atlas" class="gene">Liver (Zhang et al, 2014)</option>
+                        <option value="liver_mann" class="proteome">Liver Proteomics (Mann et al, 2014)</option>
+                      </optgroup>
+                      <optgroup label="KIDNEY">
+                        <option value="kidney_ccd" class="gene">Kidney CCD (Mercier-Zuber et al, 2009)</option>
+                        <option value="kidney_dct" class="gene">Kidney DCT/CNT (Mercier-Zuber et al, 2009)</option>
+                        <option value="kidney_atlas" class="gene">Kidney (Zhang et al, 2014)</option>
+                      </optgroup>
+                      <optgroup label="COLON">
+                        <option value="distal_colon" class="gene">Distal colon (Hoogerwerf et al, 2008)</option>
+                      </optgroup>
+                      <optgroup label="HEART">
+                        <option value="aorta" class="gene">Aorta (Rudic et al, 2005)</option>
+                        <option value="aorta_atlas" class="gene">Aorta (Zhang et al, 2014)</option>
+                        <option value="heart_atlas" class="gene">Heart (Zhang et al, 2014)</option>
+                      </optgroup>
+                      <optgroup label="GLANDS">
+                        <option value="adrenal" class="gene">Adrenal Gland (Oster et al, 2006)</option>
+                        <option value="pituitary_48h" class="gene">Pituitary 48hr (Hughes et al, 2009)</option>
+                        <option value="adrenal_atlas" class="gene">Adrenal Gland (Zhang et al, 2014)</option>
+                      </optgroup>
+                      <optgroup label="MUSCLE">
+                        <option value="muscle" class="metabolite gene">Bmal1 WT vs. KO (Dyar et al, 2013)</option>
+                        <option value="muscle_wt" class="gene">Muscle (Miller et al, 2007)</option>
+                        <option value="muscle_atlas" class="gene">Skeletal Muscle (Zhang et al, 2014)</option>
+                      </optgroup>
+                      <optgroup label="BONE">
+                        <option value="bone" class="gene">Human Osteosarcoma (U2 OS) (Baggs et al, 2009)</option>
+                      </optgroup>
+                      <optgroup label="CELLS">
+                        <option value="3T3" class="gene">Fibroblast (3T3) (Hughes et al, 2009)</option>
+                        <option value="Macrophages_DD" class="gene">Macrophages 48hr (Keller et al, 2009)</option>
+                      </optgroup>
+                      <optgroup label="BRAIN">
+                         <option value="SCN_panda" class="gene">SCN (Panda et al, 2002)</option>
+                         <option value="brain_stem_atlas" class="gene">Brain Stem (Zhang et al, 2014)</option>
+                         <option value="hypothalamus_atlas" class="gene">Hypothalamus (Zhang et al, 2014)</option>
+                         <option value="cerebellum_atlas" class="gene">Cerebellum (Zhang et al, 2014)</option>
+                      </optgroup>
+                      <optgroup label="FAT">
+                         <option value="brown_fat_atlas" class="gene">Brown Fat (Zhang et al, 2014)</option>
+                         <option value="white_fat_atlas" class="gene">White Fat (Zhang et al, 2014)</option>
+                      </optgroup>
+                      <optgroup label="Lung">
+                         <option value="lung_atlas" class="gene">Lung (Zhang et al, 2014)</option>
+                      </optgroup>
+                    </select>
+	            <div id="submit-wrapper">
+	              <input id="search" name="search" type="text" value="" />
+	              <!-- <div id="submit" onclick="document.searchfrm.submit();"><img src="/images/orange-search.png" width="22px" height="22px" /></div> -->
+                      <div id="submit"><img id="search-img" width="22px" height="22px" /></div>
+	            </div>
+	          </div>
+                </div>
+              </form>
+            </div>
+
+
+            <div id="blank_search">
+                Please input an ID in the search box above.
+            </div>
+
+            <div id="select_tissue">
+                Please select a tissue from the choices above.
+            </div>
+
+
+            <br>
+            <br>
+
+
+
+            <!-- <form id="biocyclefrm" action="/?biocycle=true" method="post"> -->
+            <input type="submit"  onclick="location.href='http://circadiomics.ics.uci.edu/?biocycle=true';" name="biocyclebutton" id="biocyclebutton" value="BIO_CYCLE // BIO_CLOCK"/>
+           <!-- </form> -->
+
+
+           <div id="distal_colon-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Transcriptional profiling of mRNA expression in the mouse distal colon</span><br>
+              <span class="paper-authors">W.&nbspA.&nbspHoogerwerf, M.&nbspSinha, A.&nbspConesa, B.&nbspA.&nbspLuxon, V.&nbspB.&nbspShahinian, G.&nbspCornÃ©lissen, F.&nbspHalberg, J.&nbspBostwick, J.&nbspTimm, and&nbspV.&nbspM.&nbspCassone</span><br>
+              <span class="paper-journal">Gastroenterology</span>&nbsp
+              <span class="paper-extra">135</span>,&nbsp
+              <span class="paper-extra">(6)</span>,&nbsp
+              <span class="paper-extra">2019-29</span>,&nbsp
+              <span class="paper-year">2008</span>
+           </div>
+
+           <div id="kidney_ccd-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Molecular clock is involved in predictive circadian adjustment of renal function</span><br>
+              <span class="paper-authors">A.&nbspM.&nbspZuber, G.&nbspCenteno, S.&nbspPradervand, S.&nbspNikolaeva, L.&nbspMaquelin, L.&nbspCardinaux, O.&nbspBonny, and&nbspD.&nbspFirsov</span><br>
+              <span class="paper-journal">PNAS</span>&nbsp
+              <span class="paper-extra">106</span>,&nbsp
+              <span class="paper-extra">(38)</span>,&nbsp
+              <span class="paper-extra">16523-8</span>,&nbsp
+              <span class="paper-year">2009</span>
+           </div>
+
+           <div id="kidney_dct-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Molecular clock is involved in predictive circadian adjustment of renal function</span><br>
+              <span class="paper-authors">A.&nbspM.&nbspZuber, G.&nbspCenteno, S.&nbspPradervand, S.&nbspNikolaeva, L.&nbspMaquelin, L.&nbspCardinaux, O.&nbspBonny, and&nbspD.&nbspFirsov</span><br>
+              <span class="paper-journal">PNAS</span>&nbsp
+              <span class="paper-extra">106</span>,&nbsp
+              <span class="paper-extra">(38)</span>,&nbsp
+              <span class="paper-extra">16523-8</span>,&nbsp
+              <span class="paper-year">2009</span>
+           </div>
+
+            <div id="bone-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Network features of the mammalian circadian clock</span><br>
+              <span class="paper-authors">J.&nbspE.&nbspBaggs, T.&nbspS.&nbspPrice, L.&nbspDiTacchio, S.&nbspPanda, G.&nbspA.&nbspFitzgerald, and&nbspJ.&nbspB.&nbspHogenesch</span><br>
+              <span class="paper-journal">PLoS Biology</span>&nbsp
+              <span class="paper-extra">7</span>,&nbsp
+              <span class="paper-extra">(3)</span>,&nbsp
+              <span class="paper-extra">e52</span>,&nbsp
+              <span class="paper-year">2009</span>
+            </div>
+
+            <div id="Macrophages_DD-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">A circadian clock in macrophages controls inflammatory immune responses</span><br>
+              <span class="paper-authors">M.&nbspKeller, J.&nbspMazuch, U.&nbspAbraham, G.&nbspD.&nbspEom, E.&nbspD.&nbspHerzog, H.&nbspD.&nbspVolk, A.&nbspKramer, and&nbspB.&nbspMaier</span><br>
+              <span class="paper-journal">PNAS</span>&nbsp
+              <span class="paper-extra">106</span>,&nbsp
+              <span class="paper-extra">(50)</span>,&nbsp
+              <span class="paper-extra">21407-12</span>,&nbsp
+              <span class="paper-year">2009</span>
+            </div>
+
+            <div id="3T3-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Harmonics of circadian gene transcription in mammals</span><br>
+              <span class="paper-authors">M.&nbspE.&nbspHughes, L.&nbspDiTacchio, C.&nbspVollmers, S.&nbspPulivarthy, J.&nbspE.&nbspBaggs, S.&nbspPanda, and&nbspJ.&nbspB.&nbspHogenesch</span><br>
+              <span class="paper-journal">PLoS Genetics</span>&nbsp
+              <span class="paper-extra">5</span>,&nbsp
+              <span class="paper-extra">(4)</span>,&nbsp
+              <span class="paper-extra">e1000442</span>,&nbsp
+              <span class="paper-year">2009</span>
+            </div>
+
+            <div id="pituitary_48h-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Harmonics of circadian gene transcription in mammals</span><br>
+              <span class="paper-authors">M.&nbspE.&nbspHughes, L.&nbspDiTacchio, C.&nbspVollmers, S.&nbspPulivarthy, J.&nbspE.&nbspBaggs, S.&nbspPanda, and&nbspJ.&nbspB.&nbspHogenesch</span><br>
+              <span class="paper-journal">PLoS Genetics</span>&nbsp
+              <span class="paper-extra">5</span>,&nbsp
+              <span class="paper-extra">(4)</span>,&nbsp
+              <span class="paper-extra">e1000442</span>,&nbsp
+              <span class="paper-year">2009</span>
+            </div>
+
+            <div id="liver_48h-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Harmonics of circadian gene transcription in mammals</span><br>
+              <span class="paper-authors">M.&nbspE.&nbspHughes, L.&nbspDiTacchio, C.&nbspVollmers, S.&nbspPulivarthy, J.&nbspE.&nbspBaggs, S.&nbspPanda, and&nbspJ.&nbspB.&nbspHogenesch</span><br>
+              <span class="paper-journal">PLoS Genetics</span>&nbsp
+              <span class="paper-extra">5</span>,&nbsp
+              <span class="paper-extra">(4)</span>,&nbsp
+              <span class="paper-extra">e1000442</span>,&nbsp
+              <span class="paper-year">2009</span>
+            </div>
+
+            <div id="liver_wt-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Circadian and CLOCK-controlled regulation of the mouse transcriptome and cell proliferation</span><br>
+              <span class="paper-authors">B.&nbspH.&nbspMiller, E.&nbspL.&nbspMcDearmon, S.&nbspPanda, K.&nbspR.&nbspHayes, J.&nbspZhang, J.&nbspL.&nbspAndrews, M.&nbspP.&nbspAntoch, J.&nbspR.&nbspWalker, K.&nbspA.&nbspEsser, J.&nbspB.&nbspHogenesch, and&nbspJ.&nbspS.&nbspTakahashi</span><br>
+              <span class="paper-journal">PNAS</span>&nbsp
+              <span class="paper-extra">104</span>,&nbsp
+              <span class="paper-extra">(9)</span>,&nbsp
+              <span class="paper-extra">3342-7</span>,&nbsp
+              <span class="paper-year">2006</span>
+            </div>
+
+            <div id="adrenal-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Transcriptional profiling in the adrenal gland reveals circadian regulation of hormone biosynthesis genes and nucleosome assembly genes</span><br>
+              <span class="paper-authors">H.&nbspOster, S.&nbspDamerow, R.&nbspA.&nbspHut, and&nbspG.&nbspEichele</span><br>
+              <span class="paper-journal">J. Biol. Rhymthms</span>&nbsp
+              <span class="paper-extra">21</span>,&nbsp
+              <span class="paper-extra">(5)</span>,&nbsp
+              <span class="paper-extra">350-61</span>,&nbsp
+              <span class="paper-year">2006</span>
+            </div>
+
+           <div id="SCN_panda-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Coordinated transcription of key pathways in the mouse by the circadian clock</span><br>
+              <span class="paper-authors">S.&nbspPanda, M.&nbspP.&nbspAntoch, B.&nbspH.&nbspMiller, A.&nbspI.&nbspSu, A.&nbspB.&nbspSchook, M.&nbspStraume, P.&nbspG.&nbspSchultz, S.&nbspA.&nbspKay, J.&nbspS.&nbspTakahashi, and&nbspJ.&nbspB.&nbspHogenesch</span><br>
+              <span class="paper-journal">Cell</span>&nbsp
+              <span class="paper-extra">109</span>,&nbsp
+              <span class="paper-extra">(3)</span>,&nbsp
+              <span class="paper-extra">307-20</span>,&nbsp
+              <span class="paper-year">2002</span>
+            </div>
+
+           <div id="liver_panda-paper" class="paper-wrapper" style="display:none">
+             <span class="paper-title">Coordinated transcription of key pathways in the mouse by the circadian clock</span><br>
+              <span class="paper-authors">S.&nbspPanda, M.&nbspP.&nbspAntoch, B.&nbspH.&nbspMiller, A.&nbspI.&nbspSu, A.&nbspB.&nbspSchook, M.&nbspStraume, P.&nbspG.&nbspSchultz, S.&nbspA.&nbspKay, J.&nbspS.&nbspTakahashi, and&nbspJ.&nbspB.&nbspHogenesch</span><br>
+              <span class="paper-journal">Cell</span>&nbsp
+              <span class="paper-extra">109</span>,&nbsp
+              <span class="paper-extra">(3)</span>,&nbsp
+              <span class="paper-extra">307-20</span>,&nbsp
+              <span class="paper-year">2002</span>
+            </div>
+
+           <div id="aorta-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Bioinformatic analysis of circadian gene oscillation in mouse aorta</span><br>
+              <span class="paper-authors">R.&nbspD.&nbspRudic, P.&nbspMcNamara, D.&nbspReilly, T.&nbspGrosser, A.&nbspM.&nbspCurtis, T.&nbspS.&nbspPrice, S.&nbspPanda, J.&nbspB.&nbspHogenesch, and&nbspG.&nbspA.&nbspFitzGerald</span><br>
+              <span class="paper-journal">Circulation</span>&nbsp
+              <span class="paper-extra">112</span>,&nbsp
+              <span class="paper-extra">(17)</span>,&nbsp
+              <span class="paper-extra">2716-24</span>,&nbsp
+              <span class="paper-year">2005</span>
+            </div>
+
+            <div id="muscle_wt-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Circadian and CLOCK-controlled regulation of the mouse transcriptome and cell proliferation</span><br>
+             <span class="paper-authors">B.&nbspH.&nbspMiller, E.&nbspL.&nbspMcDearmon, S.&nbspPanda, K.&nbspR.&nbspHayes, J.&nbspZhang, J.&nbspL.&nbspAndrews, M.&nbspP.&nbspAntoch, J.&nbspR.&nbspWalker, K.&nbspA.&nbspEsser, J.&nbspB.&nbspHogenesch, and&nbspJ.&nbspS.&nbspTakahashi</span><br>
+              <span class="paper-journal">PNAS</span>&nbsp
+              <span class="paper-extra">104</span>,&nbsp
+              <span class="paper-extra">(9)</span>,&nbsp
+              <span class="paper-extra">3342-7</span>,&nbsp
+              <span class="paper-year">2006</span>
+            </div>
+
+            <div id="SIRT1-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Partitioning Circadian Transcription by SIRT6 Leads to Segregated Control of Cellular Metabolism</span><br>
+              <span class="paper-authors">S.&nbspMasri, P.&nbspRigor, M.&nbspCervantes, N.&nbspCeglia, C.&nbspSebastian, C.&nbspXiao, M.&nbspRoqueta-Rivera, C.&nbspDeng, T.&nbspF.&nbspOsborne, R.&nbspMostoslavsky, P.&nbspBaldi, and&nbspP.&nbspSassone-Corsi</span><br>
+              <span class="paper-journal">Cell</span>&nbsp
+              <span class="paper-extra">158</span>,&nbsp
+              <span class="paper-extra">(3)</span>,&nbsp
+              <span class="paper-extra">659-672</span>,&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <!--<div id="SIRT1-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Circadian Control of Fatty Acid Elongation by SIRT1-mediated Deacetylation of Acetyl-CoA Synthetase 1</span>&nbsp
+              <span class="paper-authors">S. Sahar, S. Masubuchi, K. Eckel-Mahan, S. Vollmer, L. Galla, N. Ceglia, S. Selma Masri, T. K. Barth, B. Grimaldi, O. Oluyemi, G. Astarita, W. C. Hallows, D. Piomelli, A. Imhof, P. Baldi, J. M. Denu, P. Sassone-Corsi</span>&nbsp
+              <span class="paper-journal">Journal of Biological Chemistry</span>&nbsp
+              <span class="paper-year">2014</span>
+            </div>-->
+
+            <div id="SIRT6-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Partitioning Circadian Transcription by SIRT6 Leads to Segregated Control of Cellular Metabolism</span><br>
+              <span class="paper-authors">S.&nbspMasri, P.&nbspRigor, M.&nbspCervantes, N.&nbspCeglia, C.&nbspSebastian, C.&nbspXiao, M.&nbspRoqueta-Rivera, C.&nbspDeng, T.&nbspF.&nbspOsborne, R.&nbspMostoslavsky, P.&nbspBaldi, and&nbspP.&nbspSassone-Corsi</span><br>
+              <span class="paper-journal">Cell</span>&nbsp
+              <span class="paper-extra">158</span>,&nbsp
+              <span class="paper-extra">(3)</span>,&nbsp
+              <span class="paper-extra">659-672</span>,&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <div id="liver-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Reprogramming of the circadian clock by nutritional challenge</span><br>
+              <span class="paper-authors">K.&nbspL.&nbspEckel-Mahan, V.&nbspR.&nbspPatel, S.&nbspde Mateo, R.&nbspOrozco-Solis, N.&nbspJ.&nbspCeglia, S.&nbspSahar, S.&nbspA.&nbspDilag-Penilla, K.&nbspA.&nbspDyar, P.&nbspBaldi, and&nbspP.&nbspSassone-Corsi</span><br>
+              <span class="paper-journal">Cell</span>&nbsp
+              <span class="paper-year">2013</span>
+            </div>
+
+            <div id="liver_old-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Coordination of the transcriptome and metabolome by the circadian clock.</span><br>
+              <span class="paper-authors">K.&nbspL.&nbspEckel-Mahan, V.&nbspR.&nbspPatel, R.&nbspP.&nbspMohney, K.&nbspS.&nbspVignola, P.&nbspBaldi, and&nbspP.&nbspSassone-Corsi</span><br>
+              <span class="paper-journal">PNAS</span>&nbsp
+              <span class="paper-extra">109</span>,&nbsp
+              <span class="paper-extra">(14)</span>,&nbsp
+              <span class="paper-extra">5541-5546</span>,&nbsp
+              <span class="paper-year">2012</span>
+            </div>
+
+            <div id="muscle-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Muscle insulin sensitivity and glucose metabolism are controlled by the intrinsic muscle clock</span><br>
+              <span class="paper-authors">K.&nbspA.&nbspDyar, S.&nbspCiciliot, L.&nbspE.&nbspWright, R.&nbspS.&nbspBiensÃ¸, G.&nbspM.&nbspTagliazucchi, V.&nbspR.&nbspPatel, M.&nbspForcato, M.&nbspI.&nbspPaz, A.&nbspGudiksen, F.&nbspSolagna, M.&nbspAlbiero, I.&nbspMoretti, K.&nbspL.&nbspEckel-Mahan, P.&nbspBaldi, P.&nbspSassone-Corsi, R.&nbspRizzuto, S.&nbspBicciato, H.&nbspPilegaard, B.&nbspBlaauw, and&nbspS.&nbspSchiaffino</span><br>
+              <span class="paper-journal">Molecular metabolism</span>&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <div id="acetylome-liver-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">Circadian acetylome reveals regulation of mitochondrial metabolic pathways</span><br>
+              <span class="paper-authors">S.&nbspMasri, V.&nbspR.&nbspPatel, K.&nbspL.&nbspEckel-Mahan, S.&nbspPeleg, I.&nbspForne, A.&nbspG.&nbspLadurner, P.&nbspBaldi, A.&nbspImhof, and&nbspP.&nbspSassone-Corsi</span><br>
+              <span class="paper-journal">Proc Natl Acad Sci</span>,&nbsp
+              <span class="paper-extra">110</span>,&nbsp
+              <span class="paper-extra">(9)</span>,&nbsp
+              <span class="paper-extra">3339-44</span>,&nbsp
+              <span class="paper-year">2013</span>
+            </div>
+
+
+
+            <div id="aorta_atlas-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">A circadian gene expression atlas in mammals: Implications for biology and medicine.</span><br>
+              <span class="paper-authors">Zhang,&nbspRay, Lahans,&nbspNicholas&nbspF., Ballance,&nbspHeather&nbspI., Hughes,&nbspMichael&nbspF., Hogenesh,&nbspJohn&nbspB.</span><br>
+              <span class="paper-journal">Proc Natl Acad Sci</span>,&nbsp
+              <span class="paper-extra">111</span>,&nbsp
+              <span class="paper-extra">(45)</span>,&nbsp
+              <span class="paper-extra">16219-16224</span>,&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <div id="lung_atlas-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">A circadian gene expression atlas in mammals: Implications for biology and medicine.</span><br>
+              <span class="paper-authors">Zhang,&nbspRay, Lahans,&nbspNicholas&nbspF., Ballance,&nbspHeather&nbspI., Hughes,&nbspMichael&nbspF., Hogenesh,&nbspJohn&nbspB.</span><br>
+              <span class="paper-journal">Proc Natl Acad Sci</span>,&nbsp
+              <span class="paper-extra">111</span>,&nbsp
+              <span class="paper-extra">(45)</span>,&nbsp
+              <span class="paper-extra">16219-16224</span>,&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <div id="brain_stem_atlas-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">A circadian gene expression atlas in mammals: Implications for biology and medicine.</span><br>
+              <span class="paper-authors">Zhang,&nbspRay, Lahans,&nbspNicholas&nbspF., Ballance,&nbspHeather&nbspI., Hughes,&nbspMichael&nbspF., Hogenesh,&nbspJohn&nbspB.</span><br>
+              <span class="paper-journal">Proc Natl Acad Sci</span>,&nbsp
+              <span class="paper-extra">111</span>,&nbsp
+              <span class="paper-extra">(45)</span>,&nbsp
+              <span class="paper-extra">16219-16224</span>,&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <div id="heart_atlas-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">A circadian gene expression atlas in mammals: Implications for biology and medicine.</span><br>
+              <span class="paper-authors">Zhang,&nbspRay, Lahans,&nbspNicholas&nbspF., Ballance,&nbspHeather&nbspI., Hughes,&nbspMichael&nbspF., Hogenesh,&nbspJohn&nbspB.</span><br>
+              <span class="paper-journal">Proc Natl Acad Sci</span>,&nbsp
+              <span class="paper-extra">111</span>,&nbsp
+              <span class="paper-extra">(45)</span>,&nbsp
+              <span class="paper-extra">16219-16224</span>,&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <div id="adrenal_atlas-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">A circadian gene expression atlas in mammals: Implications for biology and medicine.</span><br>
+              <span class="paper-authors">Zhang,&nbspRay, Lahans,&nbspNicholas&nbspF., Ballance,&nbspHeather&nbspI., Hughes,&nbspMichael&nbspF., Hogenesh,&nbspJohn&nbspB.</span><br>
+              <span class="paper-journal">Proc Natl Acad Sci</span>,&nbsp
+              <span class="paper-extra">111</span>,&nbsp
+              <span class="paper-extra">(45)</span>,&nbsp
+              <span class="paper-extra">16219-16224</span>,&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <div id="hypothalamus_atlas-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">A circadian gene expression atlas in mammals: Implications for biology and medicine.</span><br>
+              <span class="paper-authors">Zhang,&nbspRay, Lahans,&nbspNicholas&nbspF., Ballance,&nbspHeather&nbspI., Hughes,&nbspMichael&nbspF., Hogenesh,&nbspJohn&nbspB.</span><br>
+              <span class="paper-journal">Proc Natl Acad Sci</span>,&nbsp
+              <span class="paper-extra">111</span>,&nbsp
+              <span class="paper-extra">(45)</span>,&nbsp
+              <span class="paper-extra">16219-16224</span>,&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <div id="cerebellum_atlas-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">A circadian gene expression atlas in mammals: Implications for biology and medicine.</span><br>
+              <span class="paper-authors">Zhang,&nbspRay, Lahans,&nbspNicholas&nbspF., Ballance,&nbspHeather&nbspI., Hughes,&nbspMichael&nbspF., Hogenesh,&nbspJohn&nbspB.</span><br>
+              <span class="paper-journal">Proc Natl Acad Sci</span>,&nbsp
+              <span class="paper-extra">111</span>,&nbsp
+              <span class="paper-extra">(45)</span>,&nbsp
+              <span class="paper-extra">16219-16224</span>,&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <div id="kidney_atlas-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">A circadian gene expression atlas in mammals: Implications for biology and medicine.</span><br>
+              <span class="paper-authors">Zhang,&nbspRay, Lahans,&nbspNicholas&nbspF., Ballance,&nbspHeather&nbspI., Hughes,&nbspMichael&nbspF., Hogenesh,&nbspJohn&nbspB.</span><br>
+              <span class="paper-journal">Proc Natl Acad Sci</span>,&nbsp
+              <span class="paper-extra">111</span>,&nbsp
+              <span class="paper-extra">(45)</span>,&nbsp
+              <span class="paper-extra">16219-16224</span>,&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <div id="brown_fat_atlas-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">A circadian gene expression atlas in mammals: Implications for biology and medicine.</span><br>
+              <span class="paper-authors">Zhang,&nbspRay, Lahans,&nbspNicholas&nbspF., Ballance,&nbspHeather&nbspI., Hughes,&nbspMichael&nbspF., Hogenesh,&nbspJohn&nbspB.</span><br>
+              <span class="paper-journal">Proc Natl Acad Sci</span>,&nbsp
+              <span class="paper-extra">111</span>,&nbsp
+              <span class="paper-extra">(45)</span>,&nbsp
+              <span class="paper-extra">16219-16224</span>,&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <div id="white_fat_atlas-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">A circadian gene expression atlas in mammals: Implications for biology and medicine.</span><br>
+              <span class="paper-authors">Zhang,&nbspRay, Lahans,&nbspNicholas&nbspF., Ballance,&nbspHeather&nbspI., Hughes,&nbspMichael&nbspF., Hogenesh,&nbspJohn&nbspB.</span><br>
+              <span class="paper-journal">Proc Natl Acad Sci</span>,&nbsp
+              <span class="paper-extra">111</span>,&nbsp
+              <span class="paper-extra">(45)</span>,&nbsp
+              <span class="paper-extra">16219-16224</span>,&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <div id="muscle_atlas-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">A circadian gene expression atlas in mammals: Implications for biology and medicine.</span><br>
+              <span class="paper-authors">Zhang,&nbspRay, Lahans,&nbspNicholas&nbspF., Ballance,&nbspHeather&nbspI., Hughes,&nbspMichael&nbspF., Hogenesh,&nbspJohn&nbspB.</span><br>
+              <span class="paper-journal">Proc Natl Acad Sci</span>,&nbsp
+              <span class="paper-extra">111</span>,&nbsp
+              <span class="paper-extra">(45)</span>,&nbsp
+              <span class="paper-extra">16219-16224</span>,&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <div id="liver_atlas-paper" class="paper-wrapper" style="display:none">
+              <span class="paper-title">A circadian gene expression atlas in mammals: Implications for biology and medicine.</span><br>
+              <span class="paper-authors">Zhang,&nbspRay, Lahans,&nbspNicholas&nbspF., Ballance,&nbspHeather&nbspI., Hughes,&nbspMichael&nbspF., Hogenesh,&nbspJohn&nbspB.</span><br>
+              <span class="paper-journal">Proc Natl Acad Sci</span>,&nbsp
+              <span class="paper-extra">111</span>,&nbsp
+              <span class="paper-extra">(45)</span>,&nbsp
+              <span class="paper-extra">16219-16224</span>,&nbsp
+              <span class="paper-year">2014</span>
+            </div>
+
+            <div id="results">
+                
+            </div>
+
+            <div id="circadiomics-paper" class="main-paper-wrapper" style="display:block">
+              <span style='color:black'>If you use Circadiomics, please cite the following paper:</span><br><br>
+              <span class="paper-title">CircadiOmics: Integrating Circadian Genomics, Transcriptomics, Proteomics, and Metabolomics</span><br>
+              <span class="paper-authors">V.&nbspPatel, K.&nbspEckel Mahan, P.&nbspSassone-Corsi, and&nbspP.&nbspBaldi</span><br>
+              <span class="paper-journal">Nature Methods</span>,
+              <span class="paper-extra">9</span>,&nbsp
+              <span class="paper-extra">(8)</span>,&nbsp
+              <span class="paper-extra">772-773</span>,&nbsp
+              <span class="paper-year">2012</span>
+            </div>
+
+
+
+        </div>
+
+		<div id="footer">
+	        <hr />
+	   		<p>
+	   			<a target="_blank" href="http://www.uci.edu">
+	   			<img class="logo" src="/images/uci_logo.png"/>University of California, Irvine</a> |
+	   			<a target="_blank" href="http://www.igb.uci.edu">
+	   			<img class="logo" src="/images/igb_logo.png"/>Institute for Genomics and Bioinformatics</a> |
+	   			<a target="_blank" href="http://cem.igb.uci.edu">Center for Epigenetics and Metabolism</a> |
+	   			&copy; 2017
+	   		</p>
+		</div>
+	</body>
+</html>

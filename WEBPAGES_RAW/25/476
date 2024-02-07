@@ -1,0 +1,253 @@
+#############################################################
+# Part One: R basics - R as a calculator
+#############################################################
+
+# In most primitive form, R is a calculator
+3 + 2
+3 * 2
+3 / 2
+x <- 5
+x + 3
+
+# R really likes to work with vectors and/or lists of numerical data
+# To create a vector/list of numerical data you've entered use the c() function with <- assignment
+x <- c(3, 8, 11)
+x + 3
+
+# You can use the = as an assignment instead of <-
+y = c(2, 7, 10)
+
+# You can also make your vector a sequence of numbers. Use : to create a sequence that increments by one.
+z = 4:6
+
+# You can do element by element operations
+x - y
+x * y
+
+# You can do vector operations as well, such as dot product, but we won't use those in this class
+
+# We can also grab specific elements of our vector by position using [ ]
+x[1]
+y[3]
+
+# To use some of R's more advanced features we need a bigger set of data.
+
+
+#############################################################
+# Part Two: Importing Data in to R
+#############################################################
+
+# Click the "Import Dataset" tab on the environment pane of the Rstudio window
+# If've you downloaded the dataset from the course website, click "From Text File".  
+# If you just want to use the data directly from the course website, click "From URL"
+
+# Let's practice with examples from the textbook
+
+# I've downloaded the .txt files from the textbook's website, http://bcs.whfreeman.com/stat2/#831766__838322__
+# and put that file on my hard drive.
+
+MedGPA <- read.delim("~/Documents/Class Work/Teaching/UC Irvine - STAT 110 (Fall 2015)/Stat2Data2012TXT/MedGPA.txt")
+View(MedGPA)
+
+# These commands are automatically generated once you finish the "Import Dataset"
+# The View() command will open a new window, but you can also view the data in the console
+MedGPA
+
+# Can look at the first six rows and/or the last six rows
+head(MedGPA)
+tail(MedGPA)
+
+
+#############################################################
+# Part Three: Overview of Object Types in R
+#############################################################
+
+# From the example above, you've seen we have an object called MedGPA. The object looks like a matrix, but it is NOT a matrix
+# To determine what type of object you have use the class() function
+
+class(MedGPA)
+
+# MedGPA is a data.frame. What makes a data.frame special is that it is a way to store a table of data
+
+# The top line of the data.frame is header, that is, it is the name of each of columns.
+# Each line of the data.frame is a data row, it is the data supplied by one of our observational units.
+# If each of the observational unit has a name it is on the left. In the case of MedGPA the observational units are numbered and not named
+# Within each data row, is a cell, that is, it is the actual (numerical, categorical, or descriptive) data
+
+# To access a column of the data.frame simply type the name of the data.frame followed by $ and followed by the name of column
+MedGPA$GPA
+
+# To access a specific cell, we use the name of the data.frame with [ ].  For example to access Person #2's GPA
+MedGPA[ 2, 5 ]
+
+# There is another way to access a specific column of the data.frame using [ ].
+MedGPA[ , 5]
+
+# Similarly you can access a specific row of the data.frame using [ ].
+MedGPA[ 2, ]
+
+# You can mix-and-match these methods as well.  Another way of getting Person #2's GPA:
+MedGPA[ 2, ]$GPA
+
+# We can use vectors within the subscripts to grab "chunks" of data
+MedGPA[ c(2, 4, 7:9), c(2, 3, 5, 10)]
+
+# There are other ways to store data in R, including lists and array, but we won't focus on those in this class.
+# If you want to learn more about R I (or Prof. Utts) will suggest some links.
+
+# According to Dice.com (a tech-job site) learning R is a very useful skill. People who know R on average earn $115,000/year.
+# http://www.sfgate.com/business/article/30-tech-skills-that-will-get-you-a-110-000-6159339.php#photo-7716759
+
+#############################################################
+# Part Four: Data Types in R
+#############################################################
+
+# We saw above data objects, but some data is either numerical (i.e. integer, double, float), categorical (i.e. factor), or descriptive (i.e. string)
+
+# We can use the class() function to determine what type of data we have.
+
+class( MedGPA$GPA )
+class( MedGPA$Sex )
+
+# BE SUPER CAREFUL !!!!!! 
+# Some types of data are coded numerical, but are actually categorical.  The Acceptance column is really categorical data but R treats it as numeric
+class( MedGPA$Acceptance )
+class( MedGPA$Accept )
+
+# There is one more type of data we'll work with in R: logical data.
+# Logical data is either TRUE or FALSE (you can type T or F in R)
+# Use == to compare if two items are "equal"
+# Use > or >= to compare if "greater than" (greater than or equal to)
+# Use < or <= to compare if "less than" (less than or equal to)
+# Use != to compare two items that are "not equal"
+# There are additional logical operations, but we most likely won't use those in this class
+
+# Some examples
+2 == 5
+5 == 5
+2 != 5
+5 != 5
+2 > 5
+2 < 5
+
+
+#############################################################
+# Part Five: Intermediate calculator commands in R
+#############################################################
+
+# A new data set
+WeightLossIncentive4 <- read.delim("~/Documents/Class Work/Teaching/UC Irvine - STAT 110 (Fall 2015)/Stat2Data2012TXT/WeightLossIncentive4.txt")
+View(WeightLossIncentive4)
+
+# Sometimes we need to subset our data.
+# To subset our data we need to use the logical operations.
+
+class( WeightLossIncentive4$Group )
+
+# Since it is a factor we need to use quotation marks:
+WeightLossIncentive4$Group == "Control"
+
+# We can save the logical vector
+cgroup <- WeightLossIncentive4$Group == "Control"
+
+# Notice that we have a vector of TRUE and FALSE entries. We can use that to subset our data.
+
+WeightLossIncentive4$WeightLoss[ cgroup ]
+
+# Now that we have a vector of weight loss for the control group, we can calculate the statistics you saw in class on Wednesday
+
+# The mean of the control group
+mean( WeightLossIncentive4$WeightLoss[ cgroup ] )
+
+# The median of the control group
+median( WeightLossIncentive4$WeightLoss[ cgroup ] )
+
+# The variance of the control group
+var( WeightLossIncentive4$WeightLoss[ cgroup ] )
+
+# The standard deviation of the control group
+sd( WeightLossIncentive4$WeightLoss[ cgroup ] )
+# Or
+sqrt( var( WeightLossIncentive4$WeightLoss[ cgroup ] ) )
+
+# The minimum and maximum of the control group
+min( WeightLossIncentive4$WeightLoss[ cgroup ] )
+max( WeightLossIncentive4$WeightLoss[ cgroup ] )
+
+# Quantiles of the control group
+quantile( WeightLossIncentive4$WeightLoss[ cgroup ] )
+
+# Five number summary of the control group
+summary( WeightLossIncentive4$WeightLoss[ cgroup ] )
+
+# We can do a similar thing for the incentive group
+summary( WeightLossIncentive4$WeightLoss[ WeightLossIncentive4$Group == "Incentive" ] )
+
+
+#############################################################
+# Part Six: Simple Linear Regression in R
+#############################################################
+
+# Let's load a new dataset
+PorschePrice <- read.delim("~/Documents/Class Work/Teaching/UC Irvine - STAT 110 (Fall 2015)/Stat2Data2012TXT/PorschePrice.txt")
+View(PorschePrice)
+
+# Let's model the price of the used Porsche (response variable) as a function of the mileage (explanatory variable)
+# To make the linear regression model we need to use the lm() function
+# To use the lm() function follow the pattern, lm( Y ~ X, data = dataset )
+# Where Y ~ X is Y = response variable and X = explanatory variable
+# and dataset is the name of the data.frame where our data resides
+
+fit <- lm( Price ~ Mileage, data = PorschePrice)
+
+# Notice that we don't need to use the $ when calling the explanatory and response variable
+
+# This works as well
+lm( PorschePrice$Price ~ PorschePrice$Mileage )
+
+# Now we've built a model, we need to get information from it! The easiest way to get information is to use the summary() function
+summary( fit )
+# Note that summary() will produce different type of results depending on the first input/argument
+
+# To see a list of other things we can get from our model use the names() function
+names( fit )
+
+# To get the coefficients (the slope and intercept values)
+coefficients(fit)
+# or
+fit$coefficients
+
+# To predict the price of a Porsche with 50,000 miles on it
+fit$coefficients[1] + 50 * fit$coefficients[2]
+# or we can use the predict() function with the lm object and coercing our new data in to a list.
+predict( fit, list(Mileage = 50) )
+
+# To get the fitted values, i.e. the predicted porsche price for each of the observations use fitted.values
+fit$fitted.values
+# or
+fitted.values(fit)
+
+# To calculate the residuals you can
+residuals(fit)
+# or
+PorschePrice$Price - fit$fitted.values
+
+# We'll go over more stuff from the lm object in the future.
+
+
+#############################################################
+# Part Seven: Getting Help in R
+#############################################################
+
+# To learn more about a function in R, you can use the help() function or ?
+help(lm)
+?lm
+
+# If you're confused about how to get a function to work in R, try searching google and stackexchange for help
+# Those are two great resources if you need an instant answer
+
+# MOST IMPORTANTLY
+# The primary purpose of this class is not to be mindless calculators who can use R!
+# If/When you get stuck trying to get R to do what you want it to do: send me an email, come to office hours, ask questions!
+
+# We are using R as a fancy calculator in this class, your goal in the class is to understand the statistical concepts not how to manipulate R

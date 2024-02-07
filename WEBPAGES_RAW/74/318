@@ -1,0 +1,1372 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<!-- Page automatically generated from latex_to_html converter. -->
+<!-- by cc_extract_html, $Revision: 3.19 $ -->
+<!-- LaTeX source file: './HalfedgeDS_ref/HalfedgeDS.tex' -->
+<html> <head>  
+<title>HalfedgeDS&lt;Traits,Items,Alloc&gt;</title>
+</head>  
+<link href="../latex_to_html.css" rel="STYLESHEET">
+<body bgcolor="white">
+<!-- ------------------------------------------------------------------- -->
+
+
+<!-- Top Navigation ---------------------------------------------------- -->
+<div class="NavTop">
+<hr>
+  <strong>Navigation:</strong>
+<a href="Chapter_intro.html">Up</a>, 
+  <a href="../contents.html">Table of Contents</A>,
+  <a href="../biblio.html">Bibliography</a>,
+  <a href="../manual_index.html">Index</a>,
+  <a href="../title.html">Title Page</a>
+<hr><!-- End of Top Navigation ----------------------------------------- -->
+</div>
+
+
+<A NAME="Cross_link_anchor_873"></A>
+
+      
+     
+     
+     
+<A NAME="Index_anchor_851"></A> 
+
+   
+<TABLE ALIGN=RIGHT><TR><TD><IMG ALIGN=TOP SRC="cc_Concept.gif"></TD></TR></TABLE>
+
+
+    <A NAME="ccRef_HalfedgeDS<Traits,Items,Alloc>"></A>
+<h2><I>HalfedgeDS&lt;Traits,Items,Alloc&gt;</I></h2>
+
+
+<A NAME="ccRef_HalfedgeDS"></A>
+<P>
+
+<H3>Release Note</H3>
+<P>
+
+Beginning with C<SMALL>GAL</SMALL> R2.3, this package has a new design.  The old
+design is still available for backwards compatibility and to support
+older compiler, such as MSVC++6.0. However its use is deprecated and
+the manual pages are not converted into this new manual
+format. Instead, see its old documentation in the manual of 
+deprecated packages.  The two designs are not interchangeable.
+<P>
+
+<H3>Definition</H3>
+<P>
+
+The concept of a halfedge data structure (abbreviated as <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A></I>, or
+<I>HDS</I> for template parameters) defines an edge-centered data structure
+capable of maintaining incidence informations of vertices, edges, and
+faces, for example for planar maps or polyhedral surfaces. It is a
+combinatorial data structure, geometric interpretation is added by
+classes built on top of the halfedge data structure.
+<P>
+
+The data structure defined here is known as the
+FE-structure&nbsp;[<A HREF="../biblio.html#Biblio_w-ebdss-85">Wei85</A>], as
+halfedges&nbsp;[<A HREF="../biblio.html#Biblio_m-ism-88">M&auml;n88</A>, <A HREF="../biblio.html#Biblio_cgal:bfh-mgedm-95">BFH95</A>] or as the doubly connected edge
+list (DCEL)&nbsp;[<A HREF="../biblio.html#Biblio_bkos-cgaa-97">dBvKOS97</A>], although the original reference for
+the DCEL&nbsp;[<A HREF="../biblio.html#Biblio_mp-fitcp-78">MP78</A>] describes a different data structure. The
+halfedge data structure can also be seen as one of the variants of the
+quad-edge data structure&nbsp;[<A HREF="../biblio.html#Biblio_gs-pmgsc-85">GS85</A>]. In general, the quad-edge
+data can represent non-orientable 2-manifolds, but the variant here is
+restricted to orientable 2-manifolds only. An overview and comparison
+of these different data structures together with a thorough
+description of the design implemented here can be found
+in&nbsp;[<A HREF="../biblio.html#Biblio_k-ugpdd-99">Ket99</A>].
+<P>
+
+Each edge is represented by two halfedges with <A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A> orientations.
+Each halfedge can store a reference to an incident face and an
+incident vertex.  For each face and each vertex an incident halfedge
+is stored.  Reduced variants of the halfedge data structure can omit
+some of these incidences, for example the reference to halfedges in
+vertices or the storage of vertices at all. See 
+Figure&nbsp;
+  <A HREF="Concept_HalfedgeDS.html#figureOptionalMethods"><IMG 
+  SRC="cc_ref_up_arrow.gif" ALT="reference arrow" WIDTH="10" HEIGHT="10"></A>
+
+for the incidences, the mandatory and optional member functions
+possible for vertices, halfedges, and faces.
+<P>
+
+<CENTER>
+    <A NAME="figureOptionalMethods">
+    <A HREF="fig/hds_optional.gif">
+        <img src="fig/hds_optional_small.gif" 
+             alt="Class Diagram"></A><BR>
+
+<A HREF="fig/hds_optional.gif">Figure:</A>
+    The three classes <I>Vertex</I>, <I>Halfedge</I>, and 
+          <I>Face</I> of the halfedge data structure. Member
+          functions with shaded background are mandatory. The others
+          are optionally supported.
+    </CENTER>
+<P>
+
+A <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I> organizes the internal storage of its items.  Examples
+are a list-based or a vector-based storage. The <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I> exhibits
+most of the characteristics of the container class used internally,
+for example the iterator category. A vector resizes
+automatically when a new item exceeds the reserved space. Since
+resizing is an expensive operation for a <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I> in general and
+only possible in a well defined state of the data structure (no
+dangling handles), it must be called explicitly in advance for a
+<I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I> before inserting new items beyond the current capacity.
+Classes built on top of a <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I> are advised to call the
+<I>reserve()</I> member function before creating new items.
+<P>
+
+<H3>Parameters</H3>
+<P>
+
+A <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I> is a class template and will be used as argument for
+other class templates, for example <I><A HREF="../Polyhedron_ref/Class_Polyhedron_3.html#Cross_link_anchor_853">CGAL::Polyhedron_3</A></I>. The
+template parameters to instantiate the <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I> will be provided by
+this other class template. Therefore, the three template parameters
+and their meaning are mandatory. We distinguish between the template
+<I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I> and an instantiation of it.
+<P>
+
+<I>Traits</I> is a traits class that will be passed to the 
+item types in <I>Items</I>. It will not be used in <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I> itself. <I>Items</I> is a model of the <I><A HREF="Concept_HalfedgeDSItems.html#Cross_link_anchor_876">HalfedgeDSItems</A></I> concept.
+<I>Alloc</I> is a standard allocator that fulfills all requirements 
+of allocators for STL container classes. The  <I>rebind</I>
+mechanism from <I>Alloc</I> will be used to create appropriate 
+allocators internally. A default argument is mandatory for
+<I>Alloc</I>, for example, the macro <I>CGAL_ALLOCATOR(int)</I>
+from the <I>&lt;CGAL/memory.h&gt;</I> header file can be used as default
+allocator.
+<P>
+
+<H3>Types</H3>
+<P>
+
+<TABLE BORDER=0 CELLSPACING=2 CELLPADDING=0 WIDTH=650>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Traits
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    traits class.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Items
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    model of <I><A HREF="Concept_HalfedgeDSItems.html#Cross_link_anchor_876">HalfedgeDSItems</A></I> concept.
+<P>
+
+</TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::size_type
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    size type.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::difference_type
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    difference type.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::iterator_category
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    iterator category for all iterators.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::allocator_type
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    allocator type <I>Alloc</I>.
+<P>
+
+</TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Vertex
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    model of <I><A HREF="Concept_HalfedgeDSVertex.html#Cross_link_anchor_877">HalfedgeDSVertex</A></I> concept.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Halfedge
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    model of <I><A HREF="Concept_HalfedgeDSHalfedge.html#Cross_link_anchor_875">HalfedgeDSHalfedge</A></I> concept.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Face
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    model of <I><A HREF="Concept_HalfedgeDSFace.html#Cross_link_anchor_874">HalfedgeDSFace</A></I> concept.
+<P>
+
+</TD></TR>
+        </TABLE>
+<P>
+
+The following handles and iterators have appropriate non-mutable
+counterparts, i.e., <I>const_handle</I> and <I>const_iterator</I>. The
+mutable types are assignable to their non-mutable counterparts. The
+iterators are assignable to the respective handle types. Wherever the
+handles appear in function parameter lists, the corresponding
+iterators can be used as well. <B>Note:</B> The handle types must have
+a default constructor that creates a unique and always the same handle
+value. It will be used in analogy to <I>NULL</I> for pointers.
+<P>
+
+<TABLE BORDER=0 CELLSPACING=2 CELLPADDING=0 WIDTH=650>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Vertex_handle
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    handle to vertex.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Halfedge_handle
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    handle to halfedge.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Face_handle
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    handle to face.
+<P>
+
+</TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Vertex_iterator
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    iterator over all vertices.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Halfedge_iterator
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    iterator over all halfedges.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Face_iterator
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    iterator over all faces.
+<P>
+
+</TD></TR>
+        </TABLE>
+<P>
+
+<BR>
+
+<div class="AdvancedBlock">
+  <table><tr><td valign="top">
+  <img border="0" src="cc_advanced_begin1.gif" alt="begin of advanced section">
+  </td><td valign="top">
+  <em class="AdvancedBlockLabel">&nbsp;advanced&nbsp;</em>
+  </td><td valign="top">
+  <img border="0" src="cc_advanced_begin2.gif" alt="begin of advanced section">
+  </td></tr></table>
+
+<H3>Types for Tagging Optional Features</H3>
+<P>
+
+The following types are equal to either <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I> or
+<I><A HREF="../Kernel_23_ref/Class_Tag_false.html#Cross_link_anchor_475">CGAL::Tag_false</A></I>, depending on whether the named feature is
+supported or not.
+<P>
+
+<TABLE BORDER=0 CELLSPACING=2 CELLPADDING=0 WIDTH=650>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Supports_vertex_halfedge
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    <I>Vertex::halfedge()</I>.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Supports_halfedge_prev
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    <I>Halfedge::prev()</I>.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Supports_halfedge_vertex
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    <I>Halfedge::vertex()</I>.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Supports_halfedge_face
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    <I>Halfedge::face()</I>.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Supports_face_halfedge
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    <I>Face::halfedge()</I>.
+<P>
+
+</TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;::Supports_removal
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    removal of individual elements.
+<P>
+
+</TD></TR>
+        </TABLE>
+<P>
+
+The following dependencies among these options must be regarded:
+<P>
+
+Vertices are supported <MATH><I> <IMG BORDER=0 WIDTH=28 HEIGHT=11 ALIGN=BOTTOM SRC="cc_Longleftrightarrow.gif"> </I></MATH>
+<I>Supports_halfedge_vertex</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I>.<BR>
+
+Faces are supported <MATH><I> <IMG BORDER=0 WIDTH=28 HEIGHT=11 ALIGN=BOTTOM SRC="cc_Longleftrightarrow.gif"> </I></MATH>
+<I>Supports_halfedge_face</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I>.<BR>
+
+<I>Supports_vertex_halfedge</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I> <MATH><I> <IMG BORDER=0 WIDTH=25 HEIGHT=11 ALIGN=BOTTOM SRC="cc_Longrightarrow.gif"> </I></MATH>
+<I>Supports_halfedge_vertex</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I>.<BR>
+
+<I>Supports_vertex_point</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I> <MATH><I> <IMG BORDER=0 WIDTH=25 HEIGHT=11 ALIGN=BOTTOM SRC="cc_Longrightarrow.gif"> </I></MATH>
+<I>Supports_halfedge_vertex</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I>.<BR>
+
+<I>Supports_face_halfedge</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I> <MATH><I> <IMG BORDER=0 WIDTH=25 HEIGHT=11 ALIGN=BOTTOM SRC="cc_Longrightarrow.gif"> </I></MATH>
+<I>Supports_halfedge_face</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I>.
+<P>
+
+<table><tr><td valign="bottom">
+  <img border="0" src="cc_advanced_end1.gif" alt="end of advanced section">
+  </td><td valign="bottom">
+  <em class="AdvancedBlockLabel">&nbsp;advanced&nbsp;</em>
+  </td><td valign="bottom">
+  <img border="0" src="cc_advanced_end2.gif" alt="end of advanced section">
+  </td></tr></table></div>
+<P>
+
+<BR>
+
+<div class="AdvancedBlock">
+  <table><tr><td valign="top">
+  <img border="0" src="cc_advanced_begin1.gif" alt="begin of advanced section">
+  </td><td valign="top">
+  <em class="AdvancedBlockLabel">&nbsp;advanced&nbsp;</em>
+  </td><td valign="top">
+  <img border="0" src="cc_advanced_begin2.gif" alt="begin of advanced section">
+  </td></tr></table>
+
+<H3>Static Member Functions</H3>
+<P>
+
+When writing an items type, such as a user defined vertex, certain
+functions need to create a handle but knowing only a pointer, for
+example, the <I>this</I>-pointer. The following static member functions
+of <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I> create such a corresponding handle for an item type
+from a pointer. This conversion encapsulates possible adjustments for
+hidden data members in the true item type, such as linked-list
+pointers. Note that the user provides item types with the
+<I>Items</I> template argument, which may differ from the <I>Vertex</I>,
+<I>Halfedge</I>, and <I>Face</I> types defined in <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I>. If they 
+differ, they are derived from the user provided item types. We denote the
+user item types with <I>Vertex_base</I>, <I>Halfedge_base</I>, and
+<I>Face_base</I> in the following. The fully qualified name for 
+<I>Vertex_base</I> would be for example - assuming that the type <I>Self</I>
+refers to the instantiated <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A></I> -
+<P>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<I>typedef typename Items::template Vertex_wrapper&lt;Self,Traits&gt;                  Vertex_wrapper;</I><BR>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<I>typedef typename Vertex_wrapper::Vertex  Vertex_base;</I>
+<P>
+
+Implementing these functions relies on the fundamental assumption that
+an iterator (or handle) of the internally used container class can be
+constructed from a pointer of a contained item only. This is true and
+controlled by us for <I><A HREF="../STL_Extension_ref/Class_In_place_list.html#Cross_link_anchor_1433">CGAL::In_place_list</A></I>. It is true for the
+<I>std::vector</I> of major STL distributions, but not necessarily 
+guaranteed. We might switch to an internal implementation if need
+arises.
+<P>
+
+<TABLE BORDER=0 CELLSPACING=2 CELLPADDING=0 WIDTH=650>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% COLSPAN=3>
+        <I><NOBR>
+    <A NAME="Function_static_Vertex_handle_HalfedgeDS::vertex_handle6_Vertex_base*_v9;"></A>
+static Vertex_handle
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>::vertex_handle ( Vertex_base* v) 
+        </I></NOBR>
+        
+    
+        </TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% COLSPAN=3>
+        <I><NOBR>
+    <A NAME="Function_static_Vertex_const_handle_HalfedgeDS::vertex_handle6_const_Vertex_base*_v9;"></A>
+static Vertex_const_handle
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>::vertex_handle ( const Vertex_base* v) 
+        </I></NOBR>
+        
+    
+        </TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% COLSPAN=3>
+        <I><NOBR>
+    <A NAME="Function_static_Halfedge_handle_HalfedgeDS::halfedge_handle6_Halfedge_base*_h9;"></A>
+static Halfedge_handle
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>::halfedge_handle ( Halfedge_base* h) 
+        </I></NOBR>
+        
+    
+        </TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% COLSPAN=3>
+        <I><NOBR>
+    <A NAME="Function_static_Halfedge_const_handle_HalfedgeDS::halfedge_handle6_const_Halfedge_base*_h9;"></A>
+static Halfedge_const_handle
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>::halfedge_handle ( const Halfedge_base* h) 
+        </I></NOBR>
+        
+    
+        </TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_static_Face_handle_HalfedgeDS::face_handle6_Face_base*_f9;"></A>
+static Face_handle
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>::face_handle ( Face_base* f) 
+        </I></NOBR>
+        
+    
+        </TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% COLSPAN=3>
+        <I><NOBR>
+    <A NAME="Function_static_Face_const_handle_HalfedgeDS::face_handle6_const_Face_items*_f9;"></A>
+static Face_const_handle
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>::face_handle ( const Face_items* f) 
+        </I></NOBR>
+        
+    
+        </TR>
+        </TABLE>
+<P>
+
+<table><tr><td valign="bottom">
+  <img border="0" src="cc_advanced_end1.gif" alt="end of advanced section">
+  </td><td valign="bottom">
+  <em class="AdvancedBlockLabel">&nbsp;advanced&nbsp;</em>
+  </td><td valign="bottom">
+  <img border="0" src="cc_advanced_end2.gif" alt="end of advanced section">
+  </td></tr></table></div>
+<P>
+
+<H3>Creation</H3>
+<P>
+
+<TABLE BORDER=0 CELLSPACING=2 CELLPADDING=0 WIDTH=650>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt; hds;
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    empty halfedge data structure.
+<P>
+
+</TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0><TR><TD ALIGN=LEFT VALIGN=TOP NOWRAP><I>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt; hds ( </I></TD><TD ALIGN=LEFT VALIGN=TOP NOWRAP><I>
+    size_type v,<BR>
+
+size_type h,<BR>
+
+size_type f);</I></TD></TR></TABLE>
+    
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    storage reserved for <MATH><I>v</I></MATH> vertices, <MATH><I>h</I></MATH> halfedges, and <MATH><I>f</I></MATH> faces.
+<P>
+
+</TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt; hds (  hds2);
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=30% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=70%>
+    copy constructor.<BR>
+
+<EM>Precondition: </EM><I>hds2</I> contains no dangling handles.
+<P>
+
+</TD></TR>
+        </TABLE>
+<P>
+
+        <TABLE BORDER=0 CELLSPACING=2 CELLPADDING=0 WIDTH=650>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=100% COLSPAN=3>
+        <I><NOBR>
+    <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;&amp;
+        </I></NOBR>
+        </TD></TR><TR><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+     hds =  hds2<A NAME="Function_HalfedgeDS6Traits+Items+Alloc9__operator=6_const_HalfedgeDS6Traits+Items+Alloc9__hds29;"></A>
+
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    assignment operator.<BR>
+
+<EM>Precondition: </EM><I>hds2</I> contains no dangling handles.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_reserve6_size_type_v+_size_type_h+_size_type_f9;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.reserve ( size_type v,  size_type h,  size_type f)
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    reserves storage for <MATH><I>v</I></MATH> vertices, <MATH><I>h</I></MATH> halfedges, and <MATH><I>f</I></MATH> faces.
+     If all capacities are already greater or equal than the requested sizes
+     nothing happens. Otherwise, <I>hds</I> will be resized and all handles, 
+     iterators and circulators invalidate.<BR>
+
+<EM>Precondition: </EM>If resizing is
+     necessary <I>hds</I> contains no dangling handles.
+        </TD></TR>
+        </TABLE>
+<P>
+
+<H3>Access Member Functions</H3>
+<P>
+
+<TABLE BORDER=0 CELLSPACING=2 CELLPADDING=0 WIDTH=650>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Size_size_of_vertices69_const;"></A>
+Size
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.size_of_vertices ()
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    number of vertices.
+        </TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Size_size_of_halfedges69_const;"></A>
+Size
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.size_of_halfedges ()
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    number of halfedges.
+        </TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Size_size_of_faces69_const;"></A>
+Size
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.size_of_faces ()
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    number of faces.
+        </TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Size_capacity_of_vertices69_const;"></A>
+Size
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.capacity_of_vertices ()
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    space reserved for vertices.
+        </TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Size_capacity_of_halfedges69_const;"></A>
+Size
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.capacity_of_halfedges ()
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    space reserved for halfedges.
+        </TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Size_capacity_of_faces69_const;"></A>
+Size
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.capacity_of_faces ()
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    space reserved for faces.
+        </TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_size_t_bytes69_const;"></A>
+size_t
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    hds.bytes ()
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    bytes used for <I>hds</I>.
+        </TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_size_t_bytes_reserved69_const;"></A>
+size_t
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.bytes_reserved ()
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    bytes reserved for <I>hds</I>.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_allocator_type_get_allocator69_const;"></A>
+allocator_type
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.get_allocator ()
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    allocator object.
+        </TD></TR>
+        </TABLE>
+<P>
+
+The following member functions return the non-mutable iterator if
+<I>hds</I> is declared const.
+<P>
+
+<TABLE BORDER=0 CELLSPACING=2 CELLPADDING=0 WIDTH=650>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Vertex_iterator_vertices_begin69;"></A>
+Vertex_iterator
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.vertices_begin ()
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    iterator over all vertices.
+        </TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Vertex_iterator_vertices_end69;"></A>
+Vertex_iterator
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.vertices_end ()
+        </I></NOBR>
+        
+    
+        </TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Halfedge_iterator_halfedges_begin69;"></A>
+Halfedge_iterator
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.halfedges_begin ()
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    iterator over all halfedges
+        </TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Halfedge_iterator_halfedges_end69;"></A>
+Halfedge_iterator
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.halfedges_end ()
+        </I></NOBR>
+        
+    
+        </TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Face_iterator_faces_begin69;"></A>
+Face_iterator
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    hds.faces_begin ()
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    iterator over all faces.
+        </TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Face_iterator_faces_end69;"></A>
+Face_iterator
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.faces_end ()
+        </I></NOBR>
+        </TD>
+    
+        </TR>
+        </TABLE>
+<P>
+
+<H3>Insertion</H3>
+<P>
+
+Note that the vertex-related and the face-related member functions may
+not be provided for a <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I> that does not support vertices or
+faces respectively.
+<P>
+
+<TABLE BORDER=0 CELLSPACING=2 CELLPADDING=0 WIDTH=650>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Vertex_handle_vertices_push_back6_const_Vertex__v9;"></A>
+Vertex_handle
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.vertices_push_back ( const Vertex&amp; v) 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    appends a copy of <MATH><I>v</I></MATH> to <I>hds</I>. Returns a handle of the new vertex.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Halfedge_handle_edges_push_back6_const_Halfedge__h+_const_Halfedge__g9;"></A>
+Halfedge_handle
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0><TR><TD ALIGN=LEFT VALIGN=TOP NOWRAP><I>
+    hds.edges_push_back ( </I></TD><TD ALIGN=LEFT VALIGN=TOP NOWRAP><I>
+    const Halfedge&amp; h,<BR>
+
+const Halfedge&amp; g)</I></TD></TR></TABLE>
+     
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    appends a copy of <MATH><I>h</I></MATH> and a copy of <MATH><I>g</I></MATH> to <I>hds</I> and makes them
+     <A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A> to each other. Returns a handle of the copy of <MATH><I>h</I></MATH>.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Halfedge_handle_edges_push_back6_const_Halfedge__h9;"></A>
+Halfedge_handle
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.edges_push_back ( const Halfedge&amp; h) 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    appends a copy of <MATH><I>h</I></MATH> and a copy of <MATH><I>h-&gt;<A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A>()</I></MATH> to <I>hds</I> and 
+     makes them <A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A> to each other. Returns a handle of the copy of <MATH><I>h</I></MATH>.<BR>
+
+<EM>Precondition: </EM><I>h-&gt;<A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A>()</I> denotes a halfedge.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Face_handle_faces_push_back6_const_Face__f9;"></A>
+Face_handle
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.faces_push_back ( const Face&amp; f) 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    appends a copy of <MATH><I>f</I></MATH> to <I>hds</I>. Returns a handle of the new face.
+        </TD></TR>
+        </TABLE>
+<P>
+
+<H3>Removal</H3>
+<P>
+
+Erasing single elements is optional and indicated with the type tag
+<I>Supports_removal</I>. The <I>pop_back</I> and the <I>clear</I> member 
+functions are mandatory. If vertices or faces are not supported 
+for a <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I> the <I>pop_back</I> and the <I>clear</I> member 
+functions must be provided as null operations.
+<P>
+
+<TABLE BORDER=0 CELLSPACING=2 CELLPADDING=0 WIDTH=650>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_vertices_pop_front69;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.vertices_pop_front () 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes the first vertex if vertices are supported and
+    <I>Supports_removal</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I>.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_vertices_pop_back69;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.vertices_pop_back () 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes the last vertex.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_vertices_erase6_Vertex_handle_v9;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.vertices_erase ( Vertex_handle v) 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes the vertex <MATH><I>v</I></MATH> if vertices are supported and
+    <I>Supports_removal</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I>.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_vertices_erase6_Vertex_handle_first+_Vertex_handle_last9;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0><TR><TD ALIGN=LEFT VALIGN=TOP NOWRAP><I>
+    hds.vertices_erase ( </I></TD><TD ALIGN=LEFT VALIGN=TOP NOWRAP><I>
+    Vertex_handle first,<BR>
+
+Vertex_handle last)</I></TD></TR></TABLE>
+     
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes the range of vertices <MATH><I>[<I>first</I>,<I>last</I>)</I></MATH> if vertices 
+    are supported and <I>Supports_removal</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I>.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_edges_pop_front69;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.edges_pop_front () 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes the first two halfedges if
+    <I>Supports_removal</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I>.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_edges_pop_back69;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.edges_pop_back () 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes the last two halfedges.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_edges_erase6_Halfedge_handle_h9;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.edges_erase ( Halfedge_handle h) 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes the pair of halfedges <MATH><I>h</I></MATH> and <I>h-&gt;<A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A>()</I>
+    if <I>Supports_removal</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I>.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_edges_erase6_Halfedge_handle_first+_Halfedge_handle_last9;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0><TR><TD ALIGN=LEFT VALIGN=TOP NOWRAP><I>
+    hds.edges_erase ( </I></TD><TD ALIGN=LEFT VALIGN=TOP NOWRAP><I>
+    Halfedge_handle first,<BR>
+
+Halfedge_handle last)</I></TD></TR></TABLE>
+     
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes the range of edges <MATH><I>[<I>first</I>,<I>last</I>)</I></MATH> if
+    <I>Supports_removal</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I>.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_faces_pop_front69;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.faces_pop_front () 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes the first face if faces are supported and
+    <I>Supports_removal</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I>.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_faces_pop_back69;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.faces_pop_back () 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes the last face.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_faces_erase6_Face_handle_f9;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.faces_erase ( Face_handle f) 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes the face <MATH><I>f</I></MATH> if faces are supported and
+    <I>Supports_removal</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I>.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_faces_erase6_Face_handle_first+_Face_handle_last9;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.faces_erase ( Face_handle first,  Face_handle last) 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes the range of faces <MATH><I>[<I>first</I>,<I>last</I>)</I></MATH> if faces are 
+    supported and <I>Supports_removal</I> <MATH><I> <IMG BORDER=0 WIDTH=11 HEIGHT=9 ALIGN=BOTTOM SRC="cc_equiv.gif"> </I></MATH> <I><A HREF="../Kernel_23_ref/Class_Tag_true.html#Cross_link_anchor_477">CGAL::Tag_true</A></I>.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_vertices_clear69;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.vertices_clear () 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes all vertices.
+        </TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_edges_clear69;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.edges_clear () 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes all halfedges.
+        </TD></TR>
+        
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_faces_clear69;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.faces_clear () 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes all faces.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_clear69;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    hds.clear () 
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    removes all elements.
+        </TD></TR>
+        </TABLE>
+<P>
+
+<BR>
+
+<div class="AdvancedBlock">
+  <table><tr><td valign="top">
+  <img border="0" src="cc_advanced_begin1.gif" alt="begin of advanced section">
+  </td><td valign="top">
+  <em class="AdvancedBlockLabel">&nbsp;advanced&nbsp;</em>
+  </td><td valign="top">
+  <img border="0" src="cc_advanced_begin2.gif" alt="begin of advanced section">
+  </td></tr></table>
+
+
+<H3>Operations with Border Halfedges</H3>
+<P>
+
+The following notion of <I>border halfedges</I> is particular useful
+where the halfedge data structure is used to model surfaces with
+boundary, i.e., surfaces with missing faces or open regions. Halfedges
+incident to an open region are called <I>border halfedges</I>. A
+halfedge is a <I>border edge</I> if the halfedge itself or its
+<A HREF="../Kernel_23_ref/Function_opposite.html#Cross_link_anchor_243">opposite</A> halfedge is a border halfedge. The only requirement to work
+with border halfedges is that the
+<I>Halfedge</I> class provides a member function <I>is_border()</I>
+returning a <I>bool</I>. Usually, the halfedge data structure
+supports faces and the value of the default constructor of the face
+handle will indicate a border halfedge, but this may not be the only
+possibility. The <I>is_border()</I> predicate divides the edges into
+two classes, the border edges and the non-border edges. The
+following normalization reorganizes the sequential storage of the
+edges such that the non-border edges precede the border edges, and
+that for each border edge the latter of the two halfedges is a
+border halfedge (the first one might be a border halfedge too). The
+normalization stores the number of border halfedges, as well as the
+halfedge iterator where the border edges start at, within the
+halfedge data structure.  These values will be invalid after further
+halfedge insertions or removals and changes in the border status of 
+a halfedge. There is no automatic update required.
+<P>
+
+<TABLE BORDER=0 CELLSPACING=2 CELLPADDING=0 WIDTH=650>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_void_normalize_border69;"></A>
+void
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.normalize_border () 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    sorts halfedges such that the non-border edges precede the
+     border edges. For each border edge that is incident to a face,
+     the halfedge iterator will reference the halfedge incident to the
+     face right before the halfedge incident to the open region.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Size_size_of_border_halfedges69_const;"></A>
+Size
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.size_of_border_halfedges () const
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    number of border halfedges. An edge with no incident face
+      counts as two border halfedges.<BR>
+
+<EM>Precondition: </EM><I>normalize_border()</I> has been called and no
+    halfedge insertion or removal and no change in border
+    status of the halfedges have occurred since then.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Size_size_of_border_edges69_const;"></A>
+Size
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.size_of_border_edges () const
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    number of border edges. If <I>size_of_border_edges()</I> is equal
+    to <I>size_of_border_halfedges()</I> all border edges are incident to
+    a face on one side and to an open region on the other side.<BR>
+
+<EM>Precondition: </EM><I>normalize_border()</I> has been called and no
+    halfedge insertion or removal and no change in border
+    status of the halfedges have occurred since then.
+        </TD></TR>
+        <TR><TD><BR></TD></TR>
+        <TR><TD ALIGN=LEFT VALIGN=TOP WIDTH=25% NOWRAP>
+        <I><NOBR>
+    <A NAME="Function_Halfedge_iterator_border_halfedges_begin69;"></A>
+Halfedge_iterator
+        </I></NOBR>
+        </TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=75% NOWRAP COLSPAN=2>
+        <I><NOBR>
+    hds.border_halfedges_begin () 
+        </I></NOBR>
+        </TR><TR><TD WIDTH=25% NOWRAP></TD><TD WIDTH=25% NOWRAP></TD><TD ALIGN=LEFT VALIGN=TOP WIDTH=50%>
+    halfedge iterator starting with the border edges. The range
+      [<I>halfedges_begin(), border_halfedges_begin()</I>) denotes
+    all non-border edges. The range
+    [<I>border_halfedges_begin(), halfedges_end()</I>) denotes all
+    border edges.<BR>
+
+<EM>Precondition: </EM><I>normalize_border()</I> has been called and no
+    halfedge insertion or removal and no change in border
+    status of the halfedges have occurred since then.
+        </TD></TR>
+        </TABLE>
+<P>
+
+<table><tr><td valign="bottom">
+  <img border="0" src="cc_advanced_end1.gif" alt="end of advanced section">
+  </td><td valign="bottom">
+  <em class="AdvancedBlockLabel">&nbsp;advanced&nbsp;</em>
+  </td><td valign="bottom">
+  <img border="0" src="cc_advanced_end2.gif" alt="end of advanced section">
+  </td></tr></table></div>
+<P>
+
+<H3>Has Models</H3>
+<P>
+
+<I><A HREF="Class_HalfedgeDS_default.html#Cross_link_anchor_882">CGAL::HalfedgeDS_default</A></I><BR>
+
+<I><A HREF="Class_HalfedgeDS_list.html#Cross_link_anchor_899">CGAL::HalfedgeDS_list</A></I><BR>
+
+<I><A HREF="Class_HalfedgeDS_vector.html#Cross_link_anchor_901">CGAL::HalfedgeDS_vector</A></I>
+<P>
+
+<H3>See Also</H3>
+<P>
+
+<I><A HREF="Concept_HalfedgeDSItems.html#Cross_link_anchor_876">HalfedgeDSItems</A></I><BR>
+
+<I><A HREF="../Polyhedron_ref/Class_Polyhedron_3.html#Cross_link_anchor_853">CGAL::Polyhedron_3</A>&lt;Traits&gt;</I><BR>
+
+<I><A HREF="Class_HalfedgeDS_vertex_base.html#Cross_link_anchor_903">CGAL::HalfedgeDS_vertex_base</A>&lt;Refs&gt;</I><BR>
+
+<I><A HREF="Class_HalfedgeDS_halfedge_base.html#Cross_link_anchor_889">CGAL::HalfedgeDS_halfedge_base</A>&lt;Refs&gt;</I><BR>
+
+<I><A HREF="Class_HalfedgeDS_face_base.html#Cross_link_anchor_885">CGAL::HalfedgeDS_face_base</A>&lt;Refs&gt;</I><BR>
+
+<I><A HREF="Class_HalfedgeDS_items_decorator.html#Cross_link_anchor_895">CGAL::HalfedgeDS_items_decorator</A>&lt;HDS&gt;</I><BR>
+
+<I><A HREF="Class_HalfedgeDS_decorator.html#Cross_link_anchor_880">CGAL::HalfedgeDS_decorator</A>&lt;HDS&gt;</I><BR>
+
+<I><A HREF="Class_HalfedgeDS_const_decorator.html#Cross_link_anchor_878">CGAL::HalfedgeDS_const_decorator</A>&lt;HDS&gt;</I>
+<P>
+
+<H3>Implementation</H3>
+<P>
+
+Classes parameterized with a halfedge data structure, such as
+<I><A HREF="../Polyhedron_ref/Class_Polyhedron_3.html#Cross_link_anchor_853">CGAL::Polyhedron_3</A></I>, need to declare a class template as one of its
+template parameters for the <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I>. For compilers not supporting
+this (i.e.&nbsp;the flag <I>CGAL_CFG_NO_TMPL_IN_TMPL_PARAM</I> is set), the
+following workaround is required, which defines a <I><A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt;</I> as a
+normal class that contains a member class template named <I>HDS</I>,
+which is the actual halfedge data structure as defined here. The
+following program fragment illustrates this workaround:
+<P>
+
+<pre class="ExampleCode">
+#ifndef CGAL_CFG_NO_TMPL_IN_TMPL_PARAM
+    template &lt;class Traits, class Items, class Alloc&gt; 
+    class <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A> {
+    public:
+        typedef <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>&lt;Traits,Items,Alloc&gt; Self;
+        <A HREF="Class_HalfedgeDS_vector.html#Cross_link_anchor_902">HalfedgeDS_vector</A>(); // constructors
+#else
+    struct <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A> {
+    template &lt;class Traits, class Items, class Alloc&gt; 
+    class HDS {
+    public:
+        typedef HDS&lt;Traits,Items,Alloc&gt; Self;
+        HDS(); // constructors
+#endif
+        // ... further member functions. Self denotes the <A HREF="Concept_HalfedgeDS.html#Cross_link_anchor_873">HalfedgeDS</A>.
+    };
+#ifdef CGAL_CFG_NO_TMPL_IN_TMPL_PARAM
+    };
+#endif
+</pre>
+<P>
+
+<div class="NavNext"><hr> <b>Next:</b> <a href="Concept_HalfedgeDSFace.html"><I>HalfedgeDSFace</I></a> 
+
+
+    
+<div class="NavBottom">
+<hr><!-- Bottom Navigation --------------------------------------------- -->
+  <strong>Navigation:</strong>
+<!Up_chapter_link_30!>
+  <a href="../contents.html">Table of Contents</A>,
+  <a href="../biblio.html">Bibliography</a>,
+  <a href="../manual_index.html">Index</a>,
+  <a href="../title.html">Title Page</a>
+<!-- End of Bottom Navigation ------------------------------------------ -->
+
+
+<hr><!-- --------------------------------------------------------------- -->
+<div class="NavAddress">
+
+The <A HREF=http://www.cgal.org>CGAL Project</A> .
+
+Tue, December 21, 2004 .
+<hr></div>
+</body>  </html>  

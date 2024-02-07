@@ -1,0 +1,21 @@
+from Numberjack import *
+
+def main(N):
+    square = Matrix(N,N,1,N**2)
+
+    sum_val = N*(N**2+1)/2
+
+    model = Model(
+        AllDiff(square),
+        [sum(row) == sum_val for row in square.row],
+        [sum(col) == sum_val for col in square.col],
+        Sum([square[i][i] for i in range(N)]) == sum_val,
+        Sum([square[i][N-i-1] for i in range(N)]) == sum_val,
+        )
+    solver = model.load('Mistral')
+    solver.startNewSearch()
+    while solver.getNextSolution():
+        print square
+        print 'magic constant:', sum_val
+
+main(int(sys.argv[1]))

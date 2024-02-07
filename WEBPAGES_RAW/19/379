@@ -1,0 +1,607 @@
+# script for Assignment 2 -  CS 175, Winter 2017, modified from
+# the scikit-learn "working with text data" tutorial, online at
+# http://scikit-learn.org/stable/tutorial/text_analytics/working_with_text_data.html#working-with-text-data
+
+# BEFORE YOU START THIS ASSIGNMENT YOU SHOULD READ THROUGH THE SCIKIT-LEARN TUTORIAL ABOVE
+
+# WHEN YOU ARE FINISHED, SUBMIT THIS FILE WITH YOUR ADDED CODE TO THE EEE DROPBOX
+
+from sklearn.datasets import fetch_20newsgroups
+from sklearn.feature_extraction.text import CountVectorizer
+from nltk import FreqDist
+from nltk.corpus import stopwords
+
+#############
+# Problem 1 #
+#############
+def load_news_dataset(n_categories):
+    """
+    Loads both training and test data from the 20 newsgroups dataset..
+
+    Training Data:
+        After loading the training news data with 20 groups,
+        get the 'n_categories' most frequent categories in 'twenty_train_all' using 'FreqDist()'.
+        Generate and return the data in these categories.
+
+    Test Data:
+        Create and return a test news data set with same categories as the training data 
+        and name it as 'twenty_test'.
+
+    Parameters
+    ----------
+    n_categories : int
+        Only data from the "n_categories" most frequent categories will be returned from the dataset.
+
+    Returns
+    -------
+    Tuple(sklearn.datasets.base.Bunch)
+        Returns both training and test data as sklearn.datasets.base.Bunch objects.
+        i.e.:(twenty_train, twenty_test).
+
+    Examples
+    --------
+    >>> twenty_train, twenty_test = load_news_dataset(n_categories)
+    >>> type(twenty_train)
+    <class 'sklearn.datasets.base.Bunch'>
+    """
+
+
+
+    # Download the 20 newsgroups for training set
+    # (this can take a while the first time it is executed....)
+    #print('\nLoading the full 20 newsgroups data set.....\n')
+    print('Loading the newsgroups data set...\n')
+    twenty_train_all = fetch_20newsgroups(subset='train')
+
+    ### YOUR SOLUTION STARTS HERE### 
+	.....
+    topn_categories = .....
+    
+    twenty_train =  ....
+    twenty_test = ....
+
+    return twenty_train, twenty_test
+    ### END SOLUTIONS ###pass
+
+
+#############
+# Problem 2 #
+#############
+def extract_text_features(train_data, test_data, min_docs ):
+    """
+    Returns two types of training and test data features.
+        1) Bags of words (BOWs): X_train_counts, X_test_counts
+        2) Term Frequency times Inverse Document Frequency (tf-idf): X_train_tfidf, X_test_tfidf
+
+    How to create BOW features:
+        You need to first generate a count vector from the input data, excluding the NLTK
+        stopwords. This can be done by importing the English stopword list from NLTK and then
+        passing it to a CountVectorizer during initialization.
+
+        CountVectorizer is slightly different than the FreqDist object you used in your previous
+        assignment.  Where FreqDist is good at creating a dict-like bag-of-words representation for
+        a single document, CountVectorizer is optimized for creating a sparse matrix representing
+        the bag-of-words counts for every document in a corpus of documents all at once.  Both
+        objects are useful at different times.
+
+    How to create tf-idf features:
+        tf-idf features can be computed using TfidfTransformer with the count matrix (BOWs matrix)
+        as an input. The fit method is used to fit a tf-idf estimator to the data, and the
+        transform method is used afterwards to transform either the training or test count-matrix
+        to a tf-idf representation. The method fit_transform strings these two methods together
+        into one.
+
+        For the training data, you'll want to use the fit_transform method to both fit the
+        tf-idf model and then transform the training count matrix into a tf-idf representation.
+
+        For the test data, you only need to call the transform method since the tf-idf weights
+        will have already been fit on your training set.
+
+    Parameters
+    ----------
+    train_data : List[str]
+        Training News data in list
+
+    test_data : List[str]
+        Test data in list
+    
+    min_docs : integer
+        Do not include terms in the vocabulary that occur in less than "min_docs" documents 
+
+    Returns
+    -------
+    Tuple(scipy.sparse.csr.csr_matrix,..)
+        Returns X_train_counts, X_train_tfidf, X_test_counts, X_test_tfidf as a tuple.
+
+    Examples
+    --------
+    >>> X_train_counts, X_train_tfidf, X_test_counts, X_test_tfidf =
+    ...          extract_text_features(twenty_train.data, sample_test_documents, 1)
+    >>> X_train_counts
+    <2989x39831 sparse matrix of type '<class 'numpy.int64'>'
+	with 377208 stored elements in Compressed Sparse Row format>
+    """
+ 
+    from sklearn.feature_extraction.text import TfidfTransformer
+    ### YOUR SOLUTION STARTS HERE### 
+    
+    # Replace FIRSTNAME_LASTNAME with your name
+    print(' Student: FIRSTNAME_LASTNAME,   Function: extract_text_features()')
+
+    # Generate count vectors from the input data, excluding the NLTK stopwords and
+    # ignoring tokens that occur in fewer than "min_docs" documents 
+    
+    .....
+    X_train_counts = ...
+    X_test_counts = ...
+
+    # Compute tfidf feature values and store in 'X_train_tfidf' and 'X_test_tfidf'
+ 
+    X_train_tfidf = ....
+    X_test_tfidf = ....
+
+    return (X_train_counts, X_train_tfidf, X_test_counts, X_test_tfidf)
+    ### END SOLUTIONS ###pass
+
+
+
+
+#############
+# Problem 3 #
+#############
+
+def fit_and_predict_multinomialNB(X_train, Y_train, X_test):
+
+    """
+    Train multinomial naive Bayes model with 'X_train' and 'Y_train' and
+    predict the Y values for 'X_test'. (Use 'MultinomialNB' from scikit-learn.)
+    Return the predicted Y values.
+
+    Parameters
+    ----------
+    X_train: scipy sparse matrix
+        Data for training (matrix with features, e.g. BOW or tf-idf)
+    Y_train: numpy.ndarray
+        Labels for training data (target value)
+    X_test: scipy sparse matrix
+        Test data used for prediction
+
+    Returns
+    -------
+    numpy.ndarray[int]
+        Target values predicted from 'X_test'
+
+ 
+    """
+
+    # Import the package
+    from sklearn.naive_bayes import MultinomialNB 
+
+    ### YOUR SOLUTION STARTS HERE### 
+    
+    # fit the model... 
+    .... 
+    
+    
+    # make predictions
+    
+    ....
+    
+    return predicted_MultinomialnNB
+    ### END SOLUTION ###  
+ 
+
+
+
+
+def fit_and_predict_BernoulliNB(X_train, Y_train, X_test):
+
+    """
+    Train Bernoulli naive Bayes model with 'X_train' and 'Y_train' and
+    predict the Y values for 'X_test'. (Use 'BernoulliNB' from scikit-learn.)
+    The 'binarize' threshold should be set to 0.0.
+    Return the predicted Y values.
+
+
+    Parameters
+    ----------
+    X_train: scipy sparse matrix
+        Data for training (matrix with features, e.g. BOW or tf-idf)
+    Y_train: numpy.ndarray
+        Labels for training data (target value)
+    X_test: scipy sparse matrix
+        Test data used for prediction
+
+    Returns
+    -------
+    numpy.ndarray[int]
+        Target values predicted from 'X_test'
+
+    """
+
+    # Import the package
+    from sklearn.naive_bayes import BernoulliNB 
+
+    ### YOUR SOLUTION STARTS HERE### 
+    
+    # fit the model... 
+    .... 
+    
+    
+    # make predictions
+    
+    ....
+    
+    return predicted_bernNB
+    ### END SOLUTION ###  
+
+
+def fit_and_predict_LR(X_train, Y_train, X_test):
+
+    """
+    Train logistic regression model with 'X_train' and 'Y_train' and
+    predict the Y values for 'X_test'. (Use 'LogisticRegression' from scikit-learn.)
+    Return the predicted Y values.
+
+
+    Parameters
+    ----------
+    X_train: scipy sparse matrix
+        Data for training (matrix with features, e.g. BOW or tf-idf)
+    Y_train: numpy.ndarray
+        Labels for training data (target value)
+    X_test: scipy sparse matrix
+        Test data used for prediction
+
+    Returns
+    -------
+    numpy.ndarray[int]
+        Target values predicted from 'X_test'
+
+    """
+
+    # Import the package
+    from sklearn.linear_model import LogisticRegression
+
+    ### YOUR SOLUTION STARTS HERE### 
+    
+    # Replace FIRSTNAME_LASTNAME with your name
+    print(' Student: FIRSTNAME_LASTNAME,   Function: fit_and_predict_LR()')
+    
+    # fit the model... 
+    .... 
+    
+    
+    # make predictions 
+    
+    ....
+    
+    return predicted_LR
+    ### END SOLUTION ### 
+
+
+def fit_and_predict_KNN(X_train, Y_train, X_test, K):
+
+    """
+    Train nearest neighbor classifier model with 'X_train' and 'Y_train' and
+    predict the Y values for 'X_test'. Use 'KNearestNeighborsClassifier' from 
+    scikit-learn with K nearest neighbors (K = 1, 3, 5, ....)
+    Return the predicted Y values.
+
+
+    Parameters
+    ----------
+    X_train: scipy sparse matrix
+        Data for training (matrix with features, e.g. BOW or tf-idf)
+    Y_train: numpy.ndarray
+        Labels for training data (target value)
+    X_test: scipy sparse matrix
+        Test data used for prediction
+    K: integer (odd)
+    	Number of neighbors to use for prediction, e.g., K = 1, 3, 5, ...
+
+    Returns
+    -------
+    numpy.ndarray[int]
+        Target values predicted from 'X_test'
+
+    """
+ 
+    # Import the package
+    from sklearn.neighbors import KNeighborsClassifier
+
+    ### YOUR SOLUTION STARTS HERE###
+    
+    # fit the model (for KNN this is just storing the training data and labels) 
+    
+    ....
+    
+    # Predict
+    predicted_KNN = ....
+    
+    return predicted_KNN
+    ### END SOLUTION  ### 
+    
+
+
+
+#############
+# Problem 4 #
+#############
+def test_classifiers(train, test, min_docs, K):
+    """
+    Evaluate the accuracy of multiple classifiers by training on the data in 
+    "train" and making predictions on the data in "test". The classifiers
+    evaluated are: BernoulliNB, MultinomialNB, Logistic, and kNN.
+    
+    The input train and test data are scikit-learn objects of type "bunch"
+    containing both the raw text as well as label information.
+    
+    The function first calls extract_text_features() to create a common
+    vocabulary and feature set for all the classifiers to use.
+    
+    The classifiers should use tfidf features.
+    
+    
+    Parameters
+    ----------
+    train: sklearn.datasets.base.Bunch
+        Text data with labels for training each classifier
+    test: sklearn.datasets.base.Bunch
+        Text data with labels for testing each classifier
+    min_docs : integer
+        Do not include terms in the vocabulary that occur in less than "min_docs" documents    
+    K: integer (odd)
+        Number of neighbors to use for prediction, e.g., K = 1, 3, 5, ...
+ 
+    """
+    X_train_counts, X_train_tfidf, X_test_counts, X_test_tfidf = extract_text_features(train.data, test.data, min_docs)
+    
+    num_docs, vocab_size = X_train_counts.shape
+    print('Number of documents =',num_docs)
+    print('Vocabulary size =',vocab_size)
+    
+
+    
+    # Now evaluate the classifiers on the test data
+    # Print out the accuracy as a percentage for each classifier.
+    # np.mean() can be used to calculate the accuracy. Round the accuracy to 2 decimal places.
+    
+    import numpy as np
+    ### YOUR SOLUTION STARTS HERE###  
+    
+    
+    predicted_multNB = ...
+    predicted_bernNB = ...
+    predicted_LR = ...
+    predicted_KNN = ...
+    
+    print('Accuracy with multinomial naive Bayes:.....
+    
+    print('Accuracy with Bernoulli naive Bayes:....
+    
+    print('Accuracy with logistic regression:....
+    
+    print('Accuracy with kNN, k=',K,', classifier:....
+ 
+    ### END SOLUTION ### 
+    
+     
+      
+  
+#############
+# Problem 5 #
+#############
+
+def LR_weights_and_words(traindata, M):
+
+    """
+    Train a logistic classifier using the data in traindata and print
+    out the M terms with the largest positive weights and the M terms with
+    the largest negative weights (print both the strings for the terms and their weights)
+    
+    Use the same settings as used before in extract_text_features() to tokenize
+    the set of documents, generate a vocabulary, extract a bag of words array,
+    and to convert to tfidf representation. Then train a logistic regression
+    classifier using the default settings.
+     
+    Parameters
+    ----------
+    traindata:  (sklearn.datasets.base.Bunch)
+        an sklearn object for storing data sets (such as twenty_train) with
+        documents stored in the "data" attribute and labels in the "target" attribute
+    M: integer
+        Number of positive weights and negative weights to print out
+ 
+    """
+
+    # Import the package
+    from sklearn.linear_model import LogisticRegression
+
+    ### YOUR SOLUTION STARTS HERE### 
+    # Note: See notes from class lecture about mapping feature IDs to term names
+    # Note: use the coef_ attribute of the LogisticRegression type from scikit_learn  
+ 
+    ### END SOLUTIONS ###pass
+ 
+
+
+#############
+# Problem 6 #
+#############
+def confusion_matrix(predicted_labels, target_labels):
+
+    """
+    Print to the screen an M x M confusion matrix, given as input two arrays
+    of integers of the same length, where the first is the predicted labels
+    and the second is the true labels (and the labels take values from 1 to M). 
+    Entry (i,j) of the confusion matrix should show the number of items (documents)
+    that were predicted to be in class i and are actually in class j.
+    
+    NOTE: write this function using basic Python functions, do not call
+    other existing code that computes a confusion matrix
+    
+    Parameters
+    ----------
+    predicted_labels: numpy.ndarray
+        N predicted labels, the labels taking values from 1 to M
+    target_labels: numpy.ndarray
+        N target labels, the labels taking values from 1 to M
+        
+ 
+    """
+   
+    ### YOUR SOLUTION STARTS HERE###  
+    
+    .....
+    
+    ### END SOLUTIONS ###pass
+    
+   
+
+
+
+
+
+
+#############
+# Problem 7 #
+#############
+# ADD THE NECESSARY CODE WHERE INDICATED BELOW. PART A IS COMPLETE AND WILL RUN ON ITS OWN
+# (NOTE: DO THIS PART AFTER YOU HAVE WRITTEN AND TESTED THE FUNCTIONS ABOVE) 
+
+# Call the functions and compute various statistics and accuracies.... 
+print('---PART A---')
+    
+# Load the news dataset, and select only the top n_categories to work with
+n_categories = 5
+twenty_train, twenty_test = load_news_dataset(n_categories)
+
+# # Play with the dataset
+# # print the first few lines of the first document in the data set
+print('The names of the', n_categories, 'most common labels in the data set are:')
+print(twenty_train.target_names)
+print()
+  
+print('First few lines of the first document....')
+print('\n'.join(twenty_train.data[0].split('\n')[:3]))
+print()
+
+# Print the labels (target names) of the first 10 documents
+print('Labels (targets) of the first 10 documents...')
+for t in twenty_train.target[:10]:
+    print(twenty_train.target_names[t])
+print()
+ 
+
+input('Hit return to continue')
+
+
+
+#----------------------------------------------------------------------------#
+print('---PART B---')
+# Define sample test data  
+sample_test_documents = [
+    # should be classified as soc.religion.christian
+    'God is love',
+    # should be classified as rec.sport.baseball
+    'The major league baseball player has a strong reputation'
+]
+
+# create TFIDF representations of the training data and sample test data
+X_train_counts, X_train_tfidf, X_test_counts, X_test_tfidf = extract_text_features(twenty_train.data, sample_test_documents,1)
+
+print('Dimensions of X_train_counts are',X_train_counts.shape)
+print()
+
+# ADD CODE HERE: COMPLETE THE LINES BELOW.....
+num_non_zero = ...
+av_num_word_tokens_per_doc = ...
+av_num_docs_per_word_token = ...
+num_docs, vocab_size = ...
+density = 100*num_non_zero/(num_docs*vocab_size)
+# END OF SECTION TO ADD CODE FOR PART B
+
+print()
+print('Number of non-zero elements in X_train_counts:', num_non_zero)  # 372208
+print('Percentage of non-zero elements in X_train_counts:', "%.2f" % density)  # 0.31 percent
+print('Average number of word tokens per document:', "%.2f" % av_num_word_tokens_per_doc)  # 181.08
+print('Average number of documents per word token:', "%.2f" % av_num_docs_per_word_token)  # 13.59
+print()
+
+input('Hit return to continue')
+
+
+
+#----------------------------------------------------------------------------#
+print('---PART C---') 
+predicted_multNB = fit_and_predict_multinomialNB(X_train_tfidf, twenty_train.target, X_test_tfidf)
+predicted_bernNB = fit_and_predict_BernoulliNB(X_train_tfidf, twenty_train.target, X_test_tfidf)
+predicted_LR = fit_and_predict_LR(X_train_tfidf, twenty_train.target, X_test_tfidf)
+predicted_LR = fit_and_predict_LR(X_train_counts, twenty_train.target, X_test_counts)
+K=3
+predicted_KNN = fit_and_predict_KNN(X_train_tfidf, twenty_train.target, X_test_tfidf, K)
+
+#
+# # Print out the results to see how they are classified.
+# # Multinomial naive Bayes
+
+# ADD CODE HERE THAT, FOR EACH CLASSIFIER, PRINTS EACH TEST DOCUMENT (THE 2 SAMPLES)
+# ALONG WITH ITS PREDICTED LABEL:
+# For example for the kNN classifier you should produce output similar to the following:
+# Predicted labels with kNN classifier:
+# 'God is love' => soc.religion.christian
+# 'The major league baseball player has a strong reputation' => rec.sport.hockey
+
+print('Predicted labels with multinomial NB classifier:') 
+....
+print()
+
+# # Bernoulli naive Bayes
+print('Predicted labels with Bernoulli NB classifier:') 
+....
+print()
+
+
+# kNN
+print('Predicted labels with kNN classifier:')
+.....
+print()
+#
+# Logistic Regression
+print('Predicted labels with logistic classifier:')
+.....
+print()
+# END OF SECTION TO ADD CODE FOR PART C
+
+input('Hit return to continue')
+
+
+
+
+#----------------------------------------------------------------------------#
+print('---PART D---')
+# call the test_classifiers() function to test the accuracy of the classifiers 
+# on the twenty_train and twenty_test data sets, for each of the following
+# min_docs values: [1, 3, 5, 10, 100].  Use K=3 in all cases.
+# (Note: this uses the twenty_test data set for testing, not sample data)
+K=3
+
+# ADD YOUR CODE FOR PART D HERE: 
+......
+
+  
+"""
+Example (for min_docs = 1)
+test_classifiers(twenty_train, twenty_test, 1, 3)
+Your output should be similar to that below...
+	Accuracy with multinomial naive Bayes: 97.28
+	Accuracy with Bernoulli naive Bayes: 90.74
+	Accuracy with logistic regression: 96.73  <- may vary from run to run due to some randomness in how LR models are fit
+	Accuracy with KNN, k=3, classifier: 91.40
+"""
+
+input('Hit return to continue')
+
+
+ 

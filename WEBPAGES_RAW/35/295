@@ -1,0 +1,129 @@
+// ArrayListTester.java
+//
+// ICS 22 / CSE 22 Fall 2010
+// Code Example
+//
+// A second example that we didn't do in class, but that is germane, is a
+// hypothetical test of the ArrayList class from the Java library.  It should
+// be noted that you wouldn't normally write unit tests for pre-existing
+// classes from the Java library; we generally take it on faith that these
+// classes work and the Java library implementors presumably have their own
+// set of unit tests already.  (It's not impossible for bugs to exist in Java
+// libraries, but it's unlikely enough that we don't spend our time writing
+// tests for them, unless we have some cause to believe that they are broken.)
+//
+// ArrayList provides an example of when you need to test "behaviors" as
+// opposed to individual methods.  For example, when we want to test the
+// add() method, we find that the approach we used in the BiggestTester
+// isn't sufficient; we can't just call add() and test its result, because
+// the add() method doesn't return a result.
+//
+// ArrayList also provides an example of testing "error cases," to ensure
+// that code responds properly when given incorrect input.  For example,
+// if we ask for the 300th element in an ArrayList that contains only 100
+// elements, that constitutes an error case; we expect ArrayList to throw
+// an exception in that case, so we write a test to ensure that the exception
+// is thrown.  It's important that our code behaves as expected even in error
+// cases, so it's worth testing them.
+
+import java.util.ArrayList;
+
+
+public class ArrayListTester
+{
+	public static void main(String[] args)
+	{
+		firstElementAddedToEmptyArrayListIsInCellZero();
+		afterManyElementsAreAddedToArrayListTheyAreInTheListInTheOrderAdded();
+		accessingElementsBeyondTheBoundaryCausesExceptions();
+	}
+	
+
+	// I've given this test method a long name because I want to make it clear
+	// what the test is checking for.  The better names I give to my test
+	// methods, the fewer of them will require comments.
+	//
+	// Note that this method is not solely a test of add() or get(); it's a
+	// test of how they work in combination in a particular case.  Through a
+	// variety of combinations of add() and get(), I can thoroughly test both
+	// methods, though I can't test either in isolation.
+	private static void firstElementAddedToEmptyArrayListIsInCellZero()
+	{
+		ArrayList<String> a = new ArrayList<String>();
+		a.add("Alex");
+		
+		String result = a.get(0);
+		
+		if (!result.equals("Alex"))
+		{
+			System.out.println(
+				"First element added to empty ArrayList is not in cell zero; "
+				+ result + " was found instead of Alex");
+		}
+	}
+	
+	
+	private static void afterManyElementsAreAddedToArrayListTheyAreInTheListInTheOrderAdded()
+	{
+		// I've chosen to use an ArrayList<Integer> this time, rather than
+		// an ArrayList<String>, because it'll be easier for me to work with.
+		// Note, too, that I declared a constant ELEMENTS_TO_ADD within this
+		// method.  The word "final," when placed before the declaration of a
+		// local variable, indicates that the variable's value cannot be
+		// changed once it's been initialized.
+
+		ArrayList<Integer> a = new ArrayList<Integer>();
+		
+		final int ELEMENTS_TO_ADD = 100;
+		
+		for (int i = 0; i < ELEMENTS_TO_ADD; i++)
+		{
+			a.add(i);
+		}
+		
+		for (int i = 0; i < ELEMENTS_TO_ADD; i++)
+		{
+			int result = a.get(i);
+			
+			if (result != i)
+			{
+				System.out.println(
+					"After adding " + ELEMENTS_TO_ADD
+					+ " elements, element #" + i + " was "
+					+ result + ", expected it to be " + i);
+			}
+		}
+	}
+	
+	
+	private static void accessingElementsBeyondTheBoundaryCausesExceptions()
+	{
+		ArrayList<Integer> a = new ArrayList<Integer>();
+		
+		final int ELEMENTS_TO_ADD = 100;
+		
+		for (int i = 0; i < ELEMENTS_TO_ADD; i++)
+		{
+			a.add(i);
+		}
+		
+		try
+		{
+			a.get(200);
+			
+			// If we get to this point in the code, get() didn't throw an
+			// exception as it should have, so we should indicate failure.
+			
+			System.out.println(
+				"Accessing element #200 in an ArrayList with 100 elements "
+				+ "should have caused an exception but did not");
+		}
+		catch (IndexOutOfBoundsException e)
+		{
+			// We expect the exception to happen; for it to happen is a good
+			// thing in the context of this test, so we do nothing about it.
+			// Remember: our testers are silent when there are no problems,
+			// and this exception does not constitute a problem.
+		}
+	}
+}

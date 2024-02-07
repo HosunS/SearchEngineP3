@@ -1,0 +1,67 @@
+#handout1.R
+################## example 1: one-sampel t-test
+#enter data
+x = c(19, 26, 32, 24, 49, 42, 23, 53, 26, 39, 38)
+#sample size
+n=length(x)
+#sample mean and variance
+mean(x)
+var(x)
+#compute the t statistic
+t.stat= (mean(x)-30)/sqrt(var(x)/n) 
+# print the statistic
+t.stat 
+#find the 97.5th percentile of the t-distribution with 10 degrees of freedom
+qt(0.975, 10)
+#alternatively, you can also compute the two-sided p-value
+2*(1-pt(abs(t.stat),10))
+### use the built-in function t.test
+t.test(x, mu=30)
+
+###################################################
+###################################################
+################## Example 2: paired t-test
+#enter data
+weight.before = c(19, 26, 32, 24, 49, 42, 23, 53, 26, 39, 38)
+weight.after = c(22, 25, 36, 32, 49, 46, 31, 52, 30, 42, 44)
+# define a new variable "diff"
+diff = weight.after - weight.before
+n = length(diff)
+
+#method 1: compute the t-test statistic then find the critical value
+mean.diff=mean(diff)
+var.diff =var(diff)
+t.stat.diff=mean.diff/sqrt(var.diff/n)
+t.stat.diff
+#the critical value
+qt(0.975, 10)
+#the p-value
+2*(1-pt(abs(t.stat.diff), 10))
+
+######method 2: use the R built-in function 
+t.test(diff, mu=0)
+
+#method 3, use the R built-in function in another way
+t.test(weight.after, weight.before, paired=T)
+
+
+###################################################
+###################################################
+################## Example 3: two-sample t-test with the equal-variance assumption
+#the difference of sample means
+mean(weight.before) - mean(weight.after)
+#the standard deviation of the difference in sample means
+sp = sqrt( ((n-1)*var(weight.before) + (n-1)*var(weight.after)) / (n + n -2))
+#the test statistic and p-value
+t.stat = (mean(weight.after) - mean(weight.before)) / (sp*sqrt(1/n+1/n))
+p.value.unpaired = 2*(1-pt(abs(t.stat), df=(n+n-2)))
+p.value.unpaired
+#you can also use the R built-in function t.test to conduct a two-sample t-test
+#with the assumption that the two populations have the same variance
+t.test(weight.after, weight.before, var.equal=T)
+
+
+###################################################
+###################################################
+################## Example 4: two-sample t-test withotu the equal-variance assumption
+t.test(weight.after, weight.before)

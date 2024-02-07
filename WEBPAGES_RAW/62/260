@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>4.4.2 Use of the conformer state</title>
+<META NAME="description" CONTENT="4.4.2 Use of the conformer state">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node41.html">
+<LINK REL="previous" HREF="node39.html">
+<LINK REL="up" HREF="node38.html">
+<LINK REL="next" HREF="node41.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node39.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node38.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node41.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node39.html">4.4.1 GetConf and GetConfs</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node38.html">4.4 Properties of Multi-Conformer</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node41.html">4.4.3 Use of the</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION007420000000000000000">
+4.4.2 Use of the conformer state</A>
+</H2>
+
+<P>
+OEMCMolBases have four functions which control the current state of the
+molecule with respect to conformers.  <code>SetActive</code> takes an OEConfBase
+as an object and makes the OEMCMolBase act exactly like an OEMolBase with
+the "Active" conformer as the only conformer.  The <code>GetActive</code>
+function returns a pointer to the currently "Active" conformation.  There
+are many OEMolBase functions which access the single-conformer coordinates
+of a molecule.  When these functions are called on an OEMCMolBase, the
+coordinates of the "Active" conformer are returned.  Similarly, if the
+OEMCMolBase does not have a title or energy of its own, the title or energy
+of the active conformer will be returned.  This is particularly convenient
+when passing the molecule to a function which has been written to use or
+manipulate the coordinates of an OEMolBase.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+
+using namespace OEChem;
+using namespace OESystem;
+using namespace std;
+
+float GetMaxX(const OEMolBase &amp;mol)
+{
+  OEIter&lt;OEAtomBase&gt; atom;
+  float xyz[3];
+  float maxX = 0.0f;
+  bool first = true;
+  for(atom = mol.GetAtoms();atom;++atom)
+  {
+    mol.GetCoords(atom,xyz);
+    if(first)
+    {
+      maxX = xyz[0];
+      first = false;
+    }
+    else
+      if(xyz[0] &gt; maxX)
+        maxX = xyz[0];
+  }
+  return maxX;
+}
+
+int main()
+{
+  OEIter&lt;OEMCMolBase&gt; mol;
+  OEIter&lt;OEConfBase&gt; conf;
+  oemolistream ims;
+
+  for (mol=ims.GetMCMolBases(); mol; ++mol)
+  {
+    for(conf = mol-&gt;GetConfs(); conf; ++conf)
+    {
+      mol-&gt;SetActive(conf);
+      cerr &lt;&#60; "maxX = " &lt;&#60; GetMaxX(*mol) &lt;&#60; endl;
+    }
+  }
+
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch5-3.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+While the <code>SetActive</code> and <code>GetActive</code> interface is sufficient for
+most uses, it is sometimes necessary to think of a more complex
+representation of the state of the molecule.  The OEMCMolBase also has
+<code>PushActive</code> and <code>PopActive</code> functions which extend the control
+over the active conformation.  All four of these functions work together to
+determine which conformation is the current active conformation.  The
+active conformation is the top conformation in a stack of OEConfBases help
+by the molecule.  <code>SetActive</code> changes the top conformation on the
+stack, while <code>GetActive</code> returns the top conformation on the stack.
+<code>PushActive</code> puts a new conformation in the top position of the stack,
+pushing all other members of the stack down.  <code>PopActive</code> removes the
+top conformer in the stack (allowing the next lower conformer to become the
+active conformer).  The conformer stack is helpful for using the state of
+an OEMCMolBase within a function while restoring the molecule to its original
+state before returning it.
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node39.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node38.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node41.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node39.html">4.4.1 GetConf and GetConfs</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node38.html">4.4 Properties of Multi-Conformer</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node41.html">4.4.3 Use of the</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

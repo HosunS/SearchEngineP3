@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+    <head>
+        <title>FORGE/Dynamo: Demo Page</title>
+        <style type="text/css" media="screen">
+            /*<![CDATA[*/
+                @import url(css/dynamo.css);
+            /*]]>*/
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <div id="top">
+                <center><img src="./img/dynamoheader.png" alt="homepage banner" /></center>
+            </div>
+           <div id="rightnav">
+                <ul>
+                    <li class="header">Navigation
+                        <ul>
+                            <li><a href="index.html">Home</a></li>
+                            <li><a href="docs.html">Documentation</a></li>
+                            <li><a href="people.html">People</a></li>
+                            <li><a href="publication.html">Publications</a></li>
+                            <li><a href="related.html">Related Links</a></li>
+                            <li><a href="faq.html">FAQ</a></li>
+                            <li><a href="http://dynamo.ics.uci.edu">Research Homepage</a></li>
+                        </ul>
+                    </li>
+                    <li class="header">Downloads
+                        <ul>
+                            <li><a href="files/dynamo_paapi_framework.tgz">Dynamo Framework v0.1</a></li>
+                            <li><a href="files/zImage_paapi">Power-Aware Kernel</a></li>
+                            <li><a href="files/libDynamoMiddleware.tgz">System Query Libraries</a></li>
+                            <li><a href="changelog.txt">Change log</a></li>
+                        </ul>
+                    </li>
+                    <li class="header">Distribution
+                        <ul>
+                            <li><b>Demo Download</b></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <div id="content">
+                <h3>Overview</h3>
+                <p>
+                    In this demonstration, we use our framework to optimize a video streaming application running on 
+                    a Compaq iPAQ. The system architecture assumed is similar to the one shown in the picture below. To
+                    simplify matters, we assume that the proxy is also the server streaming the video. The 
+                    Dynamo middleware framework executes on both the proxy and the mobile device(iPAQ). The iPAQ runs
+                    power-aware operating system and which is capable of performing voltage/frequency scaling 
+                    operations. The proxy (Linux desktop) has a streaming server that also doubles as a transcoder 
+                    that can dynamically change the quality of the video stream. The transcoder also interfaces with 
+                    the Dynamo middleware, through which the video quality can be changed on the fly.
+                </p>
+                <center><img alt="Architecture" src="arch.png" width="502" height="240" /></center>
+                <p>
+                    As soon as the client requests the server for the video stream, the Dynamo middleware gathers 
+                    system state information (residual battery, system load etc.) from the iPAQ and communicates it 
+                    to the middleware on the proxy. Using this information, the proxy middleware dynamically determines 
+                    at what quality video should be streamed to the device. This is calculated based on the 
+                    instantaneous residual energy of the device, the profiled energy usage for the video for the iPAQ,
+                    the current load etc. The middleware on the proxy simultaneously sends stream related control 
+                    information (e.g. new video quality, WCET, period etc. which have been profiled for the video) 
+                    back to the iPAQ. The Dynamo middleware on the iPAQ now relays this information to the Power 
+                    Aware OS, which dynamically adjusts the voltage/frequency parameters to work with the new 
+                    video quality. For the demo, we use our own H.263 video player and transcoder (developed in house).
+                </p>
+
+                <h3>Whats Needed</h3>
+                <ul>
+                    <li>Arm tool chain arm-linux/2.95.3</li>
+                    <li>Dynamo Middleware Package</li>
+                    <li>ARM X11 libraries</li>
+                </ul>
+                <h3>Configuration</h3>
+                <p>
+                <b>Step 0: Download the Demo</b><br/>
+                <a href="files/dynamo_paapi_demo.tgz">Download</a> the demo program. Then extract the files 
+                type "tar -zxvf demo.tgz". You will obtain a file structure similar to:<br/><br/>
+                File Structure:
+                <ul>
+                    <li>Dynamo
+                        <ul>
+                            <li>middleware
+                                <ul>
+                                    <li>lib</li>
+                                </ul>
+                            </li>
+                            <li>paapi
+                                <ul>
+                                    <li>user-level [user level dvs]</li>
+                                    <li>kernel-level [kernel level dvs]</li>
+                                    <li>linux-ipaq-v0.6.1 [kernel with dvs]</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul><br/>
+                
+                <b>Step 1: Configuring the Make Process</b><br/>
+                Open Dynamo\config.mk<br/><br/>
+                find and modify<br/>
+                <div class="code">LOCAL_PATH = /root/releases/dynamo_mw_1.0</div>
+                to the path of the dynamo directory<br/><br/>
+                find and modify
+                <div class="code">ARM_X11     = /usr/local/arm/X11R6</div>
+                to the path of your local arm X11 libraries<br/><br/>
+                find and modify if necessary
+                <div class="code">LINUXKERNELSRC    = /usr/src/linux/kernel</div>
+                to the /path/to/your/proxy/linuxdistro/src/ that is used by the proxy [this will probably not
+                                have to be change]
+                                
+                                <br/><br/>
+                
+                <b>Step 2: Updating Header Files</b><br/>
+                There are 3 files that need to be modified to use the FORGE/Dynamo Middleware Framework.
+                These are device.c [middleware on your client device] proxy.c [middleware on the 
+                proxy device] dyncommunication.c [shared information between proxy and device].<br/><br/>
+                
+                dyncommunication.h<br/>
+                [all define's and structures can be modified in this header file]
+                    
+                <div class="code">#define MOBILEIP</div>
+                defines the mobile device's IP address, configure this to the current 
+                mobile ip address<br/><br/>
+                
+                <div class="code">#define PROXYIP</div>
+                defines the proxy's IP addressconfigure this to the current 
+                mobile ip address
+                                <br/><br/>
+                                
+                <b>Step 3: Compiling the Kernel</b> [or download the <a href="files/zImage_paapi">zImage</a>]<br>
+                                Compile Boot Image:
+                                in dynamo<br/>
+                                run: make kernel
+                                <br/><br/>
+    
+                <b>Step 4: Updating the Kernel</b><br/>
+
+                cd paapi/linux-ipaq-v0.6.1/arch/arm/boot/
+                                Copy the zImage to the mobile device's boot sector and link the new zImage to the current zImage with
+                                ln -s /boot/zImage-paapi /boot/zImage
+                                <br/><br/>
+                
+                <b>Step 5: Making The Middleware Demo</b><br/>
+                    in dynamo<br/>
+                    run: make
+                                <br/><br/>
+
+                <b>Step 6: Uploading Files</b><br/>
+                                        [located in dynamo/middleware]<br/>
+                    upload the device file to your iPAQ<br/>
+                    upload the proxy file &amp; FOREMAN.H263 to the proxy machine<br/><br/>
+                <b>Step 7: Running the Demo</b><br/>
+                    run ./proxy [on the proxy]<br/> 
+                    run ./device [on the device]<br/>
+            </div>
+            <div id="footer">
+                <!-- &copy; Copyright 2004 Michael Philpott. -->
+            </div>
+        </div>
+    </body>
+</html>
+

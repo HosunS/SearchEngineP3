@@ -1,0 +1,30 @@
+#include "oechem.h"
+#include <iostream>
+
+using namespace OEChem;
+using namespace OESystem;
+using namespace std;
+
+int main()
+{
+  OEMol mol;
+  oemolistream ims("input.pdb");
+  oemolostream oms("output.mol2");
+
+  unsigned int flavor = OEIFlavor::Generic::Default |
+                        (OEIFlavor::PDB::Default | OEIFlavor::PDB::TER);
+
+  ims.SetFlavor(OEFormat::PDB,flavor);
+
+  if (ims)
+  {
+    if (oms)
+    {
+      while (OEReadMolecule(ims,mol))
+        OEWriteMolecule(oms,mol);
+    }
+    else cerr << "Error: Unable to write output.mol2" << endl;
+  }
+  else cerr << "Error: Unable to read input.pdb" << endl;
+  return 0;
+}

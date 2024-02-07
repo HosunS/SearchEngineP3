@@ -1,0 +1,45 @@
+/* log scale compaction of word frequencies
+   use -lm option when compiling!
+   usage: freq min max
+
+   any frequencies below min are threshholded
+   but any frequencies above max cause an error
+*/
+
+#include <stdio.h>
+
+static void usage()
+{
+  fprintf(stderr,"usage: a.out minfreq maxfreq\n");
+  exit(0);
+}
+
+main(int ac, char **av)
+{
+  int min, max;
+  double logscale;
+  double logmin;
+  double log(double);
+  int atoi(char *);
+  int c;
+
+  if (ac != 3) usage();
+
+  min = atoi(av[1]);
+  max = atoi(av[2]);
+  if (max <= 0 || (max-min) <= 0) usage();
+
+  logmin = log((double)min);
+  logscale = 255/(log((double)max) - logmin);
+
+  while ((c = getchar()) != EOF) {
+    int n = 0;
+    double x;
+    while ((c = getchar()) != ' ') ; /* skip word itself */
+    while ((c = getchar()) != '\n') n = (n*10) + (c-'0');
+    n = (int) (logscale * (log((double)n) - logmin));
+    if (n > 255) fprintf(stderr,"frequency too large\n");
+    if (n < 0) n = 0;
+    putchar(n);
+  }
+}

@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC
+ "-//W3C//DTD XHTML 1.1//EN"
+ "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<link rel="stylesheet" href="../../course.css" type="text/css" />
+
+<title>ICS 45C Fall 2016, Project #4: People Just Love to Play with Words</title>
+</head>
+
+<body>
+
+<div class="navbar">
+
+<p>
+ICS 45C Fall 2016 |
+<a href="../../index.html">News</a> |
+<a href="../../CourseReference.html">Course Reference</a> |
+<a href="../../Schedule.html">Schedule</a> |
+<a href="../../ProjectGuide">Project Guide</a> |
+<a href="../../Notes">Notes and Examples</a> |
+<a href="http://www.ics.uci.edu/~thornton/">About Alex</a>
+</p>
+
+<hr />
+
+</div>
+
+<div class="header">
+
+<p>ICS 45C Fall 2016<br />
+   Project #4: <i>People Just Love to Play with Words</i></p>
+   
+</div>
+
+<div class="section">
+
+<p class="center"><b>Due date and time:</b> <i>Friday, December 2, 11:59pm</i></p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Introduction</p>
+
+<p>Among a variety of new experiences you've no doubt had in this course, one experience that has likely been new for a lot of you is spending more of your time in the text-based world of the command line.  One of the things you may have noticed is that it is possible to be quite productive, even without the kinds of graphical user interfaces you may be accustomed to.  When you want to edit code, there are text editors that are based entirely on text &mdash; where there are no "windows" or "menus" in the sense that you might be used to them, but where the keyboard can be used to issue a broader variety of commands, taking the place of what you might otherwise do with a mouse or touchpad.</p>
+
+<p>Of course, getting used to an editor like that can be a big adjustment, and you may have ultimately decided that you want nothing more to do with editors like this, but it's good for you to have seen them and interacted with them a little bit, because there are plenty of professionals who spend the vast majority of their time working in these kinds of environments.  The learning curve can be daunting, but, once conquered, the tools can actually be surprisingly powerful; I've seen people do things with <b>vim</b> that boggle my mind, in terms of how quickly they could accomplish complex edits.</p>
+
+<p>If we stop and think about text editing for a minute, it's actually more complicated than it sounds.  We take for granted being able to move the cursor around, press keys on our keyboard that do things like skip words, delete lines, or select text to be copied and pasted.  More importantly, we take for granted the idea that if we make a misstep, there is a way to issue an "undo" command that lets us undo whatever we most recently did, and, quite often, a way to "redo" it if we issued "undo" on a change that we actually wanted to keep.</p>
+
+<p>This project asks you to implement a text-based text editor in C++ called <b>BooEdit</b>.  Ours is decidedly simpler than editors like <b>vim</b>, <b>emacs</b>, or <b>nano</b>, but it does have some of the key features we expect to see:</p>
+
+<ul>
+  <li>A cursor displays the current position where we're editing</li>
+  <li>The cursor can be moved around within the text using the keyboard</li>
+  <li>Text typed into the editor is inserted at the point where we typed it</li>
+  <li>Text can be deleted using a "backspace" key on the keyboard</li>
+  <li>Every change made in the editor (cursor movements, changes to the text) can be undone with one keypress, and can be redone after being undone (in case you "undo" too far)</li>
+</ul>
+
+<p>Our editor doesn't load or save the contents of files, and it doesn't have the same rich array of commands that you might expect to see in a "real" text editor, but it does form the basis of our exploration of a few key C++ and object-oriented programming concepts:</p>
+
+<ul>
+  <li>Using classes in the C++ Standard Library, such as <b>std::vector</b>, to avoid the difficulty of manually managing memory</li>
+  <li>Throwing and catching exceptions in C++, including the need to ensure that they are handled safely (e.g., they don't cause memory leaks)</li>
+  <li>Using abstract base classes with multiple derived classes to allow us to customize how parts of our program are implemented in different circumstances (e.g., being able to unit test how our text editor behaves without requiring user interaction or displaying the editor on the screen)</li>
+  <li>Implementing the well-known object-oriented <b>Command</b> pattern, which is the typical way you would implement a sequence of user interactions that can be undone and redone</li>
+</ul>
+
+<p>Because a text editor is actually a fairly daunting project to implement from scratch, BooEdit is already partially implemented.  You'll implement the parts that are interesting from the perspective of what we're learning about in this course; I've provided the rest.  This will give you the opportunity to participate in a very common scenario in real-world software development: contributing to a project for which much of the code already exists.  Learning how to find your way around a program you've never seen &mdash; gradually building a mental model of how it's built, then determining where you need to make changes and how &mdash; is a hugely important real-world skill that this project will give you some experience with.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Getting started</p>
+
+<p>As with the previous project, you'll need to complete a couple of chores before you can start working on this project.  <i>Be sure you read these instructions and follow them completely before proceeding.</i></p>
+
+<p class="subtitle">Refreshing your ICS 45C VM environment</p>
+
+<p>Even if you previously downloaded your ICS 45C VM, you may need to refresh its environment before proceeding with this project, so that you have a copy of the <b>project4</b> project template that you'll need for this project.</p>
+
+<p>Log into your VM and issue the command <b>ics45c version</b> to see what version of the ICS 45C environment you currently have stored on your VM.  Note, in particular, the timestamp; if you see a version with a timestamp older than the one listed below, you'll want to refresh your environment by running the command <b>ics45c refresh</b> to download the latest one before you proceed with this project.</p>
+
+<blockquote><pre>
+2016-11-14 01:03:04
+Project #4 template added
+</pre></blockquote>
+
+<p class="subtitle">Creating your project directory on your ICS 45C VM</p>
+
+<P>A project template has been created specifically for this project.  It includes a <b>gather</b> script for preparing your files for submission when you're finished, as well as the usual array of scripts for running the program with and without the Memcheck tool, and a directory in which you can (optionally) write unit tests to assist in your testing.</p>
+
+<p>Decide on a name for your project directory, then issue the command <b>ics45c start PROJECT_NAME project4</b> to create your new project using the <b>project4</b> template.</p>
+
+<p><i>Do not use other project templates, like <b>basic</b> or <b>project3</b>, for this project!</i></p>
+
+</div>
+
+<div class="section">
+	
+<hr />
+
+<p class="title">The BooEdit text editor</p>
+
+<p>The text editor you'll be implementing in this project is called <b>BooEdit</b>.  It's a dramatically simplified version of an editor like <b>vim</b> or <b>emacs</b>, completely based around a textual interface that runs in a Linux shell window.  When running, BooEdit looks like this:</p>
+
+<blockquote><pre>
+16 |It was just a glimpse of you, like looking through a window
+17 |Or a shallow sea
+18 |Could you see me?
+19 |And after all this time&#x25a0;
+20 |It's like nothing else we used to know
+21 |After all the hangers-on are done hanging on to the dead lights
+22 |Of the afterglow
+23 |I've gotta know
+24 |
+25 |Can we work it out?
+26 |Scream and shout 'till we work it out?
+    ----------------------------------------------------------------------
+                                                              Ln 19 Col 24
+</pre></blockquote>
+
+<p>At any given time, the lion's share of the space is dedicated to the text being edited, which we'll call the <i>editor area</i>.  A cursor is displayed somewhere in that area &mdash; depicted above as a black square &mdash; and the location of the cursor, relative to the entire text being edited, is indicated in the bottom-right corner.  Line numbers are displayed along the left-hand edge of the window.  Because the text may be longer than the available space in the editor area, the text scrolls vertically and horizontally as necessary, so that the cursor will always be visible in the editor area.  Occasionally, short error messages are displayed (e.g., when trying to move the cursor above the topmost line of the text); in that case, the error messages are shown just below the dashes under the last line of text (so, in the example above, they would be displayed just below the words <b>Scream and shout</b>).</p>
+
+<p>BooEdit always launches with no text in the editor.  It supports neither loading of text files nor saving of them.</p>
+
+<p class="subtitle">Giving input to BooEdit</p>
+
+<p>The only way to provide input to BooEdit is via the keyboard.  To maintain maximum compatibility with everyone's setup &mdash; you may be using any number of ways of connecting to your VM (e.g., using the ICS 45C VM's GUI in VirtualBox, via SSH through PuTTY on Windows or a Terminal window on a Mac), BooEdit is quite conservative about what keys it pays attention to, because special keys (like function keys, arrow keys, <b>Home</b>, <b>End</b>, etc.) are not handled consistently across systems.  So the only keys that BooEdit officially supports are these:</p>
+
+<ul>
+  <li><i>Printable characters</i> in the ASCII character set (those with ASCII codes between 32 and 126), a list of which you can find many places online.</li>
+  <li><i>Control characters</i>, meaning the characters you get when you hold down the <b>Control</b> key on your keyboard and press a letter (A through Z).</li>
+</ul>
+
+<p>Other keys may be ignored or may trigger other strange behavior, but this is not something we'll be concerned with in this project.  (You can feel free to add support for anything else you'd like, but we'll be testing only with what's listed below.)</p>
+
+<p>The following is how different keys are handled by BooEdit:</p>
+
+<table class="normal">
+  <tr class="top">
+  	<td>Key</td>
+  	<td>Meaning</td>
+  	<td>Details</td>
+  </tr>
+  <tr>
+  	<td>Any printable character</td>
+  	<td>Insert&nbsp;Character</td>
+  	<td>Inserts a character where the cursor is currently positioned.  Any characters at or beyond the cursor on the same line are shifted to the right.  The cursor moves one cell to the right afterward.</td>
+  </tr>
+  <tr>
+  	<td>Ctrl+I</td>
+  	<td>Cursor&nbsp;Up</td>
+  	<td>Moves the cursor up one cell (i.e., to the same column on the previous line).  If the previous line is so short that this would place the cursor beyond the end of the previous line, the cursor is placed in the column just beyond the end of the previous line instead.  If the cursor is already on line 1, there is no cell above, so this command fails and an error message is displayed.</td>
+  </tr>
+  <tr>
+  	<td>Ctrl+K</td>
+  	<td>Cursor&nbsp;Down</td>
+  	<td>Moves the cursor down one cell (i.e., to the same column on the next line).  If the previous line is so short that this would place the cursor beyond the end of the next line, the cursor is placed in the column just beyond the end of the next line instead.  If the cursor is already on the last line, there is no cell below, so this command fails and an error message is displayed.</td>
+  </tr>
+  <tr>
+  	<td>Ctrl+U</td>
+  	<td>Cursor&nbsp;Left</td>
+  	<td>Moves the cursor left one cell (i.e., to the previous column on the same line).  If the cursor is at the beginning of a line already, it instead moves just beyond the end of the previous line instead.  If the cursor is at the beginning of line 1, this command fails and an error message is displayed.</td>
+  </tr>
+  <tr>
+  	<td>Ctrl+O</td>
+  	<td>Cursor&nbsp;Right</td>
+  	<td>Moves the cursor right one cell (i.e., to the next column on the same line).  If the cursor is just beyond the end of a line already, it instead moves to the beginning of the next line instead.  If the cursor is just beyond the end of the last line, this command fails and an error message is displayed.</td>
+  </tr>
+  <tr>
+  	<td>Ctrl+Y</td>
+  	<td>Cursor&nbsp;Home</td>
+  	<td>Moves the cursor to the beginning of the current line.  No error message is shown if the cursor is already at the beginning of the current line.</td>
+  </tr>
+  <tr>
+  	<td>Ctrl+P</td>
+  	<td>Cursor&nbsp;End</td>
+  	<td>Moves the cursor just beyond the end of the current line.  No error message is shown if the cursor is already at the end of the current line.</td>
+  </tr>
+  <tr>
+  	<td>Ctrl+J<br />
+  	    Ctrl+M</td>
+  	<td>New Line</td>
+  	<td>Creates a new line just under the current line.  Any text at or after the cursor on the current line is moved to the beginning of the new line.  The cursor is moved to the beginning of the new line.  (Note that there are two different keys that are interpreted the same way; either Ctrl+J or Ctrl+M behaves this way.)</td>
+  </tr>
+  <tr>
+  	<td>Ctrl+H</td>
+  	<td>Backspace</td>
+    <td>Deletes the character to the left of the current cursor position, sliding subsqeuent characters backward to fill the empty space.  Moves the cursor one character to the left.  If the cursor is already in column 1, the entire current line of text is instead moved to the end of the previous line and the cursor is placed at the beginning of that moved text.  If the cursor is already on line 1 column 1, this command fails and an error message is displayed.</td>
+  </tr>
+  <tr>
+  	<td>Ctrl+D</td>
+  	<td>Delete Line</td>
+    <td>Deletes the entire current line of text, with all subsequent lines moving up to fill the empty space.  The cursor remains in its current location <i>unless</i> the cursor would be beyond the end of the line of text that now occupies the cursor's line number, in which case the cursor is placed just beyond the end of that line of text instead.  If there is only one line of text, it is cleared and the cursor is placed at line 1 column 1.  (In other words, the editor must always have at least one line of text, even if it's empty.)</td>
+  </tr>
+  <tr>
+  	<td>Ctrl+Z</td>
+  	<td>Undo</td>
+    <td>Reverts the previously-executed command, putting the editor back into the state it was in before that command was executed.  All commands listed above are "undoable", including cursor movements and text changes, and individual commands are undone individually (i.e., each "undo" command undoes a single cursor movement, a single character inserted, a single line deleted, etc.).</td>
+  </tr>
+  <tr>
+  	<td>Ctrl+A</td>
+  	<td>Redo</td>
+  	<td>Re-executes the most-recently-undone command.  Note that Undo/Redo work the way that Back and Forward buttons have traditionally worked in a web browser; once you execute a command other than Undo or Redo successfully, there are no commands available to be redone until a command is subsequently undone.</td>
+  </tr>
+  <tr>
+  	<td>Ctrl+X</td>
+  	<td>Quit/Exit</td>
+  	<td>Exits BooEdit immediately.</td>
+  </tr>
+</table>
+
+<p class="subtitle">How BooEdit works when you first start this project</p>
+
+<p>When you first create your project directory from the <b>project4</b> project template, you'll already have a version of BooEdit that you can compile and run, though it will be severely limited.  It will always display the text <b>BooEdit!</b> on line 1, placing the cursor on line 1 column 1.  The only key that's handled is <b>Ctrl+X</b>, which allows you to exit the program; every other key is ignored.</p>
+
+<p class="subtitle">Experimenting with a completed example implementation of BooEdit</p>
+
+<p>The <b>project4</b> project template also contains a compiled version of a complete implementation of BooEdit, so you can experiment with the program as it is meant to behave when you're done.  This will help you to understand its behavior, as well as help you to catch some of the nuances and edge cases that may not have been conveyed completely in the English descriptions above.</p>
+
+<p>You can run the completed example implementation of BooEdit by issuing this command from a shell prompt within the project directory:</p>
+
+<blockquote><pre>
+./run example
+</pre></blockquote>
+
+</div>
+
+<div class="section">
+	
+<hr />
+
+<p class="title">A brief tour of the project directory</p>
+
+<p>When you create your project directory from the <b>project4</b> project template, you'll have a fair amount of code in the <b>app</b> and <b>gtest</b> directories.  Much of it can safely be ignored; others will need to be modified.  As you would any time you need to begin working on a program that's partially implemented already, you should start by gaining a basic understanding of what code is present and roughly what each part does and how the parts fit together, then focus on learning more details on an as-needed basis.</p>
+
+<p>Change into the <b>app</b> directory and list its contents by issuing the <b>ls</b> shell command.  You should see a number of files already present.  What follows is a high-level tour of what's there.</p>
+
+<ul>
+  <li>There is a <b>main.cpp</b> file, which contains the program's <b>main()</b> function, along with some supporting functions that do some necessary tasks, such as setting up handling for exceptions (and also for signals that the program has crashed, so it can still dismiss the user interface even when there's a crash).</li>
+  <li>The <b>BooEdit</b> module implements a class called <b>BooEdit</b>, which implements BooEdit's outermost layer.  An instance of BooEdit is actually a combination of three things:
+    <ul>
+      <li>An <b>EditorModel</b>, which stores the text editor's underlying data (e.g., the lines of text, the current position of the cursor) and allows it to be manipulated.</li>
+      <li>An <b>EditorView</b>, which visualizes the current state of the text editor in some way, e.g., by displaying it in a Linux shell window.</li>
+      <li>An <b>InteractionReader</b>, which reads user interfaces, e.g., by waiting for the user to press keys on the keyboard.
+    </ul>
+    The latter two of those things are implemented as an inheritance hierarchy, with an abstract base class specifying the set of virtual member functions, and derived classes supplying the implementations.  This allows us to do unit testing on BooEdit without a user interface being displayed.  (This is described in more detail below.)</li>
+  <li>The <b>EditorModel</b> module implements a class called <b>EditorModel</b>, which is responsible for maintaining and modifying the current state of the editor (the current cursor location, all of the text currently in the editor, and the error message (if any) that should be displayed).  As provided, it contains a handful of member functions that are used to gather enough information to draw the screen, though they're generally implemented as stubs (i.e., their implementations are not correct, but at least compile and run).  You'll need to add additional member functions to this class as you find the need, so you can retrieve and modify the state of the editor.</li>
+  <li>The <b>EditorView</b> module provides an abstract base class for views, which implement the "look and feel" of BooEdit.  There are two derived classes of the <b>EditorView</b> class provided: <b>NcursesEditorView</b> and (in your <b>gtest</b> directory) <b>InvisibleEditorView</b>.  You will not need to modify either of these.</li>
+  <li>The <b>InteractionReader</b> module provides an abstract base class for reading user interfaces.  There are two derived classes of the <b>InteractionReader</b> class provided: <b>KeypressInteractionReader</b> and (in your <b>gtest</b> directory) <b>MockInteractionReader</b>.  You will not need to modify <b>InteractionReader</b> or <b>MockInteractionReader</b>, though you will need to modify <b>KeypressInteractionReader</b>.</li>
+  <li>The <b>Keypress</b> module implements a class called <b>Keypress</b>, which represents the result of a user pressing a key on the keyboard, possibly with the Ctrl key depressed.</li>
+  <li>The <b>KeypressReader</b> module provides an abstract base class for reading keypresses.  There are two derived classes of <b>KeypressReader</b> provided: <b>NcursesKeypressReader</b> and (in your <b>gtest</b> directory) <b>MockKeypressReader</b>.</li>
+  <li>The <b>InteractionProcessor</b> module handles user interactions, waiting for the user to press relevant keys and then executing the corresponding commands.  This is also where the "undo" and "redo" features are to be implemented.  You'll need to make changes here to implement undo/redo and whatever else you find necessary.</li>
+  <li><b>Command.hpp</b> declares an abstract base class from which you'll derive classes to implement each command.</li>
+  <li>The <b>BooEditLog</b> module provides a logging capability, described in more detail later in this write-up.</li>
+</ul>
+
+<p>Note that there is also a <b>gtest</b> directory in your project, in which you can opt to write unit tests using Google Test if you would find it helpful.  You might find unit tests of your <b>EditorModel</b> class particularly useful, because they'll allow you to nail down whether the modifications you're making to your editor are correct as you go.  You may also want to write unit tests of other functionality, which you can do using the provided "mock" implementations of <b>InteractionReader</b>, <b>KeypressReader</b>, and/or <b>EditorView</b>.  There is no explicit requirement that you write unit tests and we will not be grading the tests that you submit; however, you may find that writing unit tests is a useful tool in helping you to isolate issues that are otherwise difficult to diagnose in the context of the whole program, so I'm providing a <b>gtest</b> directory and a <b>./run gtest</b> command that will allow you to run any unit tests you write.</p>
+	
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The Command pattern</p>
+
+<p>In lecture, we briefly discussed the concept of <i>design patterns</i>.  Design patterns are well-understood solutions to commonly-occurring programming problems.</p>
+
+<p>There is a well-known pattern that you'll need to understand for this project.  Many programs take user input in the form of <i>commands</i>.  There are different ways to pass commands to a program, of course.  A textual user interface, like the one provided by BooEdit, accepts commands by allowing the user to type them into the console.  A graphical user interface accepts commands from the user by allowing the user to click buttons, select menu items, drag objects around, and so on.  Some programs take commands from the user by accepting command-line arguments.  But regardless of the style of user interface, the program's execution can be viewed as a sequence of commands from the user, each followed by the appropriate response from the program.  This is a commonly-occurring design requirement, so it makes sense that we ought to think of a common design that addresses it.</p>
+
+<p>The Command pattern is exactly that common solution.  In a program that accepts input commands from the user &mdash; be it commands typed into the console, mouse clicks and menu selections, or whatever &mdash; it is sensible for each command to be represented by a <i>command object</i>.  Different kinds of commands are represented by different kinds of objects.  Command objects know how to do two things: be <i>executed</i> (i.e., affect whatever change they're supposed to) and be <i>undone</i> (i.e., remove whatever change they made previously).</p>
+
+<p>When it's time to execute a command, we can call an execute() method on the command object.  So, we can define one class for each kind of command, and derive all of them from an abstract base class called Command.  The Command class will have a pure virtual execute() function (we'll make it pure virtual, since we don't know how to execute a command unless we know specifically what kind of command it is), a pure virtual undo() function, and probably little or nothing else.  The classes derived from Command provide appropriate overrides of the execute() and undo() functions.</p>
+
+<p>There are a couple of advantages to using this pattern.  First of all, the program's main loop becomes very simple indeed:</p>
+
+<blockquote><pre>
+while the user hasn't quit the program yet
+{
+    read one command from the keyboard
+    build the corresponding Command object to represent it
+    execute the command by calling its execute() method
+}
+</pre></blockquote>
+
+<p>There is a clear separation between the code that oversees the execution of the program &mdash; you might call this the <i>command loop</i> or <i>event loop</i> &mdash; and the code that does other jobs (such as parse the input or execute the commands).  Adding a new kind of command does not require touching this command loop at all, though you would obviously have to teach the "read one command" part to understand how it is to be entered as input, and you'd have to write a new subclass of Command that would know how to execute it.</p>
+
+<p class="subtitle">Implementing undo and redo</p>
+
+<p>It turns out that our program's main loop can't be quite as simple as the one described above if we want to support undo and redo features.  However, the Command pattern has the big advantage that it becomes very easy to keep track of all of the commands that have been executed, by keeping them after they've been executed.  Implementing an "undo" feature would require finding the most-recently executed command and calling its undo() function.  So long as Command objects have the knowledge about what change they made (e.g., what character was inserted, where the cursor moved from, etc.), they will be able to undo their changes.</p>
+
+<p>Note that in a program like a text editor &mdash; which might be dealing with a very large amount of text &mdash; it's not acceptable to store complete copies of the entire text being edited on every change.  Instead, it becomes necessary to know just enough about what happened (e.g., what character was added and where) that we can undo the effect of a Command with the most minimal changes possible.  So our Command objects have to be smart enough to do that, though it turns out that it often doesn't take a lot of smarts to do it; we just need to track some information in member variables, so it will be available later.</p>
+
+<p>To implement an undo feature, every time a command is executed, its corresponding command object can be pushed on to a stack.  When the undo feature is used, the top object can be popped from the stack and its undo() function can be called.  To implement a corresponding "redo" feature, you could store the commands in two stacks, in much the same way that web links are stored in two stacks to implement the "back" and "forward" buttons in a web browser.</p>
+
+<p>One important conceptual note here: <i>undo and redo are not commands!</i>  You can execute a command and you can undo a command.  Redoing a command is simply to execute it again.</p>
+
+<p class="subtitle">What does this have to do with me?</p>
+
+<p>The reason I've explained the Command pattern to you is that you'll be required to use it.  I've provided an abstract base class called Command, which will form the basis of your various command implementations.  Each kind of modification that the user can make in the editor &mdash; cursor movements, inserting characters, deleting lines, etc. &mdash; would be implemented as a separate class that inherits from Command.  In that class, you would implement an <b>execute()</b> member function that makes the changes necessary for the command (e.g., moving the cursor or inserting a character) and an <b>undo()</b> member function that reverts the change.  Redoing a command simply means calling <b>execute()</b> on the command again.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">General advice on approach</p>
+
+<p>You may have become quite accustomed to working on programs that you largely "own," where you've been given little or no code to start with.  This project is different; some of the challenge lies in understanding what code has been provided to you, what parts of that code you'll need to understand and modify, and what parts of it you can mostly ignore.  This may seem like an uncomfortable place to start, but this is intensely practical; unless you're involved at the moment of inception, work on most projects involves modifying and extending an existing code base, as opposed to building a new one from scratch.</p>
+
+<p>The big question, then, is "Where do I start?"  As with most projects, there are multiple reasonable paths you could follow to complete this project, but I'll give you an idea of what I might do if confronted with this problem.  If you'd rather do something different, you can certainly feel free; but if you're not sure where to start, consider starting down the path that I've described, though you can certainly deviate from it if you get to a point where something different would feeel more comfortable for you.</p>
+
+<ul>
+  <li>Since the program, as provided, starts up with the bogus text <b>BooEdit!</b> &mdash; you'll want to remove this eventually, but it's handy at the beginning to have some text to work with &mdash; I'd consider starting by implementing the command to move the cursor to the right.  Skip the undo feature initially and just do what you need to do to make the command work, which is roughly this:
+    <ul>
+      <li>Derive a class from Command to implement your command to move the cursor to the right</li>
+      <li>Implement its <b>execute()</b> method to call a function on the <b>EditorModel</b> object (passed to <b>execute()</b> as a parameter) that moves the cursor.</li>
+      <li>You'll notice that there is no function in <b>EditorModel</b> yet that moves the cursor, so you'll need to add it.  Note, too, that <b>EditorModel</b> currently hard-codes the cursor's position (by always returning 1 from its <b>cursorLine()</b> and <b>cursorColumn()</b> functions); you'll need to change that, too.</li>
+      <li>In <b>KeypressInteractionReader.cpp</b> is a member function called <b>KeypressInteractionReader::nextInteraction()</b>, which is where keypresses are turned into user interactions.  Add code to accept Ctrl+O and return an Interaction containing an object of your new command class.</li>
+      <li>At this point, if you've done everything correctly, you should be able to move the cursor to the right.  Now add code to handle the case of getting to the end of the line by displaying an error message.  (The way to display an error message is for your command's <b>execute()</b> function &mdash; or whatever function(s) it calls &mdash; to throw an <b>EditorException</b>.)</li>
+    </ul>
+  </li>
+  <li>Next, I'd probably implement the command for moving the cursor to the left, since it would be so similar to the command I'd just implemented.  The steps would be the same.</li>
+  <li>Next, I'd consider working on the undo/redo feature in <b>InteractionProcessor.cpp</b>, then implementing the <b>undo()</b> function in my two command classes.  At this point, I should be able to move the cursor to the left and right <i>and</i> undo/redo those cursor movements.</li>
+  <li>At this point, a fair amount of infrastructure would be in place, so I'd consider adding one command at a time &mdash; probably inserting characters and then handling new lines, which would allow me to add text to a line <i>and</i> have text longer than a single line, so I could continue on to moving the cursor up and down.  To keep things simple, I might only support new lines when the cursor is at the end of the line, then worry about the "line-splitting" version of it later.</li>
+</ul>
+
+<p>I'd proceed in this fashion, one command at a time.  The order in which I'd implement the commands would be determined by my ability to implement and test them (e.g., I wouldn't implement moving the cursor down until I could have multiple lines of text in the editor).  My goal would be to find relatively small tasks that will lead to stable ground as often as possible.</p>
+
+<p>As I said, there are many perfectly good paths that lead to a completed version of this project, but the above is how I would approach it.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The BooEdit log</p>
+
+<p>You may notice that BooEdit creates a file called <b>booedit.log</b> in whatever directory you ran it from.  The purpose of the log file is to allow you to write any debug output you'd like, without that debug output interfering with the normal output that BooEdit displays in the shell window.  This turns out to be critical, because BooEdit takes complete control of the shell window, handling cursor movements, "repainting" the screen as it changes, and so on.  This makes it impossible for you to write to <b>std::cout</b> normally without causing a variety of problems.</p>
+
+<p>You can write anything to the log that you'd like at any time you'd like; there is no requirement about when and what to write, and you don't have to use the log at all if you don't want to.  But it provides you an easy way to generate and view debug output, which you may find to be critical to your ability to diagnose certain kinds of problems.</p>
+
+<p>If you want to write to the BooEdit log from any of your source files, there are only two things you'll need to do:</p>
+
+<ul>
+  <li>Include the file <b>BooEditLog.hpp</b> in that source file, which includes the declaration of the function <b>booEditLog()</b> that writes a message to the log.</li>
+  <li>Call the function <b>booEditLog()</b> wherever you need it.  The function takes a single <b>const std::string&</b> parameter and appends it, on its own line, into the <b>booedit.log</b> file.  Each message in the log file is preceded by a timestamp that indicates when it was written &mdash; using your VM's system clock to determine the time.  (Two example calls to <b>booEditLog()</b> appear in the file <b>main.cpp</b>, if you want to see what they look like.)</li>
+</ul>
+
+<p>BooEdit, as provided, writes two messages to the log every time it runs: one when the program starts and another when the program stops.  So a typical run of BooEdit might generate a log that looks something like this:</p>
+
+<blockquote><pre>
+2016-11-13 14:50:30  Started /home/ics45c/projects/p4/out/bin/a.out.app
+2016-11-13 14:50:33  Stopped /home/ics45c/projects/p4/out/bin/a.out.app
+</pre></blockquote>
+
+<p>Anything you write will appear between those two lines in the log.  After you exit BooEdit, you can open <b>booedit.log</b> to view what you wrote to it.  Alternatively, you can open a separate Terminal window in your VM, change into the directory where you started BooEdit (i.e., wherever you were when you executed the <b>./run</b> script), and issue this command <i>after</i> starting BooEdit:</p>
+
+<blockquote><pre>
+tail -f booedit.log
+</pre></blockquote>
+
+<p>This will cause the contents of <b>booedit.log</b> to be displayed as they're added to the file, so you can see them play out "live" as they happen.  When your program ends &mdash; or when you no longer want to watch this file &mdash; you can stop the <b>tail</b> program by pressing <b>Ctrl+C</b>.  Note, too, that if you used <b>tail</b> to watch the file change, the file will still be there when you're done, so you can still open the file in a text editor later if you'd like.</p>
+
+<p>Be aware also that the <b>booedit.log</b> file is not deleted each time the program begins or ends; every write to it simply makes it longer.  You can delete the file manually if you ever want to start it over.  (You can use the timestamps to narrow down the output from a single run of your program.)</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">A couple of notes about using Memcheck</p>
+
+<p>As you no doubt discovered in your work on previous projects, Memcheck can be an invaluable tool for diagnosing not only memory leaks, but program crashes (e.g., segmentation faults) and other hard-to-diagnose memory-related issues.  It does this by watching every use of memory &mdash; not only every allocation and deallocation, but also every time you read and write from memory &mdash; and is able to tell you when you've used memory that isn't allocated, read the value of a variable that hasn't yet been initialized, and so on.  If you had a clean, complete implementation of previous projects, there's a good chance that you needed to use Memcheck in order to get to that point.</p>
+
+<p>However, Memcheck presents us with two problems in the context of this project that we'll need to overcome in order to use it effectively.</p>
+
+<p class="subtitle">Separating Memcheck's output from the BooEdit display</p>
+
+<p>As you've seen before, Memcheck's output will be displayed in your shell window alongside your program's standard output.  Anything you write to <b>std::cout</b> and anything that Memcheck writes will be intermixed.  In our work so far this quarter, this has never posed much of a problem, because our use of the standard input and output has tended to be line-based (i.e., reading and writing whole lines), so that it becomes easy to distinguish Memcheck's output because of the prefix that it prints before each line of its output (e.g., <b>==12345==</b>).</p>
+
+<p>But because BooEdit uses the entire shell window, including taking control of cursor movements, clearing the screen, and so on, it becomes necessary to avoid having Memcheck write its output to the shell window alongside BooEdit's output, because we'll quickly have a mess on our hands.  For this reason, we'll need to find a way to separate Memcheck's output from what is displayed ordinarily by BooEdit.</p>
+
+<p>We've seen previously that it is possible to save a program's standard output to a file, instead of displaying it in your shell window, by using a technique called redirection.  However, that technique poses an interesting problem for us in the context of this program; the standard output can't be redirected, because it's where BooEdit is displayed!  If you don't understand what I mean, try these two commands in your project directory:</p>
+
+<blockquote><pre>
+./build
+./run &gt;test.out
+</pre></blockquote>
+
+<p>What you'll see is that the program will appear to hang &mdash; no output will be shown in your shell window.  But, interestingly, if you press <b>Ctrl+X</b>, which is the BooEdit "exit" command, you'll find that the program ends, just as it would normally.  Now open the <b>test.out</b> file in an editor like <b>vim</b>:</p>
+
+<blockquote><pre>
+vim test.out
+</pre></blockquote>
+
+<p>and you'll see what appears to be a mess, but if you look at that mess more carefully, you'll notice that you'll really see all of the output (including a funny-looking representation of cursor movements) needed to generate BooEdit's initial, empty display.  So the output really was redirected to a file, but that's not what we really want here; what we'd like is to redirect Memcheck's output to a file, while continuing to send BooEdit's output to the shell window.</p>
+
+<p>The good news is that Memcheck actually doesn't send its output to the standard output (<b>std::cout</b>) at all.  Instead, it writes its output to a separate stream called the <i>standard error</i> (written in C++ as <b>std::cerr</b>).  To verify this, watch what happens when you do this:</p>
+
+<blockquote><pre>
+./build
+./run --memcheck &gt;test.out
+</pre></blockquote>
+
+<p>Notably, the Memcheck preamble is displayed in the shell window, then the program appears to hang indefinitely.  But, once again, BooEdit is running in the background &mdash; it's there, but is sending its output to a file &mdash; so you can exit using <b>Ctrl+X</b>, at which time you'll see Memcheck's final report.  If you open the file <b>test.out</b> in an editor, you'll once again see BooEdit's output &mdash; including cursor movements, etc. &mdash; but you won't see anything from Memcheck.  This is because the <b>&gt;</b> operator we've been using for redirection actually redirects only the standard output; the standard error still displays in the shell window.</p>
+
+<p>Luckily for us, we can redirect the standard error to a file instead, without redirecting the standard output.  The trick is to add a single character to our command:</p>
+
+<blockquote><pre>
+./build
+./run --memcheck 2&gt;test.out
+</pre></blockquote>
+
+<p>The <b>2</b> character denotes that we want to send the program's second output &mdash; its standard error &mdash; into a file, while allowing the standard output to be sent to the shell window as normal.  Try that and open the <b>test.out</b> file that got created; what you'll see is Memcheck's output, without any of BooEdit's normal output.  This gives you the best of both worlds: you can interact with BooEdit normally, but Memcheck's report will be available in a file when you're done.  You can open that file in a text editor to see the results.  Alternatively, you can open a separate Terminal window in your VM, change into your project directory, and issue this command <i>after</i> starting BooEdit:</p>
+
+<blockquote><pre>
+tail -f test.out
+</pre></blockquote>
+
+<p>This will cause the contents of <b>test.out</b> to be displayed as they're added to the file, so you can see them play out "live" as they happen.  When your program ends &mdash; or when you no longer want to watch this file &mdash; you can stop the <b>tail</b> program by pressing <b>Ctrl+C</b>.  Note, too, that if you used <b>tail</b> to watch the file change, the file will still be there when you're done, so you can still open the file in a text editor later if you'd like.</p>
+
+<p>Using this technique, you'll still be able to use Memcheck in your work on this project.  As before, you'll be required to deallocate any memory that you allocate, but you'll also find that Memcheck can be invaluable in diagnosing other program crashes, etc., so it's wise to get a handle on how to do this early, so you can use it throughout your work on this project.</p>
+
+<p class="subtitle">Avoiding reports of memory leaks that are not your responsibility</p>
+
+<p>BooEdit uses a well-known open source library called <b>ncurses</b> for managing cursor movements, windowing, and text output.  Programs that use <b>ncurses</b> will appear to leak memory when run under Memcheck, though all of these leaks will be in the category called <i>still reachable</i> (i.e., memory still reachable from pointers stored in global variables when the program ended).  I've made my best effort to eliminate the reporting of these leaks by including a file <b>memcheck.supp</b>, which instructs Memcheck not to report on the kinds of leaks emanating from <b>ncurses</b> that would appear, for our purposes, to be memory leaks caused by us.</p>
+
+<p>You should not modify <b>memcheck.supp</b>.  If you do change it, you may find that you start to receive reports of memory leaks that do not appear to emanate from your own code, so your best bet is to leave this file as-is.  The <b>./run</b> script instructs Memcheck to use <b>memcheck.supp</b> in its analysis automatically, so you shouldn't see leaks that emanate from <b>ncurses</b> in your work on this project.  If you do believe you're seeing such leaks, let me know; while I think I've got this part dialed in, it's possible that this will need a tweak or two to get it completely right.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Deliverables</p>
+
+<p>After using the <b>gather</b> script in your project directory to gather up your C++ source and header files (including your unit tests) into a single <b>project4.tar.gz</b> file, submit that file (and only that file!) to Checkmate.  (Note that the filename is different this time; the tarball is now called <b>project4.tar.gz</b> to avoid confusion.)</p>
+
+<p>Follow <a href="../SubmittingProjects.html">this link</a> for a discussion of how to submit your project via Checkmate.  Be aware that I'll be holding you to all of the rules specified in that document, including the one that says that you're responsible for submitting the version of the project that you want graded.  We won't regrade a project simply because you submitted the wrong version accidentally.  (It's not a bad idea to look at the contents of your tarball on your host operating system before submitting it.)</p>
+
+<p class="subtitle">Can I submit after the deadline?</p>
+
+<p>Yes, it is possible, subject to the late work policy for this course which is described in the section titled <i>Late work</i> at <a href="../index.html">this link</a>.</p>
+
+</div>
+
+<div class="history">
+
+<hr />
+
+<ul class="nomarker">
+  <li>Additional details added to the write-up, plus some adjustments to the implementation by Alex Thornton, Fall 2016.</li>
+  <li>Re-implementation of program (to support unit testing of various components) and additional explanation and background added by Alex Thornton, Fall 2015</li>
+  <li>An example implementation, support for logging, notes on using Memcheck effectively, various clarifications, and several BooEdit bug fixes by Alex Thornton, Fall 2014</li>
+  <li>Originally written by Alex Thornton, Winter 2014</li>
+</ul>
+
+</div>
+
+</body>
+</html>

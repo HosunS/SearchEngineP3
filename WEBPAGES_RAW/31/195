@@ -1,0 +1,144 @@
+//    Processing educational code
+//    Copyright (C) 2013  Lee Martie
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+class Ballon {
+
+  PVector location;
+  PVector velocity;
+  PVector acceleration;
+  float mass;
+  float ballonRadius;
+  
+  float angle = 0.0;
+  float angleVelocity = 0.0;
+  float angleAccelartion =  0.001;
+
+  float tx, ty;
+
+  Ballon(int tx, int ty, int xLocation, int yLocation, float mass) {
+    location = new PVector(xLocation, yLocation);
+    velocity = new PVector(0, -1);
+    acceleration = new PVector(0, 0);
+
+    ballonRadius = 10*mass;
+    this.tx = tx;
+    this.ty = ty;
+    this.mass = mass;
+  }
+
+  void applyForce(PVector force) {
+    PVector f = PVector.div(force, mass);
+    acceleration.add(f);
+  }
+
+  void step() {
+
+
+
+    float x =  noise(tx);
+    float y = noise(ty);
+
+    PVector wind = new PVector(x, y);
+    applyForce(wind);
+
+    PVector gravity = new PVector(0, .03);
+    gravity.mult(mass);//little cheat to get constant force for gravity
+
+    System.out.println(acceleration.x+" "+acceleration.y);
+    tx += 0.01;
+    ty += 0.01;
+
+
+    velocity.add(acceleration);
+    bounce();//bounce of sides of wall
+    location.add(velocity);   
+    acceleration.mult(0);
+    
+    
+    angleVelocity += angleAccelartion;
+    angle += angleVelocity;
+
+    
+    
+  }
+
+
+/**
+*Look at the push and pop
+*/
+  void display() {
+    pushMatrix();
+    translate(location.x, location.y);
+    rotate(angle);
+
+    fill(255, 0, 0);
+    ellipseMode(RADIUS);
+    float ballonSize = ballonRadius;
+    ellipse(0,0, ballonSize, ballonSize);
+
+    
+    stroke(255);
+    line(0, 0, 0, 0+ballonRadius);
+    fill(0);
+    ellipse(0, 0+ballonRadius, 5, 5);
+          PFont f;  // Global font variable
+      f = createFont("Arial", 10, true); 
+      textFont(f, 12); 
+       fill(255);
+      text("12", 0, 0-ballonRadius+12);
+      text("6", 0, 0+ballonRadius-12);
+      text("3", 0+ballonRadius-12,0);
+      text("9", 0-ballonRadius+12,0);
+    popMatrix();
+  }
+
+
+boolean isCollided(Ballon ballon){
+  
+  if(PVector.dist(location,ballon.location) <= (ballonRadius+ballon.ballonRadius))
+    return true;
+  else
+    return false;
+}
+
+  void bounce() {
+    if (location.x-ballonRadius  <0) {
+      if (velocity.x < 0){
+        velocity.x *= -1;
+        angleVelocity *= -1;
+      }
+    }
+    if (location.x+ballonRadius > width) {
+      if (velocity.x > 0){
+        velocity.x *= -1;
+         angleVelocity *= -1;
+      }
+    }
+    if (location.y-ballonRadius < 0) {
+      if (velocity.y < 0){
+        velocity.y *= -1;
+         angleVelocity *= -1;
+      }
+    }
+    if (location.y+ballonRadius > height) {
+      if (velocity.y > 0){
+        velocity.y *= -1;
+         angleVelocity *= -1;
+      }
+    }
+  }
+}
+

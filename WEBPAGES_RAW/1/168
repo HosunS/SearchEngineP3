@@ -1,0 +1,126 @@
+Homework: exercises 12.2-8, 12.4-3, 13.2-4, 13.3-6; problem 18-1.
+
+
+Motivation: sequential searching in lists
+    move-to-front heuristic
+
+Static analysis:
+	assume inputs drawn from some random distribution
+		(distr. not known => assume worst case)
+	compare your algorithm (which doesn't know distribut)
+		to best algorithm knowing distribution
+	for sequential searching, best algorithm
+		is to sort in order by priority
+
+Competetive analysis: [Irani]
+	ratio your alg. to precognitive alg
+		on worst-case input sequence
+	since w.c. seq, not w.c. dist, results are stronger than static
+
+For move-to-front:
+	comparing MTF and OPT, where OPT may be assumed to know input seq
+	as both algorithms progress, let
+		Phi = #pairs x,y where x<y in MTF but x>y in OPT
+	initially zero, always positive
+
+	def amortized cost(MTF) = actual cost + Delta Phi
+
+	when search for item x, let
+		k = #items before x in both MTF and OPT
+		l = #items before x that are only in MTF
+	then cost(OPT) >= k
+	     cost(MTF) = k+l (actual) + k (increase Phi) - l (decrease phi)
+
+So MTF within factor of two of cost of any other sequential search heur!
+
+
+Back to search trees...
+
+Splay trees
+	Sleater and Tarjan 1985
+
+	binary search tree
+	each node stores: left and right children
+
+	UNLIKE other search structures so far,
+	searches will change structure of tree
+	all op times (including search) amortized
+
+	search(x):
+		usual binary search for x,
+			storing list of nodes on path from root
+		then: splay -- repeatedly rotate so x=>root
+
+		double rot: zigzag => balance, straight=>straight
+		+ single rot at root if path has odd length
+
+	insert(x):
+		usual bst insert + splay
+
+	delete(x):
+		if x has one child, splice out, splay parent
+		else: replace with sliced-out successor, splay
+			previous parent of successor
+
+Amortized analysis:
+	assign weight w(x) to item x
+	total weight tw(x) = sum_{y in subtree rooted at x} w(y)
+	rank(x) = floor(log_2(tw(x)))
+
+	Phi = sum_x rank(x)
+
+	Time per operation = O(# splay steps)
+
+	So (with a little care for insert/delete)
+	We mainly need to show that splay takes O(log n) amortized steps
+
+	Lemma: on splay, #steps + Delta Phi <= 1 + 3(rank(root) - rank(x))
+	[note 0 <= rank(root)-rank(x) <= log total weight,
+	 so if w(x)=1 => O(log n); otherwise get weighted search tree]
+
+		proof: induction on # steps
+
+		single rot: rank at root stays same
+			rank(new child) < rank(v)
+			rank(old child) = rank(x)
+			DeltaPhi <= rank(v) - rank(x)
+		total <= 1 + rv-rx <= 1 + 3(rv-rx)
+			
+		straight path:
+			Delta Phi: old ranks(middle+bottom) - new
+				<= 2 rank(old top) - 2 rank(x)
+			if old top and x had different ranks,
+				1step + 2r(t-x) <= 3(t-x)
+			else: all three start at same rank
+				tw(old x) + tw(new z) <= tw(new x)
+				so new rank(z) < new rank(x)
+				again Phi drops by 1, pays for update
+
+		zigzag path: similar
+
+        Deletion: only decreases Phi (decreases ranks of nodes)
+	plus time proportional to following splay step
+
+	Insertion: can increase Phi only by O(log n)
+		[for each r, at most one rank-r node goes to rank r+1]
+	plus time proportional to following splay step
+
+	Conclusion:
+		splay trees have amortized O(log n)
+		for weighted elements, O(log total weight / weight(x))
+			[static optimality]
+
+	Also known (journal paper was so long it had to be split in 2):
+	Cole 1990
+
+		amort. cost of access d steps from prev = O(log d)
+		matching performance of finger search trees
+
+		special case (Tarjan 1985): sequential access is O(n)
+
+	Dynamic optimality conjecture
+	(Major open problem in data strux):
+
+		Are splay trees within a constant of the best possible
+		rotation-based search tree
+		(in competetive ratio sense i.e. alg can know seq in advance)?

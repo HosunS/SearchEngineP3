@@ -1,0 +1,571 @@
+
+------------------------------------------------------------
+Copyright 1999, The University of California at Irvine
+------------------------------------------------------------
+
+DESCRIPTION OF SOURCE CODE FILES
+================================
+
+This software implements the hybrid tree index structure 
+as described in [1]. This distribution of the software contains 
+a total of 26 files: 
+
+(1) 12 .C files (HTree.C, Node.C, DataNode.C, 
+OFNode.C, MONode.C, HTreeSearch.C, HTreeRangeSearch.C, 
+MultiPointQuery.C, Point.C, Rect.C, HTreeTest.C, GenSearchTest.C)
+
+(2) 10 .h files (decl.h, HTree.h, Node.h, DataNode.h, 
+OFNode.h, MONode.h, Query.h, MultiPointQuery.h,
+Point.h, Rect.h)
+
+(3) a makefile
+
+(4) this file (the README)
+
+(5) 1 data file "CH.16d.asc" (16-d color histogram, 68041 points) and 
+1 query file "CH.16d.Query" (250 queries, a random sample of "CH.16d.asc"). 
+(The format of the data file is explained under "Building a hybrid tree from scratch". 
+The query file has the same format.)
+
+
+The source code of the hybrid tree lies in the
+files HTree.C, Node.C, DataNode.C, OFNode.C, MONode.C, 
+HTreeSearch.C, HTreeRangeSearch.C and MultiPointQuery.C 
+(decl.h, HTree.h, Node.h, DataNode.h, 
+OFNode.h, MONode.h, Query.h, MultiPointQuery.h 
+are the corresponding header files). The files
+Point.C and Rect.C (Point.h, Rect.h are the header files)
+implement point and rectangle classes.
+The files HTreeTest.C and GenSearchTest.C are the test programs.
+We have tried this code only on the SUN Sparc platform (running Solaris 2.6) 
+and with gcc-2.8.1 compiler.
+
+
+COMPILING THE CODE
+==================
+
+Before we explain how to do perform the 
+various operations on the hybrid tree so
+that you can write your own application program,
+we will explain how to compile and run the included
+test program "HTreeTest.C". To compile the code 
+(with HTreeTest.C), run "make". 
+
+COMPILE TIME PARAMETERS (specified in decl.h)
+=============================================
+Before we explain how to run the program,
+we describe the parameters that need to be specified
+at compile time (they are in decl.h). The two main 
+compile-time parameters are the page size
+and the dimensionality of the data. These 2 parameters 
+are the first 2 constants defined in decl.h.
+
+#define PGSIZE  4096
+#define NUMDIMS  16            /* number of dimensions */
+
+
+You do not need to change them for running the test program
+on the included dataset (CH.16d.asc) because the dimensionality
+is 16 (but you can change the pagesize if you want). 
+But to run in on some dataset with a different dimensionality, you 
+will have to change the constant and recompile. 
+
+
+RUNNING THE CODE
+================
+
+Constructing the tree from the dataset
+--------------------------------------
+
+To build a hybrid tree from scratch, run
+"HTreeTest 0 CH.16d.asc HTdump.color".
+The above command will construct a hybrid tree from the 
+data file "CH.16d.asc" (the format of the data file is explained 
+under "Building a hybrid tree from scratch") and dump it into a file 
+"HTdump.color" (binary file).
+
+Output
+------
+You should get an output like this:
+
+
+inserted 0 points 
+inserted 1000 points 
+inserted 2000 points 
+inserted 3000 points 
+inserted 4000 points 
+.
+.
+<snip>
+.
+.
+inserted 61000 points 
+inserted 62000 points 
+inserted 63000 points 
+inserted 64000 points 
+inserted 65000 points 
+inserted 66000 points 
+inserted 67000 points 
+inserted 68000 points 
+total inserts = 68041 
+Took approx. 35 seconds
+dumped 1879 nodes on disk 
+Took approx. 35 seconds
+
+
+
+Running the queries
+--------------------
+To run some queries (250 queries) stored in the CH.16d.Query,
+run "HTreeTest 1 HTdump.color CH.16d.Query".
+The above command will load the hybrid tree
+from the file "HTdump.color" (into which it was
+dumped after construction) and run the queries
+one after another and print out some statistics 
+(e.g., average disk accesses, average CPU time etc.).
+Currently, all the queries are 10-nearest neighbor queries with 
+L2 distance function (see the discussion on "Searching the hybrid tree" below
+and lines 100-120 in HTreeTest.C). To run some other 
+type of query (e.g., range query), you need to modify the
+test program based on the discussion in "Searching the hybrid tree".
+
+
+
+Output
+------
+You should get an output like this:
+
+Loading......
+Number of empty nodes = 0 
+Loaded 1879 nodes from disk 
+Loaded 68041 objects from disk 
+Took approx. 2 seconds
+Query 1: 10 
+disk acc = 5 time = 0.008223 
+
+Query 2: 10 
+disk acc = 3 time = 0.004518 
+
+Query 3: 10 
+disk acc = 57 time = 0.062877 
+
+Query 4: 10 
+disk acc = 12 time = 0.009754 
+
+Query 5: 10 
+disk acc = 31 time = 0.025896 
+
+Query 6: 10 
+disk acc = 12 time = 0.012305 
+.
+.
+<snip>
+.
+.
+Query 241: 10 
+disk acc = 36 time = 0.032513 
+
+Query 242: 10 
+disk acc = 68 time = 0.051635 
+
+Query 243: 10 
+disk acc = 31 time = 0.023012 
+
+Query 244: 10 
+disk acc = 48 time = 0.033600 
+
+Query 245: 10 
+disk acc = 176 time = 0.127336 
+
+Query 246: 10 
+disk acc = 23 time = 0.019883 
+
+Query 247: 10 
+disk acc = 97 time = 0.063216 
+
+Query 248: 10 
+disk acc = 14 time = 0.015109 
+
+Query 249: 10 
+disk acc = 27 time = 0.030441 
+
+Query 250: 10 
+disk acc = 63 time = 0.054714 
+
+Average disk access at level 0 = 10.000000 
+Average disk access at level 1 = 52.459999 
+Average disk access at level 2 = 7.756000 
+Average disk access at level 3 = 1.000000 
+Average disk access (total) = 61.215996 
+Average time taken for 1st iter : 0.043191 seconds
+
+-------------------------------------------------------------
+
+Explanation of the output
+-------------------------
+
+For each query, the test program HTreeTest.C prints out the number 
+of objects retrieved (10 objects retrieved for all queries since all
+the queries were 10-NN queries), the number of disk accesses 
+(i.e. the number of nodes of the hybrid tree visited, e.g.,
+63 for Query 250) and the CPU time it took
+to execute the query.
+
+
+At the end of the run, we print out the statistics averaged
+over all the queries. The "Average disk access at level 0"
+is the average number of objects retrieved (these are
+NOT index node accesses and hence do not count in the total
+index node accesses printed as "Average disk access (total)").
+The index node accesses start from level 1 i.e.
+the "Average disk access at level 1" is the average 
+number of leaf level nodes accessed, the "Average disk 
+access at level 2" is the average number of nodes accessed 
+at the level just above the leaf level and so on. 
+Note the average disk access at the highest level
+("Average disk access at level 3" in this case) should 
+always be 1.00 since there is only one node at the highest
+level (the root node) and all queries access that one node.
+The "Average disk access (total)" is the average number of 
+the index nodes visited (summed across all levels). It is the sum of 
+disk accesses at all levels STARTING FROM level 1 (level 0 is NOT counted 
+because it is the number of objects retrieved and not number of index nodes 
+visited). In this case, "Average disk access (total)" is the sum of
+average disk access at level 1,2 and 3 
+( 52.459999 + 7.756000 + 1.000000 = 61.215996).
+"Average time taken for 1st iter" is the average CPU time it took
+to execute each query.
+
+
+
+How to perform various operations on the hybrid tree
+=====================================================
+
+We will now explain how to do perform the various operations 
+on the hybrid tree so that you can write your own application 
+program or modify the existing test program HTreeTest.C 
+(or GenSearchTest.C) to suit your needs. You can use the 
+test program HTreeTest.C as you are reading this to serve 
+as an example.
+
+
+Building a hybrid tree from scratch
+===================================
+There are 2 options:
+
+1. You can read the data points one by one from the 
+data file and insert them into the hybrid tree.
+To read a data point, you can use the Read function of 
+the Point class:
+
+int Point::Read(FILE *fp, int *id)   (see Point.C)
+
+File pointer fp must point to a beginning of a data record in the data file
+where a data record looks like this:
+<id-of-the-point>  <position-of-point-along-dim1> .... 
+<position-of-point-along-dimk> \newline
+id-of-the-point is of type int, rest is of type float.
+The id argument would contain the id-of-the-point.
+
+Or you can write you own function to read the point
+and construct the point object (especially if 
+the format of the data file is different from above).
+
+To insert the point into the hybrid tree, see the function
+to insert a point into the hybrid tree, explained below.
+
+
+2. If your data file has the following format -- each
+data point is one line and the data point is described
+as <id-of-the-point>  <position-of-point-along-dim1> .... 
+<position-of-point-along-dimk> -- you can pass the 
+name of the file to the hybrid tree constructor along
+with the maximum number of objects you want to be inserted:
+
+HTree::HTree(char *datafile, int max_inserts) (see HTree.C)
+
+The first max_inserts objects in the file would be inserted.
+An example of such a file is CH.16d.asc (containing
+16-d color histograms). 
+
+The test program uses option 2 (see line 211 in HTreeTest.C)
+to construct the tree. (So if you want to use HTreeTest.C for
+some other data file, make sure that the data file has
+the above format.)
+
+
+Dumping the hybrid tree from memory to disk
+===========================================
+
+void HTree::HTreeDump(char *dumpfile) (see HTree.C)
+
+The tree will dumped in the (binary) file whose name is
+passed as dumpfile. 
+
+The test program uses the above function (see line 216 
+in HTreeTest.C) to dump the tree to disk.
+
+
+
+Loading the hybrid tree from disk to memory
+===========================================
+
+HTree::HTree(char *dumpfile) (see HTree.C)
+
+The tree will be loaded into memory from the file passed 
+as argument (see line 226 in HTreeTest.C).
+Hybrid tree uses an optimization called Encoded
+Live Space (ELS) Optimization (see [1] for details).
+The ELS is created during the loading process:
+the search functions take advantage of the ELS
+during search. When the tree is changed, the ELSs
+would get invalidated -- which means the search
+performance would deteriorate with time if you are
+doing a lot of insertions and deletions in the tree.
+In that case, you can recreate all the ELS using the function:
+
+void HTree::ELS()  (see HTree.C)
+
+and restore the performance from time to time.
+
+If you do all the insertions initially (during the tree
+construction phase) and then do only searches (as
+in HTreeTest.C), then you would not need to recreate ELSs
+as they would never get invalidated (since there
+are no insertions after the tree has been loaded into memory
+from the dumpfile which is when the ELSs were created).
+
+
+Inserting a point into the hybrid tree
+======================================
+
+int HTree::Insert(Point *R, int Tid); (see HTree.C)
+
+Inserts the point R with the id Tid into the hybrid tree.
+Returns 1 if the tree increased in height (due to the root
+split), returns 0 otherwise
+
+
+Deleting a point from the hybrid tree
+======================================
+
+int HTree::Delete(Point *P, int Tid); (see HTree.C)
+
+Deletes the point P with id Tid from  the hybrid tree.
+Returns 0 if the deletion was successful, 1 otherwise.
+
+
+Searching the hybrid tree
+==========================
+
+The only interface to searching the hybrid tree
+is the Scan function:
+
+int Scan(Query *query);
+
+The query object has the following fields, you
+need to fill up only the relevant fields
+depending on the ``type'' of the query you are asking.
+See function SearchTest in HTreeTest.C as an example. 
+The queries in SearchTest are 10-nearest neighbor
+queries with L2 distance function. To run some other
+type of query (e.g., range query), you need to modify the
+SearchTest function as explained here.
+
+The fields are in the query object are:
+(1)int type;                      
+(2)MultiPointQuery startQuery;    
+(3)Result *startResult
+int feedback;
+int getmore;
+(4)int use_function;              
+(5)float (* dist_func) (Point *, Point *);  
+(6)int dist_metric;   // user can either specify a standard dist metric like L1, L2 or LMAX
+                     // dist_metric would be used
+(7) int k;             // the number of answers the user wants, for continue queries
+                     // the number of additional answers she wants
+(8)float range;       // for range queries, all answers within that range will be returned
+(9)int max_returned;  // for range queries, the user wants at most these many answers
+                     // to be returned so that the result buffer is not overwritten
+(10)long *diskacc;     // statistic returned; the number of disk accesses
+                     // to be used to do experiments for writing papers
+
+(11)PQ *startQueue;               // contains the state for the first result
+
+
+You can do 2 types of queries: range queries and k-NN queries.
+Let me describe what you need to fill up for each of these
+types one by one:
+
+Range Queries
+=============
+Let Q be a query.
+1. Set Q.type to  Query::RANGEQUERY.
+
+2. Set Q.feedback to 0. (since you are not using feedback)
+
+3. Set Q.getmore to 0. (for range query, you get all the objects 
+at once, so you can't do get more)
+
+4. Set Q.startQuery to the multipoint query you want to ask.
+A multipoint query contains the following fields (see [2] for details):
+(i)   int numPoints;
+(ii)  Point *querypoints;
+(iii) float *weights;
+It is a generalization of single point queries; so it
+can used for single point queries as well.
+Note that although the name is startQuery, it 
+is the actual query. It has been so named keeping
+the feedback environment in mind; otherwise, this
+is the only query. You need to allocate 
+memory to store the querypoints and weights.
+For efficiency, you can preallocate some maximum amount of 
+memory so that you don't have to allocate and deallocate for every query.
+
+4. Set Q.startResult properly. The hybrid tree will populate
+the startResult with the answers to the query.
+startResult is a pointer to struct result defined as:
+struct result
+{
+ int numObjects;      // number of objects returned as result
+ struct ReturnedObj *objectList; // list of objects returned as result
+};
+
+struct ReturnedObj
+{
+ long id;             // id the object returned
+ Point point;         // point corr. to the object returned
+ float distance;      // distance from the query point, invalid for bounding box queries
+};
+
+Again, make sure you allocate objectList. For efficiency,
+preallocate it.
+
+5. Are you going to provide your own distance function
+or use one of the standard Lnorms (L1, L2 or Lmax)? If
+you want to provide your own distance function, set
+Q.use_function to 1 and Q.dist_func to the pointer to
+your function. If you want to use L1, L2 or Lmax 
+(all dimensions have weight 1.0, so not normalized i.e.
+sum of weights != 1), set Q.use_function to 0 and
+set Q.dist_metric to L1, L2 or LMAX.
+
+6. Set Q.range to the range you want.
+
+7. Set Q.max_returned to the max answers you want: this is used
+to prevent accidental memory overwrite i.e. if you allocated space
+for the result's  objectList to hold 5000 objects, 
+you can put it here so that your objectList does not overflow.
+
+8. Set Q.disk_acc appropriately. It is
+an array of longs, it is filled up with the total number
+of disk accesses incurred at each level during the 
+search process: diskacc[0] will contain the total
+number of objects seen (which is also returned by each of
+the functions), diskacc[1] is the total number of leaf nodes
+accessed during the search, diskacc[2] is the number of
+nodes accessed of the next higher level and so on. 
+Preallocate for efficiency.
+
+Nearest neighbor (k-NN) queries 
+===============================
+(see function SearchTest in HTreeTest.C as an example)
+
+1. Set Q.type to  Query::NNQUERY.
+2. Set Q.feedback to 0. (since you are not using feedback)
+3. Set Q.getmore to 0 if you are just starting, set it to 1
+to continue to get some more answers.
+4. Set Q.startQuery, Q.startResult, Q.use_function
+and Q.dist_func/Q.dist_metric as described before.
+5. Set Q.k to the number of top answers you want.
+6. Set Q.disk_acc as discussed before.
+7. Set Q.startQueue to a priority queue which
+will be used to execute the query. Declare the
+queue as PQ queue and set Q.startQueue=&queue.
+Uses STL to implement the priority queue.
+
+
+Bounding box queries
+====================
+
+You can implement bounding box queries using the range query interface
+(by using the center of the box as the query point and writing
+your own distance function (weighted Lmax)). If you want to run
+a bounding box query by passing the rectangle as a parameter, you
+can use the function defined in HTreeRangeSearch.C. 
+
+int HTree::Search(Rect *R, long *diskacc, Result *res, int max_returned)
+
+
+Constants you may want to change
+================================
+
+The only constants you may want to change is the page size
+and the dimensionality of the data. These 2 constants
+are the first 2 constants defined in decl.h.
+
+#define PGSIZE  4096
+#define NUMDIMS  16            /* number of dimensions */
+
+You can change them and recompile. 
+
+
+===================================================================
+
+Miscellaneous
+-------------
+
+1. Generalized Search
+   ------------------
+Hybrid tree allows the user to define the criteria of
+whether to explore a node or not (for range search) and/or
+distance from internal nodes (for k-NN search)
+(via the function: 
+User_Overlap(Rect *rect, float *dist, int type_of_node)).
+This feature is similar to the "Consistent" function of GiST.
+The user can define separate criteria/distance computation
+for leaf and internal nodes.  There is a test program
+in the directory called "GenSearchTest.C" that shows
+how to perform generalized search. But I have not integrated
+it with the "Scan function interface" defined above yet 
+(will do it soon, but till them it is invoked through a 
+different interface as shown in "GenSearchTest.C").
+For more detailed explanation, contact kaushik@ics.uci.edu
+
+2.  Relevance Feedback
+    ------------------
+Hybrid tree supports efficient relevance feedback for k-NN
+queries. For more information, see [2].
+This feature is not present in this version of the code.
+Send me email at kaushik@ics.uci.edu if you need the 
+version with Relevance Feedback.
+
+References
+==========
+
+[1] @article{hybridtree,
+author="K. Chakrabarti and S. Mehrotra",
+title="The Hybrid Tree: An Index Structure for High Dimensional Feature Spaces",
+journal="Proceedings of the 1999 IEEE International Conference on Data Engineering",
+month="March",
+year="1999"
+}
+
+
+[2] @article{qref-tr,
+author="K. Chakrabarti, K.Porkaew, M. Ortega and S. Mehrotra",
+title="Evaluating Refined Queries in Top-$k$ Retrieval Systems",
+journal="Submitted for publication. Available online at http://www-db.ics.uci.edu/pages/publications/index.shtml#TR-MARS-00-05",
+month="July",
+year="2000"
+}
+
+
+===================================================================
+For more info on hybrid tree, please see the paper:
+K. Chakrabarti and S. Mehrotra, 
+The Hybrid Tree: An Index Structure for High Dimensional Feature Spaces , 
+1999 IEEE International Conference on Data Engineering , March 1999. 
+http://www-db.ics.uci.edu/pages/publications/index.shtml#TR-MARS-99-01
+
+or contact kaushik@ics.uci.edu / kaushikc@cs.uiuc.edu

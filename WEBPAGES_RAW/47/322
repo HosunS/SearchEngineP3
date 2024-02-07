@@ -1,0 +1,183 @@
+# R code for chapter 12  
+
+library(survival)
+library(xlsReadWrite)
+library(R2WinBUGS)
+
+### p(t), S(t), h(t), and hazard ratio for group 1 and group 2
+### FIGURE 12.1
+
+
+xe <- seq(0.00001,20,0.01)
+ye <- dgamma(xe,10,2)
+xebar <- seq(0.00001,20,0.01)
+yebar <- dgamma(xe,20,2)
+he <- ye/(1-pgamma(xe,10,2))
+hebar <- yebar/(1-pgamma(xebar,20,2))
+hr <- he/hebar
+
+par(mfrow=c(2,2))
+plot(xe,ye,type='l',xlab="",ylab="",ylim=c(0,0.32), lwd=2, cex=1.2)
+lines(xebar,yebar,lty=2, lwd=2, cex=1.2)
+text(5,0.3,"Group 1", lwd=2, cex=1.2)
+text(10,0.22,"Group 2", lwd=2, cex=1.2)
+mtext("t",line=3,side=1,cex=1.5)
+mtext("f(t)",line=2.5,side=2,cex=1.5)
+
+plot(xe,1-pgamma(xe,10,2),xlab="",ylab="",type='l',lwd=2, cex=1.5)
+lines(xebar,1-pgamma(xebar,20,2),lty=2,lwd=2, cex=1.2)
+text(2,0.28,"Group 1",lwd=2,cex=1.2)
+text(16,0.2,"Group 2",lwd=2,cex=1.2)
+mtext("t",line=3,side=1,cex=1.5)
+mtext("S(t)",line=2.5,side=2,cex=1.5)
+
+plot(xe,he,xlab="",ylab="",type='l',lwd=2, cex=1.5)
+lines(xebar,hebar,lty=2,lwd=2, cex=1.2)
+text(3,1,"Group 1",lwd=2,cex=1.2)
+text(15,0.2,"Group 2",lwd=2,cex=1.2)
+mtext("t",line=3,side=1,cex=1.5)
+mtext("h(t)",line=2.5,side=2,cex=1.5)
+
+x <- seq(0.5,20,0.01)
+ye <- dgamma(x,10,2)
+yebar <- dgamma(x,20,2)
+he <- ye/(1-pgamma(x,10,2))
+hebar <- yebar/(1-pgamma(x,20,2))
+hr <- he/hebar
+
+plot(x,hr,xlab="",ylab="",type='l',lwd=2, cex=1.5,ylim=c(0,50))
+mtext("t",line=3,side=1,cex=1.5)
+mtext(expression(h[1](t)/h[2](t)),line=2.5,side=2,cex=1.2)
+
+
+
+
+
+### FIGURE 12.2.  HISTOGRAMS OF LEUKEMIA DATA
+n1 <- 17
+n2 <- 16
+y1 <- c(65,156,100,134,16,108,121,4,39,143,56,26,22,1,1,5,65)
+y2 <- c(56,65,17,7,16,22,3,4,2,3,8,4,3,30,4,43)
+par(mfrow=c(2,1))
+hist(y1,main="AG Positive",xlab="",ylab="",xlim=c(0,170),prob=F, ylim=c(0,10))
+mtext("Survival time (weeks)",line=3,side=1,cex=1)
+mtext("Count",line=2.5,side=2,cex=1)
+hist(y2,main="AG Negative",xlab="",ylab="",xlim=c(0,170),prob=F,ylim=c(0,10))
+mtext("Survival time (weeks)",line=3,side=1,cex=1)
+mtext("Count",line=2.5,side=2,cex=1)
+
+
+
+
+
+
+
+### Example 12.2.2
+# Prior on theta1.  Mode=0.02.  95th percentile=0.15
+b1 <- seq(0.001,50,0.01)
+a1 <- 0.02*b1+1
+cbind(a1,b1,qgamma(0.95,a1,b1))   #  Look for 0.15.  Answer is [2637,] 1.52722 26.361 1.500113e-01
+
+
+
+# Prior on theta2.  Mode=0.69/20=0.0345.  95th percentile=0.69/5=0.138
+b2 <- seq(0.001,50,0.01)
+a2 <- 0.0345*b2+1
+cbind(a2,b2,qgamma(0.95,a2,b2))   #  Look for 0.138.  Answer is [3796,] 2.309310 37.951    0.1380110
+
+
+
+
+### FIGURE 12.3.  
+### Prior and posterior of theta1 and theta2
+n1 <- 17
+n2 <- 16
+t1 <- c(65,156,100,134,16,108,121,4,39,143,56,26,22,1,1,5,65)
+t2 <- c(56,65,17,7,16,22,3,4,2,3,8,4,3,30,4,43)
+a1 <- 1.53
+b1 <- 26.4
+a2 <- 2.31
+b2 <- 37.95
+
+par(mfrow=c(2,1))
+t <- seq(0,0.15,0.001)
+plot(t,dgamma(t,a1+n1,rate=(b1+sum(t1))),type='l',xlab="",ylab="",main="AG Positive", lwd=3)
+lines(t,dgamma(t,a1,rate=b1),lty=2, lwd=3)
+mtext(expression(theta[1]),line=2.5,side=1,cex=1.5)
+
+plot(t,dgamma(t,a2+n2,rate=(b2+sum(t2))),type='l',xlab="",ylab="",main="AG Negative", lwd=3)
+lines(t,dgamma(t,a2,rate=b2),lty=2, lwd=3)
+mtext(expression(theta[2]),line=2.5,side=1,cex=1.5)
+
+
+
+
+
+
+### EXAMPLE 12.3.3
+### Using R2WinBUGS to fit the 2 parameter exponential model and estimate survival functions
+# Group 1 is AG+
+# Group 2 is AG-
+library(R2WinBUGS)
+n <- c(17,16)
+a1 <- 0.0001
+b1 <- 0.0001
+a2 <- 0.0001
+b2 <- 0.0001
+t1 <- c(65,156,100,134,16,108,121,4,39,143,56,26,22,1,1,5,65)
+t2 <- c(56,65,17,7,16,22,3,4,2,3,8,4,3,30,4,43)
+leukemiadata <- list("n","t1","t2","a1","b1","a2","b2")
+parameters <- c("theta1","theta2","median1","median2","relmedian","S","Sdiff") 
+inits <- list( list(theta1=0.05, theta2=0.02))
+
+leuk.fit <- bugs(leukemiadata, inits, parameters,"leukemia.txt", 
+                 working.directory = "H:\\MyDocuments\\BAYES\\SurvivalAnalysis\\Code", 
+                 n.chains=1, n.iter=50000, n.thin=1, n.burnin=0)
+round(print(leuk.fit),3)
+attach.bugs(leuk.fit)
+
+
+
+
+
+### Figure 12.4 
+par(mfrow=c(1,2))
+
+time <- seq(0,170,1)
+plot(time,exp(-theta1[1]*time), type="l", xlab="", ylab="", cex=2, lwd=2)
+mtext("t",line=3,side=1,cex=1.5)
+mtext(expression(S[1](t)),line=2.5,side=2,cex=1.5)
+for(i in 2:20){
+	lines(time, exp(-theta1[i]*time), lty=1, cex=2, lwd=2)
+}
+### Plot mean survival curves
+time <- seq(0,170,1)
+survcurves1 <- exp(-theta1%*%t(time))
+survmean1 <- apply(survcurves1,2,mean)
+survcurves2 <- exp(-theta2%*%t(time))
+survmean2 <- apply(survcurves2,2,mean)
+plot(time,survmean1, type="l", xlab="", ylab="", lwd=3)
+lines(time, survmean2, lty=2, lwd=3)
+legend("topright", c("AG Positive","AG Negative"), lty=1:2, lwd=2, cex=1,bty="n")
+mtext("t",line=3,side=1,cex=1.5)
+mtext("S(t)",line=2.5,side=2,cex=1.5)
+
+
+
+### Figure 12.5.  Plot bands for the survival curves
+surv1 <- apply(survcurves1,2,quantile,c(0.025,0.50,0.975))
+surv2 <- apply(survcurves2,2,quantile,c(0.025,0.50,0.975))
+plot(time,surv1[2,], type="l", xlab="", ylab="", lwd=3)
+lines(time, surv1[1,], lty=1, lwd=3)
+lines(time, surv1[3,], lty=1, lwd=3)
+lines(time,surv2[2,],lty=2, lwd=3)
+lines(time, surv2[1,], lty=2, lwd=3)
+lines(time, surv2[3,], lty=2, lwd=3)
+mtext("t",line=3,side=1,cex=1.7,lwd=3)
+mtext("S(t)",line=2.5,side=2,cex=1.7,lwd=3)
+
+
+
+
+
+

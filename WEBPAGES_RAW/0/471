@@ -1,0 +1,283 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>30.2 Library Generation</title>
+<META NAME="description" CONTENT="30.2 Library Generation">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="previous" HREF="node248.html">
+<LINK REL="up" HREF="node247.html">
+<LINK REL="next" HREF="node250.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node248.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node247.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node250.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node248.html">30.1 Normalization Reactions</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node247.html">30. Reactions</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node250.html">31. OEBinary Version 2</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION0033200000000000000000">
+30.2 Library Generation</A>
+</H1>
+
+<P>
+The <code>OELibraryGen</code> was designed to give programmers a high degree
+of control when applying chemical transformations.  It was also
+designed for efficiency. Potentially costly preprocessing is performed
+a single time before transformations can be carried out.  The relative
+setup cost of a <code>OELibraryGen</code> instance may be high, and the
+memory use large as preprocessed reactants are stored in memory.
+Subsequent generation of products,however, is very efficient because
+setup costs are paid in advance.  The <code>OELibraryGen</code> class serves
+a dual purpose of managing sets of preprocessed starting materials,
+and storing a list of chemical transform operations defined by a
+reaction molecule.
+
+<P>
+Chemical transform operations are carried out on starting materials.
+Starting materials provide most of the virtual matter that goes into
+making virtual product molecules.  The <code>OELibraryGen</code> class
+provides an interface to associate starting materials with reactant
+patterns using the <code>OELibraryGen::SetStartingMaterial</code> and
+<code>OELibraryGen::AddStartingMaterial</code> methods.  These methods
+associate starting materials to reactant patterns using the index
+(reactant number) of the pattern.  Reactant patterns are numbered
+starting at zero for the lowest atom index and all atoms that are a
+members of the same connected component.  The next reactant pattern
+begins with the next lowest atom index that is not a member of the
+first component.  In a SMIRKS pattern the first reactant (reactant
+number zero) is the furthest reactant on the left.  Disconnected
+reactant patterns may be grouped into a single component using
+component level grouping in SMIRKS denoted by parentheses.
+
+<P>
+Once a reaction has been defined, and starting materials have been
+associated with each of the reactant patterns, chemical
+transformations can be applied to combinations of starting materials.
+To achieve a chemically reasonable output attention should be given to
+the mode of valence (or hydrogen count) correction that matches the
+reaction.  The <code>OELibraryGen</code> class has three possible modes of
+valence correction: explicit hydrogen, implicit hydrogen, and
+automatic.  The default mode for valence correction and SMIRKS
+interpretation is to emulate the Daylight Reaction Toolkit.  Hydrogen
+counts are adjusted using explicit hydrogens in SMIRKS patterns.
+Reactions are carried out using explicit hydrogens, and valence
+correction occurs when explicit hydrogens are added or deleted as
+defined by a reaction.  The following example demonstrates strict
+SMIRKS and explicit hydrogen handling.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+
+using namespace std;
+using namespace OEChem;
+using namespace OESystem;
+
+int main()
+{
+  OELibraryGen libgen("[O:1]=[C:2][Cl:3].[N:4][H:5]&gt;&#62;[O:1]=[C:2][N:4]");
+
+  OEGraphMol mol;
+  OEParseSmiles(mol,"CC(=O)Cl");
+  libgen.SetStartingMaterial(mol,0);
+
+  mol.Clear();
+  OEParseSmiles(mol,"NCC");
+  libgen.SetStartingMaterial(mol,1);
+
+  OEIter&lt;OEMolBase&gt; product;
+  for (product = libgen.GetProducts();product;++product)
+  {
+    std::string smi;
+    OECreateCanSmiString(smi,product);
+    cout &lt;&#60; "smiles = " &lt;&#60; smi &lt;&#60; endl;
+  }
+
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch30-2.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+In the amide bond forming reaction a hydrogen atom attached to the
+nitrogen in the amine pattern is explicitly deleted when forming the
+product.  When executed, the example generates two products in total.
+Each product corresponds to the equivalent protons attached to the
+amine.  If a unique set of products is desired, canonical smiles
+strings may be stored for verification that products generated are
+indeed unique.
+
+<P>
+The following demonstrates how the same basic reaction given in the
+previous example can be carried out using the implicit hydrogen
+correction mode.  Notice that no explicit hydrogens appear in the
+reaction.  Instead, the SMARTS implicit hydrogen count operator
+appears on the right hand side of the reaction and is used to assign
+the implicit hydrogen count of the product nitrogen.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+
+using namespace std;
+using namespace OEChem;
+using namespace OESystem;
+
+int main()
+{
+  OELibraryGen libgen("[O:1]=[C:2][Cl:3].[N:4]&gt;&#62;[O:1]=[C:2][Nh1:4]");
+  libgen.SetExplicitHydrogens(false);
+
+  OEGraphMol mol;
+  OEParseSmiles(mol,"CC(=O)Cl");
+  libgen.SetStartingMaterial(mol,0);
+
+  mol.Clear();
+  OEParseSmiles(mol,"NCC");
+  libgen.SetStartingMaterial(mol,1);
+
+  OEIter&lt;OEMolBase&gt; product;
+  for (product = libgen.GetProducts();product;++product)
+  {
+    std::string smi;
+    OECreateCanSmiString(smi,product);
+    cout &lt;&#60; "smiles = " &lt;&#60; smi &lt;&#60; endl;
+  }
+
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch30-3.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+The reaction is written to work with implicit hydrogens (using the
+lowercase 'h' primitive), and the <code>OELibraryGen</code> instance is set
+to work in implicit hydrogen mode using the
+<code>OELibraryGen::SetExplicitHydrogens</code> method.
+
+<P>
+The final example demonstrates automatic valence correction.  In
+implicit hydrogen mode (set using the
+<code>OELibraryGen::SetExplicitHydrogens</code> method) automatic valence
+correction attempts to add or subtract implicit hydrogens in order to
+retain the valence state observed in the starting materials.  Before
+chemical transformations commence, the valence state for each reacting
+atom is recorded.  After the transform operations are complete the
+implicit hydrogen count is adjusted to match the beginning state of
+the reacting atoms.  Changes in formal charge are taken into account
+during the valence correction.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+
+using namespace std;
+using namespace OEChem;
+using namespace OESystem;
+
+int main()
+{
+  OELibraryGen libgen("[O:1]=[C:2][Cl:3].[N:4]&gt;&#62;[O:1]=[C:2][N:4]");
+  libgen.SetExplicitHydrogens(false);
+  libgen.SetValenceCorrection(true);
+
+  OEGraphMol mol;
+  OEParseSmiles(mol,"CC(=O)Cl");
+  libgen.SetStartingMaterial(mol,0);
+
+  mol.Clear();
+  OEParseSmiles(mol,"NCC");
+  libgen.SetStartingMaterial(mol,1);
+
+  OEIter&lt;OEMolBase&gt; product;
+  for (product = libgen.GetProducts();product;++product)
+  {
+    std::string smi;
+    OECreateCanSmiString(smi,product);
+    cout &lt;&#60; "smiles = " &lt;&#60; smi &lt;&#60; endl;
+  }
+
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch30-4.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+In general, automatic valence correction is a convenience that allows
+straightforward reactions to be written in simplified manner and
+reduces the onus of valence state bookkeeping.  Reactions that alter
+the preferred valence state of an atom, oxidation for example, may not
+be automatically correctable.
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node248.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node247.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node250.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node248.html">30.1 Normalization Reactions</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node247.html">30. Reactions</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node250.html">31. OEBinary Version 2</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

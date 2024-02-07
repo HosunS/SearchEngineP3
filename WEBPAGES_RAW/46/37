@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC
+ "-//W3C//DTD XHTML 1.1//EN"
+ "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<link rel="stylesheet" href="../../course.css" type="text/css" />
+
+<title>ICS 46 Spring 2016, Project #2: Black and White</title>
+</head>
+
+<body>
+
+<div class="navbar">
+
+<p>
+ICS 46 Spring 2016 |
+<a href="../../index.html">News</a> |
+<a href="../../CourseReference.html">Course Reference</a> |
+<a href="../../Schedule.html">Schedule</a> |
+<a href="../../ProjectGuide">Project Guide</a> |
+<a href="../../Notes">Notes and Examples</a> |
+<a href="http://www.ics.uci.edu/~thornton/">About Alex</a>
+</p>
+
+<hr />
+
+</div>
+
+<div class="header">
+
+<p>ICS 46 Spring 2016<br />
+   Project #2: <i>Black and White</i></p>
+
+</div>
+
+<div class="section">
+
+<p class="center"><b>Due date and time:</b> <i>Monday, May 2, 11:59pm</i></b></p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Introduction</p>
+
+<p>Many of you have played video games, and while it can be more compelling to play them against other people, we've all become quite accustomed to the idea that you can often play them without anyone else being involved, with the game making its own decisions about how to play against you.  This project explores one way to write programs that can make these kinds of decisions, that provide a kind of <i>artificial intelligence</i> (AI).  In our case, we'll focus our efforts on techniques based around <i>search trees</i>, which will also give you more practice with the kinds of algorithms that can be used to traverse tree-based structures and with implementing a more complex recursive algorithm than the ones you built in the <a href="../Project1">previous project</a>, which will be a necessary skill for our later work.</p>
+<!--
+<p>While you work, you will have an opportunity to play your AI against the AIs of other students.  <i>(This feature is still a work in progress; stay tuned for more details.)</i></p>
+-->
+<p>Finally, after everyone has submitted this project, I'll run a tournament in which your AI will compete against those written by others.  While the tournament has no course credit associated with it &mdash; you don't get a higher grade for finishing the tournament rated higher than others, though we do pay attention to who finishes it without being disqualified &mdash; you are competing for the notoriety of putting together a better algorithm than anyone else's.  May the best algorithm win!</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Getting started</p>
+
+<p>Before you begin work on this project, there are a couple of chores you'll need to complete on your ICS 46 VM to get it set up to proceed.</p>
+
+<p class="subtitle">Refreshing your ICS 46 VM environment</p>
+
+<p>Even if you previously downloaded your ICS 46 VM, you will probably need to refresh its environment before proceeding with this project.  Log into your VM and issue the command <b>ics46 version</b> to see what version of the ICS 46 environment you currently have stored on your VM.  Note, in particular, the timestamp; if you see a version with a timestamp older than the one listed below, you'll want to refresh your environment by running the command <b>ics46 refresh</b> to download the latest one before you proceed with this project.</p>
+
+<blockquote><pre>
+2016-04-20 22:13:28
+Project #2 template added 
+</pre></blockquote>
+
+<p class="subtitle">Creating your project directory on your ICS 46 VM</p>
+
+<p>A project template has been created specifically for this project, containing a similar structure to the <b>basic</b> template you saw in <a href="../Project0">Project #0</a>, but including a fair amount of code (both source code and compiled libraries) that is being provided as a starting point.  So you'll absolutely need to use the <b>project2</b> template for this project, as opposed to the <b>basic</b> one.</p>
+
+<p>Decide on a name for your project directory, then issue the command <b>ics46 start <i>YOUR_CHOSEN_PROJECT_NAME</i> project2</b> to create your new project directory using the <b>project2</b> template.  (For example, if you wanted to call your project directory <b>p2</b>, you would issue the command <b>ics46 start p2 project2</b> to create it.)  Now you're ready to proceed!</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The project directory</p>
+
+<p>Change into your project directory and take a look around.  Having already completed <a href="../Project1">Project #1</a>, what you will see will look very familiar.  Once again, your project directory is capable of building (any or all of) three separate programs that you can run by issuing the commands <b>./run app</b>, <b>./run exp</b>, or <b>./run gtest</b>.  As before, a <b>lib</b> directory contains precompiled libraries that make up the part of the project that you won't be implementing yourself, an <b>include</b> directory contains declarations of things (only some of which you'll need to use directly), and the usual <b>app</b>, <b>core</b>, <b>exp</b>, and <b>gtest</b> directories for writing your code.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The game of Othello</p>
+
+<p>This project asks you to implement an artificial intelligence for a game called Othello.  Othello (also known as Reversi) is a well-known two-player strategy game.  The game is played on a square board divided into a grid &mdash; usually 8x8, though the size of the grid can vary.  Players alternately place <i>tiles</i> on the game board; one player's tiles are black and the other player's are white.  When tiles are placed on the game board, other tiles already on the board are <i>flipped</i> (i.e., a black tile becomes a white tile or vice versa).  The game concludes when every cell in the grid contains a tile, or when neither player is able to make a legal move; the winning player is the one who has more tiles on the board at the end of the game.</p>
+
+<p>The rules of the game, along with some notion of strategy, are described in the <a href="http://en.wikipedia.org/wiki/Reversi">Wikipedia entry on Reversi</a>.  If you haven't played Othello before, or have seen it previously but don't remember how it works, you should at least read the sections of the Wikipedia entry that covers the rules of the game; knowing how the game is played is crucial to implementing code capable of playing the game well.</p>
+
+<p>If you want to try playing the game, you'll find that a complete, working version of Othello is included as part of this project already.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The application</p>
+<!--
+<p class="subtitle">The initial version</p>
+-->
+<p>Your work on this project begins with an already-working Othello game with a graphical user interface (GUI), allowing two human players to play the game against each other.  Also included are two rudimentary artificial intelligence implementations &mdash; neither is all that intelligent, actually, but they are at least capable of selecting moves automatically so you can play against them.</p>
+
+<p>When you start the application, a window arranged like the one below will appear:</p>
+
+<p class="center"><img src="OthelloUI1.png" alt="Screenshot of Othello UI (1)" /></p>
+
+<p>You'll be asked to choose who will play in game, human players or the available AIs.  Click <b>Start Game</b> to start a new game, which will launch a new tab in which an Othello board and score are displayed.</p>
+
+<p class="center"><img src="OthelloUI2.png" alt="Screenshot of Othello UI (2)" /></p>
+
+<p>When it is a human player's turn to move, all you need to do is click on a square to make your move.  When it an AI's turn to move, the AI will make its own decision and the GUI will be updated automatically once the move has been chosen.  If you'd like to quit the game, or if you'd like to dismiss it after it's ended, you can just click the <b>Close</b> button.  Any time an AI makes an invalid move or throws an exception, an error message will be displayed along the bottom of the windows.</p>
+
+<p>In addition to the score, you'll be able to see which AIs (or human players) are playing against each other.</p>
+<!--
+<p class="subtitle">An upcoming update</p>
+
+<p>An upcoming version of this application, which will be distributed in a few days when completed, will offer a more full-featured GUI, including the ability to connect it to an Internet server so your AI can play against other students' AIs online, so you can gauge your progress, particularly if you're interested in how you might do in the tournament.  This feature is, at the moment, a work in progress, and is not yet ready to be delivered.</p>
+
+<p>Note that the updated version will not directly affect your work at all.  What you'll need to write will be identical, and none of the header files from which your work will be derived will change; however, when you run the updated version of the GUI, you'll have access to new features that aren't currently available.</p>
+
+<p>Rest assured, I'll let everyone know when the new version is available.</p>
+-->
+<p class="subtitle">A brief word of warning</p>
+
+<p>When you start the application on your ICS 46 VM, you may notice an error message like this one in your Terminal window:</p>
+
+<blockquote><pre>
+pci id for fd 13: 80ee:beef, driver (null)
+libGL error: core dri or dri2 extension not found
+libGL error: failed to load driver: vboxvideo
+</pre></blockquote>
+
+<p>This is something you can safely ignore.  While the GUI was built with a library called Qt that integrates with OpenGL and provides support for 3D graphics and video playback, that functionality is not being used by our application.  (I tried turning 3D acceleration on in my VM's settings in VirtualBox, but that caused many additional error messages to pop up instead, so I gave up trying to solve this problem, since it has no effect on our work anyway.)</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The requirements</p>
+
+<p>This project actually requires you to complete only a single task: write an AI that is capable of choosing moves in an Othello game, by using the recursive, search-tree-based algorithm described below.  Optionally, you can implement as many additional AIs as you'd like, but one of them constitutes your "official" submission that will be graded; the others are strictly for use in the tournament (described below). </p>
+
+<p>Each of your Othello AI implementations is subject to a few restrictions:</p>
+
+<ul>
+  <li>You must derive the outermost class that implements your AI from the abstract base class <b>OthelloAI</b>, which is declared in a file <b>OthelloAI.hpp</b> in <b>include/othellogame</b>.  (You can include this file by simply saying <b>#include "OthelloAI.hpp"</b>, since the compiler has already been configured to look in the <b>include/othellogame</b> directory for header files.)</li>
+  <li>Your class must provide an implementation of this member function, which is pure virtual in the <b>OthelloAI</b> class:
+<blockquote><pre>
+virtual std::pair&lt;int, int&gt; chooseMove(const OthelloGameState&amp; state);
+</pre></blockquote>
+    the goal of which is to intelligently choose a move that the current player would make in the given game state, by returning a <b>std::pair</b> that contains an <b>(x, y)</b> coordinate for the move.</li>
+  <li>Your class must be registered using the <b>ICS46_DYNAMIC_FACTORY_REGISTER</b> macro, similarly to how you registered your maze generator and maze solver in <a href="../Project1">Project #1</a>.</li>
+  <li>Your class must be declared in a namespace whose name is your UCInetID (all lowercase).  For example, my UCInetID is <b>thornton</b>, so I would declare and define my class this way:
+<blockquote><pre>
+// MyOthelloAI.hpp
+
+#include "OthelloAI.hpp"
+
+
+namespace thornton
+{
+    class MyOthelloAI : public OthelloAI
+    {
+    public:
+        virtual std::pair&lt;int, int&gt; chooseMove(const OthelloGameState&amp; state);
+    };
+}
+
+
+// MyOthelloAI.cpp
+
+#include &lt;ics46/factory/DynamicFactory.hpp&gt;
+#include "MyOthelloAI.hpp"
+
+
+ICS46_DYNAMIC_FACTORY_REGISTER(OthelloAI, thornton::MyOthelloAI, "<i>a human-readable name for your class</i>");
+
+
+std::pair&lt;int, int&gt; thornton::MyOthelloAI::chooseMove(const OthelloGameState&amp; state)
+{
+    <i>// implementation of my AI goes here</i>
+}
+</pre></blockquote>
+    You would do something similar, though, of course, you wouldn't use my UCInetID of <b>thornton</b>; you'd need to use your own.  You might also want to choose a better name for your class than <b>MyOthelloAI</b>; any name is fine, as long as you put your class into a correctly-named namespace.  This requirement ensures that everyone's classes have unique full names, necessary so that they can all be linked together for me to run the tournament.
+  </li>
+  <li>All of the other functions you write <i>must</i> either be in the namespace whose name is your UCInetID, <i>or</i> in the unnamed namespace.  <i>Do not</i> write any code that is in any other namespace (or in the default, "global" namespace).  This, too, is to ensure that everyone's code can be linked together for me to run the tournament.</li>
+</ul>
+
+<p class="subtitle">Naming your Othello AIs</p>
+
+<p>Each of your Othello AIs is registered with a <i>display name</i> using the <b>ICS46_DYNAMIC_FACTORY_REGISTER</b> macro.  The display name serves three purposes:</p>
+
+<ul>
+  <li>It is displayed in the GUI, so you select your AIs as one or both of the players in a game.</li>
+  <li>It uniquely identifies which of your AIs is intended to meet this project's requirements.  The one you want graded <i>must</i> have a name that has <b>(Required)</b> at the end of it; capitalization and the parentheses are important here.  Any other AIs you submit should not have names that end in <b>(Required)</b>, and, of course, <i>none</i> of your AIs should have a name that has <b>(Provided)</b> at the end of it, because none of your AIs were provided by us.</li>
+  <li>It will show up in the final results of the Othello tournament, so be sure you choose something that is (a) unique enough that no one else will have chosen it, and (b) is inoffensive (I reserve the right to change names that I think are potentially offensive).</li>
+</ul>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Game trees</p>
+
+<p>You can think of the possible game states as being arranged, conceptually, in a kind of search tree called a <i>game tree</i>.  Each node of the tree contains a particular game state <i>g</i>.  Its children are the game states that can result from making each valid move from the state <i>g</i>.</p>
+
+<p>The root of the tree is the initial game state &mdash; that is, the Othello game before the first move is made.  The children of this initial state are all of the possible states that can arise from the black player (who moves first) making a valid opening move.  There are four such states, corresponding to the four possible moves that the black player is permitted to make at the opening.  (All other moves are illegal and, as such, are not to be considered.)</p>
+
+<p>Here is a partial look at an Othello game tree:</p>
+
+<p class="center"><img src="SearchTree.jpg" /></p>
+
+<p>In the picture, from the initial state, there are four possibilies from which the black player can choose its initial move.  From the first of those, we see that there are three possible moves that the white player can make in response.  Other moves aren't pictured, but the tree continues to grow in this fashion.  (Not surprisingly, the game tree can grow large rather quickly, so you'll find that it's difficult to draw very much of it on paper.)</p>
+
+<p>We'll call the leaves in such a game tree the <i>final states</i>.  These leaves indicate the states in which one player or the other has won the game.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Exhaustively searching all possibilities</p>
+
+<p>Each time a player wants to pick a move, he or she wants to pick the one that will lead to a winning game state.  One algorithm for doing that would determine the best move in three steps:</p>
+
+<ol>
+  <li>We apply an <i>evaluation function</i> to each final game state.  An evaluation function typically returns a number, where higher numbers are considered better.  We then identify the final state with the highest value &mdash; that is the "end game" that we would like to occur, as it is the best win for us.</li>
+  <li>We determine the path from the current game state to the final state that we chose above.</li>
+  <li>We make the move that takes us from the current game state down the path toward the chosen final state.</li>
+</ol>
+
+<p>Assuming that you had a complete game tree at your disposal, this is a simple approach to implement.  However, practical limitations make this approach impossible.  First of all, the number of game states on each level of the tree grows exponentially as you work your way down the tree, since there are a number of possible moves that can be taken from any particular game state.  There simply won't be enough memory to store the entire game tree.  (You can imagine that, if you build the game tree 20 levels deep, and there are four possible moves that can be made from any particular state, the number of nodes in the tree would be greater than 4<sup>20</sup>, which is more than one quadrillion nodes!)  Besides, even if there was enough memory available to store the tree, the processing time to create the entire game tree would be prohibitive.</p>
+
+<p>So we'll need to find a compromise &mdash; an approach that perhaps doesn't always find the best possible outcome, but that makes a decision in a reasonable amount of time and uses a reasonable amount of memory.</p>
+
+<p>Also, it's important to realize that just because you've found a path to the end game you want doesn't mean that you can force the events to take place that will get you there.  Just as your goal is to make moves that are in your best interest, your opponent's goal is the opposite.  So your algorithm will need to account for the fact that your opponent wants to beat you, just as you want to beat your opponent.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Heuristic search</p>
+
+<p>The study of artificial intelligence has much to say about good ways to search toward a goal when it's impractical to check all possible paths toward it.</p>
+
+<p>We can first make use of the following observation: Suppose the black player has made a move in the game, and the white player wants to figure out the best move to make, using the search tree approach we've been discussing.  Then the white player need only be concerned with the subtree that has the current game state as its root.  Once a move is made, all the other moves that could have been made can be ignored, as it is now not possible to take those paths down the tree.  Thus, when analyzing the next move to make, we need only generate the part of the search tree that originates from the current game state.  That's a good step toward reducing our storage needs significantly, though it's only the first step; especially early in the game, there might still be huge numbers of states that can arise from the state we're currently in.</p>
+
+<p>To reduce our workload even more, we can employ a technique called <i>heuristic search</i>.  In a heuristic search, we generate as much of the relevant subtree as is practical, using the resulting game states to guide us in selecting a move that we hope will be the best, even though we don't have time to get full information about how the move might turn out.</p>
+
+<p>There are several strategies that we could use.  At the heart of the strategy that we'll use is the notion of an <i>evaluation function</i> that we discussed earlier.  We'll need to rate each particular game state in some way, so that we can decide which of a large number of game states is the best outcome for us.  A simple approach &mdash; though one that ignores some important aspects of the game &mdash; is the following:</p>
+
+<p><i>eval(state) = number of tiles belonging to me &minus; number of tiles belonging to my opponent</i></p>
+
+<p>It's also important to note here that <i><b>you do not need to actually build a game tree in memory</b></i>.  Our algorithm will perform a sort of <i>depth-first search</i> on the game tree, meaning that we can use parameters in a recursive method (stored on the run-time stack) to perform the search, negating the need to actually build and store a game tree.  This will dramatically reduce the amount of memory needed to choose a move, since only one path in the tree will ever need to be stored on the run-time stack at a time.  So, in an eight-level-deep search, we'll store as many as eight nodes, rather than all of the nodes that can be reached in eight moves (which might be huge).</p>
+
+<p>Putting these ideas together, we can develop a search algorithm that will help us to evaluate each of the possible moves we might make.  That algorithm, sketched in a very rough pseudo-code, looks something like this:</p>
+
+<pre>
+int search(OthelloGameState s, int depth):
+    if depth == 0:
+        return evaluation of s
+    else:
+        if it's my turn to move:
+            for each valid move that I can make from s:
+                make that move on s yielding a state s'
+                search(s', depth - 1)
+            return the <i>maximum</i> value returned from recursive search calls
+        else:
+            for each valid move that my opponent can make from s:
+                make that move on s yielding a state s'
+                search(s', depth - 1)
+            return the <i>minimum</i> value returned from recursive search calls
+</pre>
+
+<p>There are a few things we need to discuss about the algorithm above.  First, notice that there are two cases of recursion: either it is your algorithm's turn (who is currently making the decision) or its opponent's turn.  In each case, the algorithm is almost the same, except:</p>
+
+<ul>
+  <li>...when it is your algorithm's turn, the <i>maximum</i> value is returned.  In other words, the algorithm wants to make the best possible move it can on its own behalf.</li>
+  <li>...when it is the opponent's turn, the <i>minimum</i> value is returned.  This is because it is assumed that the opponent will also make the move that's in <i>its</i> best interest (which, in turn, is in our worst interest).</li>
+</ul>
+
+<p>You <i>may not</i> assume that your algorithm will always be the black or the white player.  Either the black or the white player (or both!) might be played by your algorithm.  When deciding whether it's "my turn" or "my opponent's turn," you'll have to exercise some caution to ensure that you're making the right decision.  There's more than one way to solve that problem, but you'll need to choose one.  One thing to be aware of, though, is that you won't be able to use a global variable to solve this problem, as there might be two instances of your AI playing the game against each other, or there might be multiple simultaneous games being played at the same time.</p>
+
+<p>Second, notice the <b>depth</b> parameter.  This will be used to limit the depth of our search, to make sure that our search does a manageable amount of work.  Each time we recurse one level deeper, the depth is reduced by one, and we stop recursing when it reaches zero.  You'll need to experiment a bit to decide what depth can be handled in a reasonable amount of time, but without limiting the depth, you'll find that moves will take orders of magnitude longer than you'll be willing to wait.</p>
+
+<p>Third, observe that when one player makes a move, it isn't necessarily the case that the other player will be making the next move; occasionally, in Othello, the same player gets to move twice in a row.  So, care must be taken in deciding whose turn it is.  The easiest way to deal with this problem is to count on the current game state to keep track of this for you; it can always tell you reliably whose turn it is.</p>
+
+<p>Lastly, note that this algorithm returns the <i>evaluation</i> of the best state, not the best state itself.  In short, calling search(<i>s</i>, 6) for some state <i>s</i> asks the following question: "Looking six moves into the future, and assuming I do the best I can do and so does my opponent, how well will the state <i>s</i> turn out for me?"  You'll need to exercise some care in actually implementing this algorithm so that chooseMove() will be able to call search() and use the result to help it choose the right move.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Evaluation functions</p>
+
+<p>The core of your AI &mdash; probably the most important factor that will set it apart from others &mdash; is the evaluation function that it uses to decide how "good" each board configuration is.  I'm leaving this as an open problem and you're welcome to implement your evaluation function however you'd like.  You might want to poke around the web looking for strategy guides or other information, taking into account, for example, that some squares on the Othello board are considered more important than others.</p>
+
+<p>It's intended to be fun to play against your own program to see if you and your friends can beat it, and I also hope you enjoy fine-tuning your program until you have trouble beating it.</p>
+
+</div>
+<!--
+<div class="section">
+
+<hr />
+
+<p class="title">Playing your AI against another student's AI online</p>
+
+<p><i>Details to be revealed as soon as they are available...</i></p>
+
+</div>
+-->
+<div class="section">
+
+<hr />
+
+<p class="title">A tournament!</p>
+
+<p>After the project's due date has passed, I'll be gathering all of your AIs together and running a tournament to determine who has the best AI.  In fairness, I'll explain here how the tournament will be organized; you'll need to follow these rules in order to win (or possibly even to participate).</p>
+
+<ul>
+  <li>You can submit as many AIs as you'd like, but do be sure that there's something interesting and different about them; don't submit ten AIs that are virtually identical, for example, because I'll need to run &Theta;(<i>n</i><sup><small>2</small></sup>) games to complete a tournament with <i>n</i> AIs.  That grows fast!</li>
+  <li>When you register your AIs with a name using the <b>ICS46_DYNAMIC_FACTORY_REGISTER</b> macro, the name you choose will be displayed in the final results posted to the web, so (a) make sure that you don't include your name unless you want your name posted online, and (b) choose names that are somehow unique to you &mdash; be clever (but inoffensive).</li>
+  <li>Each AI will play two games against every other AI, one each as black and as white.</li>
+  <li>The primary factor in determining the "best" AI is the total percentage of games won.  (Draws will count as 1/2 of a win and 1/2 of a loss.)  So, first and foremost, your goal is to win games.</li>
+  <li>A secondary factor, to be used in the case of a tie, is the total number of tiles accumulated in all games.  This means that winning games big, as opposed to squeaking out close wins, is important if there's a tie, but that winning small more often still trumps winning big less often.</li>
+  <li>Your AI will be given three seconds of CPU time to choose each of its moves.  (Note that <i>CPU time</i> is not a measurement of actual time passed, but only of time consumed by the CPU.  On the other hand, note that threads won't buy you any additional time, since four threads running simultaneously consume four times as much CPU as one thread does.)  The three seconds is a hard limit; as soon as your AI reaches this limit, it will be aborted immediately.
+    <ul>
+      <li>I'll run the tournament on a machine with these specs: Intel Core i7-4800MQ CPU 2.7 GHz, 24 GB RAM, Windows 10 64-bit as the host operating system, with the ICS 46 VM running in a VirtualBox instance.  I can't guarantee I won't be doing anything else with the machine simultaneously, but since only CPU time consumed by your algorithm will be measured, this will only affect how long it will take me to run the tournament, not how much work your algorithm can do per move.</li>
+    </ul>
+  </li>
+  <li>Your AI needs to be <i>stateless</i>.  It is entirely possible that different objects of your AI class will be called to choose different moves during the course of the same game, so you won't be able to save values in member variables and expect them to still be available the next time your AI chooses a move.</li>
+  <li>Your AI is not permitted to launch additional processes, though you can launch threads if you'd like.  (Note, though, that every thread consumes CPU time.)</li>
+  <li>If your AI takes too long to make a move, returns an invalid move, throws an exception, crashes, isn't implemented in a class <i>within a namespace named by your UCInetID</i>, or violates any of the other rules laid out in the project write-up, it will be disqualified from the tournament.
+    <ul>
+      <li>Ultimately, only games between AIs that completed the tournament without being disqualified are counted.  As soon as an AI is disqualified, all of its results are removed from the overall totals.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>How well you do in the tournament will have no bearing on your grade, but it will hopefully motivate you to think a bit about how you might tune up your evaluation function &mdash; or explore alternative ways of helping your AI to see farther into the future.  (You are required, fundamentally, to use the algorithm shown in this write-up to implement your "required" AI, though you can additionally do anything you'd like, and you can apply any optimizations to your required AI, provided that you're still basically implementing a recursive search tree based algorithm.)</p>
+
+<p>Being disqualified from the tournament is an indicator we'll use in the grading, however, particularly because it will demonstrate to us that your AI has some kind of flaw (e.g., it chooses invalid moves, or crashes in certain circumstances).</p>
+
+<p>Good luck!</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Deliverables</p>
+
+<p>After using the <b>gather</b> script in your project directory to gather up your C++ source and header files into a single <b>project2.tar.gz</b> file (as you did in <a href="../Project0">Project #0</a>, submit that file (and only that file) to Checkmate.  Refer back to <a href="../Project0">Project #0</a> if you need instructions on how to do that.</p>
+
+<p>Follow <a href="../SubmittingProjects.html">this link</a> for a discussion of how to submit your project via Checkmate.  Be aware that I'll be holding you to all of the rules specified in that document, including the one that says that you're reponsible for submitting the version of the project that you want graded.  We won't regrade a project simply because you submitted the wrong version accidentally.  (It's not a bad idea to look at the contents of your tarball before submitting it; see <a href="../Project0">Project #0</a> for instructions on how to do that.)</p>
+
+<p class="subtitle">Can I submit after the deadline?</p>
+
+<p>Yes, it is possible, subject to the late work policy for this course, which is described in the section titled <i>Late work</i> at <a href="../index.html">this link</a>.</p>
+
+</div>
+
+<div class="history">
+
+<hr />
+
+<ul class="nomarker">
+  <li>New version of UI, along with some tweaks and clarifications made by Alex Thornton, Spring 2016.</li>
+  <li>Requirements tuned, and implementation beefed up (including an online component) by Alex Thornton, Spring 2015.</li>
+  <li>Originally written by Alex Thornton, Spring 2014, with heavy influence from a similarly-named project from ICS 23.</li>
+</ul>
+
+</div>
+
+</body>
+</html>

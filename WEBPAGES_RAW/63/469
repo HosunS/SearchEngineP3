@@ -1,0 +1,176 @@
+<html>
+<head>
+    <title>Ucigame - Gallery - Tank</title>
+<link href="../stylesheet.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+
+<center><h2>Ucigame - Gallery - Tank</h2></center>
+
+<h4>
+<a href="../index.html">Home</a> |
+<a href="../getting-started.html">Getting Started</a> |
+<a href="../reference.html">Reference</a> |
+<a href="../java.html">Introduction to Java</a> |
+<a href="../gallery.html">Gallery</a>
+</h4>
+
+<p>
+<table>
+<tr>
+<td width="300" valign="top">
+<applet
+   code="Tank.class"
+   codebase="."
+   archive="../ucigame.jar"
+   width="250"
+   height="250"
+   border="0"
+>
+Your browser cannot show Java applets.
+</applet>
+</td>
+<td width=600 valign="top" halign="center">
+Tank illustrates some slightly fancy use of pinning, some calculations
+to determine rotation, and the onKeyRelease() callback method.
+<br> <br>
+Up and down arrows aim the cannon. <br>
+Hold down the space key to increase firing power, and release to fire. <br>
+R to reset and start over.
+</td>
+</tr>
+<tr>
+<td colspan=2>
+<br>
+<b>Tank.java</b>
+<br>
+<pre>
+import ucigame.*;
+
+public class Tank extends Ucigame
+{
+    Sprite platform;
+    Sprite gun;
+    Sprite shell;
+    Sprite movingShell;
+    int angle = 0;
+    double pullback = 0.0;
+    boolean spacePressed = false;
+    boolean shellBeingFired = false;
+    boolean waitForReset = false;
+    double shellX, shellY;
+    double velocityX, velocityY;
+    int framesInFlight = 0;
+
+    public void setup()
+    {
+        window.size(250, 250);
+        window.title("Tank");
+        framerate(30);
+
+        Image bkg = getImage("images/tank-background.png");
+        canvas.background(bkg);
+
+        platform = makeSprite(getImage("images/tank-platform.png", 255, 255, 0));
+        gun = makeSprite(getImage("images/tank-gun.png"));
+        shell = makeSprite(getImage("images/tank-shell.png", 255, 255, 0));
+        movingShell = makeSprite(getImage("images/tank-shell.png", 255, 255, 0));
+        movingShell.hide();
+
+        platform.position(5, 183);
+        platform.pin(gun, 22, 12);
+        gun.pin(shell, 14, 0);
+    }
+
+    public void draw()
+    {
+        canvas.clear();
+
+        if (shellBeingFired)
+        {
+            updateShellPosition();
+            if (shellY > canvas.height() - 10)
+            {
+                shellBeingFired = false;
+                waitForReset = true;
+            }
+        }
+
+        gun.rotate(angle, -1, 3);        // (-1, 3) is relative to the gun's ulh corner
+        shell.position(-pullback, 0);    // relative to the gun
+        platform.draw();
+        movingShell.draw();              // only if not hidden, if shellBeingFired = true;
+    }
+
+    // Any resemblance to actual physics is purely coincidental.
+    public void updateShellPosition()
+    {
+        shellX = shellX + velocityX;
+        shellY = shellY + velocityY;
+        movingShell.position(shellX, shellY);
+
+        velocityX = velocityX * 0.98;                        // drag
+        framesInFlight = framesInFlight + 1;
+        velocityY = velocityY + framesInFlight * 0.03;        // gravity
+    }
+
+    public void onKeyPress()
+    {
+        if (keyboard.isDown(keyboard.R))    // reset
+        {
+            pullback = angle = framesInFlight = 0;
+            spacePressed = shellBeingFired = waitForReset = false;
+            movingShell.hide();
+            shell.show();
+            return;
+        }
+
+        if (shellBeingFired || waitForReset)
+            return;
+
+        if (keyboard.isDown(keyboard.UP, keyboard.LEFT))
+        {
+            if (angle > -135)
+                angle = angle - 1;
+        }
+        if (keyboard.isDown(keyboard.DOWN, keyboard.RIGHT))
+        {
+            if (angle < 0)
+                angle = angle + 1;
+        }
+        if (keyboard.isDown(keyboard.SPACE))
+        {
+            spacePressed = true;
+            if (pullback < 15)
+                pullback = pullback + 0.2;
+        }
+    }
+
+    // Fire on space key up.
+    public void onKeyRelease()
+    {
+        if (spacePressed && !keyboard.isDown(keyboard.SPACE))
+        {
+            shellBeingFired = true;
+            spacePressed = false;
+            double angleInRadians = -angle * Math.PI / 180.0;
+            shellX = 23 + Math.cos(angleInRadians) * 24;
+            shellY = 195 - Math.sin(angleInRadians) * 24;
+            velocityX = Math.cos(angleInRadians) * pullback;
+            velocityY = -Math.sin(angleInRadians) * pullback;
+            shell.hide();
+            movingShell.show();
+            movingShell.position(shellX, shellY);
+        }
+    }
+}
+</pre>
+</td>
+</tr>
+</table>
+
+<br>
+<br>
+
+</body>
+</html>

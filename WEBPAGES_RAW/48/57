@@ -1,0 +1,157 @@
+<HTML>
+<HEAD>
+  <META NAME="GENERATOR" CONTENT="Adobe PageMill 2.0 Mac">
+  <TITLE>user.websites.chimera2.concepts.clients</TITLE>
+</HEAD>
+<BODY LINK="#0000ff" VLINK="#ff0000" ALINK="#00bb00" BGCOLOR="#ffffff">
+
+<P><CENTER><TABLE BORDER="1" CELLSPACING="0" CELLPADDING="2">
+<CAPTION ALIGN="TOP">Local Site Map</CAPTION>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="index.html">Overview</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="viewers.html">Viewers</A></TD>
+<TD WIDTH="34%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="objects.html">Objects</A></TD></TR>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="views.html">Views</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="anchors.html">Anchors</A></TD>
+<TD WIDTH="34%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="links.html">Links</A></TD></TR>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="attributes.html">Attributes</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><B>Clients</B></TD>
+<TD WIDTH="34%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="hyperwebs.html">Hyperwebs</A></TD></TR>
+</TABLE>
+</CENTER></P>
+
+<P><CENTER><HR></CENTER></P>
+
+<H1><CENTER>Clients</CENTER></H1>
+
+<P>Clients play an integral role in the Chimera architecture. They provide
+users access to Chimera's hypermedia services. While clients typically contain
+only one viewer, Chimera places no restrictions on the number of viewers
+a client can contain. This strict separation between the notion of client
+and the notion of viewer allows Chimera to efficiently model a wide variety
+of application architectures ranging from single-threaded single-purpose
+clients to multi-threaded commercial applications.</P>
+
+<P>The <A NAME="obligations"></A>responsibilities of a client are distinct
+from the <A HREF="viewers.html#obligations">responsibilities</A> of a viewer.
+These responsibilities are:</P>
+
+<UL>
+  <LI>Establishing and maintaining a connection with the Chimera server.
+  This includes notifying viewers of changes in the state of the connection.
+  <LI>Activating viewers as appropriate in response to a user's actions.
+  For instance, requesting a chart be generated from a range of spreadsheet
+  data will necessitate the invocation of a chart viewer.
+  <LI>Routing hypermedia events to the appropriate viewer. Hypermedia events
+  arrive from the Chimera server tagged for a particular viewer. It is the
+  client's responsibility to see that the event is delivered to the correct
+  viewer.
+</UL>
+
+<H2>Developer Information</H2>
+
+<P>The operations used by clients are listed below. The type <CODE>concept</CODE>
+used in some of the operations below indicates that these operations are
+available on all of the previous hypermedia concepts (viewers, objects,
+views, anchors, and links). For more information see the <A HREF="../../dev/docs/index.html">on-line
+documentation</A>.</P>
+
+<P><CENTER><TABLE BORDER="1" CELLSPACING="2" CELLPADDING="4">
+<TR>
+<TD VALIGN="TOP" NOWRAP><B>connect(String)</B></TD>
+<TD VALIGN="TOP">Establishes a connection to a Chimera server. The string specifies the name
+of the client. The name of the client is currently unused by the system.
+It is here to serve as a placeholder for potential future use by the system.
+(In particular, since clients can contain multiple viewers, it must be possible
+to map viewer names to their associated client name in order to invoke the
+appropriate client during a delayed link traversal.)</TD></TR>
+<TR>
+<TD VALIGN="TOP" NOWRAP><B>connectApplet(String, String, String)</B></TD>
+<TD VALIGN="TOP">Establishes a connection to a Chimera server in the case where the client
+is a Java applet. Due to the security restrictions on applets additional
+information is required. In particular, the first string specifies the name
+of the host from which the applet was downloaded, the second string specifies
+the name of the applet's user (which the applet may have to query its user
+for), while the third string specifies the name of the client, as before.</TD></TR>
+<TR>
+<TD VALIGN="TOP" NOWRAP><B>connectHyperwebManager(String)</B></TD>
+<TD VALIGN="TOP">Once you are connected to a Chimera server, the viewer needs to connect
+to a Chimera 2.0 website in order to access Chimera 2.0 hyperwebs. This
+routine connects the Chimera server to the website specified by a URL passed
+as a string to this routine. Note, all of a user's clients share the same
+Chimera server, thus this routine determines which site is accessed by all
+of a user's clients. Thus, this operation will generate an activeSite event
+to all of the user's other clients informing them of the change.</TD></TR>
+<TR>
+<TD VALIGN="TOP" NOWRAP><B>disconnect()</B></TD>
+<TD VALIGN="TOP">Disconnects the client from its Chimera server.</TD></TR>
+<TR>
+<TD VALIGN="TOP" NOWRAP><B>disconnectHyperwebManager()</B></TD>
+<TD VALIGN="TOP">Disconnects the Chimera server from its currently active Chimera 2.0 website.
+This will generate an activeSite event to all of the user's other clients
+informing them of the change.</TD></TR>
+<TR>
+<TD VALIGN="TOP" NOWRAP><B>clearWeb()</B></TD>
+<TD VALIGN="TOP">Deselects the currently active hyperweb. All of the user's other clients
+will be informed of the change via an activeWeb event.</TD></TR>
+<TR>
+<TD VALIGN="TOP" NOWRAP><B>getWeb()</B></TD>
+<TD VALIGN="TOP">Returns the name of the currently active hyperweb.</TD></TR>
+<TR>
+<TD VALIGN="TOP" NOWRAP><B>getWebs()</B></TD>
+<TD VALIGN="TOP">Returns the names of the available hyperwebs for the active Chimera 2.0
+website. These names can then be used to select hyperwebs for manipulation
+via the <CODE>setWeb()</CODE> operation.</TD></TR>
+<TR>
+<TD VALIGN="TOP" NOWRAP><B>isHwmConnected()</B></TD>
+<TD VALIGN="TOP">Returns <CODE>TRUE</CODE> if the client is connected to a Chimera 2.0 website.</TD></TR>
+<TR>
+<TD VALIGN="TOP" NOWRAP><B>lockConcept(concept)</B></TD>
+<TD VALIGN="TOP">A client must lock a concept before performing an operation which would
+change its state. This prevents two different clients from modifying the
+concept at the same time. This operation is non-blocking. It will either
+lock the concept and return <CODE>TRUE</CODE> or it will return <CODE>FALSE</CODE>.
+If the latter, the client must enter a polling loop to determine when the
+concept is available for locking. <I>The inadequacy of this locking mechanism
+is well known by its developers. This mechanism is one of the primary targets
+for improvement in the Chimera 2.0 beta release.</I></TD></TR>
+<TR>
+<TD VALIGN="TOP" NOWRAP><B>locked(concept)</B></TD>
+<TD VALIGN="TOP">Returns <CODE>TRUE</CODE> if the specified concept is locked.</TD></TR>
+<TR>
+<TD VALIGN="TOP" NOWRAP><B>setWeb(String)</B></TD>
+<TD VALIGN="TOP">Activates the specified hyperweb. All of a user's clients may now manipulate
+this hyperweb. The user's other clients will be notified of the change by
+an activeWeb event.</TD></TR>
+<TR>
+<TD VALIGN="TOP" NOWRAP><B>unlockConcept(concept)</B></TD>
+<TD VALIGN="TOP">Unlocks the specified concept.</TD></TR>
+</TABLE>
+</CENTER></P>
+
+<P><CENTER><HR SIZE="1" NOSHADE> <TABLE BORDER="1" CELLSPACING="0" CELLPADDING=
+"2">
+<CAPTION ALIGN="TOP">Local Site Map</CAPTION>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="index.html">Overview</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="viewers.html">Viewers</A></TD>
+<TD WIDTH="34%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="objects.html">Objects</A></TD></TR>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="views.html">Views</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="anchors.html">Anchors</A></TD>
+<TD WIDTH="34%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="links.html">Links</A></TD></TR>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="attributes.html">Attributes</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><B>Clients</B></TD>
+<TD WIDTH="34%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="hyperwebs.html">Hyperwebs</A></TD></TR>
+</TABLE>
+</CENTER></P>
+
+<P><B>This page is part of the <A HREF="http://www.ics.uci.edu/pub/chimera/">Chimera</A>
+web site.<BR>
+Send feedback and questions to <A HREF="mailto:kanderso@ics.uci.edu">Ken
+Anderson</A>.</B>
+</BODY>
+</HTML>

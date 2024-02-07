@@ -1,0 +1,428 @@
+				Testing Functions
+
+Writing functions is one of the most common activity for programmers, whether
+they are writing functions for use in a specific script or writing functions
+in a library module (to be imported by many possible of scripts). In this
+lecture we will discuss a variety of ways to quickly test the functions we are
+writing. In the process, we will write some functions to help us test other
+functions, and we will learn about the eval and exec functions that are defined
+in Python's builtins module and automatically imported into any modules that we
+write.
+
+We will discuss, briefly, six ways of testing
+
+(1) Testing within a script module
+(2) Testing within a library module
+(3) Testing libraries with a driver script (the exec function)
+(4) Batch testing with files
+(5) Self checking
+(6) Self checking/batch testing with files
+
+------------------------------------------------------------------------------
+
+(1) Testing within a script
+
+When writing functions in a script, we can always write test code beneath them,
+that calls the functions and prints their returned results. When we run the
+script, first the functions are defined (those are just the earlier statements
+in the script that Python executes, just like any other statement), and then it
+will continue executing the statements at the bottom, which call the functions
+to test them.
+
+While we can write complicated test code that prompts for the values to test,
+often it is easier to just call the functions with the values we want to test,
+and later edit the test code and rerun the script to test different values.
+Eventually the tests will be replaced by other code in the script that actually
+calls the functions to help solve the problem the scripts is solving. 
+
+For example if a script defines the number_match function, we can write a print
+statement that tests it.
+
+def number_match(number,singular,plural):
+    return singular if number == 1 else plural
+
+print( number_match(1,'goose','geese'))
+
+If we run the script and it prints the correct result,we can change the print to
+
+print( number_match(2,'goose','geese'))
+
+and rerun the script to test this function on a different argument. Of course
+we can write code like this to test the function on a variety of values (which
+is a bit of overkill for the number_match function)
+
+for i in irange(0,10):
+    print(i, number_match(i,'goose',geese')
+
+When we are done testing a function, we can leave the test code in the script,
+but comment it out so the script won't execute it. This allows us to uncomment
+the code to retest the function if we change it, or think of a better way to
+test it.
+
+Another way to test is with assert statements. If we added the following
+code to the bottom of a script
+
+assert number_match(1,'goose','geese') == 'goose'
+assert number_match(2,'goose','geese') == 'geese'
+
+then if the code was correct it would not raise any AssertionError exceptions,
+but it is was wrong the first failed assertion (whose boolean value was False)
+would raise an AssertionError.
+
+------------------------------------------------------------------------------
+
+(2) Testing within a library module
+
+When we write functions in a library module, we expect other modules to use
+these functions by importing them from their module. So typically a library
+module should only define functions, and not include code that calls them.
+Here think of the math or prompt modules, which we import functions from. Of
+course, we can use a strategy similar to what we did for functions in script
+modules, to test library functions as well (running their modules like scripts)
+but in addition we can do something else.
+
+When Python runs a module as a script, it binds the special name __name__ to
+the string '__main__'. All Python programs require running one script to get
+started. If a module is imported by a script or another module, its __name__
+is bound to the name of the module. Here is a simple example
+
+Assume the library.py module's block is
+
+  print('in library.py:',__name__)
+
+
+Assume the script.py module's block is
+
+  import library
+  print('in script.py:',__name__)
+
+
+If we execute the library.py module as a script, it prints
+
+  library.py: __main__
+
+If we execute script.py module as a script it prints
+
+  library.py: library
+  script.py: __main__
+
+Why does it print this? Because the script.py module first imports library,
+which executes all the code in the library.py module; but when the code is
+executed __name__ is bound to just 'library' since it is not the script that
+is being run. Then the print in the script.py module is executed; since this is
+the script we executed, its __name__ is bound to '__main__'.
+
+Python programmers use this mechanism to put testing code in their library
+modules.  Then, if the library module is run as a script, the testing code is
+executed; but if the library module is just imported from some other module, the
+testing code is not executed. Here is what such code looks like. Suppose the
+library.py module is written as follows
+
+def number_match(number,singular,plural):
+    return singular if number == 1 else plural
+
+if __name__ == '__main__':
+    for i in irange(0,10):
+        print(i, number_match(i,'goose',geese')
+    ....
+
+When this module is executed as a script, the number_match function is defined
+and then the if statement is executed. In this case the test is True so the
+testing code inside the if's block is executed.
+
+When this module is imported by another module, the number_match function is
+defined and then the if statement is executed. In this case the test is False
+(the imported module doesn't bind __name__ to '__main__') so the testing code
+inside the if's block is skipped.
+
+So, with this mechanism, we can keep testing code "live" in a library module
+(not comment it out), but it will be executed only if we are running the
+library module as a script, not if we import the library module.
+
+------------------------------------------------------------------------------
+
+(3) Testing libraries with a driver script (the exec function)
+
+A driver script exists just to "test drive" other code. It acts as a mini-
+interpreter for Python. Driver scripts are very simple to write, if we know
+about Python's exec function. Its prototype is exec(command : str) -> NoneType,
+which means its parameter is a string that represents a Python command; it
+always returns the value None (the only value in the NoneType; the print
+function also always return None). So typically when we exec some string it is
+to define some name or print some results. So, instead of writing
+
+x = 1
+print(x)
+
+in a script, we could write the following and the result would be the same.
+
+exec('x = 1')
+exec('print(x)')
+
+But this would be insane, because we can execute these commands more easily
+without calling the exec function. But what if we wanted to prompt the user to
+enter a command to execute in the middle of the script? That is, when we run
+the script we don't know what command will actually be entered and executed.
+Here is one way to execute the user-entered command.
+
+exec(prompt.for_string('Command'))
+
+Even more interesting would be to put a statement like this into a loop, which
+repeatedly prompts the user and executes his/her commands. But first, import
+all the names from module-to-test; this is the first reasonable use we have
+found for this form of importing.
+
+from module-to-test import *              # * means import all names
+while True:
+    exec(prompt.for_string('Command'))
+
+But if the command raised an exception, then the loop (and the whole script
+would terminate). So instead, we can put the call to exec in a try/except
+statement in a loop.
+
+from module-to-test import *
+import traceback
+while True:
+    try:
+        exec(prompt.for_string('Command'))
+    except:
+        traceback.print_exc()
+
+Here, any exception raised calls traceback.print_exc() -from the imported
+traceback module- which will print the exception on the console (just as Python
+does). After handling this exception, the while loop re-executes the try/except
+statement, prompting the user for another command to execute and executing it.
+So even if your testing command raises an exception, it is handled and still
+keeps test.
+
+Try executing the following script
+
+import prompt
+from math import sqrt
+import traceback
+while True:
+    try:
+        exec(prompt.for_string('Command'))
+    except:
+        traceback.print_exc()
+
+When prompted first enter print(sqrt(2)) and then print(sqrt(-2)). Notice
+after printing the raised exception for sqrt(-2) the 'Command: ' prompt
+appears again. Dometimes Python will show this prompt in the middle of the
+exception because it is doing 2 things at once (printing the exception
+information and reprompting: don't worry about this behavior).
+
+You must terminate this program manually (press the red square in the console)
+because it is an infinite loop.
+
+------------------------------------------------------------------------------
+
+(4) Batch testing with files
+
+One problem with testing is that often we want to test a function using a bunch
+of different arguments, and then if we find a mistake, and correct the function,
+we want to retest it on the same bunch of arguments. If we have to do this
+manually, it can be very tedious and prone to error. But, with what we have
+learned about reading files, and what we just learned about the exec command,
+we can define a small function that automates the process. We assume that we
+have written a file with all the tests we want to perform: each test must be
+on its own line. It might look like
+
+print(number_match(0,'goose','geese'))
+print(number_match(1,'goose','geese'))
+print(number_match(2,'goose','geese'))
+
+Now, here is a function that reads commands from a file, one line at a time,
+and prints each command and the results of executing that command.
+
+def batch_test(file_name):
+    print('Starting batch_test')
+    for command in open(file_name):
+        try:
+            command = command.rstrip()
+            print('\nCommand:',command)
+            exec(command)
+        except:
+            traceback.print_exc()
+    print('\nDone batch_test')
+
+This function prints an opening and closing message. Then it uses a for loop
+to iterate through every line in the file. It rebinds command to refer to the
+command string with the whitespace ('\n') stipped off the right end, and then
+prints the command and execs the command. As in the previous section, we use a
+try/except statement to handle any exceptions (printing them) but continuing
+past them to process all the command lines in the file.
+
+We can augment the standard batch_test function by adding a confirm parameter,
+whose default argument is False (in which case this function acts exactly like
+the batch_test above). But, if confirm is True, after Python prints the command
+(but before execing it), it prompts the user for a confirmation (just pressing
+the enter key) and waits for the user to do so before execing the command. Here
+is that function.
+
+def batch_test(file_name,confirm=False):
+    print('Starting batch_test')
+    for command in open(file_name,'r'):
+        try:
+            command = command.rstrip()
+            print('\nCommand:',command)
+            if confirm:
+                prompt.for_string('Press enter to do command','')
+            exec(command)
+        except Exception:
+            traceback.print_exc()
+    print('\nDone batch_test')
+
+If we defined this function in the same script that includes a driver (see the
+previous section), we can enter normal commands in the driver, and also enter a
+command to call the batch_test function.
+
+In the lecture on testing/debugging we discussed regression testing, whereby a
+a modified function is retested on a series of test cases. This is exactly what
+batch_test allows, although we must careully put together a file of test cases
+befor running batch_test.
+
+See the driverbatch project that goes with this lecture. It defines the
+number_match function in library.py; it includes the batch_test function and
+driver loop in the file driverbatch.py, which is a script you can execute;
+finally, it includes the driverbatch.txt file which contains commands used to
+test number_match. When run, duplicate the following interaction.
+
+  Command: print(number_match(1,'goose','geese'))
+  goose
+  Command: batch_test('driverbatch.txt')
+  Starting batch_test
+
+  Command: print(number_match(0,'goose','geese'))
+  geese
+
+  Command: print(number_match(1,'goose','geese'))
+  goose
+
+  Command: print(number_match(2,'goose','geese'))
+  geese
+
+  Done batch_test
+  Command: 
+
+The first command (print) is entered manually. Then by calling batch_test
+it executes the 3 commands from the driverbatch.txt file.
+
+Finally press the red square in the Console tab to terminate the driver.
+
+------------------------------------------------------------------------------
+
+The following material (5-6) is a bit advanced. You are not responsible for it,
+but I include it here for those students who are interested.
+
+(5) Self checking
+
+In all the previous sections, we have printed results on the cosole and  then
+eyeballed these results to see (literally) if they were correct. This isn't a
+terrible burden if we are entering a few commands, one-by-one, but if we are
+doing batch testing, performing many automatic checks, eyeballing for
+correctness can be lengthy and error-prone. The idea of self checking is that
+we provide not only the function call to check, but also the value it should
+produce: then Python automatically check the result for us.
+
+In this section we will examine the fundamentals of self checking for
+user-entered commands; in the next (and last) section we will examine options
+for self-checking batch files.
+
+We can define a simple check function as follows
+
+def check(computed,correct):
+    if computed == correct:
+        print('correct')
+    else:
+        print('incorrect')
+
+As we saw in the section on testing a library module, after checking whether
+__name__ == '__main__' we execute a bunch of tests. But we have to look at the
+tests and then the output to see if they are correct. Instead we might write
+
+if __name__ == '__main__':
+    check(number_match(0,'goose','geese'),'geese')
+    check(number_match(1,'goose','geese'),'goose')
+    check(number_match(2,'goose','geese'),'geese')
+
+Now, if we run this library module as a script it will print only correct or
+incorrect, so it is easier to look at the output. But still, if we see an
+incorrect, we have to trace down which function call caused the problem. So,
+let's rewrite the check function in a way that we can avoid this problem. To do
+so we will use the eval function, which is similar to exec: both take string
+arguments, but while exec is for statements (and always returns None) eval is
+for expressions and returns the value computed by the expression, which can be
+any object. So we specify its prototype as eval(str) -> object.
+
+While we are generalizing check, let's also make it silenty if the check passes,
+and print something only if the check fails. So we redefine check as
+
+def check(to_compute,correct):
+    try:
+        computed = eval(to_compute)
+        if computed != correct:
+            print('Error:', to_compute,'->',computed,'but should be',correct)
+    except:
+        print('Error:', to_compute,'raised exception')
+
+Notice that we are now passing a string argument that is bound to to_compute,
+which calls eval on the string inside this function to compute its answer. If
+the answer is wrong (or raises an exception) then information about the error
+is printed, otherwise nothing is printed. We could rewrite these tests as:
+
+if __name__ == '__main__':
+    check( "number_match(0,'goose','geese')" , 'geese')
+    check( "number_match(1,'goose','geese')" , 'goose')
+    check( "number_match(2,'goose','geese')" , 'geese')
+
+Now, if the function passes all the tests, nothing is printed; for every test
+it fails the expression, its value, and the correct value are all printed.
+
+------------------------------------------------------------------------------
+
+(6) Self checking/batch testing with files
+
+We finish this lecture by combining what we know about self-checking and batch
+testing. This uses new Python features, but with a short discussion we can all
+understand their basic operation (even if we do not really understand well how
+to use them). The line
+
+  expression,correct = line.rstrip().split('-->')
+
+binds expression to the string in line.rstrip() before the characters '->' and
+binds correct to the string in line.rstrip() after the characters '->'.
+So, if a file contains the line
+
+number_match(1,'goose','geese')-->goose
+
+Then expression binds to the string number_match(1,'goose','geese') and
+correct binds to the string goose. Now, as with batch testing we can read lines
+to test from a file, but these lines contain the correct answers, which the
+batch_self_test function can check. As in the previous section, it will print
+information only if a test fails; it will also count the numnber of tests that
+succeed and fail, and print this number at the end of the method.
+
+def batch_self_check(file_name,seperator='-->'):
+    print('Starting batch_self_check')
+    correct_count, wrong_count = 0, 0
+    for line in open(file_name):
+        try:
+            expression,correct = line.rstrip().split(seperator)
+            computed = str(eval(expression))
+            if computed == correct:
+                correct_count += 1
+            else:
+                wrong_count += 1
+                print('Error:',expression,'->',computed,'but should be',correct)
+        except Exception:
+            print('Error:',expression,'raised exception')
+            traceback.print_exc()
+    print('Done batch_self_check:',correct_count,'correct;',wrong_count,'incorrect')
+
+There are very many more sophisticated (and harder to understand) tools for
+testing software, because programmers often make mistakes and do not catch them,
+and malfunctioning software can kill people (or wreck economies...). In this
+lecture we have discussed six different ways to test functions, each approach
+more sophisticated than the ones preceeding it, but often building upon the
+earlier approaches.

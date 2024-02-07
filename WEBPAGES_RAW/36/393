@@ -1,0 +1,162 @@
+<!-- received="Fri Jun 07 16:00:00 1996 PDT" -->
+<!-- sent="Fri, 7 Jun 1996 15:59:57 -0700" -->
+<!-- name="Christopher Seiwald" -->
+<!-- email="seiwald@p3.com" -->
+<!-- subject="what's doable in Web version control" -->
+<!-- id="ade2640c44021004bd6c@[128.195.21.209]" -->
+<!-- inreplyto="" -->
+<title>Archive of Working Group on Versioning and Configuration Management of World Wide Web Content: what's doable in Web version control</title>
+<h1>what's doable in Web version control</h1>
+<b>Christopher Seiwald</b> (<a href="mailto:seiwald@p3.com"><i>seiwald@p3.com</i></a>)<br>
+<i>Fri, 7 Jun 1996 15:59:57 -0700</i>
+<p>
+<ul>
+<li> <b>Messages sorted by:</b> <a href="index.html#62">[ date ]</a><a href="thread.html#62">[ thread ]</a><a href="subject.html#62">[ subject ]</a><a href="author.html#62">[ author ]</a>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0063.html">Larry Masinter: "version management and relative links"</a>
+<li> <b>Previous message:</b> <a href="0061.html">Larry Masinter: "Re: More versioning thoughts."</a>
+<!-- nextthread="start" -->
+<li> <b>Next in thread:</b> <a href="0066.html">Larry Masinter: "Re: what's doable in Web version control"</a>
+<li> <b>Maybe reply:</b> <a href="0066.html">Larry Masinter: "Re: what's doable in Web version control"</a>
+<!-- reply="end" -->
+</ul>
+<hr>
+<!-- body="start" -->
+<pre>
+Jim divided up the Web versioning world into browsing/authoring issues.
+I see three, and they all happen via HTTP.
+
+1)      GET -- browsing versioned entities.
+
+2)      PUT -- "checking in" a newly authored version of an entity.
+
+3)      VC -- doing all the ancilliary configuration management activities.
+
+I'm going to wade in again and offer some opinion.
+
+GET.
+
+    It seems critical to me that we support what Jim called "browsing
+    within a collection of entities" and that we do so with without
+    requiring version-aware clients.  Why?  Because delivering versioned
+    content will be the most important product of our efforts, and our
+    plans can't rely on changing Netscape.
+
+    Of the various URL decoration proposals, only one satisfies this
+    dual requirement: having the version indicator embedded in the URL,
+    separated off by /'s.  With this, we can reuse the support already
+    in Web clients for handling relative URLs.
+
+    As Fabio discussed, and I wholeheartedly agree with, the hierarchical
+    path component of a URL is well suited to accomodating version
+    information.  This is because, I believe, an entity's version is
+    just another component of its name, albeit a component that locates
+    the entity in time rather than in (filesystem) space.
+
+    The only other possible solution, which is poor, is to have
+    version-aware servers support non version-aware clients by editing
+    the returned HTML on the fly, fixing up links with version info.
+    If anyone supports this solution, I'd like to hear it.
+
+PUT.
+
+    "When all you have is a hammer, everything looks like a nail." My
+    personal feeling is many lives will be lost to this effort.
+    Nonetheless, I think it is inevitable that it will be done.
+
+    The significance of the PUT operation is that the Web plays the role
+    of a client/server configuration management system, with HTTP being
+    the client/server protocol.  Of course, in most cases the Web server
+    is just making use of an existing software configuration management
+    (SCM) system.
+
+    Having written a full-bore SCM system from scratch, and being familiar
+    with a dozen others, I can tell you that supporting the union of
+    all SCM practices and architectures will be, uh, difficult.  The
+    major differences is not whether they require locked head revisions
+    but rather how well their architecture fits in with the Web's
+    client/server model.
+
+    To wit:
+
+    1)  SCM systems such as CVS rely on state information, stored
+        on the client, to know what version of what documents are
+        being edited (and thus what will be "put" back).  CVS's
+        state information is fairly trivial, and could be embedded
+        into the HTML documents being edited.  But that doesn't work
+        so well if the entities aren't HTML.  When the user PUTs a
+        GIF, how will a version-aware Web server based on CVS recover
+        the state necessary to check the GIF in?
+
+        SCM systems that store the state in the server, such as
+        ClearCase, don't have this same problem, I think.  But make
+        no mistake about it: these version-aware Web servers are
+        quite stateful.
+
+    2)  Other SCM systems have fairly heavyweight client
+        implementations themselves, with a fat protocol between the
+        client and server.  For example, it is unlikely that a
+        version-aware Web client would be able to carry out all the
+        machinations necessary to be a ClearCase view (i.e. a client).
+
+        The only solution I see to this is to have the Web server
+        maintain private client workspaces on behalf its own clients,
+        and act as a proxy to those clients.  Playing out the
+        ClearCase example, the Web server would have a view for each
+        of the Web clients who will PUT documents.
+
+    3)  The picture is even less rosy with SCM systems that require
+        the client to have direct file access to the repository.  A
+        large chunk of the commercial SCM systems -- PVCS, MKS Source
+        Integrity, Continuus, Microsoft's SourceSafe -- are in this
+        boat.  I can't see any way they can be backend to a version-aware
+        Web server without the Web server having to act as proxy to
+        client workspaces maintained on the server.
+
+        Maybe David Fiander can say what MKS does to support this.
+        There must be a decent solution in there somewhere.
+
+    4)  Aside from architecture, the model varies wildly from one SCM
+        system to the next.  And as has been discussed, the lock-the-head
+        vs merge-into-trunk vs change-set models all need to be
+        accomodated.
+
+        Going further, something that we (P3) support is atomic checkin
+        of multiple documents, because it allows you to move the repository
+        forward in whole chunks rather than a file-at-a-time.  Certainly
+        we think this is important for Web documents as well, and would
+        like to see multiple PUTs with a single COMMIT possible.
+
+Version control.
+
+    All the wrinkles that make a simple PUT difficult are going to make
+    flowing full version control models over HTTP truly daunting.
+    It might be possible to come up with a limited set of operations that
+    make sense across all models, but the examples put forth so far --
+    compute the predecessor revision and show a version tree -- each only
+    make sense in a subset of the systems.
+
+My flame-retardant personal opinion is that supporting GETs is well
+within the ability of this group, that PUTs will get mired for long
+enough that some defacto industry implementation will set the lead and
+thus simplify the range of models that need supporting, and that the
+rest of version control via HTTP will follow after that.  But I welcome
+contrary opinions, because in this case I'd be glad to be wrong.
+
+Christopher
+----
+Christopher Seiwald     P3 Software             <a href="http://www.p3.com">http://www.p3.com</a>
+<a href="mailto:seiwald@p3.com">seiwald@p3.com</a>          f-f-f-fast SCM          1-510-865-8720
+</pre>
+<!-- body="end" -->
+<hr>
+<p>
+<ul>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0063.html">Larry Masinter: "version management and relative links"</a>
+<li> <b>Previous message:</b> <a href="0061.html">Larry Masinter: "Re: More versioning thoughts."</a>
+<!-- nextthread="start" -->
+<li> <b>Next in thread:</b> <a href="0066.html">Larry Masinter: "Re: what's doable in Web version control"</a>
+<li> <b>Maybe reply:</b> <a href="0066.html">Larry Masinter: "Re: what's doable in Web version control"</a>
+<!-- reply="end" -->
+</ul>

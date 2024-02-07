@@ -1,0 +1,166 @@
+;;;;;;;; RESTAURANT DATABASE PROGRAM
+;;;;;;;; ICS H21 -- UC Irvine ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; David G. Kay
+
+;;;;;;;; Top-level Application Routines ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(define Restaurants                        ; Main "driver" routine; call in
+   (lambda ()                              ;   interpreter by (Restaurants)
+      (let((collection (make-collection))) 
+        (handle-commands collection)
+      (write-line "Thank you.  Good-bye."))))
+
+(define handle-commands                   ; Repeatedly handle menu requests
+  (lambda (C)
+   (let ((response (get-menu-response)))  ; Get a response from the user
+     (case response                       ; 'case' is like 'cond' but it
+       ((q) C)                            ; matches values, not boolean expressions
+       ((a) (handle-commands (collection-add C (Rrant-get-info))))
+       ((r) (handle-commands (collection-remove C (test-to-match-name))))
+       ((p) (begin (print-collection C) (handle-commands C)))
+       ((s) (begin (search-collection C) (handle-commands C)))
+       (else (begin (invalid-command response) (handle-commands C)))))))
+
+(define  get-menu-response                ; Print the menu and get an answer
+   (lambda ()
+      (newline)
+      (write-line "Restaurant Collection Program --- Choose one:")
+      (write-line "   a:  Add a new restaurant to the collection")
+      (write-line "   r:  Remove a restaurant from the collection")
+      (write-line "   s:  Search the collection for selected restaurants")
+      (write-line "   p:  Print all the restaurants")
+      (write-line "   q:  Quit")
+      (read)))
+
+(define invalid-command                       
+   (lambda (response)                                 
+      (write-line "Sorry; '" response "' isn't a valid command.  Please try again.")))
+
+(define test-to-match-name     ; This routine returns a PROCEDURE (a lambda     
+  (lambda ()                   ; expression); that's what's needed by the
+    (let ((deletion            ; 'remove' command.
+            (get-it "name of the restaurant to delete")))
+      (lambda (R)
+        (equal? deletion (Rrant-name R))))))
+
+(define print-collection       ; The (lambda(x)#t) below matches every restaurant
+  (lambda (collection)         ; in the collection, so this call essentially gives
+    (for-each Rrant-print      ; us a Lisp list of each Rrant in the collection.
+                 (collection-select collection (lambda (x) #t)))))                  
+
+(define search-collection
+  (lambda (collection)
+    (let ((name (get-it "name of the restaurant to search for")))
+        (for-each Rrant-print
+                          (collection-select collection
+                                             (lambda (R)
+                                               (equal? name (Rrant-name R))))))))
+
+
+											   
+											   
+											  
+;  Here's another routine that the program here doesn't call;
+;  it's a good exercise, though.
+
+(define cheap-dishes          ; What restaurants are cheap?
+   (lambda (C)
+     (let ((threshhold ((get-it "the cut-off price"))))
+       (for-each Rrant-prin
+                 (collection-select C (lambda (R) (< (Rrant-price R) threshhold)))))))
+           
+           
+           
+;;; Rrant -- Abstract data type (ADT) for a restaurant object
+
+(define-struct Rrant (name cuisine phone dish price))
+
+; Calling define-struct automatically creates for us:
+;     (make-Rrant n c ph d p)   -- This "constructor" routine builds a new 'Rrant'
+;     (Rrant? R)                -- This predicate checks whether R is a 'Rrant'
+;     (Rrant-name R)            -- These "selector" routines return the components
+;     (Rrant-cuisine R)         --     of a 'Rrant'
+;     (Rrant-phone R)    (Rrant-dish R)    (Rrant-price R)
+
+(define Rrant-get-info                       ; Prompts a user at a terminal to enter
+  (lambda ()                                ; info to create a new restaurant
+    (write-line "When the machine asks you to supply some non-numeric information, ")
+    (write-line "please type that information surrounded by parentheses.")
+    (let* ((n (get-it "restaurant's name"))
+           (c (get-it "kind of food served"))
+           (ph (get-it "phone number"))
+           (d (get-it "name of the best dish"))
+           (p (get-it "price of that dish")))
+       (make-Rrant n c ph d p))))
+
+(define Rrant-print
+  (lambda (r)
+    (write-line "Name:      " (Rrant-name r))
+    (write-line "Cuisine:   " (Rrant-cuisine r))
+    (write-line "Phone:     " (Rrant-phone r))
+    (write-line "Best dish: " (Rrant-dish r))
+    (write-line "Price:     " (Rrant-price r))))
+
+
+;;; COLLECTION -- Abstract data type (ADT) for a collection of restaurants
+;;;
+;;; We represent the collection as a Lisp list of restaurants (for now;
+;;; we could change that representation, perhaps to a binary search tree
+;;; sorted by the name of the restaurant).
+
+(define make-collection
+  (lambda ()
+    '()))
+
+(define collection-add
+  (lambda (C R)
+    (cons R C)))
+
+(define collection-empty?
+  (lambda (C)
+    (null? C)))
+
+(define collection-remove       ; Return a collection made up of all the
+  (lambda (C test?)             ; restaurants in C that do NOT pass 'test?'
+    (cond
+      ((collection-empty? C) (make-collection))
+      ((test? (first C)) (collection-remove (rest C) test?))
+      (else (cons (first C) (collection-remove (rest C) test?))))))
+
+(define collection-select       ; Return a Lisp list made up of all the
+  (lambda (C test?)             ; restaurants in C that pass 'test?'
+    (cond
+      ((collection-empty? C) '())
+      ((test? (first C)) (cons (first C) (collection-select (rest C) test?)))
+      (else (collection-select (rest C) test?)))))
+
+
+
+
+
+
+(define collection-change       ; Return collection after applying 'action'
+  (lambda (C test? action)      ; to each restaurant that passes 'test?'
+    (cond
+      ((collection-empty? C) (make-collection))
+      ((test? (first C)) (cons (action (first C))
+                               (collection-change (rest C) test? action)))
+      (else (cons (first c) 
+                  (collection-change (rest C) test? action))))))
+
+;;;;;;;; GENERALLY USEFUL INPUT/OUTPUT ROUTINES
+
+(define get-it
+   (lambda (what-to-get)
+      (display "Please enter the ")
+      (display what-to-get)
+      (display ":  ")
+      (read)))
+
+(define write-line         ; The form of lambda used here makes 'item'
+  (lambda item             ; a list of ALL the arguments (however many)
+    (for-each display item); in the call to write-line.  The 'for-each'
+    (newline)))            ; applies 'display' to each element of 'item'.
+
+(define first car)   ; Make sure the modern mnemonic operations are recognized
+(define rest cdr)

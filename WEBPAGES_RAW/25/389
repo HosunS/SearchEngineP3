@@ -1,0 +1,369 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>32.1 Compiling a text file into a C++ program</title>
+<META NAME="description" CONTENT="32.1 Compiling a text file into a C++ program">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node254.html">
+<LINK REL="previous" HREF="node252.html">
+<LINK REL="up" HREF="node252.html">
+<LINK REL="next" HREF="node254.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node252.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node252.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node254.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node252.html">32. OpenEye Command Line</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node252.html">32. OpenEye Command Line</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node254.html">32.2 Configuring OEInterface</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION0035100000000000000000">
+32.1 Compiling a text file into a C++ program</A>
+</H1>
+
+<P>
+This section describes how to automatically compile a text file into a C++
+program, using a simple makefile rule and a perl script.  Using this method
+the text file is required at compile time but <i>NOT</i> at runtime,  and the
+contents of the file will be accessible as a <code>const unsigned char*</code>.
+Several of the functions described later in this chapter take a
+<code>const unsigned char*</code> created by this method.
+
+<P>
+This following perl script
+
+<P>
+<dl><dd><pre class="verbatim">#!/usr/bin/perl
+# text2hex.pl
+# OpenEye Scientific Software
+# September 2001
+
+# Autoflush STDOUT
+#STDOUT-&gt;autoflush(1);
+$| = 1;
+
+$argc = @ARGV;
+if( $argc == 2 ) {
+    $filename = @ARGV[0];
+    $arrayname = @ARGV[1];
+
+    $pos1 = rindex($filename,"/") + 1;
+    if ($pos1 &gt; -1)
+    {
+      $tmpguard = substr($filename,$pos1);
+    }
+    else
+    {
+      $tmpguard = $filename;
+    }
+    $guard = uc($tmpguard);
+    for ( $pos2 = rindex($guard,".") ; $pos2 &gt; -1 ; $pos2 = rindex($guard,".") )
+    {
+      $lnth = length($guard);
+      $pos3 = $pos2 + 1;
+      $pos4 = $lnth - $pos3;
+      $tmpguard = $guard;
+      $guard = substr($tmpguard,0,$pos2) . "_" . substr($tmpguard,$pos3,$pos4);
+    }
+    for ( $pos2 = rindex($guard,"-") ; $pos2 &gt; -1 ; $pos2 = rindex($guard,"-") )
+    {
+      $lnth = length($guard);
+      $pos3 = $pos2 + 1;
+      $pos4 = $lnth - $pos3;
+      $tmpguard = $guard;
+      $guard = substr($tmpguard,0,$pos2) . "_" . substr($tmpguard,$pos3,$pos4);
+    }
+} elsif( $argc == 3 ) {
+    $filename = @ARGV[0];
+    $arrayname = @ARGV[1];
+    $guard = @ARGV[2];
+} else {
+    print "usage:  bin2hex.pl &lt;textfile&gt; &lt;arrayname&gt;&#92;n&#92;n";
+    exit;
+}
+
+$debug = 0;
+
+open(F,$filename) || die "Error: Unable to open binary file!&#92;n";
+
+if( !$debug ) {
+    print "#ifndef OE_" . $guard . "&#92;n";
+    print "#define OE_" . $guard . "&#92;n&#92;n";
+    print "static const unsigned char " . $arrayname . "[] = {&#92;n";
+}
+
+binmode(F);
+
+$col = 0;
+$init = 0;
+$ignore = 0;
+$newline = 1;
+
+while( !eof(F) ) {
+    $ch = ord(getc(F));
+    if( $ch == 13 ) {
+        $ch = 0;
+    }
+
+    if( $ignore ) {
+        if( $ch == 10 ) {
+            $ignore = 0;
+        }
+        $ch = 0;
+    } elsif( $newline ) {
+        if ( $ch == 35 ) {
+            $ignore = 1;
+            $ch = 0;
+        } elsif( $ch ) {
+            $newline = 0;
+        }
+    } elsif( $ch == 10 ) {
+        $newline = 1;
+    }
+
+    if( $ch ) {
+        if( $debug ) {
+            print chr($ch);
+        } else {
+            if( $init ) {
+                print ",";
+            } else {
+                $init = 1;
+            }
+            if( $col &gt;= 15 ) {
+                print "&#92;n";
+                $col = 0;
+            }
+            print sprintf("0x%02X",$ch);
+            $col++;
+        }
+    }
+}
+
+if( !$debug ) {
+    if( $col &gt;= 15 ) {
+        print ",&#92;n0x00};&#92;n&#92;n";
+    } else {
+        print ",0x00};&#92;n&#92;n";
+    }
+    print "#endif // OE_" . $guard . "&#92;n&#92;n";
+}
+
+close(F);
+exit;
+
+</pre>
+<div class="verbatiminput-footer">
+<a href="text2hex.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+Converts a text file into a C++ <code>const unsigned char*</code>.  The usage of this script is
+
+<P>
+<dl><dd><pre class="verbatim">text2hex.pl &lt;textfile&gt; &lt;arrayname&gt;
+</pre></dl>
+
+<P>
+And the output is sent so standard out.
+
+<P>
+So for example if we had a text file
+
+<P>
+<dl><dd><pre class="verbatim">OOGA
+BOOGA
+</pre></dl>
+
+<P>
+named babytalk.txt
+
+<P>
+text2hex.pl would produce the following output
+
+<P>
+<dl><dd><pre class="verbatim">&gt; text2hex.pl babytalk.txt baby
+#ifndef OE_BABYTALK
+#define OE_BABYTALK
+
+static const unsigned char baby[] = {
+0x4F,0x4F,0x47,0x41,0x0A,0x42,0x4F,0x4F,0x47,0x41,0x0A,0x00};
+
+#endif // OE_BABYTALK_ITF
+&gt;
+</pre></dl>
+
+<P>
+With this perl script we can put the following rule in our makefile
+
+<P>
+<dl><dd><pre class="verbatim">.SUFFIXES:      .txt
+.SUFFIXES:      .itf
+.txt.itf:
+                text2hex.pl $&lt; InterfaceData &gt; $@
+</pre></dl>
+
+<P>
+This rule tells the make system that it can create a file with a file
+with a .itf extension from a file with a .txt extension by using the
+text2hex.pl script and piping the output into the .itf file.  This
+is exactly analogous to rules that create a .o file from a .cpp file
+(here .txt corresponds to .cpp and .itf corresponds to .o).  Note
+that the choice of itf as an extension is completely arbitrary, but
+the OpenEye supplied makefiles define this rule with the .itf
+extension, and also another rule with the .req extension as follows
+
+<P>
+<dl><dd><pre class="verbatim">.SUFFIXES:      .txt
+.SUFFIXES:      .req
+.txt.req:
+                text2hex.pl $&lt; RequirementData &gt; $@
+</pre></dl>
+
+<P>
+The following program
+
+<P>
+<i>Chapter 32 - Example 1: cpp file</i>
+<dl><dd><pre class="verbatim">#include "oeplatform.h"
+#include "oesystem.h"
+
+//This .itf file defines the static unsigned char* variable InterfaceData
+#include "ch32-1.itf"
+
+using namespace OEPlatform;
+using namespace OESystem;
+
+int main(int , char** )
+{
+  oeout &lt;&#60; InterfaceData &lt;&#60; oeendl;
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch32-1.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+Includes a .itf file.  Provided the above rule for generating and itf
+file is included in the makefile, the only additional modification to
+the makefile needed to compile ch32-1.o, aside from the normal compiling
+riles, is ch32-1.o must have a dependency on ch32-1.txt added to it.
+As with any makefile dependencies, this dependency can be added by
+including this line
+
+<P>
+<i>Chapter 32 - Example 1: Makefile dependency</i>
+<dl><dd><pre class="verbatim">ch32-1.o: ch32-1.txt
+</pre></dl>
+
+<P>
+Anywhere in the makefile.  Alternatively you could add ch32-1.txt to
+your existing dependency list for ch32-1.o (which presumably includes
+ch32-1.cpp).
+
+<P>
+Once compiled the program simply outputs the contents of file ch32-1.txt
+it was compiled with.  So given that the contents of ch32-1.txt were
+
+<P>
+<i>Chapter 32 - Example 1: Text file</i>
+<dl><dd><pre class="verbatim">#include "oeplatform.h"
+#include "oesystem.h"
+
+//This .itf file defines the static unsigned char* variable InterfaceData
+#include "ch32-1.itf"
+
+using namespace OEPlatform;
+using namespace OESystem;
+
+int main(int , char** )
+{
+  oeout &lt;&#60; InterfaceData &lt;&#60; oeendl;
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch32-1.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+At compile time the program, ch32-1, will work as follows
+
+<P>
+<i>Chapter 32 - Example 1: Output</i>
+<dl><dd><pre class="verbatim">&gt; ch32-1
+OOGA
+BOOGA
+
+&gt;
+</pre></dl>
+
+<P>
+Note that ch32-1.txt is only required at compile time, not run time.
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node252.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node252.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node254.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node252.html">32. OpenEye Command Line</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node252.html">32. OpenEye Command Line</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node254.html">32.2 Configuring OEInterface</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

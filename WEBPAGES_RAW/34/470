@@ -1,0 +1,702 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; chimera.el --- Chimera extension for XEmacs
+;;
+;; Author: Uffe Kock Wiil <kock@iesd.auc.dk>
+;; Maintainer: Uffe Kock Wiil <kock@iesd.auc.dk>
+;; Created: 20 Jun 1996
+;;
+;; Chimera 2.0 Upgrade by: Kenneth M. Anderson <kanderso@ics.uci.edu>
+;; Updated: 11 Jun 1997
+;;
+;; Copyright (c) 1996, 1997 Regents of the University of California.
+;; All rights reserved.
+;;
+;; This software was developed by the Arcadia project
+;; at the University of California, Irvine.
+;;
+;; Redistribution and use in source and binary forms are permitted
+;; provided that the above copyright notice and this paragraph are
+;; duplicated in all such forms and that any documentation,
+;; advertising materials, and other materials related to such
+;; distribution and use acknowledge that the software was developed
+;; by the University of California, Irvine.  The name of the
+;; University may not be used to endorse or promote products derived
+;; from this software without specific prior written permission.
+;; THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+;; IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+;; WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defvar ch-viewer-id nil)
+(defvar ch-object-id nil)
+(defvar ch-view-id nil)
+(defvar ch-anchor-list nil)
+(defvar ch-event-setup nil)
+(defvar ch-multiple-dests nil)
+(defvar ch-new-frame nil)
+(defvar ch-process nil)
+(defvar ch-return-message "")
+(defvar ch-chimsh-str "")
+(defvar ch-value-needed nil)
+(defvar ch-active-site nil)
+(defvar ch-active-web nil)
+
+(make-variable-buffer-local 'ch-object-id)
+(make-variable-buffer-local 'ch-view-id)
+(make-variable-buffer-local 'ch-anchor-list)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Chimera menues
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defvar ch-menu1 
+  (list "Chimera" 
+	(vector "Traverse Link" 'ch-traverse-link t)
+	"--:singleLine"
+	(vector "Create Anchor" 'ch-create-anchor t)
+	(vector "Delete Anchor" 'ch-delete-anchor t)
+	"--:singleLine"
+	(vector "Create New Link" 'ch-create-new-link t)
+	(vector "Close Link" 'ch-close-link t)
+	"--:singleLine"
+	(vector "Add Anchor to Active Link" 'ch-add-anchor t)
+	(vector "Remove Anchor from Active Link" 'ch-remove-anchor t)
+	"--:singleLine"
+	(vector "Traverse Popup New Frame" 
+		'(setq ch-new-frame (not ch-new-frame))
+		:active t :style 'toggle :selected 'ch-new-frame)
+	(vector "Handle Multiple Destinations" 
+		'(setq ch-multiple-dests (not ch-multiple-dests))
+		:active t :style 'toggle :selected 'ch-multiple-dests)))
+
+(defvar ch-menu2 
+  (list "Chimera" (vector "Connect to Chimera" 'ch-menu-connect t)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Chimera face
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(make-face 'chimera "" nil)
+(set-face-underline-p 'chimera t)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Chimera functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun ch-traverse-link ( )
+  (interactive)
+  (let* ((anchor-extent (extent-at (point)))
+	 (anchor (cdr (assoc anchor-extent ch-anchor-list)))
+	 (links)(linkids)(link)(name)(menu))
+    (if anchor 
+	(progn
+	  (setq links (string-to-int (chimera "number_of_links_with_anchor" 
+					      anchor)))
+	  (cond 
+	   ((= links 0) 
+	    (message "Traverse Link: No links from this anchor"))
+	   ((= links 1)
+	    (message "Traverse Link: %s" (chimera "traverse_links_from_anchor" 
+	                                          anchor)))
+	   ((> links 1)
+	    (if ch-multiple-dests
+              (progn
+                (setq linkids (chimera "get_links_with_anchor" anchor))
+                (setq menu 
+                   (list "Browsable Links" 
+                      (vector "-Traverse All-" 
+                              `(ch-menu-traverse-link "all" "" ,anchor) t)
+                      "--:singleLine"))
+	        (while (> links 0)
+	          (setq comma (string-match "," linkids))
+	          (setq link (substring linkids 0 comma))
+	          (setq name (chimera "get_attribute link" link "name"))
+	          (if (string-equal "NO_SUCH_ATTRIBUTE" name)
+		      (setq name link))
+	          (setq links (- links 1))
+	          (if (> links 0)
+                    (setq linkids (substring linkids (+ comma 2))))
+	          (setq menu
+                    (append menu
+                      (list (vector name `(ch-menu-traverse-link
+		  	                 ,name ,link ,anchor)
+				    t)))))
+	        (popup-menu menu))
+              (message
+                "Traverse Link: %s"
+                (chimera "traverse_links_from_anchor" anchor)))))))))
+
+(defun ch-menu-traverse-link ( linkname linkid anchor )
+  (interactive)
+  (cond 
+   ((string= linkname "all")
+    (message "Traverse Link: %s" (chimera "traverse_links_from_anchor" anchor)))
+   ((string= linkname ""))
+   (t 
+    (message "Traverse Link: %s" 
+	     (chimera "traverse_link_from_anchor" linkid anchor)))))
+
+(defun ch-create-anchor ( )
+  (interactive)
+  (ch-check)
+  (let* ((value (x-get-selection))(the-point (point))(anchor-extent)(back nil))
+    (setq status (chimera "lock_concept view" ch-view-id))
+    (if (string-match "TRUE" status)
+	(progn
+	  (setq anchor-id (chimera "register_anchor" ch-view-id))
+	  (setq status (chimera "unlock_concept view" ch-view-id))
+	  (if (string-equal "TRUE" status)
+	      (progn
+		(save-excursion
+		  (search-backward value nil t) (search-forward value nil t)
+		  (chimera "lock_concept anchor" anchor-id)
+		  (if (= the-point (point))
+		      (progn
+			(setq back t)
+			(setq pos-end the-point)
+			(chimera "set_attribute anchor" anchor-id "row_end" 
+				 (ch-current-line pos-end))
+			(chimera "set_attribute anchor" anchor-id "col_end"
+				 (current-column))
+			(setq pos-start (search-backward value))
+			(chimera "set_attribute anchor" anchor-id "row_start" 
+				 (ch-current-line pos-start))
+			(chimera "set_attribute anchor" anchor-id "col_start" 
+				 (current-column)))
+		    (goto-char the-point)
+		    (setq pos-start the-point)	
+		    (chimera "set_attribute anchor" anchor-id "row_start" 
+			     (ch-current-line pos-start))
+		    (chimera "set_attribute anchor" anchor-id "col_start"
+			     (current-column))
+		    (setq pos-end (search-forward value))
+		    (chimera "set_attribute anchor" anchor-id "row_end" 
+			     (ch-current-line pos-end))
+		    (chimera "set_attribute anchor" anchor-id "col_end"
+			     (current-column)))
+		  (chimera "unlock_concept anchor" anchor-id))
+		(if back (backward-char))
+		(setq anchor-extent (make-extent pos-start pos-end))
+		(set-extent-property anchor-extent 'face 'chimera)
+		(set-extent-property anchor-extent 'highlight t)
+		(set-extent-property anchor-extent 'duplicable t)
+		(set-extent-property anchor-extent 'unique t)
+		(setq ch-anchor-list (cons (cons anchor-extent anchor-id)
+					   ch-anchor-list))
+		(message "Create Anchor: OK"))
+	    (message "Create Anchor: FAILED")))
+	  (message "Create Anchor: FAILED"))))
+
+(defun ch-delete-anchor ( )
+  (interactive)
+  (let* ((anchor-extent (extent-at (point)))
+	 (anchor (cdr (assoc anchor-extent ch-anchor-list))))
+    (if anchor
+	(progn
+	  (delete-extent anchor-extent)
+	  (setq ch-anchor-list (ch-remove-from-alist anchor-extent 
+						     ch-anchor-list))
+	  (chimera "lock_concept anchor" anchor)
+	  (message "Delete Anchor: %s" 
+		   (chimera "unregister_anchor" anchor))))))
+
+(defun ch-create-new-link ( name )
+  (interactive "sLink name: ")
+  (ch-check)
+  (let ((linkid (chimera "register_link")))
+    (chimera "lock_concept link" linkid)
+    (chimera "set_attribute link" linkid "name" name)
+    (chimera "unlock_concept link" linkid)
+    (message "Create New Link: %s" (chimera "make_link_active" linkid))))
+
+(defun ch-close-link ( )
+  (interactive)
+  (ch-check)
+  (message "Close Link: %s" (chimera "make_link_inactive")))
+
+(defun ch-add-anchor ( )
+  (interactive)
+  (let* ((anchor-extent (extent-at (point)))
+	 (anchor (cdr (assoc anchor-extent ch-anchor-list))))
+    (if anchor 
+	(message "Add Anchor to Active Link: %s" 
+		 (chimera "add_anchor_to_active" anchor)))))
+
+(defun ch-remove-anchor ( )
+  (interactive)
+  (let* ((anchor-extent (extent-at (point)))
+	 (anchor (cdr (assoc anchor-extent ch-anchor-list)))
+	 (active-link))
+    (if anchor 
+	(progn
+	  (setq active-link (chimera "get_active_link"))
+	  (chimera "lock_concept link" active-link)
+	  (chimera "lock_concept anchor" anchor)
+	  (setq status (chimera "remove_anchor" active-link anchor))
+	  (chimera "unlock_concept link" active-link)
+	  (chimera "unlock_concept anchor" anchor)
+	  (message "Remove Anchor from Active Link: %s" status)))))
+
+(defun ch-menu-connect ( )
+  (interactive)
+  (if (string= (ch-connect) "error")
+      (error "Cannot connect to Chimera")
+      (message "Connected to Chimera")))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Chimera menu functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun ch-set-up-menu ( enable )
+  (if (eq enable nil)
+      (progn
+	(disable-menu-item (list "Chimera" "Traverse Link"))
+	(disable-menu-item (list "Chimera" "Create Anchor"))
+	(disable-menu-item (list "Chimera" "Delete Anchor"))
+	(disable-menu-item (list "Chimera" "Create New Link"))
+	(disable-menu-item (list "Chimera" "Close Link"))
+	(disable-menu-item (list "Chimera" "Add Anchor to Active Link"))
+	(disable-menu-item (list "Chimera" "Remove Anchor from Active Link"))
+	(disable-menu-item (list "Chimera" "Traverse Popup New Frame"))
+	(disable-menu-item (list "Chimera" "Handle Multiple Destinations")))
+    (progn
+      (enable-menu-item (list "Chimera" "Traverse Link"))
+      (enable-menu-item (list "Chimera" "Create Anchor"))
+      (enable-menu-item (list "Chimera" "Delete Anchor"))
+      (enable-menu-item (list "Chimera" "Create New Link"))
+      (enable-menu-item (list "Chimera" "Close Link"))
+      (enable-menu-item (list "Chimera" "Add Anchor to Active Link"))
+      (enable-menu-item (list "Chimera" "Remove Anchor from Active Link"))
+      (enable-menu-item (list "Chimera" "Traverse Popup New Frame"))
+      (enable-menu-item (list "Chimera" "Handle Multiple Destinations")))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Chimera help functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun ch-connect ( )
+  (let ((value)(frames (frame-list)))
+    (if (not ch-process)
+	(progn
+	  (setq ch-process (start-process "chimsh" "*chimera*" "chimsh"))
+	  (set-process-filter ch-process 'ch-process-filter)
+	  (accept-process-output ch-process)
+	  (set-process-buffer ch-process nil)
+	  (kill-buffer "*chimera*")
+	  (setq value ch-return-message)
+	  (if (string= "error" value)
+	      (progn
+		(delete-process ch-process)
+		(setq ch-process nil)
+		(add-submenu nil ch-menu2)
+		(global-set-key "\C-c\C-c" 'ch-menu-connect))
+	    (while frames
+	      (save-excursion
+		(select-frame (car frames))
+		(add-submenu nil ch-menu1)
+		(setq frames (cdr frames))))
+	    (global-set-key "\C-c\C-t" 'ch-traverse-link)
+	    (global-set-key "\C-c\C-a" 'ch-create-anchor)
+	    (global-set-key "\C-c\C-d" 'ch-delete-anchor)
+	    (global-set-key "\C-c\C-l" 'ch-create-new-link)
+	    (global-set-key "\C-c\C-c" 'ch-close-link)
+	    (global-set-key "\C-c\C-f" 'ch-add-anchor)
+	    (global-set-key "\C-c\C-r" 'ch-remove-anchor)
+	    (global-set-key "\C-c\C-i" 'ch-toggle-invocation)
+	    (setq status (chimera "is_hyperweb_manager_connected"))
+	    (if (string= status "TRUE")
+		(progn
+		  (setq ch-active-site t)
+		  (ch-register-viewer)
+		  (ch-setup-event)
+		  (setq status (chimera "get_web"))
+		  (if (not (string= status "NULL"))
+		      (progn
+			(setq ch-active-web t)
+			(ch-set-up-menu t)
+			(ch-create-anchors))
+		    (progn
+		      (setq ch-active-web nil)
+		      (ch-set-up-menu nil))))
+	      (progn
+		(setq ch-active-site nil)
+		(ch-set-up-menu nil)))
+	    (chimera "client_ready"))))
+    value))
+	      
+(defun ch-setup-event ( )
+  (if ch-active-site
+      (if (not ch-event-setup)
+	  (progn
+	    (chimera "viewer_is_active" ch-viewer-id)
+	    (chimera "register_interest" ch-viewer-id "link_traversal")
+	    (setq ch-event-setup t)))))
+
+(defun ch-register-viewer ( )
+  (setq ch-viewer-id (chimera "get_viewer" "texted"))
+  (if (string= ch-viewer-id "FALSE")
+      (progn
+	(setq ch-viewer-id (chimera "register_viewer" "texted"))
+	(chimera "lock_concept viewer" ch-viewer-id)
+	(chimera "add_mime_type" ch-viewer-id "text/plain")
+	(chimera "set_multiple_views" ch-viewer-id "TRUE")
+	(chimera "unlock_concept viewer" ch-viewer-id))))
+
+(defun ch-register-view ( )
+  (setq ch-view-id (chimera "get_view" ch-viewer-id ch-object-id))
+  (if (string= ch-view-id "FALSE")
+      (progn
+	(chimera "lock_concept viewer" ch-viewer-id)
+	(chimera "lock_concept object" ch-object-id)
+	(setq ch-view-id (chimera "register_view" ch-viewer-id ch-object-id))
+	(chimera "unlock_concept viewer" ch-viewer-id)
+	(chimera "unlock_concept object" ch-object-id))))
+
+(defun ch-create-anchors ( )
+  (let ((buffers (buffer-list)) (filename))
+    (while buffers
+      (setq filename (buffer-file-name (car buffers)))
+      (if filename
+	  (save-excursion
+	    (set-buffer (car buffers))
+	    (ch-get-anchors filename)))
+      (setq buffers (cdr buffers)))))
+
+(defun ch-delete-anchors ( )
+  (let ((buffers (buffer-list)))
+    (while buffers
+      (save-excursion
+	(set-buffer (car buffers))
+	(if ch-object-id
+	    (progn
+	      (setq ch-object-id nil)
+	      (setq ch-view-id nil)
+	      (while ch-anchor-list
+		(delete-extent (caar ch-anchor-list))
+		(setq ch-anchor-list
+		      (cdr ch-anchor-list))))))
+      (setq buffers (cdr buffers)))))
+
+(defun ch-get-anchors ( filename )
+  (let ((anchor-ids ""))
+    (setq ch-object-id (chimera "get_object" filename))
+    (if (string= "FALSE" ch-object-id)
+	(setq ch-object-id nil)
+      (ch-register-view)
+      (setq anchor-ids (chimera "get_anchors_in_view" ch-view-id))
+      (setq num-anchors (chimera "how_many_anchors_in_view" ch-view-id))
+      (setq ch-counter 1)
+      (if (string= "None" anchor-ids)
+	  (setq anchor-ids "")
+	(let ((len (length anchor-ids))(anchors t)
+	      (pos-start)(pos-end)(anchor-extent)(str anchor-ids))
+	  (while anchors
+	    (save-excursion
+	      (message "Loading Anchor %s of %s" ch-counter num-anchors)
+	      (setq ch-counter (+ ch-counter 1))
+	      (setq comma (string-match "," str))
+	      (if (eq comma nil)
+		  (setq comma len))
+	      (goto-line (string-to-int 
+			  (chimera "retrieve_value anchor"
+				   (substring str 0 comma) 
+				   "row_start")))
+	      (move-to-column (string-to-int 
+			       (chimera "retrieve_value anchor"
+					(substring str 0 comma) 
+					"col_start")))
+	      (setq pos-start (point))
+	      (goto-line (string-to-int 
+			  (chimera "retrieve_value anchor"
+				   (substring str 0 comma) 
+				   "row_end")))
+	      (move-to-column (string-to-int 
+			       (chimera "retrieve_value anchor"
+					(substring str 0 comma) 
+					"col_end")))
+	      (setq pos-end (point)))
+	    (setq anchor-extent (make-extent pos-start pos-end))
+	    (set-extent-property anchor-extent 'face 'chimera)
+	    (set-extent-property anchor-extent 'highlight t)
+	    (set-extent-property anchor-extent 'duplicable t)
+	    (set-extent-property anchor-extent 'unique t)
+	    (setq ch-anchor-list (cons (cons anchor-extent 
+					     (substring str 0 comma)) 
+				       ch-anchor-list))
+	    (if (/= comma len)
+		(progn
+		  (setq str (substring str (+ comma 2)))
+		  (setq len (length str)))
+	        (setq anchors nil))))))))
+
+(defun ch-remove-from-alist (value alist)
+  (let* ((alist-copy '()))
+    (while alist
+      (if (not (equal value (caar alist)))
+          (setq alist-copy (cons (car alist) alist-copy)))
+      (setq alist (cdr alist)))
+    alist-copy))
+
+(defun ch-current-line ( pos )
+  (+ (count-lines (point-min) pos)
+     (if (= (current-column) 0) 1 0)))
+
+(defun ch-check ( )
+"  This is the only function that registers objects with Chimera.
+  If the object filenames need to be modified due to filesystem-specific
+  naming conventions, this function will need to be modified to
+  alter the object filename before it is registered with Chimera."
+(progn
+  (if (not ch-object-id)
+      (progn
+	(setq ch-object-id (chimera "register_object" (buffer-file-name)
+				    "text/plain"))
+	(ch-register-view)))
+  (ch-setup-event)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Chimera hooks
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(add-hook 'mouse-track-click-hook 'ch-mouse-traverse-link)
+(add-hook 'find-file-hooks 'ch-find-file)
+(add-hook 'write-file-hooks 'ch-save-anchors)
+(global-set-key "\C-x\C-c" 'ch-cleanup)
+
+(defun ch-mouse-traverse-link ( event click-count )
+  (let* ((anchor-extent (extent-at (point))))
+    (if anchor-extent
+	(if (= 2 click-count)
+	    (progn
+	      (ch-traverse-link)
+	      t)
+	  nil)
+      nil)))
+
+(defun ch-find-file ( )
+  (if ch-process
+      (if ch-active-site
+	  (if ch-active-web
+	      (ch-get-anchors buffer-file-name)))))
+
+
+(defun ch-save-anchors ( )
+  (if (buffer-modified-p)
+      (let ((anchors ch-anchor-list)(pos-start)(pos-end))
+	(while anchors
+	  (if (extent-detached-p (caar anchors))
+	      (progn
+		(chimera "lock_concept anchor" (cdar anchors))
+		(chimera "unregister_anchor" (cdar anchors))
+		(delete-extent (caar anchors))
+		(setq ch-anchor-list (ch-remove-from-alist (caar anchors) 
+							   ch-anchor-list)))
+	    (setq pos-start (extent-start-position (caar anchors)))
+	    (setq pos-end (extent-end-position (caar anchors)))
+	    (save-excursion
+	      (goto-char pos-start)
+	      (chimera "lock_concept anchor" (cdar anchors))
+	      (chimera "set_attribute anchor" (cdar anchors) "row_start"
+		       (ch-current-line pos-start))
+	      (chimera "set_attribute anchor" (cdar anchors) "col_start" 
+		       (current-column))
+	      (goto-char pos-end)
+	      (chimera "set_attribute anchor" (cdar anchors) "row_end" 
+		       (ch-current-line pos-end))
+	      (chimera "set_attribute anchor" (cdar anchors) "col_end" 
+		       (current-column))
+	      (chimera "unlock_concept anchor" (cdar anchors))))
+	  (setq anchors (cdr anchors)))
+	nil)))
+
+(defun ch-cleanup ( )
+  (interactive)
+  (if ch-process (delete-process ch-process))
+  (save-buffers-kill-emacs))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Chimera shell functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(get-buffer-create "*chimera debug*")	; debugging info
+
+(defun chimera ( ope &rest args )
+  (let ((str ope))
+    (while args
+      (setq str (concat str " " (car args)))
+      (setq args (cdr args)))
+    (process-send-string ch-process (concat str "\n"))
+    (save-excursion			; debugging info
+      (set-buffer "*chimera debug*")	; debugging info
+      (insert (concat str "\n")))	; debugging info
+    (setq ch-value-needed t)
+    (while ch-value-needed
+      (accept-process-output ch-process))
+    ch-return-message))
+
+(defun ch-process-filter ( proc str )
+  (save-excursion			; debugging info
+    (set-buffer "*chimera debug*")	; debugging info
+    (insert str))			; debugging info
+  (setq ch-chimsh-str (concat ch-chimsh-str str))
+  (let ((pointer (string-match "\nchimsh% " ch-chimsh-str)))
+    (if pointer
+	(progn
+	  (setq ch-return-message (substring ch-chimsh-str 0 pointer))
+	  (setq ch-chimsh-str (substring ch-chimsh-str (+ pointer 9)))
+	  (setq ch-value-needed nil))))
+  (let ((event (string-match "*** Event: " ch-chimsh-str)) (event-str))
+    (if event
+	(progn
+	  (setq event-str (substring ch-chimsh-str (+ event 11)))
+	  (setq ch-chimsh-str (substring ch-chimsh-str 0 event))
+	  (ch-event-handler event-str))))
+  (let ((connect (string-match "is not available" ch-chimsh-str)))
+    (if connect 
+	(progn
+	  (setq ch-return-message "error")
+	  (setq ch-chimsh-str ""))))
+  (let ((connect (string-match "chimsh% " ch-chimsh-str)))
+    (if connect
+	(progn
+	  (setq ch-return-message "ok")
+	  (setq ch-chimsh-str "")))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Chimera event handler
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun select-the-window ( filename )
+  (progn
+    (setq frames (frame-list))
+    (while frames
+      (if (get-buffer-window filename (car frames))
+        (select-frame (car frames)))
+      (setq frames (cdr frames)))
+    (switch-to-buffer filename)
+    (delete-other-windows)
+    (raise-frame (selected-frame))))
+
+(defun ch-event-handler ( event )
+  (let ((web    (string-match "active_web" event))
+	(site   (string-match "active_site" event))
+	(follow (string-match "link_traversal" event))
+	(server (string-match "server_disconnect" event)))
+    (if follow
+	(let* ((len        (length event))
+	       (space      (string-match " " event 15))
+	       (event-name (substring event 0 14))
+	       (viewer     (substring event 15 space))
+	       (anchor     (substring event (+ space 1) (- len 1))))
+	  (if (and (string= event-name "link_traversal")
+		   (string= viewer ch-viewer-id))
+	      (progn
+		(let* ((view (chimera "retrieve_view" anchor))
+		       (object (chimera "retrieve_object" view))
+		       (name (chimera "retrieve_object_name" object))
+		       (filename (file-name-nondirectory name))
+		       (frames (frame-list)))
+		  (if (get-buffer filename)
+                    (select-the-window filename)
+		    (if ch-new-frame
+		      (find-file-other-frame name)
+		      (if (string= (buffer-name) "*scratch*")
+		        (progn
+			  (find-file name)
+			  (delete-other-windows))
+			(find-file-other-window name)))))
+                (progn
+                  (setq anchor-extent (car (rassoc anchor ch-anchor-list)))
+                  (if (not (eq anchor-extent nil))
+                    (progn
+                      (setq pos (extent-start-position anchor-extent))
+                      (goto-char pos)
+                      (highlight-extent anchor-extent t)
+                      (recenter))))
+                  (redraw-frame (selected-frame))))
+	  (chimera "client_ready")))
+    (if web
+	(let* ((len        (length event))
+	       (space      (string-match " " event 11))
+	       (event-name (substring event 0 10))
+	       (webname    (substring event (+ space 1) (- len 1))))
+	  (if (string= event-name "active_web")
+	      (if (string= webname "NULL")
+		  (progn
+		    (ch-set-up-menu nil)
+		    (ch-delete-anchors)
+		    (setq ch-active-web nil))
+		  (progn
+		    (ch-set-up-menu t)
+		    (ch-create-anchors)
+		    (setq ch-active-web t))))
+	  (chimera "client_ready")))
+    (if site
+	(let* ((len        (length event))
+	       (space      (string-match " " event 12))
+	       (event-name (substring event 0 11))
+	       (sitename   (substring event (+ space 1) (- len 1))))
+	  (if (string= event-name "active_site")
+	      (if (string= sitename "NULL")
+		  (progn
+		    (setq ch-active-site nil)
+		    (if ch-active-web
+			(progn
+			  (ch-set-up-menu nil)
+			  (ch-delete-anchors)
+			  (setq ch-active-web nil)))
+		    (setq ch-viewer-id nil)
+		    (setq ch-event-setup nil))
+		  (progn
+		    (setq ch-active-site t)
+		    (ch-register-viewer)
+		    (ch-setup-event))))
+	  (chimera "client_ready")))
+    (if server
+	(if ch-process 
+	    (let ((buffers (buffer-list))(frames (frame-list)))
+	      (delete-process ch-process)
+	      (setq ch-process nil)
+	      (setq ch-viewer-id nil)
+	      (setq ch-event-setup nil)
+	      (while frames
+		(save-excursion
+		  (select-frame (car frames))
+		  (add-submenu nil ch-menu2)
+		  (setq frames (cdr frames))))
+	      (global-set-key "\C-c\C-c" 'ch-menu-connect)
+	      (global-unset-key "\C-c\C-t")
+	      (global-unset-key "\C-c\C-a")
+	      (global-unset-key "\C-c\C-d")
+	      (global-unset-key "\C-c\C-l")
+	      (global-unset-key "\C-c\C-f")
+	      (global-unset-key "\C-c\C-r")
+	      (global-unset-key "\C-c\C-i")
+	      (while buffers
+		(save-excursion
+		  (set-buffer (car buffers))
+		  (if ch-object-id
+		      (progn
+			(setq ch-object-id nil)
+			(setq ch-view-id nil)
+			(while ch-anchor-list
+			  (delete-extent (caar ch-anchor-list))
+			  (setq ch-anchor-list (cdr ch-anchor-list))))))
+		(setq buffers (cdr buffers)))
+	      (error "Chimera server disconnect, deactivating hypertext capability"))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Chimera command line function
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun ch ( )
+  (ch-setup-event))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Chimera startup function
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(ch-connect)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; end of file
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -1,0 +1,26 @@
+// Test of closest pair algorithms
+// David Eppstein, UC Irvine, 19 Apr 1997
+//
+// Random binary values with two-adic valuation
+// distance = 1/(2^i) where i=index of least significant differing bit
+
+#include "TwoAdic.h"
+#include "Random.h"
+#include "Error.h"
+
+TwoAdic::TwoAdic(unsigned long np) : PointSet(np)
+{
+	values = new unsigned long[np];
+	if (values == 0) error("TwoAdic: can't allocate table of values");
+	while (np > 0) values[--np] = RandomLong();
+}
+
+TwoAdic::~TwoAdic() { delete values; }
+
+double TwoAdic::operator() (point i, point j)
+{
+	gDistances++;
+	unsigned long x = values[i]^values[j];	// get differing bits
+	x ^= x - 1;					// turn into 2^{i+1}-1 where i=least sig diff
+	return 2.0 / ((double) x + 1.0);
+}

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ProblemRecord: Summary of users / students completing synthesis problems</title>    
+    <meta charset="utf-8">
+    <!-- Include JQuery for tabs and UI plugins -->     
+    <script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.unserialize.js"></script>
+    <script type="text/javascript" src="/js/jquery-ui-1.8.16.custom.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.colorbox-min.js"></script>
+    <script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.multiselect.min.js"></script>
+    <script type="text/javascript" src="/js/chemdb.js"></script>
+    <!-- Include styling -->
+    <link rel="stylesheet" type="text/css" href="/css/chemdb.css" />
+    <link rel="stylesheet" type="text/css" href="/css/colorbox.css" />
+    <link rel="stylesheet" type="text/css" href="/css/jquery.ui.selectmenu.css" />
+    <link rel="stylesheet" type="text/css" href="/css/jquery.datatable_jui.css" />
+    <link rel="stylesheet" type="text/css" href="/css/jquery.datatable.css" />    
+    <link type="text/css" href="/css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />
+    
+    <script type="text/javascript">                               
+        // Define AJAX submission
+        function ajax_submit(formID, targetID){
+            var values = $(formID).serialize();         
+            var url = $(formID).attr('action');         
+            $.post(url, values, function(data){
+                $("#results").html($(data).find("#results").contents());                
+                $('#results').dataTable( {            
+                    "bJQueryUI": true,
+                    "sPaginationType": "full_numbers",
+                    "bAutoWidth": true,
+                    "bFilter": true,
+                    "bPaginate": true,
+                    "bInfo": true
+                });
+                $('.hide').show()
+            });
+        }       
+        
+        // Wait for DOM to be lodaded and then do work
+        $(document).ready(function(){
+        	// Init select,buttons,datepicker,etc
+            $("#metricSelect").multiselect();
+            $("#recordStart").datepicker({ altField: "#recordStart", altFormat: "dd-M-yy" });
+            $("#recordEnd").datepicker({ altField: "#recordEnd", altFormat: "dd-M-yy" });
+            
+            // Bind ajax submit to form
+            $("#ProblemRecordWeb").submit(function(){
+                ajax_submit("#ProblemRecordWeb", "#results");
+                return false;
+            });
+        });
+    </script>
+    <style>
+        input,select{width:250px;}
+    </style>
+</head>
+<body>
+<div id="background">           
+    <div id="content">
+        <div id="header">
+            <div id="chemdb-logo"></div>
+            <span>ProblemRecord: Summary of users / students completing synthesis problems</span>
+            <div id="top-nav">                
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Tools</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/BabelWeb.py">Babel</a></li>
+                        <li><a href="/cgibin/Mass2Structure.py">Mass2Structure</a></li>                        
+                        <li class="odd"><a href="/cgibin/tools/MolInfoWeb.py">MolInfo</a></li>
+                        <li><a href="/cgibin/MSFragment.py">MSFragment</a></li>
+                        <li class="odd"><a href="/cgibin/PatternCountScreenWeb.py">Pattern Count Screen</a></li>
+                        <li><a href="/cgibin/PatternMatchCounterWeb.py">Pattern Match Counter</a></li>
+                        <li class="odd"><a href="/cgibin/Smi2DepictWeb.py">Smi2Depict</a></li>
+                        <li><a href="/cgibin/reaction/ReactionProcessorWeb.py">Reaction Processor</a></li>
+                    </ul>
+                </div>                                                                          
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Applications</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/ChemicalIndexWeb.py">Chemical Search</a></li>
+                        <li><a href="http://cosmos.igb.uci.edu/">COSMOS</a></li>
+                        <li class="odd"><a href="/cgibin/tutorial/ReactionTutorialSetupWeb.py">Reaction Explorer</a></li>
+                        <li><a href="http://reactions.igb.uci.edu/">Reaction Predictor</a></li>                        
+                        <li class="odd"><a href="/cgibin/reaction/VirtualSpaceWeb.py">Virtual Chemical Space</a></li>
+                    </ul>
+                </div>
+            </div>   
+            <div id="crumbs"><!-- <a class="breadcrumb" href="http://cdb.ics.uci.edu" target="_top">ChemDB</a>
+ / 
+<a class="breadcrumb" href="../../cgibin/tutorial/ReactionTutorialSetupWeb.py" target="_top">Reaction Explorer</a>
+ --><a href="/">Home</a> <img class="crumb-arrow" src='/images/arrow.png' /> <a class="breadcrumb" href="#">ProblemRecord</a></div>
+        </div>
+
+        <div id="loadingDiv"><img src="/images/loading.gif" /></div>
+        
+        <div id="tooltips" class="hidden">            
+            <ul>
+                <li>Use the input fields to filter the information
+                    down to what's relevant to you.  In particular...
+                <li>Fill in the "User / Student IDs" box with a list
+                    of all the student ID numbers you want to check for
+                    (one number per line).
+                    You can copy-and-paste a column right out of Excel
+                    to easily do this.
+                <li>Fill in the "Record Start" date with the earliest
+                    records you want to look for
+                    (e.g., beginning of the quarter "27-Sep-2007").
+                <li>Click on Submit Query to extract out a report on
+                    how many problems students have completed.
+                    This is further broken down into problems
+                    completed per chapter as well as which non-random
+                    (assigned) problems each student completed.
+                    <p>
+                    If you scroll to the very bottom of the page,
+                    the same data is available in tab-delimited format
+                    in a big textbox.  This is suitable to do a complete
+                    copy-and-paste into Excel for further analysis
+                    in a PivotTable.
+            </ul>
+        </div>
+        
+        <div class="ui-widget-header">Query Parameters <a class="float-right" href="help/ReactionTutorialHelp.htm#problemRecord" target="help">?</a></div>
+        <div class="module">
+            <form id="ProblemRecordWeb" name="ProblemRecordWeb" action="ProblemRecordWeb.py" method=post>                
+                <div class="tooltip">            
+                    <div class="module-sub-header">User / Student IDs</div>
+                    <textarea id="userIDList" name="userIDList" rows=5 style="width: 100%;"></textarea>
+                </div>
+                
+                <div class="half-column float-left">
+                    <div class="margin-top">
+                        <div class="module-sub-header">Record Start (inclusive)</div>
+                        <input type=text id="recordStart" name="recordStart" class="datepicker" value="" />                        
+                    </div>
+                
+                    <div class="margin-top">
+                        <div class="module-sub-header">Record End (exclusive)</div>
+                        <input type=text id="recordEnd" name="recordEnd" class="datepicker" value="" />                        
+                    </div>
+                </div>
+                
+                <div class="half-column float-right">
+                    <div class="margin-top">
+                        <div class="module-sub-header">Metrics</div>                
+                        <select id="metricSelect" name="metricSelect" multiple>
+                            <option value="total" selected>Total Problems</option>
+<option value="avg_steps" selected>Average Steps</option>
+
+                        </select>
+                    </div>                
+                    <div class="margin-top">
+                        <div class="module-sub-header">Min Steps</div>
+                        <input type=text class="spinner" id="minSteps" name="minSteps" value="1" />
+                    </div>
+                </div>     
+                
+                <input type="hidden" name="ProblemRecordWeb" value="Submit Query">
+                <button class="convert-button clear float-right margin-top">Submit Query</button>            
+            </form>
+        </div>
+        
+        <div class="ui-widget-header hide">Problem Record Summary </div>
+        <div class="module hide" style="min-height: 180px;">
+            <table id="results">
+                 
+            </table>
+        </div>
+        
+        <div class="hidden">            
+            <div>
+                <p>You can copy and paste the contents below into Excel for additional analysis.</p>
+                <textarea tabindex=500 rows=10 style="width:100%;" wrap=off></textarea>
+            </div>
+        </div>  
+    </div>
+</div>
+
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-3896317-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+
+
+</body>
+</html>

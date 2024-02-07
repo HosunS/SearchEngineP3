@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>22.5 Call-Backs</title>
+<META NAME="description" CONTENT="22.5 Call-Backs">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node177.html">
+<LINK REL="previous" HREF="node175.html">
+<LINK REL="up" HREF="node171.html">
+<LINK REL="next" HREF="node177.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node175.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node171.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node177.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node175.html">22.4 OEUnaryPredicate</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node171.html">22. Predicate Functors</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node177.html">22.6 Predefined OEChem Functors</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION0025500000000000000000">
+22.5 Call-Backs</A>
+</H1>
+
+<P>
+Simply stated, predicate functors (boolean functors) are functions which
+return "true" or "false".  In OEChem, these functors are often passed into
+another function.  The functors are then called from inside the second
+function.  This is the concept of a "call-back" because the second function
+provides the argument and "call's back" to the functor which was passed
+into the function.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include "oesystem.h"
+
+#include &lt;iostream&gt;
+
+using namespace OESystem;
+using namespace OEChem;
+using namespace std;
+
+unsigned int Count(const OEUnaryPredicate&lt;OEAtomBase&gt; &amp;fcn,
+                   const OEMolBase &amp;mol)
+{
+  unsigned int count = 0;
+  OEIter&lt;OEAtomBase&gt; atom;
+  for(atom = mol.GetAtoms();atom;++atom)
+    if(fcn(*atom))
+      ++count;
+
+  return count;
+}
+
+int main()
+{
+  OEGraphMol mol;
+  OEParseSmiles(mol, "c1c(O)c(O)c(Cl)cc1CCCBr");
+
+  cerr &lt;&#60; "Number of Oxygens = " &lt;&#60; Count(OEIsOxygen(),mol) &lt;&#60; endl;
+
+  cerr &lt;&#60; "Number of Carbons = " &lt;&#60; Count(OEHasAtomicNum(6),mol) &lt;&#60; endl;
+
+  cerr &lt;&#60; "Number of Halides = " &lt;&#60; Count(OEIsHalide(),mol) &lt;&#60; endl;
+
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch22-1.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+In the example above, the function <code>Count</code> loops over the atom and
+performs a call-back to the predicate functor <code>fcn</code> for each atom.  If
+the predicate returns true, a counter is incremented.  The main loop passes
+three of OEChem's predefined atom predicates to the <code>Count</code> function,
+allowing the same function to calculate the number atoms in the molecule
+which satisfy the functor passed to it.
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node175.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node171.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node177.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node175.html">22.4 OEUnaryPredicate</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node171.html">22. Predicate Functors</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node177.html">22.6 Predefined OEChem Functors</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

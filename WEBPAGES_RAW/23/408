@@ -1,0 +1,249 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>32.4 Command line help</title>
+<META NAME="description" CONTENT="32.4 Command line help">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node259.html">
+<LINK REL="previous" HREF="node255.html">
+<LINK REL="up" HREF="node252.html">
+<LINK REL="next" HREF="node259.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node257.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node252.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node259.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node257.html">32.3.2 OEParseCommandLineLW</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node252.html">32. OpenEye Command Line</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node259.html">32.5 Parameter Categories</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION0035400000000000000000">
+32.4 Command line help</A>
+</H1>
+
+<P>
+The OEInterface object can has a significant amount of information,
+default values, text descriptions etc, about the parameters it holds.
+This information can be made accessible from the command line using
+the OECheckHelp function.  This function is described in detail in
+the API documentation, but in general is simply check if the first
+argument on the command line (argv[1]) is "<SPAN CLASS="MATH"><IMG
+ WIDTH="37" HEIGHT="37" ALIGN="MIDDLE" BORDER="0"
+ SRC="img7.gif"
+ ALT="$--$"></SPAN>help", and if it
+is I supplies instructions on how to access the various help functions.
+If no help is requested (<I>i.e.</I>, <code>argv[1]</code> isn't "<SPAN CLASS="MATH"><IMG
+ WIDTH="37" HEIGHT="37" ALIGN="MIDDLE" BORDER="0"
+ SRC="img7.gif"
+ ALT="$--$"></SPAN>help)
+the function is a no-op.
+
+<P>
+Given the following program
+
+<P>
+<i>Chapter 32 - Example 6 : cpp file</i>
+<dl><dd><pre class="verbatim">#include "oeplatform.h"
+#include "oesystem.h"
+
+//Defines static const unsigned char* array InterfaceData
+#include "ch32-6.itf"
+
+using namespace OEPlatform;
+using namespace OESystem;
+
+int main(int argc, char** argv)
+{
+  OEInterface itf;
+  OEConfigure(itf,InterfaceData);
+  if (OECheckHelp(itf,argc,argv)) return 0;
+  OEParseCommandLine(itf,argc,argv);
+  OEWriteSettings(itf,oeout,true);
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch32-6.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+and text configuration file
+
+<P>
+<i>Chapter 32 - Example 6 : txt configuration file</i>
+<dl><dd><pre class="verbatim">!PARAMETER -x
+  !TYPE float
+  !DEFAULT 0.0
+  !VISIBILITY simple
+  !BRIEF First variable
+!END
+
+!PARAMETER -y
+  !TYPE float
+  !DEFAULT 0.0
+  !BRIEF Second variable
+!END
+
+!PARAMETER -op
+  !TYPE string
+  !BRIEF Operation to perform on x and y
+  !DETAIL
+    The operation performed is
+
+      x &lt;-op&gt; y
+
+    So if -op is 'add' the operation is
+
+      x + y
+  !VISIBILITY normal
+!END
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch32-6.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+Calling the program with "<SPAN CLASS="MATH"><IMG
+ WIDTH="37" HEIGHT="37" ALIGN="MIDDLE" BORDER="0"
+ SRC="img7.gif"
+ ALT="$--$"></SPAN>help" as the first argument gives and no further
+arguments gives the following.
+
+<P>
+<dl><dd><pre class="verbatim">&gt; ch32-6 --help
+Help functions:
+  ch32-6 --help simple      : Get a list of simple parameters
+  ch32-6 --help all         : Get a complete list of parameters
+  ch32-6 --help defaults    : List the defaults for all parameters
+  ch32-6 --help &lt;parameter&gt; : Get detailed help on a parameter
+  ch32-6 --help html        : Create an html help file for this program
+
+&gt;
+</pre></dl>
+
+<P>
+The specific help function return the following output
+
+<P>
+<dl><dd><pre class="verbatim">&gt; ch32-6 --help simple
+Simple parameter list
+    -x : First variable
+    -y : Second variable
+
+&gt; ch32-6 --help all
+Complete parameter list
+    -op : Operation to perform on x and y
+    -x : First variable
+    -y : Second variable
+
+&gt; ch32-6 --help defaults
+Default settings
+    -op : add
+    -x : 0.000000
+    -y : 0.000000
+
+&gt; ch32-6 --help -x
+Contents of parameter -x
+    Type : floatDefault : 0.000000
+    Simple : true
+    Required : false
+    Brief : First variable
+
+&gt; ch32-6 --help -y
+Contents of parameter -y
+    Type : floatDefault : 0.000000
+    Simple : true
+    Required : false
+    Brief : Second variable
+
+&gt; ch32-6 --help -op
+Contents of parameter -op
+    Type : string
+    Simple : false
+    Required : false
+    Brief : Operation to perform on x and y
+    Detail
+            The operation performed is
+
+              x &lt;-op&gt; y
+
+            So if -op is 'add' the operation is
+
+              x + y
+
+&gt; ch32-6 --help html
+Creating 'ch32-6_help.html'
+</pre></dl>
+
+<P>
+The difference between the <i>simple</i> and <i>all</i> help is that
+all lists every parameter with a visibility setting of "simple" or
+"normal", while simple only lists parameters with a visibility setting
+of "simple".  "simple" is the default visibility if !VISIBILITY isn't
+specified.  Calling the <i>html</i> help creates an html file with all
+the available help content from the OEInterface.
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node257.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node252.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node259.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node257.html">32.3.2 OEParseCommandLineLW</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node252.html">32. OpenEye Command Line</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node259.html">32.5 Parameter Categories</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

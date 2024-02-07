@@ -1,0 +1,294 @@
+<!-- This document automatically created using nb2html -->
+<!--         nb2html is Copyright T.D.Robb 1994        -->
+<H1><CENTER>
+Algorithms for Egyptian Fractions
+</CENTER></H1>
+<P>
+<HR><H2><IMG SRC="mmaSection.gif" ALT="o">
+Brute Force Methods
+</H2>
+<P>
+<A NAME="genrem"><H3><IMG SRC="mmaSubSection.gif" ALT="+">
+The Generalized Remainder Method
+</H3>
+<P>
+</A>This is closely related to the
+<A HREF="binary.html#binrem">binary remainder method</A>, and to similar methods cited in the discussion there.  We find a number p with many divisors, compute xp=qy+r, represent q and r as sums of divisors of p, and use these representations to expand x/y=q/p + r/yp.
+<P>
+Here we assume a value p given by the user, and use a close-to-brute-force dynamic programming technique to represent numbers as sums of divisors of p.  We then use
+<A HREF="conflict.html#pair">EgyptPairList</A> because our technique does not necessarily avoid duplicate fractions (and because the chief goal here is to minimize the number of terms in the expansion).
+<BLOCKQUOTE><PRE><B>
+SumDivisors[n_,p_] :=
+	DivisorSums[n,p,
+				Table[If[p ~Mod~ i == 0, {{i}}, {}],{i,n}]];
+
+DivisorSums[n_,p_,t_] :=
+	If [t[[n]] != {}, t[[n]],
+		DivisorSums[n,p,ExtendDivTable[t,p,n]]];
+
+ExtendTableEntry[e_,d_] :=
+	Append[#,d]&amp; /@
+	Select[e,Last[#] &lt;= d&amp;];
+	
+ExtendDivTable[t_,p_,n_] :=
+	Table[If[t[[i]] != {}, t[[i]],
+		  	 Join @@
+		  	 ( ExtendTableEntry[t[[i-#]],#]&amp; /@
+		  	 Select[Divisors[p], #&lt;i&amp;] ) ],
+		  {i,n}]
+		  
+EgyptRemainder[Rational[x_,y_],p_] :=
+   Module[{r, s},
+           q = Quotient[x p, y];
+   		   r = Mod[x p, y];
+           EgyptPairList /@
+           OuterJoin[SumDivisors[q,p]/p,
+           			 SumDivisors[r,p]/(p*y)]];
+</B></PRE></BLOCKQUOTE>
+<P>
+In general, the behavior of this algorithm depends on the number p, which should be chosen to have many divisors (factorials are reasonable choices), and to make q and r both small.  With a good choice this seems to be capable of generating very short representations, with reasonably small denominators.
+<BLOCKQUOTE><PRE><B>
+EgyptRemainder[31/311,252]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+  1   1    1     1      1   1    1      1
+{{--, --, ----, ----}, {--, --, ----, -----}, 
+  14  36  2799  8708    14  36  2177  78372
+ 
+   1   1    1     1      1   1    1      1
+  {--, --, ----, ----}, {--, --, ----, -----}}
+   12  63  2799  8708    12  63  2177  78372
+</PRE></BLOCKQUOTE>
+<H3><IMG SRC="mmaSubSection.gif" ALT="+">
+The Small Multiple Method
+</H3>
+<P>
+If y is prime, then any representation of x/y must have some terms 1/ky.  In particular, the sum of these terms must be a/by where xb-a is divisible by y.  (From this we can quickly see that for some x, the denominators in any representation must be Omega[y log[y]]: each such combination a/b works for only one x so we need at least y different combinations to be available.)
+<P>
+The idea behind the following method is simply to try all small combinations of terms until finding one cancelling the factor of y.  The result is a fraction which may well end up with a higher denominator than y, but likely has more divisors.
+<P>
+If y is not prime, we first start by greedily removing fractions d/y where d is a divisor of y;
+the hope is that this step makes x sufficiently small that a smaller combination a/b will work.
+<P>
+Once we have found a combination that works, we are likely to have a denominator with many more divisors, so we apply some other method better suited to that case (here, the
+<A HREF="greed.html#smallden">small-denominator reverse greedy method</A>) rather than continuing recursively.
+<BLOCKQUOTE><PRE><B>
+Subsets[s_] :=
+	Flatten /@ Distribute[{{},{#}}&amp; /@ s, List,List];
+
+ESMGoodFrac[Rational[a_,b_],x_,y_] :=
+	(x*b - a) ~Mod~ y == 0;
+	
+ESMSubset[x_,y_,i_] :=
+	Select[Subsets[Table[1/j,{j,i}]],
+		   ESMGoodFrac[Plus@@#,x,y]&amp;];
+		   
+ESMFind[x_,y_,i_] :=
+	If[# == {}, ESMFind[x,y,i+1], #]&amp; @
+	ESMSubset[x,y,i];
+
+ESMFrac[x_,y_] :=
+	 Join[EgyptSmallDen[x/y - Plus@@#], #]&amp; /@
+	 (ESMFind[x,y,1] / y);
+
+EgyptSmallMult[Rational[x_,y_]] :=
+	Reverse[Sort[#]]&amp; /@ ESMFrac[x,y];
+</B></PRE></BLOCKQUOTE>
+<P>
+It is not clear whether all terms in the representation produced by this method are distinct. However it seems to produce good results in practice for moderate inputs.  If y is prime, and this method produces a correct representation in which the largest denominator is divisible by y, it will be the representation with the minimum possible denominator.
+<BLOCKQUOTE><PRE><B>
+EgyptSmallMult[31/311]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+  1   1   1    1    1     1     1     1
+{{--, --, --, ---, ----, ----, ----, ----}, 
+  28  30  36  933  1555  2177  2799  3110
+ 
+   1   1    1    1     1     1     1
+  {--, --, ---, ----, ----, ----, ----}}
+   15  36  311  1244  1866  2799  3110
+</PRE></BLOCKQUOTE>
+<P>
+<A NAME="short"><H3><IMG SRC="mmaSubSection.gif" ALT="+">
+The Short Sequence Method
+</H3>
+<P>
+</A>This method, proposed by Stewart
+<A HREF="refs.html#Ste92">[Ste92]</A>, is based on the following idea.  If we are looking for any Egyptian fraction representation for q,
+1/u + 1/v + ..., then each term must of course be no larger than q itself; so u &gt;= 1/q.  However if the terms are in sorted order u &gt; v &gt; ..., and there are a total of k terms, then the largest term 1/u must be at least q/k.  So this gives upper and lower bounds for u; we simply try all possibilities and continue recursively.  (In the recursive call we have a further bound on the fractions from the assumption that they are generated in sorted order.)  Incidentally, since we have a k-level recursion, and each call generates a finite number of recursive calls, the whole call tree must be finite and there are only finitely many k-term representations of q.
+<P>
+To make this method less slow (and perhaps even more important, to make it use less memory), we speed up the case for k=2.  We wish to solve the equation x/y=1/a + 1/b; this can be rewritten (ax-y)(bx-y)=y^2, and letting the two factors of y^2 be r and s we can solve a=(r+y)/x, b=(s+y)/x.  We try all factors r of y^2 for which r&lt;y and collect the ones that make a,b integers.
+(Note that if a is an integer, b must also be an integer, so we only need one test.)
+<BLOCKQUOTE><PRE><B>
+EgyptTwoTerm[Rational[x_,y_],minden_,preplist_] :=
+	Join[preplist,{x/#,x(#-y)/(y #)}]&amp; /@
+	Select[ y + Take[#,Quotient[Length[#],2]]&amp; @ Divisors[y^2],
+			Mod[#,x]==0 &amp;&amp; # &gt;= minden*x &amp; ]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE><B>
+EgyptShort[q_,k_] := EShortRecur[q,k,1,{}];
+EShortRecur[q_,k_,b_,a_] :=
+	If [q == 0, {a},
+	If [k &lt;= 2, EgyptTwoTerm[q, b, a],
+		Join @@
+		Table[EShortRecur[q-1/i,k-1,i+1,Append[a,1/i]],
+			  {i,Max[b,Ceiling[1/q]],Floor[k/q]}]]];
+</B></PRE></BLOCKQUOTE>
+<P>
+This method is quite slow, taking four minutes on my Powerbook 540c to solve the following example.
+<A HREF="efrac.c">A C++ version</A> that I also coded up performs much more quickly ("solving" the same problem in less than a minute) but because it is less careful than Mathematica about arithmetic overflow it gets the wrong answers.
+<BLOCKQUOTE><PRE><B>
+EgyptShort[31/311,4]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+  1    1     1       1        1    1     1       1
+{{--, ---, -----, --------}, {--, ---, -----, -------}, 
+  11  115  13570  46422970    11  115  13662  1931310
+ 
+   1    1     1       1       1    1    1       1
+  {--, ---, -----, -------}, {--, ---, ----, --------}, 
+   11  115  13684  1573660    11  116  6728  23016488
+ 
+   1    1    1      1       1    1    1      1
+  {--, ---, ----, ------}, {--, ---, ----, ------}, 
+   11  116  6842  396836    11  118  3421  403678
+ 
+   1    1    1      1       1   1    1       1
+  {--, ---, ----, ------}, {--, --, ----, --------}, 
+   11  119  2772  190332    12  62  4628  66927822
+ 
+   1   1    1      1       1   1    1      1
+  {--, --, ----, ------}, {--, --, ----, ------}, 
+   12  62  4650  964100    12  62  4665  578460
+ 
+   1   1    1      1       1   1    1      1
+  {--, --, ----, ------}, {--, --, ----, ------}, 
+   12  62  4743  190332    12  63  2124  770658
+ 
+   1   1    1      1       1   1    1      1
+  {--, --, ----, ------}, {--, --, ----, -----}, 
+   12  63  2142  190332    12  63  2177  78372
+ 
+   1   1    1     1      1   1    1      1
+  {--, --, ----, ----}, {--, --, ----, ------}, 
+   12  63  2799  8708    12  64  1392  577216
+ 
+   1   1    1     1       1   1    1     1
+  {--, --, ---, ------}, {--, --, ---, -----}, 
+   12  68  612  190332    12  68  622  31722
+ 
+   1   1    1      1       1   1    1     1
+  {--, --, ---, -------}, {--, --, ---, ------}, 
+   12  69  540  1931310    12  72  408  190332
+ 
+   1   1    1     1       1   1    1      1
+  {--, --, ---, ------}, {--, --, ---, -------}, 
+   12  78  284  287053    12  86  212  4252614
+ 
+   1    1    1     1       1    1    1     1
+  {--, ---, ---, ------}, {--, ---, ---, ------}, 
+   12  102  153  190332    12  119  126  190332
+ 
+   1   1     1        1        1   1     1        1
+  {--, --, -----, ---------}, {--, --, -----, ---------}, 
+   13  44  35580  791174670    13  44  35581  486890404
+ 
+   1   1     1       1        1   1     1       1
+  {--, --, -----, --------}, {--, --, -----, --------}, 
+   13  44  35596  71957314    13  44  35607  44295108
+ 
+   1   1     1       1        1   1     1       1
+  {--, --, -----, --------}, {--, --, -----, --------}, 
+   13  44  35620  30464005    13  44  35646  18760764
+ 
+   1   1     1       1       1   1     1       1
+  {--, --, -----, -------}, {--, --, -----, -------}, 
+   13  44  35772  6573918    13  44  35893  4059172
+ 
+   1   1     1       1       1   1     1       1
+  {--, --, -----, -------}, {--, --, -----, -------}, 
+   13  44  36036  2801799    13  44  36076  2579434
+ 
+   1   1     1       1       1   1     1       1
+  {--, --, -----, -------}, {--, --, -----, -------}, 
+   13  44  36322  1737868    13  44  36387  1601028
+ 
+   1   1     1      1       1   1     1      1
+  {--, --, -----, ------}, {--, --, -----, ------}, 
+   13  44  40612  287053    13  44  41052  266838
+ 
+   1   1     1      1       1   1     1      1
+  {--, --, -----, ------}, {--, --, -----, ------}, 
+   13  44  43758  190332    13  44  44473  177892
+ 
+   1   1     1      1       1   1     1      1
+  {--, --, -----, ------}, {--, --, -----, -----}, 
+   13  44  48516  133419    13  44  56602  95788
+ 
+   1   1    1     1       1   1    1      1
+  {--, --, ---, ------}, {--, --, ----, ------}, 
+   13  52  284  287053    14  36  2124  770658
+ 
+   1   1    1      1       1   1    1      1
+  {--, --, ----, ------}, {--, --, ----, -----}, 
+   14  36  2142  190332    14  36  2177  78372
+ 
+   1   1    1     1      1   1   1      1
+  {--, --, ----, ----}, {--, --, --, -------}, 
+   14  36  2799  8708    15  54  69  1931310
+ 
+   1   1    1       1        1   1    1       1
+  {--, --, ----, --------}, {--, --, ----, --------}, 
+   16  27  7072  59383584    16  27  7074  17600112
+ 
+   1   1    1      1       1   1    1      1
+  {--, --, ----, ------}, {--, --, ----, ------}, 
+   16  27  7344  190332    16  27  7464  134352
+ 
+   1   1    1      1      1   1    1      1
+  {--, --, ----, -----}, {--, --, ---, --------}, 
+   16  27  8397  44784    16  28  683  23790256
+ 
+   1   1    1     1      1   1    1      1
+  {--, --, ---, -----}, {--, --, ----, ------}, 
+   16  28  688  93611    18  23  1555  643770
+ 
+   1   1    1      1       1   1    1     1
+  {--, --, ----, ------}, {--, --, ---, ------}, 
+   18  23  1564  190332    18  24  408  190332
+ 
+   1   1    1     1       1   1   1     1
+  {--, --, ---, ------}, {--, --, --, ------}}
+   18  28  119  190332    18  34  68  190332
+</PRE></BLOCKQUOTE>
+<P>
+Many of these expansions could have also been obtained by EgyptRemainder, using the following numbers as bases:
+<BLOCKQUOTE><PRE><B>
+Union[((LCM@@ Denominator/@ #) / 311)&amp; /@ %]
+</B></PRE></BLOCKQUOTE>
+<BLOCKQUOTE><PRE>
+{204, 252, 432, 572, 612, 1224, 1276, 1298, 1716, 1860, 
+ 
+  2070, 3692, 4004, 4284, 4816, 5060, 5148, 5568, 6210, 
+ 
+  7344, 9300, 11076, 12420, 14076, 14868, 16588, 18972, 
+ 
+  27348, 36036, 40612, 47124, 56592, 68310, 72644, 74008, 
+ 
+  76496, 87516, 142428, 143572, 149270, 190944, 391820, 
+ 
+  430404, 462748, 465036, 784212, 1565564, 5087940}
+</PRE></BLOCKQUOTE>
+<P>
+However some (for instance 2070) do not work.
+<P><HR><P><A HREF="http://www.ics.uci.edu/~eppstein/numth/egypt/">Egyptian Fractions,
+</A><A HREF="http://www.ics.uci.edu/~eppstein/numth/">Number Theory,
+</A><A HREF="http://www.ics.uci.edu/~eppstein/">David Eppstein,
+</A><A HREF="http://www.ics.uci.edu/">ICS,
+</A><A HREF="http://www.uci.edu/">UC Irvine
+</A><P><SMALL>Formatted by
+<A HREF="http://www.hallym.ac.kr/~physics/education/Math/tdr/nbks/sourceCode.html">nb2html</A> and
+<A HREF="http://www.ics.uci.edu/~eppstein/pubs/filter.html">filter</A>.
+<!--#config timefmt="%d %h %Y, %T %Z" -->Last update:
+<!--#flastmod file="egypt.ma" -->.
+</SMALL>

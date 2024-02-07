@@ -1,0 +1,152 @@
+<HTML><HEAD>
+<TITLE>Computational Statistics</TITLE>
+</HEAD><BODY BGCOLOR="#FFFFFF" TEXT="#000000">
+<!--#config timefmt="%d %h %Y, %T %Z" -->
+
+<A HREF="/~theory/">
+<IMG src="/~theory/logo/shortTheory.gif"
+WIDTH=521 HEIGHT=82 BORDER=0 ALT="ICS Theory Group"></A>
+
+
+<H1><A HREF="/~eppstein/280/">ICS 280, Spring 1999:<BR>
+Computational Statistics</A></H1>
+
+<H2>Introduction</H2>
+
+To begin with, I'm not a statistician, so take anything I say about
+statistics (as opposed to statistical algorithms) with a big grain of salt.
+But let's begin by talking about statistics in general.
+
+<H3>The Big Picture</H3>
+
+I view statistics as a sequence of transformations of numbers,
+starting from parameters that define a model for the generation of data,
+through a model for noise (describing how the data may be corrupted by
+random events, transmission errors, or measurement errors),
+through an algorithm that makes estimates from the observed data.
+The hope is that the estimates in some sense match the original parameters.
+
+<PRE>
+                          ______________
+                         |              |
+        parameters ----&gt; |  DATA MODEL  |
+                         |______________|
+
+                                |
+                                | data
+                                V
+                          _______________
+                         |               |
+                         |  NOISE MODEL  |
+                         |_______________|
+
+                                |
+                                | observations
+                                V
+                          _____________
+                         |             |
+                         |  ALGORITHM  | ----&gt; estimate
+                         |_____________|
+</PRE>
+
+<P>To some extent the division between the data model and noise model is
+arbitrary (both are describing physical processes that are parts of the
+real world) and comes from the division between which parameters we want
+to estimate and which other ones we want to treat as noise and ignore.
+
+<H3>Function Follows Form</H3>
+
+The nature of the statistical algorithm to be used is determined
+by the data and noise models.
+
+<P>The data model sets the general
+flavor of problem being considered:
+<A HREF="point.html">single point estimation</A>
+(data model: pass parameters unchanged as data coordinates),
+regression (data model: parameters are the coordinates of a linear
+function relating independent and dependent variables), clustering
+(data model: choose randomly among several different points or point
+distributions), or hierarchical clustering
+(e.g. evolutionary tree reconstruction, in which the
+parameters define an evolutionary tree and the data model
+uses this tree to define mutated gene sequences for each leaf of the tree).
+
+<P>More complicated data models of interest to the AI students in the course
+are hidden Markov models for time series data, and belief propagation
+methods for decoding error correcting codes ("turbocodes").
+The problem of devising a good error correcting code could be seen
+as choosing a data model in such a way that whatever noise you
+have doesn't destroy too much of your data.
+
+<P>The noise model determines which to choose among several different
+estimation algorithms returning the same sort of output.
+E.g., if one is estimating a single point value,
+one might choose among least squares (Gaussian noise),
+the centroid (for noise distributions with known zero expectation and unknown
+radial components), the circumcenter
+(for arbitrary bounded-radius noise distributions),
+or the minimum circumcenter of n/2 points (for robust outlier elimination).
+
+<H3>Desiderata</H3>
+
+An estimation algorithm should have the following properties:
+
+<DL>
+<DT><B>Consistency.</B></DT>
+<DD>The estimates should converge (with enough data) to the original
+parameters: that is, there should exist a limit
+(as n, the number of observations, goes to infinity),
+and that limit should equal the parameters.
+If this is impossible due to the noise model,
+we would at least like the estimate to be near the parameters,
+e.g. by minimizing the worst case error or maximizing the likelihood.</DD>
+<DT><B>Invariance.</B></DT>
+<DD>The estimates should not be changed by irrelevant rescaling or other
+such transformations of the data.  In extreme cases (distance-free methods)
+the estimates may depend only on the combinatorics of the data points
+(e.g. are they above/below the estimated regression line)
+and not on metric or distance information.</DD>
+<DT><B>Efficiency.</B></DT>
+<DD>The estimates should use only as much data as is required to solve
+the problem accurately.  Another way of stating this is that the rate of
+convergence of the estimates should be high.</DD>
+<DT><B>Robustness.</B></DT>
+<DD>The estimates should tolerate as broad a class of noise models as possible.
+A particularly important type of noise from the point of view of
+robustness is <I>outliers</I>: a noise model in which some fraction
+of the data may be arbitrarily corrupted (and should be treated as
+being set by an adversary which will try to make the estimates as
+inaccurate as possible).  Robustness against outliers may be measured
+in terms of the number of outliers that can be tolerated before the
+estimate becomes arbitrarily inaccurate.</DD>
+<DT><B>Speed.</B></DT>
+<DD>How quickly will an implementation of the algorithm run?
+Although this is the most important characteristic from the theoretical
+CS point of view, it is probably the least important from the
+statistical point of view, and possibly the "greed for speed"
+has led to overuse of fast estimation methods such as least squares.
+One of the contributions algorithmic research can make in this area
+is to convince users that methods other than least squares can
+be efficient enough to be used when appropriate.
+<P>The simplest way of optimizing for speed
+without compromising statistical quality is to work on improved
+algorithms for already known statistical methods: that is, to find fast
+algorithms that produce exactly the same output as other slower
+algorithms already in use.  One can also look for <I>approximation
+algorithms</I> that quickly find a result "almost as good as"
+the original slower algorithm, but one must be careful
+to preserve the other important statistical qualities of the original
+algorithm -- generally it's safest to approximate the <I>estimated values</I>
+themselves, rather than to approximate whatever objective function the
+estimation algorithm is optimizing.</DD>
+</DL>
+
+<H2><A HREF="point.html">NEXT: Single point estimators</A></H2>
+
+<HR><P>
+<A HREF="/~eppstein/">David Eppstein</A>,
+<A HREF="/~theory/">Theory Group</A>,
+<A HREF="/">Dept. Information & Computer Science</A>,
+<A HREF="http://www.uci.edu/">UC Irvine</A>.<BR>
+<SMALL>Last update: <!--#flastmod file="intro.html" --></SMALL>
+</BODY></HTML>

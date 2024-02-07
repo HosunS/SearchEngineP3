@@ -1,0 +1,62 @@
+
+% Simple test data matrix
+ Data = [ 3     0    -2    99   ;
+          2     1     0     1   ;
+         -1    -1    99     0   ;
+          3     0     3     0   ;
+          0    99     4    98   ;
+          0    -1     3    -2   ];
+
+
+ PredNN = Data;                  % copy the data; we'll fill in the missing values in Pred
+ PredW  = Data;                  %   make another copy for weighted average prediction
+ alpha  = 1;                     % just guess a value of alpha to try...
+
+ [nRows, nCols] = size(Data);    % get the data size
+
+ for i=1:nRows,                  % predict each row i:
+   x = Data(i,:);                %   call that row "x" for short
+   if (all(x < 90)), continue; end;  % check if there is nothing to predict?
+
+   % Compute distances from x to all the other rows
+   dist = zeros(1,nRows);        % pre-allocate vector of distances
+   for j=1:nRows,
+     v = Data(j,:);              % compare row i to row j:
+     d = (x-v).^2;               %   compute the vector of squared differences
+     d(v>90 | x>90)=10;          %   "missing" distances default to ~ 3^2 = 10 (you can change)
+     dist(j) = mean(d);          %    compute their "mean L2" distance
+   end
+
+   % Use (nearest other row) or (weighted average) to fill in each missing value:
+   for c = find(x > 90)          % for each missing value,
+     % find nearest data point with a non-missing value in that column
+     % variable "c" will iterate over each column that x is missing
+
+     missing = Data(:,c)>90;     % identify which rows have missing values in column c
+  
+     % find nearest data point that is not missing column c:
+     dist_c = dist;              % (we'll want to re-use dist later)
+     dist_c(missing) = inf;      % make rows missing column c *very far*
+     [val,idx] = min(dist_c);    % find the smallest remaining distance
+
+     PredNN(i,c) = Data(idx,c);  % fill in the missing value     
+
+     dist_c = dist_c - val;      % for numerical reasons, subtract nearest distance from all
+     sim = exp(-alpha.*dist_c);  % get similarity weights
+     sim = sim/sum(sim);         % normalize weights to sum to one
+     PredW(i,c) = sum(sim.*Data(:,c)');   % then compute weighted sum
+   end
+ end
+
+% Some notes:
+
+% You can check PredNN and PredW, and see that they are quite close
+
+% Since the Data matrix are all integers, the nearest neighbor predictions are also integers
+%   but the weighted average (since they are averaging multiple values) are not
+
+% If you pick a very big alpha (=10) they are effectively identical
+% If you pick a very small alpha (=1e-8) PredW will match the "mean with missing values" we did in lab 1
+% (If you pick alpha=0, 0*inf = nan and you get some errors...)
+
+

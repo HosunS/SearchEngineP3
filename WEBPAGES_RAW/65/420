@@ -1,0 +1,44 @@
+import sys
+from Numberjack import *
+
+def main(N):
+
+    wa = Variable(N) 
+    nt = Variable(N)
+    sa = Variable(N)
+    q = Variable(N)
+    nsw = Variable(N)
+    vic = Variable(N)
+    t = Variable(N)
+
+
+    model = Model()
+    model.add(wa != nt)
+    model.add(wa != sa)
+    model.add(nt != sa)
+    model.add(nt != q)
+    model.add(sa != q)
+    model.add(sa != nsw)
+    model.add(sa != vic)
+    model.add(q != nsw)
+    model.add(nsw != vic)
+
+    varMap = {
+            'West Australia' : wa,
+            'Northern Territory' : nt,
+            'South Australia' : sa,
+            'Queensland' : q,
+            'New South Wales' : nsw,
+            'Victoria' : vic,
+            'Tazmania' : t 
+            }
+    
+    solver = model.load('Mistral')
+    solver.startNewSearch()
+    if solver.getNextSolution():
+        for key,value in varMap.iteritems():
+            print key,value
+    else:
+        print 'No solution'
+
+main(int(sys.argv[1]))

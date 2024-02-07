@@ -1,0 +1,247 @@
+<html>
+	<head>
+		<title>Winter 2005 ICS H22</title></head>
+	<body bgColor="#ffcc99">
+		<h2>H22 Lab 4 - Running Time Analysis</h2>
+		<h2>Due *Wednesday*,&nbsp;February 15 in the discussion session&nbsp;and/or via 
+			dropbox.</h2>
+		<P>What's to submit:&nbsp;
+		</P>
+		<OL>
+			<LI>
+				<EM>the code</EM>:<EM>&nbsp; </EM>
+			You submit the coding part of this lab in the regular way, via the dropbox, but 
+			the due date is 10am on Wednesday (instead of the usual 23:59pm...).
+			<LI>
+				<EM>the written part</EM>:&nbsp; This lab assignement has a written part of 
+				your answers, and you can submit those in the distribution center (class in the 
+				discussion session at 10am on Wendesday.&nbsp; If you prefer, you can type the 
+				written part and submit it electronically, by including the readible document 
+				(doc, txt, pdf) with your code in the zip file you submit via the dropbox.</LI></OL>
+		<P>Note that there's many optional points in the lab which you can explore.&nbsp; 
+			All these can earn you bonus points.</P>
+		<h3>Overview</h3>
+		<P>This lab has 2 parts.&nbsp; First you'll generalize the binary search algorithm 
+			you wrote in lab2 into "trinary" search (and optionally you can generalize that 
+			to "n-ary" search for any n=2,3,...).&nbsp; Second, you'll time all these 
+			search algorithms, plot their average running times and compare these to the 
+			theoretical analysis of the (worst-case) running time of these n-ary search 
+			algorithms.</P>
+		<P>The point of this lab is that you learn how to:
+		</P>
+		<OL>
+			<LI>
+			generalize a binary search algorithm and generalize algorithms in general,
+			<LI>
+				compute actual&nbsp;<EM>average</EM> <EM>running time </EM>of <EM>your implemention 
+					of an algorithm</EM>
+			running on some particular architecture, by clocking your code and 
+			then&nbsp;averaging the timing samples on sample data points
+			<LI>
+				do a theoretical, i.e. "big-O", analysis of a running time of an algorithm 
+				(which is always a <EM>worst case running time</EM>
+			analysis),
+			<LI>
+			compare the results of the theoretical analysis of the (worst case) running 
+			time of the algorithm with the experimental results which show the average 
+			running time of your implementation of this algorithm
+			<LI>
+				draw conclusions:
+				<UL>
+					<LI>
+					is the "big-O" worst-case running time function a good predictor of the 
+					average-time behaviour of your implementation of this algorithm?&nbsp;
+					<LI>
+					what are the discrepancies due to?&nbsp; can the average case and the worst 
+					case differ much?&nbsp; was it justifiable to ignore the low-order terms which 
+					are indeed ignored by the "big-O" analysis?
+					<LI>
+						what's the actual cost of the "primitve operations" on the particular 
+						architecture where your implementation of the algorithm ran?</LI></UL>
+			</LI>
+		</OL>
+		<h3>Part Ia:&nbsp;Generalize the Binary Search Algorithm from Lab2 to Trinary (and 
+			"n-ary") Search</h3>
+		<P>Modify the binary search algorithm in lab2 so that it does a "trinary" search 
+			instead.&nbsp; Recall that the binary search examines the value at the middle m 
+			= (f+i)/2 = i + (f-i)/2 of the searched-for interval [i,f] (of ordered values 
+			between some initial point i and the final point f), and then recursively calls 
+			the binary search on either the [i,m] or the [m,f] half of this [i,f] 
+			inverval.&nbsp; The base case of the binary search algorithm is this:&nbsp; If 
+			the searched-for interval is so small that it cannot be split into two smaller 
+			fragments, i.e. when f-i &lt; 2, then the algorithm "manually" examines each of 
+			the values in the interval, i.e. simply the value at point i and the value at 
+			point f.&nbsp; (Note that if f-i &lt; 2 then we either have f=i or f=i+1.)</P>
+		<P>A *trinary* search algorithm searches such [i,f] interval by examining the 
+			values at 1/3 and the 2/3 of the interval, i.e. by examining the values at 
+			point m1 = i + 1/3*(f-i) and m2 = i + 2/3*(f-i), and then, depending on how do 
+			these values compare with the searched-for value, the trinary search algorithm 
+			recursively calls the trinary search on *either* the [i,m1] interval, or the 
+			[m1,m2] interval, or the [m2,f] interval.&nbsp; The base case of the trinary 
+			search algorithm is similar to that of the binary search:&nbsp; If the 
+			searched-for interval is so small that it cannot be split into even smaller 
+			fragments, then the algorithm examines the remaning values one-by-one.&nbsp;
+		</P>
+		<P>As you generalize the binary search to trinary one, these are the things you 
+			need to think about:</P>
+		<OL>
+			<LI>
+			make sure that the all the choices of the recursive calls taken together cover 
+			the whole interval region, i.e. no elements will ever be missed, for example 
+			because of the effect of rounding.
+			<LI>
+			at the same time, make sure that when the search procedure invoked on arguments 
+			(i,f) makes a recursive call to the itself, it can always do so only if the 
+			arguments (i',f') it calls with are such that f'-i' is strictly smaller than 
+			f-i.&nbsp; Only making sure that this is true can guarantee that your algorithm 
+			does not enter an infinite loop.
+			<LI>
+				make sure that the base case covers all the possibilities that can occur when 
+				the interval is small enough, i.e. the value f-i is small enough, that the base 
+				case needs to kick in.</LI></OL>
+		<P>[Optionally, you can generalize this even further, and code a general "n-ary 
+			search" algorithm which given an argument n does the search by splitting the 
+			searched-for interval into n fragments and searching them recursively via the 
+			"n-ary search".&nbsp; (It might be that the base case of the n-ary search will 
+			have to depend on n, but maybe that will not be necessary.]
+			<H3>PartIb: Theoretical analysis of the running time of the search algorithms</H3>
+		<P>Do the (theoretical) analysis of the (worst-case) running time of the binary 
+			search *and* the trinary search algorithms.&nbsp; We want the running time to 
+			be expressed in terms of just one variable:&nbsp; n, the *size* of the searched 
+			interval.&nbsp; Note that in the case of the savings calculator application in 
+			lab2, the size n of the searched interval is equal to n = 100t/m where t is the 
+			target amount in cents, and m is the the number of months.&nbsp; In the running 
+			time analysis consider m, the number of months, as a constant.&nbsp; For 
+			example, set m = 60, which&nbsp;corresponds to dealing with 5-year saving 
+			plans.&nbsp; (Note also that the running time of all these algorithmsdoes not 
+			depend on the interest rate r.)&nbsp; The analysis will give you some running 
+			time functions, T<SUB>bs</SUB>(n) and&nbsp;T<SUB>ts</SUB>
+		(n), for the binary search and the trinary search, correspondingly.&nbsp; What 
+		is the O() notation for both of these functions?
+		<P>Compare the running times of the binary and the trinary search algorithms.&nbsp; 
+			Are they asymptotically the same or one is larger than the other?&nbsp; Even if 
+			they are the same in the O() sense, i.e. if T<SUB>bs</SUB>(n) = O(T<SUB>ts</SUB>(n)) 
+			and also T<SUB>ts</SUB>(n) = O(T<SUB>bs</SUB>
+		(n)), try to think about the constants in fhe functions themselves:&nbsp; Can 
+		you hypothesize which function will dominate the other?
+		<P>
+			[Optionally, you can check what's the asymptotic behaviour of the running time 
+			function of general n-ary search, and compare it to the others.&nbsp; What's 
+			the optimal value of n?]</P>
+		<P>[Optionally, you can consider both m and n the variables for the running time 
+			function.&nbsp; In the book we talked about the running-time function as only a 
+			function T(n) of one single variable n that represents the "size of the 
+			problem", but one often wants to express the runnning time as a&nbsp;function 
+			of more than just one variable.&nbsp; In the case of the savings calculator 
+			application, it'd be convient to consider its running time as a function of <EM>two</EM>&nbsp;variables, 
+			n and m, i.e.&nbsp;some function&nbsp;T(m,n).&nbsp; The definition of the O() 
+			notation for the two-variable function is very similar to the single-variable 
+			definition:&nbsp;&nbsp;We say that T(m,n) is O(F(m,n)) for some other function 
+			F(m,n) if there exist&nbsp;a constant c&gt;0 and <EM>two</EM> points m0 and n0 
+			s.t. for all m&gt;m0 and all n&gt;n0 we have that T(m,n) &lt;= c * 
+			F(m,n).&nbsp; When you do the running-time experiments in the second part of 
+			the lab (see below), you can gather the information also as a function of these 
+			two variables, m and n, and compare such results to the O() expression for the 
+			T(m,n) function you derive here using pen and paper.]
+			<h3>Part IIa:&nbsp;&nbsp;Gather experimental data about average-case time of your 
+				binary and trinary search algorithms</h3>
+		<P>
+			First you need to implement the timer.&nbsp; Use an appropriate timer class 
+			from the&nbsp; <A href="http://java.sun.com/j2se/1.4.2/docs/api/overview-tree.html">
+				java Class library</A>
+		&nbsp;to clock the time before and after your search algorithm runs.&nbsp; We 
+		are interested in the running time of your implementation as a function of n, 
+		where n = 100t/m, where m is fixed, as we said above, to m=60.&nbsp; [Of course 
+		optionally you can explore the running time of your algorithm as a function of 
+		both n and m.]&nbsp; Since n is not an explicit variable which your algorithm 
+		takes as an input, this means that in order to test the time of the algorithm 
+		as a function of n you need to run the algorithm on input t = n*m / 100.&nbsp; 
+		(Recall that t denotes the target amount.)&nbsp;
+		<P>Moreover, we want to examine the <EM>average</EM>
+		running time, as a function of n, and not just a running time of a single 
+		instance of your algorithm for a particular interest rate r.&nbsp; (Once n and 
+		m are fixed, the only other input that determines how your code is executed 
+		will be the interest rate r.)&nbsp;&nbsp; How can we do this?&nbsp; Simply, for 
+		every n, you should examine the average running time of your algorithm by 
+		averaging the times observed in k executions of your code, each one executing 
+		with the same parameter n.&nbsp;&nbsp;It's up to you to determine the useful 
+		value of k, but you can start with k=100.&nbsp; In each of these k instances 
+		you should run the algorithm with the same n but you should vary the r 
+		parameter.&nbsp; For example you can take say that the i-th execution should 
+		run with r = 0.05 +&nbsp;0.01 * i/k, which will effectively range r between 5% 
+		and 6%.&nbsp; Or you can assign in each instance r using a random number 
+		generator.&nbsp; (But make sure that it falls into some reasonable region, 
+		definitely different than 0 or 1, because&nbsp;if r is either 0 or 1 your code 
+		might exhibit very non-average behaviour...)
+		<P>The result of all the above should be a procedure, for example called (binary or 
+			trinary search) <EM>test</EM>
+		, which takes parameters k and n, and outputs the average running time of 
+		k&nbsp;instances of the (binary or trinary) search algorithm, each of which 
+		executes on the same input size n (and each of which runs on some 
+		average-looking interest rate r and on m=60).
+		<P>Now, to analyze them, gather your results in an array of results for some 
+			realistic n values.&nbsp; Pick the n values in the array so that you can easily 
+			observe the dependance between the (average) running time and these 
+			values.&nbsp; For example, if you have good reasons to believe that the running 
+			time of your algorithm is a <EM>linear</EM> function of n, you will want your n 
+			values spread linearly, e.g. n<SUB>i</SUB> = a * i for some constant a.&nbsp; 
+			If, on the other hand, you think that your running time is logarithmtic, then 
+			the running times will be easier to observe if you observe the results for n's 
+			spread <EM>exponentially,&nbsp;</EM>e.g. n<SUB>i</SUB> =&nbsp;2<SUP>i</SUP> or 
+			n<SUB>i</SUB> =&nbsp;10<SUP>i</SUP>
+		.&nbsp; In any event, you should program a procedure which iterates over n 
+		values in an array of test cases, runs the above test for each of them, and 
+		gathers the outputs in an array of outputs.&nbsp; Then you can populate the 
+		array of test cases with linearly-spaced n's and see if the results are 
+		informative.&nbsp; If not, populate the array of test cases with 
+		exponentially-spaced n's and rerun the process.&nbsp; Note that if you start 
+		with too-big values, your code will run forever.&nbsp; If on the other hand you 
+		use too-small values, the results will be random-looking and hard to 
+		interpret.&nbsp; This is exactly why you need to program the *procedures* that 
+		take any array of test cases and runs any number k of tests on each.&nbsp; 
+		Using these procedures you can easily then change the k parameter and the test 
+		inputs and see what they need to be in order for you to get observable and easy 
+		to interpret results!
+		<P>
+			Finally, once you get some easy-to-interprest results, <EM>plot them </EM>
+		on a graph.&nbsp; On the x-axis there should be the different values of n, and 
+		on the y-axis there should be the average running time of the algorithm for a 
+		given n.&nbsp; Your solutions can contain two such plots:&nbsp; One for the 
+		binary and one for the trinary algorithms.&nbsp; The two plots should use the 
+		same test cases n.&nbsp; Even better, you can draw a single plot, with two 
+		lines (or curves):&nbsp; In one color the line representing the average running 
+		times of the binary search algorithm, and in the other color the same for the 
+		trinary search.
+		<P>For the code part, you should submit a code you used to test organized as I'm 
+			suggesting above, and with a description of how it can be used to do the 
+			testing:&nbsp; Where do you set the k value, where do you populate the test 
+			cases.&nbsp; The results should be displayed in some easy to read way, but they 
+			do not need to be plotted on the screen.
+			<h3>PartIIb: Compare the experimental data and the theoretically-derived runnig 
+				time</h3>
+		<P>Answer the following questions:</P>
+		<OL>
+			<LI>
+				Which algorithm seems better in practice?&nbsp; How can you explain it?&nbsp; 
+				[Optionally, what's the optimal n for the n-ary search?]</LI>
+			<LI>
+				How do the experimental results compare to the theoretically-derived running 
+				time functions&nbsp;T<SUB>bs</SUB>(n) and&nbsp;T<SUB>ts</SUB> (n)?&nbsp; Note 
+				that the T(n) functions represent the worst-case running time and the 
+				experimental results report an average-running time.&nbsp; Are the two 
+				different in this case?&nbsp; Why or why not?&nbsp;
+			</LI>
+			<LI>
+				If the average-case and the worst-case are similar in this case, is the 
+				average-case bahaviour <EM>exactly</EM> matching the theoretically derived 
+				one?&nbsp; What are the discrepancies and how can you explain them?</LI></OL>
+		<P>[Optional idea:&nbsp;&nbsp;You can use this experiment to estimate the cost of 
+			the arithmetic operations compared to the cost of the other operations (like 
+			comparisons, look-ups, variable assignments, and everything else this code 
+			does).&nbsp; You can see this by replacing floats with doubles (or vice versa) 
+			in the interest-rate operations in the amount-saved procedure, and observing 
+			whether the running time changes by much.&nbsp;&nbsp;If you can, maybe you 
+			can&nbsp;do all the operations on the integers (it'd be sligtly tricky but it 
+			might be possible).&nbsp; You can test if this speeds it up.]</P>
+	</body>
+</html>

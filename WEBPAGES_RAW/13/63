@@ -1,0 +1,129 @@
+<!-- received="Tue Sep  3 20:40:00 1996 PDT" -->
+<!-- sent="Tue, 3 Sep 1996 19:10:37 -0700" -->
+<!-- name="Yaron Goland" -->
+<!-- email="yarong@microsoft.com" -->
+<!-- subject="RE: Seiwald Q &amp; A -- "GET for EDIT" cookies" -->
+<!-- id="199609032353.TAA29231@synergy.ai.mit.edu" -->
+<!-- inreplyto="" -->
+<title>Archive of Working Group on Versioning and Configuration Management of World Wide Web Content: RE: Seiwald Q &amp; A -- "GET for EDIT" cookies</title>
+<h1>RE: Seiwald Q &amp; A -- "GET for EDIT" cookies</h1>
+<b>Yaron Goland</b> (<a href="mailto:yarong@microsoft.com"><i>yarong@microsoft.com</i></a>)<br>
+<i>Tue, 3 Sep 1996 19:10:37 -0700</i>
+<p>
+<ul>
+<li> <b>Messages sorted by:</b> <a href="index.html#152">[ date ]</a><a href="thread.html#152">[ thread ]</a><a href="subject.html#152">[ subject ]</a><a href="author.html#152">[ author ]</a>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0153.html">David G. Durand: "RE: Seiwald Q &amp; A -- "GET for EDIT" cookies"</a>
+<li> <b>Previous message:</b> <a href="0151.html">Robert S. Thau: "Re: Seiwald Q &amp; A -- "GET for EDIT" cookies"</a>
+<!-- nextthread="start" -->
+<!-- reply="end" -->
+</ul>
+<hr>
+<!-- body="start" -->
+<pre>
+Talking about dead horses... When people say things like "Check Out the
+Source" I get worried. As I mentioned previously there are cases where
+the number of links between the final version of an entity and the
+original version contains many nodes. Rather than trying to put together
+a "GET for Edit" which will either only have one level and thus is not
+very useful or will hack the hell out itself to support more levels we
+should just support links which solve the problem very elegantly.
+
+					Yaron
+
+&gt;----------
+&gt;From: 	Christopher Seiwald[SMTP:seiwald@perforce.com]
+&gt;Sent: 	Tuesday, September 03, 1996 4:38 PM
+&gt;To: 	<a href="mailto:w3c-dist-auth@w3.org;">w3c-dist-auth@w3.org;</a> www-vers-wg@ics.UCI.EDU
+&gt;Subject: 	Re: Seiwald Q &amp; A -- "GET for EDIT" cookies
+&gt;
+&gt;| From: "Roy T. Fielding" &lt;<a href="mailto:fielding@liege.ICS.UCI.EDU">fielding@liege.ICS.UCI.EDU</a>&gt;
+&gt;|
+&gt;| &gt; 	Now Roy Fielding says that Content-Version is opaque and could
+&gt;| &gt; 	be used exactly for this purpose, 'cause no one would be the wiser
+&gt;| &gt; 	if the Content-Version were different for each checkout of the
+&gt;| &gt; 	same document.  This is true, but now the names of these fields
+&gt;| &gt; 	are losing their meaning, no?  If it's checkout context, call it
+&gt;| &gt; 	"Checkout-Context" (or "Checkout-Cookie").
+&gt;|
+&gt;| Checkout does not have meaning on all systems, whereas version has a
+&gt;generic
+&gt;| meaning (at times, too generic). It is intended to be as flexible as
+&gt;possible.
+&gt;| The "Content-" prefix is a requirement of MIME for what HTTP calls
+&gt;| entity-header field names.
+&gt;
+&gt;Not to beat a dead horse (but this one's still kicking):
+&gt;
+&gt;I'm pushing for us to recognise "checkout" as a meaningful act for the
+&gt;version abstraction we are trying to support, whether or not the underlying
+&gt;system can make real use of it.  It means "GET the SOURCE for EDIT".
+&gt;"GET" because the document has to be fetched (or via existing methods
+&gt;determined that the user has the requested copy), "the SOURCE" because
+&gt;the user needs the document as it is prior to any server-side
+&gt;interpretation, and "for EDIT" so that the VC backend is aware of the
+&gt;user's activity.
+&gt;
+&gt;All VC systems can cook up a checkout cookie; some VC system will have
+&gt;difficulty without one.  The simpler systems - RCS, SCCS, and CVS may
+&gt;well be wrapped with some layer that provides the context.
+&gt;
+&gt;Here's how I see them being used, again with Perforce thrown into the
+&gt;mix because it has fairly modern VC semantics:
+&gt;
+&gt;		CHECKOUT		LOCK			CHECKIN
+&gt;----------------------------------------------------------------------------
+&gt;
+&gt;RCS		Probably just		Verifies that		Verifies
+&gt;SCCS		emits URL+version,	the cookie		that cookie
+&gt;		so that the		represents		represents
+&gt;		subsequent		the head rev.		LOCKed rev.
+&gt;		LOCK or SUBMIT		May be a no-op
+&gt;		can make sure user 	if the SCCS/RCS
+&gt;		has the head rev.	wrapper does
+&gt;		May imply LOCK,		LOCK on CHECKOUT.
+&gt;		since RCS/SCCS don't
+&gt;		normally support
+&gt;		unlocked checkout.
+&gt;
+&gt;CVS		Emits the line		Throws up its		Verifies
+&gt;		from the CVS/Entries	hands because		that cookie
+&gt;		file that reflects	CVS doesn't		represents
+&gt;		the file+rev being	support locking.	head rev.
+&gt;		edited.
+&gt;
+&gt;ClearCase	Emits view-extended	Verifies that		Verifies
+&gt;		pathname and rev of	cookie represents	that cookie
+&gt;		file being checked out.	checked-out file	represents
+&gt;		Because of CC's auto-	and does a CC		LOCKed rev.
+&gt;		branching, the rev may	reserved checkout.
+&gt;		be different that what
+&gt;		was requested.
+&gt;
+&gt;Perforce	Emits client pathname	Verifies that		Verfies
+&gt;		and rev of file		cookie represents	that cookie
+&gt;		being checked out.	checked out file.	represents
+&gt;								head rev.
+&gt;
+&gt;There is use for the checkout cookie for all these systems, even if the
+&gt;cookied degrades into being little more than "Content-Version".  Since
+&gt;All VC systems can make use of the cookies, and some need them for sane
+&gt;operation (checkin without checkout under clearcase is a no-go), it makes
+&gt;sense to use a single tag across all underlying VC systems.
+&gt;
+&gt;IMHO, of course.
+&gt;
+&gt;Christopher
+&gt;
+&gt;
+</pre>
+<!-- body="end" -->
+<hr>
+<p>
+<ul>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0153.html">David G. Durand: "RE: Seiwald Q &amp; A -- "GET for EDIT" cookies"</a>
+<li> <b>Previous message:</b> <a href="0151.html">Robert S. Thau: "Re: Seiwald Q &amp; A -- "GET for EDIT" cookies"</a>
+<!-- nextthread="start" -->
+<!-- reply="end" -->
+</ul>

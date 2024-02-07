@@ -1,0 +1,44 @@
+/* put or take a prime */
+
+isprime(x)
+{
+    int y = 3;
+    if ((x & 1) == 0) return 0;
+    for (;;) {
+	if (y * y > x) return 1;
+	if ((x / y) * y == x) return 0;
+	y += 2;
+    }
+}
+
+bigprime(x)
+{
+    while (!isprime(x)) x--;
+    return x;
+}
+
+P(x)
+{
+    int y;
+    if (x == 0 || x == 1) return 1;
+    y = bigprime(x);
+    return (!P(x - y) && !P(x + y));
+}
+
+main(ac,av)
+char **av;
+{
+    int x = atoi(av[1]);
+    int y;
+    while (x > 1) {
+	y = bigprime(x);
+	if (P(x - y)) {
+	    printf("%d:%d\n", x, x-y);
+	    x -= y;
+	} else {
+	    if (P(x+y)) printf("%d:%d\n", x, x+y);
+	    else printf("%d:(%d,%d)\n", x, x-y, x+y);
+	    x += y;
+	}
+    }
+}

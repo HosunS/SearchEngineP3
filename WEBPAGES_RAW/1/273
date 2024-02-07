@@ -1,0 +1,163 @@
+<!-- received="Tue Jun 11 23:23:00 1996 PDT" -->
+<!-- sent="Tue, 11 Jun 1996 23:22:56 -0700" -->
+<!-- name="Jim Whitehead" -->
+<!-- email="ejw@ics.uci.edu" -->
+<!-- subject="Re: Name space munging ... blech!" -->
+<!-- id="ade406fd03021004c74f@[128.200.199.222]" -->
+<!-- inreplyto="Name space munging ... blech!" -->
+<title>Archive of Working Group on Versioning and Configuration Management of World Wide Web Content: Re: Name space munging ... blech!</title>
+<h1>Re: Name space munging ... blech!</h1>
+<b>Jim Whitehead</b> (<a href="mailto:ejw@ics.uci.edu"><i>ejw@ics.uci.edu</i></a>)<br>
+<i>Tue, 11 Jun 1996 23:22:56 -0700</i>
+<p>
+<ul>
+<li> <b>Messages sorted by:</b> <a href="index.html#87">[ date ]</a><a href="thread.html#87">[ thread ]</a><a href="subject.html#87">[ subject ]</a><a href="author.html#87">[ author ]</a>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0088.html">Jim Whitehead: "Re: Name space munging ... blech!"</a>
+<li> <b>Previous message:</b> <a href="0086.html">Christopher Seiwald: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe in reply to:</b> <a href="0083.html">Jim Whitehead: "Name space munging ... blech!"</a>
+<!-- nextthread="start" -->
+<li> <b>Next in thread:</b> <a href="0088.html">Jim Whitehead: "Re: Name space munging ... blech!"</a>
+<!-- reply="end" -->
+</ul>
+<hr>
+<!-- body="start" -->
+<pre>
+&gt;Jim's subject line makes the issue seem one of taste
+
+No... just an attempt to inject some humor into an otherwise serious post.
+Name space munging has the same negative connotations as URL "decorations,"
+as if a URL was a Christmas tree... :-)
+
+&gt;To that end, I suggest that we decorate the version number with version=,
+&gt;so that
+&gt;
+&gt;        <a href="http://host/dir/projectX/1.5/Macintosh/French/file.c">http://host/dir/projectX/1.5/Macintosh/French/file.c</a>
+&gt;
+&gt;becomes:
+&gt;
+&gt;        <a href="http://host/dir/projectX/version=1.5/Macintosh/French/file.c">http://host/dir/projectX/version=1.5/Macintosh/French/file.c</a>
+&gt;
+&gt;Aesthetics aside, this works.
+
+This is better, although it seriously increases the length of URLs.  And if
+we're going to do this, I'd prefer to see something like:
+
+   <a href="http://host/dir/projectX/Macintosh;version=1.5/French/file.c">http://host/dir/projectX/Macintosh;version=1.5/French/file.c</a>
+
+This still handles the "surfing" requirement that seems to be so compelling.
+
+&gt;
+&gt;| 2)  Competing name space semantics: What gives us the right to partition
+&gt;| the name space for HTTP servers which employ versioning?  How can we
+&gt;
+&gt;We're not seizing rights here, we're establishing a convention.
+&gt;Admittedly, even /version=_version_/ takes away from the namespace
+&gt;freedom of the HTTP servers, albeit less than simply /_version_/.
+
+This dodges my main point: how can we guarantee there won't be collisions
+between our convention, and other existing conventions.  Given the scope of
+the proposed convention, I find the likelihood of collisions to be high,
+and gave an example of an entire class of existing namespaces which may
+cause problems.
+
+&gt;
+&gt;| 4) The main benefit of placing version identifiers into the name space,
+&gt;| "surfing" into the past via relative URLs, does not work.  One scenario
+&gt;| outlines this:
+&gt;|
+&gt;| <a href="http://foo.bar.com/1.5/A.html">http://foo.bar.com/1.5/A.html</a>  (where 1.5 is the version id) contains a
+&gt;| relative URL of GIF "../background.gif."  In this case, version 1.5 of
+&gt;| background.gif would also be retrieved.  However, experience to date with
+&gt;| versioning systems shows that all objects are not versioned at the same
+&gt;| rate.
+&gt;
+&gt;First, if the _version_ identifier is something other than a revision
+&gt;number, this works a whole lot better:
+&gt;
+&gt;        <a href="http://foo.bar.com/brochure/version=_symbolic-label_/A.html">http://foo.bar.com/brochure/version=_symbolic-label_/A.html</a>
+&gt;
+&gt;allows A.html to include a relative gif of "background.gif" and get the
+&gt;desired version, whatever its revision number may be.
+&gt;
+&gt;Second, if you allow /version=_version_/ to appear anywhere in the path,
+&gt;then the aware server can have it where it most makes sense.  For example,
+&gt;
+&gt;        <a href="http://foo.bar.com/brochure/A.html/version=1.15">http://foo.bar.com/brochure/A.html/version=1.15</a>
+&gt;
+
+I don't think you can just allow /version=_version_/ to appear either
+before or after the resource without affecting the semantics of it.  The
+way I read your comments, having the /version=_version_/ before the
+resource is giving the version id of a *collection* of resources, while
+having /version=_version_/ after the resource is simply specifying the
+version id of the resource itself.  These are not the same.
+
+Plus, I still don't think this works.  Here's another example:
+
+resource A.html has 3 versions: A.html,1.0; A.html,2.0; A.html;2.1
+resource B.html has 2 versions: B.html,1.0; B.html,2.0
+resource logo.gif has 2 versions: logo.gif,1.0; logo.gif,2.0
+
+The latest version of resource A.html is version 2.1, and includes version
+2.0 of logo.gif using a relative URL.  The latest version of resource
+B.hmtl is version 2.0, which also includes version 2.0 of logo.gif using a
+relative URL.
+
+To make the name space work, you'd have:
+
+<a href="http://foo.bar.com/top/version=2.1/A.html">http://foo.bar.com/top/version=2.1/A.html</a>
+<a href="http://foo.bar.com/top/version=2.0/B.html">http://foo.bar.com/top/version=2.0/B.html</a>
+
+But wait ... the relative URL in A.html will try to get the 2.1 version of
+logo.gif, which doesn't exist!  Assuming you mean that the version=2.1
+really refers to a collection of resources, I'll assume you can add a
+symbolic link to version 2.0 of logo.gif into the version=2.1 collection.
+At this point, let me introduce resource C.html, which, like A.html, has
+three versions, 1.0, 2.0 and 2.1.  As you might imagine, C.html also
+includes logo.gif, but C.html is an older page which has not been updated
+recently, and hence includes logo.gif version 1.0. So the URL for C.html
+is:
+
+<a href="http://foo.bar.com/top/version=2.1/C.html">http://foo.bar.com/top/version=2.1/C.html</a>
+
+Utilizing the solution of adding a symbolic link to logo.gif, version 1.0
+into collection "version=2.1", we suddenly realize that a symbolic link to
+logo.gif already exists (left over from adding the link to version 2.0 of
+logo.gif for A.html version 2.1).  This is a problem.
+
+On the other hand, if the versions (i.e.,
+..../version=_version_/resource.html) do not actually refer to collections,
+but instead refer just to the object one heirarchy down, then there are
+still problems.  A new version 2.1 of logo.gif, a copy of version 2.0,
+could be made so that A.html would retrieve the right version, but C.html,
+version 2.1 just simply would be unable to get version 1.0 of logo.gif,
+because the version 2.1 name for logo.gif has already been taken by a copy
+of version 2.0 of logo.gif.
+
+&gt;The whole point is to allow version-naive clients to surf.  If this is not
+&gt;as important as I think it is, then maybe we don't need to go to such lengths
+&gt;to solve the problem.
+
+I think it is an important problem.  But I also think we shouldn't
+partition the namespace in a way which causes other problems due to
+namespace collisions, and restrictions on the versions of entities which
+may be accessed.
+
+I strongly feel the text/config MIME type approach is the best one for
+handling browsing of collections of versioned objects.
+
+- Jim
+</pre>
+<!-- body="end" -->
+<hr>
+<p>
+<ul>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0088.html">Jim Whitehead: "Re: Name space munging ... blech!"</a>
+<li> <b>Previous message:</b> <a href="0086.html">Christopher Seiwald: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe in reply to:</b> <a href="0083.html">Jim Whitehead: "Name space munging ... blech!"</a>
+<!-- nextthread="start" -->
+<li> <b>Next in thread:</b> <a href="0088.html">Jim Whitehead: "Re: Name space munging ... blech!"</a>
+<!-- reply="end" -->
+</ul>

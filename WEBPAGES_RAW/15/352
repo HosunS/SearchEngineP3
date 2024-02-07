@@ -1,0 +1,201 @@
+// Maintain list of words with frequencies, sorted by pattern of letters
+//
+// A pattern is the alphabetically first string of letters that could possibly
+// be a translation of the given string, i.e. the word "MAINTAIN" would correspond
+// to the pattern "ABCDEBCF".
+
+import java.lang.*;
+import java.net.*;
+import java.io.*;
+import java.util.*;
+import java.util.zip.*;
+
+public class WordPatterns {
+
+	// initialize WordPatterns object by reading frequency count file
+	// these two parameters should match args to freq.c
+	private final int MIN_FREQ = 10;
+	private final int MAX_FREQ = 40000;
+	
+	public WordPatterns( String codeBase ) {
+		try {
+			StringBuffer wordBuf = new StringBuffer();
+			InputStream wordStream = new GZIPInputStream(
+				new URL(codeBase + "trie.gz").openConnection().getInputStream() );
+			InputStream freqStream = new GZIPInputStream(
+				new URL(codeBase + "freq.gz").openConnection().getInputStream() );
+			
+			double logmin = Math.log(MIN_FREQ);
+			double logscale = (Math.log(MAX_FREQ)-logmin)/255.0;
+			logmin += logscale/2.0;	// make truncation look more like rounding
+			
+			char decode[] = new char[32];
+			for (int i = 0; i < 32; i++) decode[i] = (char) wordStream.read();
+			int buf[] = new int[50];
+			int pos = 0;
+			for (;;) {
+				int c = wordStream.read();
+				if (c < 0) break;
+				buf[pos++] = c;
+				wordBuf.append(decode[c&037]);
+				if ((c & (1<<5)) != 0 || (c & (1<<7)) == 0) { /* is it a word? */
+					int freq = (int) Math.exp(logmin + logscale * (double) freqStream.read());
+					new Word(wordBuf.toString(), freq);
+				}
+			   if ((c & (1<<7)) == 0) {        /* if no children */
+			   	while (--pos >= 0 && (buf[pos] & (1<<6)) == 0) ; /* find node w/siblings */
+			   	if (pos < 0) break;
+			   	wordBuf.setLength(pos);
+			   }
+			}
+			
+			wordStream.close();
+			freqStream.close();
+				
+			// now count incidences of each pattern and normalize freq to a probability
+			Enumeration pat = patterns.elements();
+			while (pat.hasMoreElements()) {
+				Vector vec = (Vector) pat.nextElement();
+				Enumeration mat = vec.elements();
+				double tot = 0.0;
+				while (mat.hasMoreElements()) {
+					Word w = (Word) mat.nextElement();
+					tot += w.freq;
+				}
+				mat = vec.elements();
+				while (mat.hasMoreElements()) {
+					Word w = (Word) mat.nextElement();
+					w.freq /= tot;
+				}
+			}
+		} catch (IOException e) { }
+	}
+	
+	// is this character translatable?
+	static boolean letter(char c) {
+		return (c >= 'A' && c <= 'Z');
+	}
+	
+	// list the words in a phrase
+	public class WordEnumerator implements Enumeration {
+		String thePhrase;
+		public WordEnumerator( String phrase ) { thePhrase = phrase; stripStart(); }
+		public boolean hasMoreElements() { return thePhrase != null && thePhrase.length() > 0; }
+		
+		private void stripStart() {
+			while (hasMoreElements()) {
+				if (!letter(thePhrase.charAt(0))) thePhrase = thePhrase.substring(1);
+				else if (thePhrase.charAt(1) == '.') thePhrase = thePhrase.substring(2);
+				else return;
+			}
+		}
+		
+		public int firstBreak(String phrase) {
+			int space = phrase.indexOf(" ");
+			int dash = phrase.indexOf("-");
+			if (dash >= 0 && dash < space) space = dash;
+			int dots = phrase.indexOf("..");
+			if (dots >= 0 && dots < space) space = dots;
+			return space;
+		}
+		
+		public Object nextElement() {
+			int space = firstBreak(thePhrase);
+			String theWord;
+			if (space < 0) {
+				theWord = thePhrase;
+				thePhrase = null;
+			} else {
+				theWord = thePhrase.substring(0, space);
+				thePhrase = thePhrase.substring(space+1);
+				stripStart();
+			}
+			while (theWord.length() > 0 && !letter(theWord.charAt(theWord.length()-1)))
+				theWord = theWord.substring(0, theWord.length() - 1);
+			return theWord;
+		}
+	}
+	public Enumeration words(String thePhrase) { return new WordEnumerator(thePhrase); }
+	
+	// how good is this phrase?
+	public long badWords(String thePhrase) {
+		long bits = 0;
+		int n = 0;
+		Enumeration e = words(thePhrase);
+		while (e.hasMoreElements()) {
+			if ( getWord( (String) e.nextElement() ) == null )
+				bits |= (1L << n);
+			n++;
+		}
+		return bits;
+	}
+	public int nBadWords(String thePhrase) {
+		Enumeration e = words(thePhrase);
+		int n = 0;
+		while (e.hasMoreElements())
+			if ( getWord( (String) e.nextElement() ) == null )
+				n++;
+		return n;
+	}
+	
+	static final double PHRASE_PROB_ADJUSTMENT = 10.0; // help avoid underflow
+	public double phraseProb(String thePhrase) {
+		Enumeration e = words(thePhrase);
+		double p = 1.0;
+		while (e.hasMoreElements()) {
+			Word w = getWord( (String) e.nextElement() );
+			if (w != null) p *= w.freq * PHRASE_PROB_ADJUSTMENT;
+		}
+		return p;
+	}
+	
+	// translate word to its pattern
+	static StringBuffer patBuf = new StringBuffer();
+	public static String pattern( String word ) {
+		patBuf.setLength(0);
+		for (int i = 0; i < word.length(); i++) {
+			char c = word.charAt(i);
+			if (letter(c)) patBuf.append( (char) ( (int)'A' + word.indexOf(c) ) );
+			else patBuf.append(c);
+		}
+		return patBuf.toString();
+	}
+	
+	// find set of letters occurring in a word
+	static StringBuffer letBuf = new StringBuffer();
+	public static String letters( String word ) {
+		letBuf.setLength(0);
+		for (int i = 0; i < word.length(); i++) {
+			char c = word.charAt(i);
+			if (letter(c) && i == word.indexOf(c)) letBuf.append(c);
+		}
+		return letBuf.toString();
+	}
+	
+	// find list of words that match given word's pattern
+	protected Dictionary patterns = new Hashtable();
+	public Vector matches( String word ) {
+		String pat = pattern( word );
+		Vector vec = (Vector) patterns.get( pat );
+		if (vec == null) {
+			vec = new Vector();
+			patterns.put ( pat, vec );
+		}
+		return vec;
+	}
+	
+	// single frequency count entry
+	protected Dictionary wordDict = new Hashtable();
+	public class Word {
+		public String theWord;
+		public double freq;
+		public Word( String w, int f ) throws IOException {
+			theWord = w;
+			freq = f;
+			matches( theWord ).addElement( this );
+			wordDict.put ( theWord, this );
+		}
+	}
+	
+	Word getWord( String theWord ) { return (Word) wordDict.get( theWord ); }
+}

@@ -1,0 +1,333 @@
+			Sorting: O(N^2) Sorts
+
+
+Sorting is one of the most studied problems in Computer Science. Hundreds of
+different sorting algorithms have been developed, each with relative advantages
+and disadvantages based on the data being truly random or partially sorted, and
+other features, some of which we will discuss below.
+  
+We will start our discussion of sorting by covering general characteristics
+(applied to each algorithm we later examine), simple O(N^2) algorithms, more
+complicated O(N Log2 N) algorithms, non-trivial lower bounds for "comparison"
+based sorting, and finally sorting methods that do not use comparisons: their
+complexity classes, and how to interpret them.
+
+First, we will often examine the following sorting characteristics for the
+algorithms discussed below.
+
+1) The complexity class of the algorithm (normally worst-case, but
+   sometimes average-case and best case too)
+
+2) The amount of extra storage needed to run it. If just O(1) extra storage is
+   needed (not proportional to N, the size of the array being sorted), we call
+   the sorting method "In Place". In fact, we will call it "in place" if it
+   uses O(Log2 N) space as well, because this number is << N for large N.
+
+3) The number of comparsions and data movements needed to sort. For example,
+   it we are sorting a huge amount of information on an external memory that
+   is non-random access (say a hard disk) the cost of a comparison might be
+   a small fraction of the moving data, so we'd prefer an algorithm that does
+   more of the former and less of the later. This won't change its complexity
+   class, but it can have a large impact on its actual performance. We will
+   discuss sorting huge amounts of data on external storage the last week of
+   course.
+
+4) Is the algorithm stable: do equal values in the array keep their same
+   relative order in the sorted array as in the original array. Stability is
+   sometimes useful, but there is often a price to pay for it (increased
+   execution time).
+
+-----------
+
+Illustrating and Using Stability:
+
+Stability is useful, for example, in the following situation. Imagine we have
+an array of objects that store a student's name and grade. We want to sort the
+array by grade (first all A students, then all B students, etc.), but with all
+students who have the same grade listed in alphabetical order. With a stable
+sorting algorithm we can do this easily as two sorts: one on each key.
+
+First, assume the original array contains the following pairs of data in each
+object (Name-Grade).
+
+  Bob-A   Mary-C   Pat-B   Fred-B   Gail-A   Irving-C   Betty-B   Rich-F
+
+1) Sort on the minor/secondary key (name) first; we don't care whether or not
+the sort is stable (and in this case, none of the names are equal); so the
+result is
+
+  Betty-B   Bob-A   Fred-B   Gail-A   Irving-C   Mary-C   Pat-B   Rich-F
+
+2) Sort on the primary/major key (grade) using a stable sort. So, for
+example, since Betty (grade B) is to the left of Fred (grade B) who is to
+the left of Pat (grade B), for data with those equal keys of B (when sorting by
+grade, with a stable sort), this order will be maintained in the newly sorted
+array: Betty to the left of Fred, Fred to the left of Pat, and all those names
+will move together based on all having a grade of B (after all with an A grade;
+before all with a C grade).
+
+  Bob-A   Gail-A   Betty-B   Fred-B   Pat-B   Irving-C   Mary-C   Rich-F
+
+Thus, the information is finally sorted by grade, with all those students with
+the same grade (sub)sorted by name (which was done in the first sort).
+
+Another way to accomplish this same ordering is by sorting once, but with a
+more complicated operator< (instead of sorting twice, with two simple
+operator<). Use an operator< such that if the grades are different, the better
+(lower in the alphabet) one is smaller; but if they are the same, the one with
+the smaller (earlier in the dictionary) name is smaller. So when comparing
+Betty-B and Bob-A, the grades are different so Bob-A comes first; when
+comparing Betty-B and Fred-B, the grades are the same but Betty's name is
+smaller (comes before in the dictionary ordering) Fred's name. Here is the
+operator< assuming std::string fields .name and .grade in a class called
+Student
+
+  bool operator< (const Student& a, const Student& b) {
+    if (a.grade < b.grade)
+      return true;
+    else if (a.grade > b.grade)
+      return false;
+    else /* if a.grade == b.grade */
+      return a.name < b.name;
+
+    //or, 
+    //return (a.grade != b.grade ? a.grade < b.grade : a.name < b.name);
+    }
+  }
+
+-----
+Not available in C++ yet; but there is a Java version
+In the spirit of empirical investigation, I have written a small driver that
+serves as a testbed for sorting application. It is available off the
+Programs link for the course (Sorting). It allows us to time various sorting
+algorithms on various sized-data with various orderings (including random).
+-----
+
+-----------
+
+Simple to Code O(N^2) Sorts
+
+In Selection Sort, the left part of the array is correct (sorted with the final
+values there) and the right is unknown. Each iteration around the outer loop
+ensures the sorted part expands by one index (on the left of the boundary
+between sorted/unsorted) and the unsorted part shrinks by one index (on the
+right of that boundary). The algorithm scans forwards from the 1st unsorted
+index to the end of the array to find the smallest remaining value in the
+array, then it swaps that value with the one in the first unsorted index.
+
+  1) Worst is O(N^2), best is O(N^2), and average is O(N^2)
+  2) In-place O(1): needs a few extra local variables in the method
+  3) O(N^2) comparisons; O(N) swaps
+  4) Unstable
+
+  template<class T>
+  void selection_sort(T a[],length) {
+    for (int index_to_update=0; index_to_update<length; ++index_to_update) {
+      int index_of_min = index_to_update;
+      for (int i = index_to_update+1; i<length; ++i)
+        if ( a[i] < a[index_of_min] )
+          index_of_min = i;
+      std::swap(a[index_to_update], a[index_of_min]);
+    }
+  }
+
+When index_to_update is 3, we have
+
+       0   1   2   3   4   5   6   7   8   9
+     +---+---+---+---+---+---+---+---+---+---+
+     |   |   |   |   |   |   |   |   |   |   |
+     +---+---+---+---+---+---+---+---+---+---+
+                 ^
+       <- Sorted | Unsorted ->
+
+meaning the values at indexes 0-2 are sorted (with the 3 smallest array values,
+in order) and the values at indexes 3-9 are unsorted; this loop scans all of
+the unsorted values to find the smallest one, and immediately after the end of
+this loop, the code swaps it with the value in the first unsorted index (3).
+So, the value at array index 3 will store the next biggest value and the
+dividing line will moved one to the right and be between 3 and 4.
+
+Note the body of the inner for-loop is executed N-1 times (N = length) times
+when index_to_update is 0; N-2 times when index_to_update is 1; N-3 times when
+index_to_update is 2; ... 0 times when index_to_udate is N-1. So, the total
+number of times it executes is the sum: 0+1+2+...+(N-1) = N(N-1)/2 by a
+formula we studied previously.
+
+Note that the body of the inner loop does one comparison and at most one data
+movement (moving an int: i to index_of_min); each time the inner loop is
+finished, the body of the outer loop finally moves/swaps two data values in the
+array.
+
+Some students might want to rewrite the swapping by embedding it in an if
+statement, to "avoid doing extra work":
+
+  if (index_to_update != index_of_min)
+    std::swap(a[index_to_update], a[index_of_min]);
+
+adding extra code to avoid swapping a value with itself (in such a case, the
+swap code will execute correctly, but ultimately makes no changes in the array).
+The problem with this code is that to save doing a swap that is SOMETIMES
+unneeded, we must ALWAYS do a comparison of indexes in the if.
+
+Suppose that the comparison takes 1 computer operation and the swap takes 3;
+also suppose that when sorting 1,000 values, 95% of the time index_to_update is
+not equal to i. Then, the original code takes 3,000 instructions (always
+swapping for 1,000 values). The conditional code takes 1,000 instructions to
+test whether to swap, and swaps 950 times (so takes 1,000+3*950 = 3,850
+computer instructions, compared to the 3,000 done by the "always swap" way).
+So, the extra code isn't really an "improvement". In contrast, when sorting an
+array that is already sorted, the updated code takes only 1,000 instructions
+because it never swaps. So the preconditioning of the data makes a difference.
+
+How about stability? If you sort the following tiny array (currently sorted by
+name) by grade
+
+  Betty-B  Fred-B  Gail-A
+
+The first swap will be Betty-B and Gail-A (the smallest), which inverts the
+order of the "equal" keys Betty and Frd. The final result will be
+
+  Gail-A  Fred-B  Betty-B
+
+which still has inverted the order of Betty-B and Fred-B, so selection sort is
+unstable. This algorithm moves data too radically in the array. Generally,
+swapping the value at index_to_move (on the left) with the one at index_of_min
+(anwhere to the right) might make the new value at index_to_move move be to the
+left of other values that are equal to it (between index_to_move and
+index_of_min).
+
+This algorithm works equally well for arrays and linked lists (with slight
+changes in code). It runs in about the same amount of time no matter what the
+ordering in the original array. Also note that it is an offline algorithm: it
+requires all the data be present in the array before it can start: it looks at
+all the data to determine what belongs at index 0.
+
+----------
+
+In Insertion Sort, again the left part of the array is sorted (although it
+doesn't have its final values until the last iteration), but and the right is
+unknown. Each iteration around the outer loop ensures the sorted part expands
+by one index (on the left of the boundary between sorted and unsorted) and the
+unsorted part shrinks by one index (on the right of the boundary). The
+algorithm moves/swaps the value in the 1st unsorted index backwards, until it
+is >= the value before it. So, only data in the sorted part changes.
+
+Note that unlike selection sort, the left part does not immediately have its
+values in their final, correct place: the left part contains some subset of the
+array values, but that subset is always sorted. Eventually it contains all the
+array values, sorted.
+
+  1) Worst is O(N^2), best is O(N), average is O(N^2)
+  2) In-place O(1): needs a few extra local variables in the method
+  3) O(N^2) comparisons; O(N^2) swaps
+  4) Stable
+
+  template<class T>
+  insertion_sort(T a[], length) {
+    for (int index_to_move=0; index_to_move<length; index_to_move++)
+      for (int i=index_to_move-1; i>=0; --i)
+          if ( a[i] > a[i+1] )
+            std::swap(a[i], a[i+1]);
+          else
+            break;
+  }
+
+When index_to_move is 3, we have
+
+       0   1   2   3   4   5   6   7   8   9
+     +---+---+---+---+---+---+---+---+---+---+
+     |   |   |   |   |   |   |   |   |   |   |
+     +---+---+---+---+---+---+---+---+---+---+
+                 ^
+       <- Sorted | Unsorted ->
+
+meaning the values at indexes 0-2 are sorted (although they might not yet
+contain the 3 smallest array values!) and indexes 3-9 are unsorted; this loop
+swaps the value at index 3 backwards until it is in index 0 or >= the value to
+its left, so at the end of this loop, the array indexes 0-4 will be in order
+(although they might not yet contain the 4 smallest array values!) and the
+dividing line will be between 3 and 4.
+
+Note the body of the inner for-loop is executed at most 0 times when
+index_to_move is 0; at most 1 time when index_to_move is 1; ... at most N-1
+times when index_to_move is N-1 (when N = length). So, the most number of times
+it executes is the sum 0+1++2+...+(N-1) = N(N-1)/2  by a formula we studied
+previously.
+
+Note that the body of the inner loop does one comparison and at most one swap
+of a pair of data values each time it executes.
+
+In the best case (where the entire array is completely sorted), each value in
+index_to_move will already be bigger than the one before it, so the inner loop
+will immedately break, requiring just a total of N comparisons (one for each
+iteration in the outer loop) and no data movement in the best case.
+
+If some values in the array are equal, the one on the right will move left, but
+stop to the right of any equal values (see the break, controlled by the ">"
+operator). There is no "severe" swapping; only adjacent values are swapped.
+This means that the Insertion sorting  method is stable.
+
+So, this method in the worst case does the same number of comparisons as in
+Selection sort, but is likely to do many more swaps than Selection sort, and
+therefore it has a higher constant. But if we know the array is sorted (or very
+close to being sorted: where no values are far away from where they belong)
+this method is O(N), whereas selection sort is always O(N^2) -worst, best, and
+average case.
+
+This means if we know something about the data (like it is almost sorted) it
+means that we might prefer this algorithm over the previous one (in fact, if
+the data is almost sorted, this algorithm beats the O(N Log N) algorithms.
+
+There is a better variant of this algorithm, which is a bit more complicated to
+write, but has better performance: it does half the data movements by caching
+the value to move and translating swaps into single data movements.
+
+  1) Worst is O(N^2), best is O(N), average is O(N^2)
+  2) In-place: needs a few extra local variables in the method
+  3) O(N^2) comparisons; O(N^2) swaps
+      (although here it moves just once piece of data in the inner loop; by not
+       swapping, less work is done; so at worst it still does O(N^2) data
+       movements)
+  4) Stable
+
+  template<class T>
+  insertion_sort(T a[], length) {
+    for (int index_to_move=0; index_to_move<length; index_to_move++) {
+      to_move = a[index_to_move];
+      int i = index_to_move-1;        //i must be usable after/outside the loop
+      for (/*See above*/; i>=0; --i)
+          if ( a[i] > to_move )
+            a[i+1] = a[i];            //Single assignment, not swapping
+          else
+            break;
+      a[i+1] = to_move    
+    }
+  }
+
+This version caches the value a[index_to_move] and then shifts to the right all
+value > that to_move; finally, it stores to_move in the correct place. In both
+versions we can start index_to_move at 1, because inserting the value at index
+0 requires no comparisions or movement: it is already inserted in the correct
+place. If the length is 1, then, the outer loop immediately terminates because
+all 1 length arrays are sorted.
+
+Insertion sort also works for doubly linked lists, but not simply for linear
+linked lists (note the inner for loop is incrementing backwards); but, if we
+remove each value from the first list and insert it into a second list (so that
+the second list is always sorted), this algorithm works for simple linked lists
+(although a sorted list takes O(N^2) comparisons while the a list sorted in
+reverse order takes only O(N)).
+
+Finally, note that it is an online algorithm: it doesn't require that all the
+data be present in the array before it can start sorting: as each new value is
+"added in the right part of the array", the algorithm can move it backward to
+its correct position in the left part of the array. When the final piece of
+data appears, the array to the left can be completely sorted, and sorting the
+entire array (with the new piece of data) requires O(N) operations.
+
+------------------------------------------------------------------------------
+
+I'm not a big fan of animations, but you might want to check out the sorting
+animations at http://www.sorting-algorithms.com/. I think these animations
+are better on the O(N^2) algorithms, which are pretty easy to visualize without
+a computer anyway.

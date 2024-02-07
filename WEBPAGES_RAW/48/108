@@ -1,0 +1,72 @@
+def readSequencesFromFastaFile(filename):
+    fastaFile = open(filename)
+
+    sequenceList = []
+
+    readingSequence = False
+
+    for line in fastaFile:
+        line = line[0 : len(line) - 1]
+
+        if readingSequence:
+            if line[0] == '>':
+                readingSequence = False
+                sequenceList.append(sequence)
+            else:
+                sequence = sequence + line
+
+        else:
+            if line[0] != ';' and line[0] != '>':
+                readingSequence = True
+                sequence = line
+
+    sequenceList.append(sequence)
+
+    fastaFile.close()
+
+    return sequenceList
+
+
+def findReverseComplement(dnaSequence):
+    basePairTranslator = {}
+    basePairTranslator['A'] = 'T'
+    basePairTranslator['C'] = 'G'
+    basePairTranslator['G'] = 'C'
+    basePairTranslator['T'] = 'A'
+
+    reverseStrand = ""
+
+    for i in range(len(dnaSequence)-1, -1, -1):
+        c = dnaSequence[i]
+        reverseC = basePairTranslator[c]
+        reverseStrand = reverseStrand + reverseC
+
+    return reverseStrand
+
+
+def printCandidateGenes(dnaSequence, isGivenStrand):
+    for i in range(0, len(dnaSequence)-2):
+        if dnaSequence[i : i+3] == 'ATG':
+            for j in range(i+3, len(dnaSequence)-2, 3):
+                if dnaSequence[j : j+3] == 'TAA' or dnaSequence[j : j+3] == 'TAG' or dnaSequence[j : j+3] == 'TGA':
+                    if j+3-i >= 60:
+                        print "-----"
+
+                        if isGivenStrand:
+                            print "Candidate gene found on given strand"
+                        else:
+                            print "Candidate gene found on reverse strand"
+
+                        print "     Start position    :", (i+1)
+                        print "     Length (in codons):", (j+3-i)/3
+                    break
+
+
+
+filename = raw_input("Enter name of FASTA file: ")
+
+sequences = readSequencesFromFastaFile(filename)
+
+for sequence in sequences:
+    printCandidateGenes(sequence, True)
+    printCandidateGenes(findReverseComplement(sequence), False)

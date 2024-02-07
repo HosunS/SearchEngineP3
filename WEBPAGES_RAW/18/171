@@ -1,0 +1,458 @@
+/*
+    $Id: unittest.cc 1109 2007-04-17 00:04:26Z rvernica $
+
+    Copyright (C) 2007 by The Regents of the University of California
+
+    Redistribution of this file is permitted under the terms of the
+    GNU Public License (GPL).
+
+    Date: 01/30/2007
+    Author: Rares Vernica <rvernica@ics.uci.edu>
+*/
+
+#include <fstream>
+#include <iostream>
+#include <cassert>
+
+#include "ed.h"
+#include "jd.h"
+#include "gram.h"
+#include "output.h"
+#include "misc.h"
+
+void edTest()
+{
+  unsigned t = 0;
+  
+  vector<string> s;
+  s.push_back("abc");
+  s.push_back("ab");
+  s.push_back("ac");
+  s.push_back("bc");
+  s.push_back("a");
+  s.push_back("b");
+  s.push_back("c");
+  s.push_back("abcdef");
+  s.push_back("xyz");
+  s.push_back("bac");
+  s.push_back("acb");
+  s.push_back("ba");
+  
+  const unsigned n = 12;
+  unsigned e[][n] = 
+    { {0, 1, 1, 1, 2, 2, 2, 3l, 3, 2, 2, 2},
+      {1, 0, 1, 2, 1, 1, 2, 4, 3, 2, 1, 2},
+      {1, 1, 0, 1, 1, 2, 1, 4, 3, 1, 1, 2},
+      {1, 2, 1, 0, 2, 1, 1, 4, 3, 1, 2, 1},
+      {2, 1, 1, 2, 0, 1, 1, 5, 3, 2, 2, 1},
+      {2, 1, 2, 1, 1, 0, 1, 5, 3, 2, 2, 1},
+      {2, 2, 1, 1, 1, 1, 0, 5, 3, 2, 2, 2},
+      {3, 4, 4, 4, 5, 5, 5, 0, 6, 5, 4, 5},
+      {3, 3, 3, 3, 3, 3, 3, 6, 0, 3, 3, 3},
+      {2, 2, 1, 1, 2, 2, 2, 5, 3, 0, 2, 1},
+      {2, 1, 1, 2, 2, 2, 2, 4, 3, 2, 0, 3},
+      {2, 2, 2, 1, 1, 1, 2, 5, 3, 1, 3, 0}};
+
+  unsigned eSwap[][n] = 
+    { {0, 1, 1, 1, 2, 2, 2, 3, 3, 1, 1, 2},
+      {1, 0, 1, 2, 1, 1, 2, 4, 3, 2, 1, 1},
+      {1, 1, 0, 1, 1, 2, 1, 4, 3, 1, 1, 2},
+      {1, 2, 1, 0, 2, 1, 1, 4, 3, 1, 2, 1},
+      {2, 1, 1, 2, 0, 1, 1, 5, 3, 2, 2, 1},
+      {2, 1, 2, 1, 1, 0, 1, 5, 3, 2, 2, 1},
+      {2, 2, 1, 1, 1, 1, 0, 5, 3, 2, 2, 2},
+      {3, 4, 4, 4, 5, 5, 5, 0, 6, 4, 4, 5},
+      {3, 3, 3, 3, 3, 3, 3, 6, 0, 3, 3, 3},
+      {1, 2, 1, 1, 2, 2, 2, 4, 3, 0, 2, 1},
+      {1, 1, 1, 2, 2, 2, 2, 4, 3, 2, 0, 3},
+      {2, 1, 2, 1, 1, 1, 2, 5, 3, 1, 3, 0}};
+
+  for (unsigned i = 0; i < n; i++)
+    for (unsigned j = 0; j < n; j++) {
+//       cout << i << " " << j << " " << s[i] << " " << s[j] << " " 
+//            << e[i][j] << endl;
+      assert(ed(s[i], s[j]) == e[i][j]); t++;
+    }  
+
+  for (unsigned i = 0; i < n; i++)
+    for (unsigned j = 0; j < n; j++) {
+      assert(ed(s[i], s[j], e[i][j])); t++;
+    }
+
+  for (unsigned i = 0; i < n; i++)
+    for (unsigned j = 0; j < n; j++) {
+      if (e[i][j]) {
+        assert(!ed(s[i], s[j], e[i][j] - 1)); t++;
+      }
+    }
+
+  for (unsigned i = 0; i < n; i++)
+    for (unsigned j = 0; j < n; j++) {
+//       cout << i << " " << j << " " << s[i] << " " << s[j] << " " 
+//            << eSwap[i][j] << " " << edSwap(s[i], s[j]) << endl;
+      assert(edSwap(s[i], s[j]) == eSwap[i][j]); t++;
+    }  
+
+ 
+  cout << "ed (" << t << ")" << endl;
+}
+
+void jdTest()
+{
+  unsigned t = 0;
+
+  vector<string> s;
+  s.push_back("abc");
+  s.push_back("ab");
+  s.push_back("ac");
+  s.push_back("bc");
+  s.push_back("a");
+  s.push_back("b");
+  s.push_back("c");
+  s.push_back("abcdef");
+  s.push_back("xyz");
+  s.push_back("bac");
+  s.push_back("acb");
+  s.push_back("ba");
+  
+  const unsigned n1 = 12;
+  unsigned q = 1;
+  float r1[][n1] = 
+    { {     0, 1. / 3, 1. / 3, 1. / 3, 2. / 3, 2. / 3, 2. / 3,     .5,     1,      0,      0, 1. / 3},
+      {1. / 3, 0,      2. / 3, 2. / 3,     .5,     .5,      1, 2. / 3,     1, 1. / 3, 1. / 3,      0},
+      {1. / 3, 2. / 3,      0, 2. / 3,     .5,      1,     .5, 2. / 3,     1, 1. / 3, 1. / 3, 2. / 3},
+      {1. / 3, 2. / 3, 2. / 3,      0,      1,     .5,     .5, 2. / 3,     1, 1. / 3, 1. / 3, 2. / 3},
+      {2. / 3,     .5,     .5,      1,      0,      1,      1, 5. / 6,     1, 2. / 3, 2. / 3,     .5},
+      {2. / 3,     .5,      1,     .5,      1,      0,      1, 5. / 6,     1, 2. / 3, 2. / 3,     .5},
+      {2. / 3,      1,     .5,     .5,      1,      1,      0, 5. / 6,     1, 2. / 3, 2. / 3,      1},
+      {    .5, 2. / 3, 2. / 3, 2. / 3, 5. / 6, 5. / 6, 5. / 6,      0,     1,     .5,     .5, 2. / 3},
+      {     1,      1,      1,      1,      1,      1,      1,      1,     0,      1,      1,      1},
+      {     0, 1. / 3, 1. / 3, 1. / 3, 2. / 3, 2. / 3, 2. / 3,     .5,     1,      0,      0, 1. / 3},
+      {     0, 1. / 3, 1. / 3, 1. / 3, 2. / 3, 2. / 3, 2. / 3,     .5,     1,      0,      0, 1. / 3},
+      {1. / 3,      0, 2. / 3, 2. / 3,     .5,     .5,      1, 2. / 3,     1, 1. / 3, 1. / 3,      0}};
+
+  unsigned n = n1;
+  for (unsigned i = 0; i < n; i++)
+    for (unsigned j = 0; j < n; j++) {
+//       cout << i << " " << j << " " << s[i] << " " << s[j] << " " 
+//            << r1[i][j] << " " << jd(s[i], s[j], q) << endl;
+      assert(jd(s[i], s[j], q) == r1[i][j]); t++;
+    }  
+  
+  s.clear();
+  s.push_back("abc");
+  s.push_back("ab");
+  s.push_back("ac");
+  s.push_back("bc");
+  s.push_back("abcdef");
+  s.push_back("xyz");
+  s.push_back("bac");
+  s.push_back("acb");
+  s.push_back("ba");
+  
+  q = 2;
+  const unsigned n2 = 9; 
+  float r2[][n2] = 
+    { {     0,     .5,      1,     .5,     .6,     1,      1,      1,      1},
+      {    .5,      0,      1,      1, 4. / 5,     1,      1,      1,      1},
+      {     1,      1,      0,      1,      1,     1,     .5,     .5,      1},
+      {    .5,      1,      1,      0, 4. / 5,     1,      1,      1,      1},
+      {    .6, 4. / 5,      1, 4. / 5,      0,     1,      1,      1,      1},
+      {     1,      1,      1,      1,      1,     0,      1,      1,      1},
+      {     1,      1,     .5,      1,      1,     1,      0, 2. / 3,     .5},
+      {     1,      1,     .5,      1,      1,     1, 2. / 3,      0,      1},
+      {     1,      1,      1,      1,      1,     1,     .5,      1,      0}};
+
+  n = n2;
+  for (unsigned i = 0; i < n; i++)
+    for (unsigned j = 0; j < n; j++) {
+//       cout << i << " " << j << " " << s[i] << " " << s[j] << " " 
+//            << r2[i][j] << " " << jd(s[i], s[j], q) << endl;
+      assert(jd(s[i], s[j], q) == r2[i][j]); t++;
+    }  
+
+  cout << "jd (" << t << ")" << endl;
+}
+
+void gramTest()
+{
+  unsigned t = 0;
+
+  // str2grams, str2gramsHash, and grams2str
+  vector<string> gramsCor, gramsRes;
+  string strRes;
+  gramsCor.push_back("##a");
+  gramsCor.push_back("#ab");
+  gramsCor.push_back("abc");
+  gramsCor.push_back("bc$");
+  gramsCor.push_back("c$$");
+  str2grams("abc", gramsRes);
+  assert(gramsRes == gramsCor); t++;
+  grams2str(gramsCor, strRes);
+  assert(strRes == "abc"); t++;
+
+  vector<unsigned> gramsHash, gramsHashRes;
+  for (vector<string>::const_iterator gram = gramsCor.begin();
+       gram != gramsCor.end(); ++gram)
+    gramsHash.push_back(hashString(*gram));
+  
+  str2gramsHash("abc", gramsHashRes);
+  assert(gramsHashRes == gramsHash); t++;  
+
+  gramsCor.clear();
+  gramsCor.push_back("%%%a");
+  gramsCor.push_back("%%ab");
+  gramsCor.push_back("%abc");
+  gramsCor.push_back("abcd");
+  gramsCor.push_back("bcd@");
+  gramsCor.push_back("cd@@");
+  gramsCor.push_back("d@@@");
+  gramsRes.clear();
+  str2grams("abcd", gramsRes, 4, '%', '@');
+  assert(gramsRes == gramsCor); t++;
+  grams2str(gramsCor, strRes, 4);
+  assert(strRes == "abcd"); t++;
+
+  gramsHash.clear();
+  for (vector<string>::const_iterator gram = gramsCor.begin();
+       gram != gramsCor.end(); ++gram)
+    gramsHash.push_back(hashString(*gram));
+  gramsHashRes.clear();
+  str2gramsHash("abcd", gramsHashRes, 4, '%', '@');
+  assert(gramsHashRes == gramsHash); t++;
+
+  // gram2id &  id2gram
+  assert(gram2id("abc") == 207804); t++;
+  id2gram(207804, strRes, 3);
+  assert(strRes == "abc"); t++;
+
+  // GramId
+  GramId gid(3, '#', '$', "abc", false);
+
+  assert(gid.getId("###") == 0); t++;
+  assert(gid.getId("##a") == 1); t++;
+  assert(gid.getId("aaa") == 31); t++;
+  assert(gid.getId("abc") == 38); t++;
+  assert(gid.getId("cba") == 86); t++;
+
+  assert(gid.getGram(0) == "###"); t++;
+  assert(gid.getGram(1) == "##a"); t++;
+  assert(gid.getGram(31) == "aaa"); t++;
+  assert(gid.getGram(38) == "abc"); t++;
+  assert(gid.getGram(86) == "cba"); t++;
+
+  vector<unsigned> idsCor, idsRes;
+  idsCor.clear();
+  idsCor.push_back(1);
+  idsCor.push_back(6);
+  idsCor.push_back(32);
+  idsCor.push_back(37);
+  idsCor.push_back(63);
+  idsCor.push_back(68);
+  idsCor.push_back(94);
+  idsCor.push_back(99);
+  idsRes.clear();
+  gid.getIds("aabbcc", idsRes);
+  assert(idsRes == idsCor); t++;
+
+  gramsCor.clear();
+  gramsCor.push_back("##a");
+  gramsCor.push_back("#aa");
+  gramsCor.push_back("aab");
+  gramsCor.push_back("abb");
+  gramsCor.push_back("bbc");
+  gramsCor.push_back("bcc");
+  gramsCor.push_back("cc$");
+  gramsCor.push_back("c$$");
+  gramsRes.clear();
+  gid.getGrams(idsCor, gramsRes);
+  assert(gramsRes == gramsCor); t++;
+  grams2str(gramsCor, strRes);
+  assert(strRes == "aabbcc"); t++;
+
+  string filenamePrefix = "gram";
+  GramId gidSave = GramId();
+  gidSave.saveData(filenamePrefix);
+  GramId gidLoad = GramId(filenamePrefix);
+  assert(gidSave == gidLoad); t++;
+
+  // str2words
+  vector<string> words, wordsRes;
+  words.push_back("abc");
+  words.push_back("de");
+  words.push_back("f");
+  
+  str2words("abc de f", wordsRes);
+  assert(wordsRes == words); t++;
+  wordsRes.clear();
+  str2words("abc\tde\tf", wordsRes);
+  assert(wordsRes == words); t++;
+  wordsRes.clear();
+  str2words("abc \tde\t f", wordsRes);
+  assert(wordsRes == words); t++;
+  wordsRes.clear();
+  str2words("abc \t de\t \tf", wordsRes);
+  assert(wordsRes == words); t++;
+  wordsRes.clear();
+  str2words("\t \tabc \t de\t \tf \t ", wordsRes);
+  assert(wordsRes == words); t++;
+
+  // WordIndex
+  WordHash wordHash;
+  vector<string> data;
+  data.push_back("abc cd");
+  data.push_back("cd def");
+  data.push_back("abc");
+  WordIndex::build(data, wordHash);
+
+  Ids s;
+  s.insert(0);
+  s.insert(2);
+  assert(wordHash["abc"] == s); t++;
+  s.erase(2);
+  s.insert(1);
+  assert(wordHash["cd"] == s); t++;
+  s.erase(0);
+  assert(wordHash["def"] == s); t++;
+  
+  wordHash.clear();
+  WordIndex::build("dataset.txt", wordHash);
+  s.clear();
+  s.insert(0);
+  s.insert(2);
+  assert(wordHash["abc"] == s); t++;
+  s.erase(2);
+  s.insert(1);
+  assert(wordHash["cd"] == s); t++;
+  s.erase(0);
+  assert(wordHash["def"] == s); t++;
+
+  WordIndex::save("dataset.words.txt", 
+                  "dataset.ids.bin", wordHash);
+  wordHash.clear();
+  WordIndex::load("dataset.words.txt", 
+                  "dataset.ids.bin", wordHash);
+  s.clear();
+  s.insert(0);
+  s.insert(2);
+  assert(wordHash["abc"] == s); t++;
+  s.erase(2);
+  s.insert(1);
+  assert(wordHash["cd"] == s); t++;
+  s.erase(0);
+  assert(wordHash["def"] == s); t++;
+
+  WordIds wordIds;
+  WordKey wordKey;
+  WordIndex::build(data, wordIds, wordKey);
+
+  s.clear();
+  s.insert(0);
+  s.insert(2);
+  assert(wordIds[wordKey["abc"]].second == s); t++;
+  s.erase(2);
+  s.insert(1);
+  assert(wordIds[wordKey["cd"]].second == s); t++;
+  s.erase(0);
+  assert(wordIds[wordKey["def"]].second == s); t++;
+
+  wordIds.clear();
+  wordKey.clear();
+  WordIndex::build("dataset.txt", wordIds, wordKey);
+  s.clear();
+  s.insert(0);
+  s.insert(2);
+  assert(wordIds[wordKey["abc"]].second == s); t++;
+  s.erase(2);
+  s.insert(1);
+  assert(wordIds[wordKey["cd"]].second == s); t++;
+  s.erase(0);
+  assert(wordIds[wordKey["def"]].second == s); t++;
+
+  WordIndex::save("dataset.wids.bin", "dataset.wkey.txt", 
+    wordIds, wordKey);
+  wordIds.clear();
+  wordKey.clear();
+  WordIndex::load("dataset.wids.bin", "dataset.wkey.txt", 
+    wordIds, wordKey);
+  s.clear();
+  s.insert(0);
+  s.insert(2);
+  assert(wordIds[wordKey["abc"]].second == s); t++;
+  s.erase(2);
+  s.insert(1);
+  assert(wordIds[wordKey["cd"]].second == s); t++;
+  s.erase(0);
+  assert(wordIds[wordKey["def"]].second == s); t++;
+
+  cout << "gram (" << t << ")" << endl;
+}
+
+void miscTest()
+{
+  unsigned t = 0;
+
+  assert(pow(static_cast<unsigned>(2), static_cast<unsigned>(0)) == 1); t++;
+  assert(pow(static_cast<unsigned>(2), static_cast<unsigned>(1)) == 2); t++;
+  assert(pow(static_cast<unsigned>(2), static_cast<unsigned>(2)) == 4); t++;
+
+  vector<vector<unsigned> > subs;
+  vector<unsigned> sub;
+  sub.push_back(0);
+  sub.push_back(1);
+  subs.push_back(sub);
+  sub[1] = 2;
+  subs.push_back(sub);
+  sub[0] = 1;
+  sub[1] = 2;
+  subs.push_back(sub);
+  assert(subsets(3, 2) == subs); t++;
+  
+  subs.clear();
+  sub.clear();
+  sub.push_back(0);
+  subs.push_back(sub);
+  sub[0] = 1;
+  subs.push_back(sub);
+  sub[0] = 2;
+  subs.push_back(sub);
+  assert(subsets(3, 1) == subs); t++;
+
+  assert(min(static_cast<unsigned>(1), 2, 3) == 1); t++;
+  assert(min(static_cast<unsigned>(1), 3, 2) == 1); t++;
+  assert(min(static_cast<unsigned>(2), 1, 3) == 1); t++;
+  assert(min(static_cast<unsigned>(2), 3, 1) == 1); t++;
+  assert(min(static_cast<unsigned>(3), 1, 2) == 1); t++;
+  assert(min(static_cast<unsigned>(3), 2, 1) == 1); t++;
+  assert(min(static_cast<unsigned>(1), 2, 2) == 1); t++;
+  assert(min(static_cast<unsigned>(2), 1, 2) == 1); t++;
+  assert(min(static_cast<unsigned>(2), 2, 1) == 1); t++;  
+
+  assert(utos(10) == "10"); t++;
+  assert(utosh(10) == "10"); t++;
+  assert(utosh(1000) == "1k"); t++;
+
+  UnsignedSeq s;
+  assert(s() == 0); t++;
+  assert(s() == 1); t++;
+  s = UnsignedSeq(10);
+  assert(s() == 10); t++;
+  assert(s() == 11); t++;
+
+  assert(removeExt("a.txt") == "a"); t++;
+  assert(removeExt("a.bin") == "a"); t++;
+
+  cout << "misc (" << t << ")" << endl;
+}
+
+int main() 
+{
+  cout << "test..." << endl;
+
+  edTest();
+  jdTest();
+  gramTest();
+  miscTest();
+
+  cout << "OK" << endl;
+}

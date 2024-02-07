@@ -1,0 +1,955 @@
+/*
+** gsearch -- search for gliders in totalistic-rule cellular automata
+** David Eppstein, UC Irvine, 10 Mar 1998
+**
+** This program performs a brute-force search through random starting patterns
+** that fit into a small rectangle, attempting to find a glider.  For each such pattern,
+** it follows its life history until one of three things happens:
+**   - we get a loop
+**   - we get a pattern that appears to expand "forever" without returning to a small box
+**   - we get something we've seen before
+** Once we get a loop, we see if the pattern ends up shifted after the loop,
+** and if so we output it as a glider.
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+/* define DEBUG */
+
+#define ABS(x) ((x)<0? -(x) : x)
+#define MAX(x,y) ((x)<(y)? (y) : (x))
+#define MIN(x,y) ((x)<(y)? (x) : (y))
+
+#define STROBING ((theRule & 01400) == 01000)
+
+/* =================================================================== */
+/*  Read glider database for checking new patterns against known ones  */
+/* =================================================================== */
+#ifndef GLIDERDB
+#define GLIDERDB "/home/eppstein/ph/ca/glider.db"
+#endif
+
+/* HACK TO MAKE WORK WITH MAC LINE TERMINATION! */
+int my_fgets(char * buf, int BUFLEN, FILE * f) {
+  int n = 0; int c;
+  while (n < BUFLEN - 1 && (c = fgetc(f)) != EOF) {
+    if (c == '\r') c = '\n';
+    buf[n++] = c;
+    if (c == '\n') break;
+  }
+  buf[n] = 0;
+  return n;
+}
+#define fgets my_fgets
+
+#define MAX_GDB_LINE_LENGTH 1000000
+
+#define MAX_RLE_LINE_LENGTH 72
+
+typedef unsigned long rule;
+rule theRule = 0;
+
+struct Glider {
+  rule zeros, ones;	 /* bits that must be zero or one in CA rule spec */
+  short x, y;
+  short period, dx, dy;
+  short halfPeriod;
+  char *name;
+  char *disco;
+  struct Glider * next;
+};
+
+struct Glider *firstGlider = 0;
+struct Glider *lastGlider = 0;
+
+char lineBuf[MAX_GDB_LINE_LENGTH];
+
+void badDB(char * arg) {
+	printf("Database file has bad format: %s!\nLine:\n\n%s", arg, lineBuf);
+	exit(0);
+}
+
+void readGliderDB() {
+	FILE * f = fopen(GLIDERDB,"r");
+	if (ferror(f)) {
+		printf("Unable to open glider database!\n");
+		exit(0);
+	}
+	while (!feof(f) && !ferror(f) && fgets(lineBuf, MAX_GDB_LINE_LENGTH, f) != 0) {
+		char * s = lineBuf;
+		struct Glider * g;
+		int rl;
+
+		while (*s == ' ') s++;
+		if (*s == '\0' || *s == '\n' || *s == '#') continue;
+		
+		/* make new glider */
+		g = malloc(sizeof(struct Glider));
+		if (g == 0) {
+			printf("Out of memory!\n");
+			exit(0);
+		}
+		if (firstGlider == 0) firstGlider = g;
+		else lastGlider->next = g;
+		lastGlider = g;
+		g->next = 0;
+
+		/* read name */
+		rl = 0;
+		while (s[rl] != ':' && s[rl] != '\0') rl++;
+		if (rl == 0) g->name = 0;
+		else {
+			g->name = malloc(rl+1);
+			if (g->name == 0) {
+				fprintf(stderr,"No memory for glider: %s\n", s);
+				exit(0);
+			}
+			memcpy(g->name, s, rl);
+			g->name[rl] = '\0';
+			s += rl;
+		}
+		if (*s++ != ':') badDB("missing colon after name");
+
+		/* read discoverer */
+		rl = 0;
+		while (s[rl] != ':' && s[rl] != '\0') rl++;
+		if (rl == 0) g->disco = 0;
+		else {
+			g->disco = malloc(rl+1);
+			if (g->disco == 0) {
+				fprintf(stderr,"No memory for glider: %s\n", s);
+				exit(0);
+			}
+			memcpy(g->disco, s, rl);
+			g->disco[rl] = '\0';
+			s += rl;
+		}
+		while (*s != ':' && *s != '\0') s++;	/* skip disco */
+		
+		/* parse rules */
+		if (*s++ != ':') badDB("missing colon after discoverer");
+		if (*s++ != 'B') badDB("missing B in first rule");
+		g->ones = 0;
+		while (*s >= '0' && *s <= '8') g->ones |= 1 << (9 + *s++ - '0');
+		if (*s++ != '/') badDB("missing slash in first rule");
+		if (*s++ != 'S') badDB("missing S in first rule");
+		while (*s >= '0' && *s <= '8') g->ones |= 1 << (*s++ - '0');
+		g->zeros = 0777777;
+		if (*s++ != ':') badDB("missing colon after first rule");
+		if (*s++ != 'B') badDB("missing B in second rule");
+		while (*s >= '0' && *s <= '8') g->zeros &=~ (1 << (9 + *s++ - '0'));
+		if (*s++ != '/') badDB("missing slash in second rule");
+		if (*s++ != 'S') badDB("missing S in second rule");
+		while (*s >= '0' && *s <= '8') g->zeros &=~ (1 << (*s++ - '0'));
+		if ((g->zeros & g->ones) != 0) badDB("first rule is not subset of second");
+		
+		/* parse period and other numbers */
+		if (*s++ != ':') badDB("missing colon after rules");
+		g->period = 0;
+		while (*s >= '0' && *s <= '9')
+			g->period = g->period * 10 + *s++ - '0';
+		if (*s == '/') {
+			s++;
+			while (*s >= '0' && *s <= '9') s++;
+			g->halfPeriod = 1;
+		} else g->halfPeriod = 0;
+		if (*s++ != ':') badDB("missing colon after period");
+		g->dx = 0;
+		if (*s == '-') s++;	/* ignore sign */
+		while (*s >= '0' && *s <= '9')
+			g->dx = g->dx * 10 + *s++ - '0';
+		if (*s++ != ':') badDB("missing colon after dx");
+		g->dy = 0;
+		if (*s == '-') s++;	/* ignore sign */
+		while (*s >= '0' && *s <= '9')
+			g->dy = g->dy * 10 + *s++ - '0';
+		if (*s++ != ':') badDB("missing colon after dy");
+		g->x = 0;
+		while (*s >= '0' && *s <= '9')
+			g->x = g->x * 10 + *s++ - '0';
+		if (*s++ != ':') badDB("missing colon after x");
+		g->y = 0;
+		while (*s >= '0' && *s <= '9')
+			g->y = g->y * 10 + *s++ - '0';
+	}
+}
+
+#define MAX_KNOWN 100
+struct Glider *knownPats[MAX_KNOWN];
+int nKnown;
+
+void findKnown()
+{
+	struct Glider *g;
+	rule compRule = theRule;
+	nKnown = 0;
+
+	if (STROBING) {
+	int i;
+		compRule = 0;
+		for (i = 0; i < 18; i++)
+			if ((theRule & (1<<i)) == 0)
+				compRule |= (1 << (17-i));
+	}
+
+	for (g = firstGlider; g != 0 && nKnown < MAX_KNOWN; g = g->next) {
+		if ((theRule & g->zeros) == 0 && (theRule & g->ones) == g->ones)
+			knownPats[nKnown++] = g;
+		if ((compRule & g->zeros) == 0 && (compRule & g->ones) == g->ones)
+			knownPats[nKnown++] = g;
+	}
+}
+
+/* ============================================================== */
+/*  Behave nicely under non-preemptive multitasking (i.e. MacOS)  */
+/* ============================================================== */
+
+#ifdef __MWERKS__
+
+#include <Events.h>
+#include <SIOUX.h>
+
+long niceTimer = 0;
+#define NICE() if (--niceTimer <= 0) beNice()
+
+/* global timer value - call beNice every k iterations */
+#define TOTALNICENESS (1<<11)
+
+void beNice(void)
+{
+	EventRecord evRec;
+	niceTimer = TOTALNICENESS;
+	while (WaitNextEvent(-1, &evRec, 0, 0))
+		SIOUXHandleOneEvent(&evRec);
+}
+
+#else
+#define NICE()
+#endif
+
+/* end MacOS additions */
+
+/* ========================= */
+/*  command-line parameters  */
+/* ========================= */
+#define P_BIRTHS 0
+#define P_SURVIVES 1
+#define P_NOBIRTHS 2
+#define P_NOSURV 3
+#define P_PATSIZE 4
+#define P_OSC 5
+#define P_PHOT 6
+#define P_RANDOM 7
+#define P_GENS 8
+#define P_KILLSTILL 9
+#define P_KILLCOL 10
+#define P_PATS_PER_MODE 11
+#define PARAM_IS_BITMASK(p) (p <= 3)
+#define NUM_PARAMS 12
+int params[NUM_PARAMS];
+
+#define PATTERNS_PER_MODE (params[P_PATS_PER_MODE])
+
+typedef unsigned long row;
+
+enum { asym, odd, even, diag } mode;
+int seedRows, seedCols;
+
+#define MAX_SIZE 28		   /* max height or width before we overflow */
+#define CHAINLENGTH 50000
+#define MAX_GENERATIONS CHAINLENGTH /* default generations allowed before halting search */
+
+#define DEFAULT_PATSIZE 6
+#define DIAG_PATSIZEINC 3
+
+struct pattern {
+  int xOffset, yOffset;
+  int nRows;
+  row *rows;
+  row origin[MAX_SIZE+20];
+} patterns[CHAINLENGTH];
+
+/* Command-line input */
+
+void usage() {
+	printf("usage: gsearch rule/options\n");
+	printf("available options:\n");
+	printf("  /lNN searches for NN*NN patterns (default %d)\n", DEFAULT_PATSIZE);
+	printf("  /gNN limits gap between small phases to NN generations (default %d)\n", MAX_GENERATIONS);
+	printf("  /kNN kills still lifes separated from main body by NN positions\n");
+	printf("  /eNN kills small active regions separated from main body by NN empty columns\n");
+	printf("  /rNN repeatedly searches with randomly chosen rules using NN as seed\n");
+	printf("  /oNN outputs oscillators of period at least NN\n");
+	printf("  /pNN outputs photons of period at least NN\n");
+	printf("  /xNN prevents random testing of rules with survival when there are NN neighbors\n");
+	printf("  /zNN prevents random testing of rules with births when there are NN neighbors\n");
+	exit(0);
+}
+
+void badRule() {
+	printf("For command line options, type 'gsearch c'.\n");
+	exit(0);
+}
+/* return either 0 or a string explaining why no gliders for this rule 
+   see glider.c for detailed explanations */
+char * findExcuse(rule r) {
+	if (r & (1 << 9)) {
+		if (r & (1<<8))
+			return "rules with B0/S8 are equivalent to other rules without B0";
+		return 0;	/* otherwise we don't know much about B0, try it */
+	} else if (r & (1 << 10))
+		return "with B1, any pattern expands in all directions";
+	else if (!(r & ((1 << 11) | (1 << 12))))
+		return "without B2 or B3, pattern can't escape bounding box";
+	else if ((r & 017) == 017)
+		return "with S0123, trailing edge of pattern can not die";
+	else if ((r & 014001) == 014001)
+		return "with B23/S0, trailing edge of pattern can not die";
+	else if ((r & 0176) == 0176)
+		return "with S123456, connected patterns can not shrink";
+	else if ((r & 030076) == 030076)
+		return "with B34/S12345, connected patterns can not shrink";
+	else if ((r & 070036) == 070036)
+		return "with B345/S1234, connected patterns can not shrink";
+	else if ((r & 04374) == 0374)
+		return "with S234567 and without B2, can't escape bounding diamond without immortal triangle";
+	else if ((r & 064077) == 0)
+		return "without one of B245/S012345, can't escape bounding diamond";
+	else return 0;
+}
+
+void parseRule(char *s) {
+	int param;
+	for (param = 0; param < NUM_PARAMS; param++) params[param] = 0;
+	params[P_OSC] = params[P_PHOT] = -1;
+	param = -1;
+
+	while (*s != 0) {
+		switch(*s) {
+			case 'c': case 'C': usage();
+
+			case 'b': case 'B': param = P_BIRTHS; break;
+			case 's': case 'S': param = P_SURVIVES; break;
+			case 'x': case 'X': param = P_NOSURV; break;
+			case 'z': case 'Z': param = P_NOBIRTHS; break;
+			case 'l': case 'L': param = P_PATSIZE; break;
+			case 'g': case 'G': param = P_GENS; break;
+			case 'k': case 'K': param = P_KILLSTILL; break;
+			case 'e': case 'E': param = P_KILLCOL; break;
+			case 'r': case 'R': param = P_RANDOM; break;
+			case '*': param = P_PATS_PER_MODE; break;
+			case 'o': case 'O': param = P_OSC; params[P_OSC] = 0; break;
+			case 'p': case 'P': param = P_PHOT; params[P_PHOT] = 0; break;
+
+			case '/': break;
+
+			case '0': case '1': case '2': case '3': case '4':
+			case '5': case '6': case '7': case '8': case '9':
+				if (param < 0) {
+					printf("Unexpected digit in command line.\n");
+					badRule();
+				} else if (PARAM_IS_BITMASK(param)) params[param] |= 1 << (*s - '0');
+				else params[param] = 10 * params[param] + *s - '0';
+				break;
+
+			default:
+				printf("Unexpected character '%c' in command line.\n", *s);
+				badRule();
+		}
+		s++;
+	}
+	
+	if (params[P_PATS_PER_MODE] == 0) params[P_PATS_PER_MODE] = 200;
+	if (params[P_GENS] == 0) params[P_GENS] = MAX_GENERATIONS;
+	if (params[P_PATSIZE] == 0) params[P_PATSIZE] = DEFAULT_PATSIZE;
+	if (params[P_OSC] < 0) params[P_OSC] = CHAINLENGTH;
+	else if (params[P_OSC] == 0) params[P_OSC] = 2;
+	if (params[P_PHOT] < 0) params[P_PHOT] = CHAINLENGTH;
+	else if (params[P_PHOT] == 0) params[P_PHOT] = 1;
+
+	if (params[P_RANDOM] != 0) {
+		if (params[P_BIRTHS] & params[P_NOBIRTHS]) {
+			printf("B and Z sets must be disjoint.\n");
+			badRule();
+		} else if (params[P_SURVIVES] & params[P_NOSURV]) {
+			printf("S and X sets must be disjoint.\n");
+			badRule();
+		}
+	} else {
+		const char * s;
+		theRule = (params[P_BIRTHS] << 9) + params[P_SURVIVES];
+		if (theRule == 0) {
+			printf("No rule specified.\n");
+			badRule();
+		}
+		s = findExcuse(theRule);
+		if (s != 0) {
+			printf("No gliders can exist: %s.\n", s);
+			badRule();
+		}
+	}
+}
+
+char * readString() {
+	static char buf[1024];
+	char *s = buf;
+	int i = 0;
+	char c;
+	
+	fprintf(stderr,"Rule: ");
+	while ((c = getchar()) != '\n')
+		if (i++ < 1023) *s++ = c;
+	*s++ = '\0';
+	return buf;
+}
+
+/* Is pattern a single unit or two disconnected pieces? */
+
+int discGutter(int sg, int eg) {
+	int g;
+	row r;
+	for (g = sg; g < eg; g++) {
+		if (patterns[g].rows[0] != 0) return 0;
+		r = patterns[g].rows[1];
+		if ((theRule & 010000) != 0 &&
+			 (r & (r>>1) & (r>>2)) != 0) return 0;
+		if ((theRule & 004000) != 0 &&
+			 (r & (r>>1)) != 0) return 0;
+	}
+	return 1;
+}
+
+#define DFSVISN 200
+struct pattern dfsVis[DFSVISN];
+
+void dfs(int sg, int eg, int g, int i, int j) {
+	int k,l,n1=0,n2=0,n3=0,n4=0,dx1,dx2,dy1,dy2;
+
+	/* test if params ok and bit has not been searched already */
+	if (i < 0 || i > patterns[g].nRows || j < 0 || j > MAX_SIZE) return;
+	if ((patterns[g].rows[i] & (1 << j) &~ dfsVis[g-sg].rows[i]) == 0) return;
+	
+	/* remember that we have searched this bit */
+	dfsVis[g-sg].rows[i] |= 1<<j;
+	
+	/* set up to find nontrivial connections in same gen, 2 steps away */
+	for (k = -1; k <= 1; k++)
+		for (l = -1; l <= 1; l++) {
+			if (i-1+k>=0 && i-1+k<patterns[g].nRows && j-1+l>=0 &&
+				 (patterns[g].rows[i-1+k] & (1 << (j-1+l))) != 0) n1++;
+			if (i-1+k>=0 && i-1+k<patterns[g].nRows && j+1+l>=0 &&
+				 (patterns[g].rows[i-1+k] & (1 << (j+1+l))) != 0) n2++;
+			if (i+1+k>=0 && i+1+k<patterns[g].nRows && j-1+l>=0 &&
+				 (patterns[g].rows[i+1+k] & (1 << (j-1+l))) != 0) n3++;
+			if (i+1+k>=0 && i+1+k<patterns[g].nRows && j+1+l>=0 &&
+				 (patterns[g].rows[i+1+k] & (1 << (j+1+l))) != 0) n4++;
+		}
+	if (theRule & 01000) {			/* if B0, need only one neighbor to be nontrivial */
+		n1 += 2; n2 += 2; n3 += 2; n4 += 2;
+	} else if (theRule & 04000) {	/* if B2, need one fewer neighbor to be nontrivial */
+		n1++; n2++; n3++; n4++;
+	}
+	
+	/* compute offsets between this gen and neighboring gens */
+	if (g == sg) {
+		dx1 = patterns[eg-1].xOffset - patterns[eg].xOffset;
+		dy1 = patterns[eg-1].yOffset - patterns[eg].yOffset;
+	} else {
+		dx1 = patterns[g-1].xOffset - patterns[g].xOffset;
+		dy1 = patterns[g-1].yOffset - patterns[g].yOffset;
+	}
+	dx2 = patterns[g+1].xOffset - patterns[g].xOffset;
+	dy2 = patterns[g+1].yOffset - patterns[g].yOffset;
+
+	/* call recursively on neighboring bits */
+	for (k = -1; k <= 1; k++)
+		for (l = -1; l <= 1; l++) {
+			int h = (g == sg? eg-1 : g-1);
+			dfs(sg, eg, h, i+k-dy1, j+l-dx1);
+			h = g+1;
+			if (h == eg) h=sg;
+			dfs(sg, eg, h, i+k-dy2, j+l-dx2);
+			dfs(sg,eg,g,i+k,j+l);
+			if (n1 >= 3) dfs(sg,eg,g,i-1+k,j-1+l);
+			if (n2 >= 3) dfs(sg,eg,g,i-1+k,j+1+l);
+			if (n3 >= 3) dfs(sg,eg,g,i+1+k,j-1+l);
+			if (n4 >= 3) dfs(sg,eg,g,i+1+k,j+1+l);
+		}
+}
+
+int connected(int sg, int eg) {
+	int g, i, j, c = 0;
+	row r;
+	
+	/* avoid mysterious segfault */
+	if (STROBING) return 1;
+
+	/* first check for false gutter */
+	if ((mode == odd || mode == even) && discGutter(sg,eg)) return 0;
+
+	/* clear out dfsVis */
+	if (eg - sg >= DFSVISN) return 1;
+	for (g = sg; g < eg; g++) {
+		dfsVis[g - sg].rows = dfsVis[g - sg].origin;
+		dfsVis[g - sg].nRows = patterns[g].nRows;
+		for (i = 0; i < patterns[g].nRows; i++)
+			dfsVis[g - sg].rows[i] = 0;
+	}
+	
+	/* now go through finding components until all bits found or two components found */
+	for (g = sg; g < eg; g++)
+		for (i = 0; i < patterns[g].nRows; i++)
+			while ((r = patterns[g].rows[i] &~ dfsVis[g-sg].rows[i]) != 0)
+			{
+				/* here after finding a row with an unvisited live cell */
+				if (c++) return 0;		/* second component found? */
+				for (j = 0; (r & (1<<j)) == 0; j++) { }	/* find index of first bit */
+				dfs(sg,eg,g,i,j);
+			}
+	
+	return 1;
+}
+
+/* Output of successful search */
+
+int RLEcount = 0;
+char RLEchar;
+
+void sendRLE(char c) {
+  if (RLEcount > 0 && c != RLEchar) {
+    if (RLEcount == 1) putchar(RLEchar);
+    else printf("%d%c", RLEcount, RLEchar);
+    RLEcount = 0;
+  }
+  if (c != '\0') {
+    RLEcount++;
+    RLEchar = c;
+  }
+}
+
+void putRow(int r) {
+	int i;
+	for (i = 0; (r>>i) != 0 && i < 32; i++)
+		sendRLE(r & (1<<i)? 'o' : 'b');
+	sendRLE('$');
+}
+
+void printRule(rule r) {
+  int i;
+  printf("B");
+  for (i = 0; i < 9; i++) if (r & (1 << (9+i))) putchar(i+'0');
+  printf("/S");
+  for (i = 0; i < 9; i++) if (r & (1 << i)) putchar(i+'0');
+}
+
+void blockRLE(int phase) {
+	int i;
+	switch(mode) {
+		case odd:
+			for (i = patterns[phase].nRows - 1; i > 0; i--)
+				putRow(patterns[phase].rows[i]);
+			break;
+		case even:
+			for (i = patterns[phase].nRows - 1; i >= 0; i--)
+				putRow(patterns[phase].rows[i]);
+			break;
+	}
+	for (i = 0; i < patterns[phase].nRows; i++)
+		putRow(patterns[phase].rows[i]);
+	RLEchar = '!';
+	sendRLE('\0');
+	putchar('\n');
+}
+
+int modeGliders = 0;
+void success(int startGen, int endGen, int xDiff, int yDiff) {
+	int phase, x, y, i;
+	int nGens = endGen - startGen;
+	
+	rule compRule;
+
+	if (STROBING) {
+		compRule = 0;
+		for (i = 0; i < 18; i++)
+			if ((theRule & (1<<i)) == 0)
+				compRule |= (1 << (17-i));
+	}
+
+	if (xDiff < 0) xDiff = -xDiff;
+	if (yDiff < 0) yDiff = -yDiff;
+	if (endGen - startGen == MAX(xDiff,yDiff) && MAX(xDiff,yDiff) < params[P_PHOT]) return;
+
+	/* test if already in DB */
+	for (i = 0; i < nKnown; i++) {
+		if (endGen - startGen == knownPats[i]->period &&
+			 MAX(xDiff,yDiff) == MAX(knownPats[i]->dx,knownPats[i]->dy) &&
+			 MIN(xDiff,yDiff) == MIN(knownPats[i]->dx,knownPats[i]->dy)) return;
+		if (endGen - startGen == 2*knownPats[i]->period &&
+			 MAX(xDiff,yDiff) == 2*MAX(knownPats[i]->dx,knownPats[i]->dy) &&
+			 MIN(xDiff,yDiff) == 2*MIN(knownPats[i]->dx,knownPats[i]->dy)) return;
+		if (2*(endGen - startGen) == knownPats[i]->period &&
+			 2*MAX(xDiff,yDiff) == MAX(knownPats[i]->dx,knownPats[i]->dy) &&
+			 2*MIN(xDiff,yDiff) == MIN(knownPats[i]->dx,knownPats[i]->dy)) return;
+	}
+
+	if(!connected(startGen,endGen)) return;
+	
+	/* add to db */
+	lastGlider->next = malloc(sizeof(struct Glider));
+	if (lastGlider->next != 0) {
+		lastGlider = lastGlider->next;
+		lastGlider->period = endGen - startGen;
+		lastGlider->dx = xDiff;
+		lastGlider->dy = yDiff;
+		lastGlider->next = 0;
+		lastGlider->ones = theRule;
+		lastGlider->zeros = ~theRule;
+		if (nKnown < MAX_KNOWN) knownPats[nKnown++] = lastGlider;
+	}
+
+	/* find smallest phase */
+	phase = endGen;
+	x = MAX_SIZE;
+	y = 2*MAX_SIZE;
+	while (endGen >= startGen) {
+		int egy = patterns[endGen].nRows;
+		int egx;
+		row onion = 0;
+		for (egx = 0; egx < egy; egx++) onion |= patterns[endGen].rows[egx];
+		for (egx = 0; onion != 0; onion >>= 1) egx++;
+		if (mode == odd) egy = 2*egy - 1;
+		else if (mode == even) egy = 2*egy;
+		if (MAX(egx,egy) < MAX(x,y) || (MAX(egx,egy) == MAX(x,y) && MIN(egx,egy) < MIN(x,y))) {
+			phase = endGen;
+			x = egx; y = egy;
+		}
+		endGen--;
+	}
+#ifdef DEBUG
+	printf("found phase...");
+	fflush(stdout);
+#endif
+	
+	/* send it out! */
+	printf("\n#C Moves horizontally %d and vertically %d in %d generations.\n",
+			 ABS(xDiff), ABS(yDiff), nGens);
+	printf("x = %d, y = %d, rule = ", x, y);
+	printRule((STROBING && (phase & 1)==0)? compRule: theRule);
+	putchar('\n');
+	blockRLE(phase);
+	fflush(stdout);
+}
+
+/* data structure for quick lookup of new row values */
+
+#define CHUNK 4		/* number of bits per row to look at */
+#define CHUNKMASK ((1<<CHUNK)-1)
+char rowTable[1<<(3*CHUNK)];	/* define CHUNK carefully so this fits in cache!! */
+
+
+void fillRowTable() {
+	long x;
+	for (x = 0; x < (1<<(3*CHUNK)); x++) {
+		int r0,r1,r2,n1,n2,i,result=0;
+		r0 = x>>(2*CHUNK);
+		r1 = (x>>CHUNK) & CHUNKMASK;
+		r2 = x & CHUNKMASK;
+		
+		NICE();
+
+		/* find binary digits of the sums of triples of bits */
+		n1 = r0 ^ r1;
+		n2 = (r0 & r1) | (n1 & r2);
+		n1 ^= r2;
+
+		/* fill out bits */
+		for (i = 0; i < 2; i++) {
+			int nn1,nn2,nn;
+			nn1 = (n1 >> i) & 7;
+			nn1 -= (nn1 >> 2) + (nn1 >> 1);
+			nn2 = (n2 >> i) & 7;
+			nn2 -= (nn2 >> 2) + (nn2 >> 1);
+			nn = nn1 + (nn2<<1);
+			if (theRule & (1 << ((r1 & (1<<(i+1))? -1 : 9) + nn)))
+				result |= 1<<i;
+		}
+		rowTable[x] = result;
+	}
+}
+
+/* KILLCOL handling */
+char *kcShift = 0;
+row kcMask = 0;
+
+void kcInit() {
+	row emptyMask = (1L << params[P_KILLCOL]) - 1;
+	row b;
+
+	if (params[P_KILLCOL] <= 0) return;
+	kcMask = (1L << (2*params[P_KILLCOL])) - 1;
+	kcShift = malloc(kcMask + 1);
+	if (kcShift == 0) {
+		printf("Unable to allocate shift array for /E parameter, aborting.\n");
+		exit(0);
+	}
+	
+	for (b = 0; b <= kcMask; b++) {
+		int i = params[P_KILLCOL];	/* start w/max shift */
+		while (i > 0 && ((b >> i) & emptyMask) != 0) i--;
+		if (i > 0) kcShift[b] = i + params[P_KILLCOL];
+		else kcShift[b] = 0;
+	}
+}
+
+/* inner loop */
+void process() {
+	int gen = 0;
+	int halfmod = (STROBING? 3 : 1);
+
+	/* set up random bits in patterns[0] */
+	int i;
+	patterns[0].rows = patterns[0].origin;
+	if (mode == diag) {
+		for (i = 0; i < params[P_PATSIZE]+DIAG_PATSIZEINC; i++)
+			patterns[0].rows[i] = (random() ^ (random()>>9)) & ((2<<i)-1);
+		patterns[0].nRows = params[P_PATSIZE]+DIAG_PATSIZEINC;
+		for (i = 1; i < params[P_PATSIZE]+DIAG_PATSIZEINC; i++) {
+			int j;
+			for (j = 0; j < i; j++)
+				if (patterns[0].rows[i] & (1<<j))
+					patterns[0].rows[j] |= 1<<i;
+		}
+	} else {
+		for (i = 0; i < params[P_PATSIZE]; i++)
+			patterns[0].rows[i] = (random() ^ (random()>>9)) & ((1<<params[P_PATSIZE])-1);
+		patterns[0].nRows = params[P_PATSIZE];
+	}
+
+	/* repeat generations until we find something */
+	while (gen < CHAINLENGTH-1 && gen <= params[P_GENS]) {
+		struct pattern * p = patterns + gen;
+		struct pattern * q = patterns + ++gen;
+		int i, shift;
+		row r0,r1,r2;
+		row rr0,rr1,rr2;
+		row *rp;
+		row onion = 0;
+		
+		NICE();
+		
+		/* set up initial rows to compute successors of, according to symmetry mode */
+		switch(mode) {
+		case asym:
+		case diag:
+			r1 = 0;
+			r2 = 0;
+			q->nRows = p->nRows + 2;
+			q->yOffset = p->yOffset - 1;
+			rp = p->rows;
+			break;
+			
+		case odd:
+			r1 = p->rows[1];
+			r2 = p->rows[0];
+			q->nRows = p->nRows+1;
+			q->yOffset = p->yOffset;
+			rp = p->rows+1;
+			break;
+			
+		case even:
+			r1 = p->rows[0];
+			r2 = p->rows[0];
+			q->nRows = p->nRows+1;
+			q->yOffset = p->yOffset;
+			rp = p->rows+1;
+			break;
+		}
+	
+		/* advance pattern a generation */
+		q->rows = q->origin;
+		q->xOffset = p->xOffset - 1;
+		p->rows[p->nRows] = p->rows[p->nRows+1] = 0;	/* pad to avoid special cases */
+		for (i = 0; i < q->nRows; i++) {
+			row qr = 0;
+			r0 = r1;
+			r1 = r2;
+			r2 = *rp++;
+			rr0 = r0 << 2;
+			rr1 = r1 << 2;
+			rr2 = r2 << 2;
+			shift = 0;
+			q->rows[i] = 0;
+			while ((rr0 | rr1 | rr2) != 0) {
+				long data = ((rr0 & CHUNKMASK) << (2*CHUNK)) +
+							((rr1 & CHUNKMASK) << CHUNK) +
+							(rr2 & CHUNKMASK);
+				if (STROBING && (gen & 1))
+					data = ~data & ((1 << (3*CHUNK)) - 1);
+				data = rowTable[data];
+				if (STROBING && !(gen & 1))
+					data = ~data & ((1 << (CHUNK-2)) - 1);
+				qr |= data << shift;
+				rr0 >>= CHUNK-2;
+				rr1 >>= CHUNK-2;
+				rr2 >>= CHUNK-2;
+				shift += CHUNK-2;
+			}
+			q->rows[i] = qr;
+			onion |= qr;
+		}
+		
+		/* kill still lifes to find puffers */
+		if (params[P_KILLSTILL]) {
+			/* find differences from previous pattern */
+			static struct pattern active;
+			int changed = 1;
+			int foundbody = 0;
+			active.nRows = q->nRows;
+			active.rows = active.origin;
+			for (i = 0; i < q->nRows; i++) {
+				int j = i + q->yOffset - p->yOffset;
+				if (j < 0 || j >= p->nRows) active.rows[i] = q->rows[i];
+				else active.rows[i] = q->rows[i] ^ (p->rows[j] << 1);
+			}
+
+			/* loop: blur active bits, then intersect with q */
+			/* for three purposes: */
+			/* (1) find main body of pattern: blur each cell to 5x5 grid */
+			/* (2) find cells within distance k of main body: blur to (2k+1) x (2k+1) */
+			/* (3) find connected components containing those cells: blur to 5x5 again */
+			while (changed || !foundbody) {
+				int blur = 3;
+				int nb = 1;
+				static struct pattern b;
+				b.rows = b.origin;
+				if (!changed) {
+					blur = params[P_KILLSTILL]+1;
+					foundbody = 1;
+				}
+				if (blur > 10) blur = 10;	/* avoid overflow */
+				for (i = 0; i < q->nRows; i++) b.rows[i] = active.rows[i];
+				while (i < MAX_SIZE+20) b.rows[i++] = 0;
+
+				/* first pass at blurring: repeatedly double blur amt until w/in two of target */
+				while (nb < blur) {
+					for (i = q->nRows + nb - 1; i >= nb; i--)
+						b.rows[i] |= b.rows[i-nb];
+					for (i = 0; i < q->nRows + nb; i++)
+						b.rows[i] |= (b.rows[i] << nb);
+					nb += nb;
+				}
+				
+				/* now get final blur amount exactly right and shifted into the right place */
+				for (i = 0; i < q->nRows; i++)
+					b.rows[i] = (b.rows[i] >> (blur-1)) | (b.rows[i] >> (nb - blur));
+				for (i = 0; i < q->nRows; i++)
+					b.rows[i] = (b.rows[i + blur - 1] | b.rows[i + nb - blur]);
+					
+				/* mask with q, put back into active, and test changed */
+				changed = 0;
+				for (i = 0; i < q->nRows; i++) {
+					b.rows[i] &= q->rows[i];
+					if (b.rows[i] != active.rows[i]) {
+						active.rows[i] = b.rows[i];
+						changed = 1;
+					}
+				}
+			}
+			
+			/* Put final active set into q */
+			for (i = 0; i < q->nRows; i++)
+				q->rows[i] = active.rows[i];
+		}
+
+		/* normalize pattern by removing its margin */
+		if (onion == 0) return;		/* all dead? */
+		for (shift = 0; (onion & 1) == 0; onion >>= 1) shift++;
+		if (params[P_KILLCOL] && (onion & kcMask) != onion) {
+			int extraShift = kcShift[onion & kcMask];
+			shift += extraShift;
+			onion >>= extraShift;
+			if (onion == 0) return;
+		}
+		if (shift > 0) {
+			for (i = 0; i < q->nRows; i++) q->rows[i] >>= shift;
+			q->xOffset += shift;
+		}
+		if (onion & (-1 << MAX_SIZE)) return;	/* horizontal overflow */
+
+		while (q->nRows > 0 && q->rows[q->nRows - 1] == 0)
+			q->nRows--;					/* skip blanks at bottom */
+		if (q->nRows == 0 || q->nRows > MAX_SIZE) return;	/* all dead or vertical overflow */
+		if (mode == asym || mode == diag) while (q->nRows > 0 && q->rows[0] == 0) {
+			q->rows++;
+			q->nRows--;
+			q->yOffset++;
+		}
+
+		/* use half-speed trick to test if we've found a loop */
+		if ((gen & halfmod) == 0 && patterns[gen].nRows == patterns[gen/2].nRows) {
+			int r = patterns[gen].nRows - 1;
+			while (r >= 0 && patterns[gen].rows[r] == patterns[gen/2].rows[r])
+				r--;
+			if (r < 0) {
+				/* have found a loop, now find its shortest period */
+				int per;
+				for (per = 1; per <= gen/2; per++) {
+					if ((gen/2) % per == 0 && (!STROBING || (per & 1) == 0) &&
+						 patterns[gen].nRows == patterns[gen-per].nRows) {
+						r = patterns[gen].nRows - 1;
+						while (r >= 0 && patterns[gen].rows[r] == patterns[gen-per].rows[r])
+							r--;
+						if (r < 0) {
+							int dx = patterns[gen].xOffset - patterns[gen-per].xOffset;
+							int dy = patterns[gen].yOffset - patterns[gen-per].yOffset;
+							if (dx != 0 || dy != 0 || params[P_OSC] <= per)
+								success(gen-per, gen, dx, dy);
+							return;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+/* Do all processing for a single rule */
+
+void processRule() {
+	int i;
+
+	fillRowTable();
+	findKnown();
+	for (mode = asym; mode <= diag; mode++)
+		for (i = 0; i < PATTERNS_PER_MODE; i++)
+			process();
+}
+
+/* Main entry point */
+
+int main(int ac, char **av) {
+	char * arg;
+
+	if (ac < 2) arg = readString();
+	else if (ac == 2) arg = av[1];
+	else usage();
+	parseRule(arg);
+
+	kcInit();
+	readGliderDB();
+
+	if (theRule != 0) {
+		for (;;) processRule();
+	} else {
+		srandom(params[P_RANDOM]);
+		for (;;) {
+			theRule = (random()>>9) & 0777777;
+			theRule |= (params[P_BIRTHS] << 9) | params[P_SURVIVES];
+			theRule &=~ ((params[P_NOBIRTHS] << 9) | params[P_NOSURV]);
+			if (!findExcuse(theRule))	/* can gliders exist? */
+				processRule();
+		}
+	}
+	return 0;
+}

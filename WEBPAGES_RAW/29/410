@@ -1,0 +1,146 @@
+<!-- received="Sun Jun 09 15:44:00 1996 PDT" -->
+<!-- sent="Sun, 9 Jun 1996 15:43:38 PDT" -->
+<!-- name="Larry Masinter" -->
+<!-- email="masinter@parc.xerox.com" -->
+<!-- subject="Re: what's doable in Web version control" -->
+<!-- id="ade2642e48021004c54e@[128.195.21.209]" -->
+<!-- inreplyto="what's doable in Web version control" -->
+<title>Archive of Working Group on Versioning and Configuration Management of World Wide Web Content: Re: what's doable in Web version control</title>
+<h1>Re: what's doable in Web version control</h1>
+<b>Larry Masinter</b> (<a href="mailto:masinter@parc.xerox.com"><i>masinter@parc.xerox.com</i></a>)<br>
+<i>Sun, 9 Jun 1996 15:43:38 PDT</i>
+<p>
+<ul>
+<li> <b>Messages sorted by:</b> <a href="index.html#66">[ date ]</a><a href="thread.html#66">[ thread ]</a><a href="subject.html#66">[ subject ]</a><a href="author.html#66">[ author ]</a>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0067.html">David J. Fiander: "First cut at Functional Requirements document"</a>
+<li> <b>Previous message:</b> <a href="0065.html">Daniel W. Connolly: "Re: version management and relative links"</a>
+<li> <b>Maybe in reply to:</b> <a href="0062.html">Christopher Seiwald: "what's doable in Web version control"</a>
+<!-- nextthread="start" -->
+<!-- reply="end" -->
+</ul>
+<hr>
+<!-- body="start" -->
+<pre>
+&gt;   It seems critical to me that we support what Jim called "browsing
+&gt;   within a collection of entities" and that we do so with without
+&gt;   requiring version-aware clients.  Why?  Because delivering versioned
+&gt;   content will be the most important product of our efforts, and our
+&gt;   plans can't rely on changing Netscape.
+
+&gt;    Of the various URL decoration proposals, only one satisfies this
+&gt;    dual requirement: having the version indicator embedded in the URL,
+&gt;    separated off by /'s.  With this, we can reuse the support already
+&gt;    in Web clients for handling relative URLs.
+
+Actually, I think that none of them satisfy the requirements; the only
+thing that's close is the one that puts all of the version information
+at the beginning.
+
+&gt;   The only other possible solution, which is poor, is to have
+&gt;   version-aware servers support non version-aware clients by editing
+&gt;   the returned HTML on the fly, fixing up links with version info.
+&gt;   If anyone supports this solution, I'd like to hear it.
+
+I think this is the only thing that will actually work.
+
+
+Re PUT and all of the possibilities around it:
+
+I think all of the requirements laid on "PUT" can be accomplished with
+"POST", with some standards for the data that is posted. (E.g., a new
+media type. Call it 'multipart/update'.)
+
+&gt;    1)  SCM systems such as CVS rely on state information, stored
+&gt;       on the client, to know what version of what documents are
+&gt;       being edited (and thus what will be "put" back).  CVS's
+&gt;       state information is fairly trivial, and could be embedded
+&gt;       into the HTML documents being edited.  But that doesn't work
+&gt;       so well if the entities aren't HTML.  When the user PUTs a
+&gt;       GIF, how will a version-aware Web server based on CVS recover
+&gt;       the state necessary to check the GIF in?
+
+&gt;       SCM systems that store the state in the server, such as
+&gt;       ClearCase, don't have this same problem, I think.  But make
+&gt;       no mistake about it: these version-aware Web servers are
+&gt;       quite stateful.
+
+Yes, multipart/update should contain information about the location,
+variant, entitytag (for validation), and prior version that's being
+updated.
+
+&gt;    2)  Other SCM systems have fairly heavyweight client
+&gt;       implementations themselves, with a fat protocol between the
+&gt;       client and server.  For example, it is unlikely that a
+&gt;       version-aware Web client would be able to carry out all the
+&gt;       machinations necessary to be a ClearCase view (i.e. a client).
+
+The protocol itself (POST) doesn't have to be 'fat', as long as you
+get the body of the protocol (multipart/update) right.
+
+&gt;    3)  The picture is even less rosy with SCM systems that require
+&gt;       the client to have direct file access to the repository.  A
+&gt;       large chunk of the commercial SCM systems -- PVCS, MKS Source
+&gt;       Integrity, Continuus, Microsoft's SourceSafe -- are in this
+&gt;       boat.  I can't see any way they can be backend to a version-aware
+&gt;       Web server without the Web server having to act as proxy to
+&gt;       client workspaces maintained on the server.
+
+Well, the CGI that implements POST of a multipart/update will need to
+have direct file access to the repository.
+
+&gt;    4)  Aside from architecture, the model varies wildly from one SCM
+&gt;       system to the next.  And as has been discussed, the lock-the-head
+&gt;       vs merge-into-trunk vs change-set models all need to be
+&gt;       accomodated.
+
+These just change the data content of multipart/update in minor ways.
+
+&gt;       Going further, something that we (P3) support is atomic checkin
+&gt;       of multiple documents, because it allows you to move the repository
+&gt;       forward in whole chunks rather than a file-at-a-time.  Certainly
+&gt;       we think this is important for Web documents as well, and would
+&gt;       like to see multiple PUTs with a single COMMIT possible.
+
+Well, a single POST of a multipart/update can be performed atomicly.
+
+&gt; Version control.
+&gt;
+&gt;    All the wrinkles that make a simple PUT difficult are going to make
+&gt;    flowing full version control models over HTTP truly daunting.
+&gt;    It might be possible to come up with a limited set of operations that
+&gt;    make sense across all models, but the examples put forth so far --
+&gt;    compute the predecessor revision and show a version tree -- each only
+&gt;    make sense in a subset of the systems.
+
+Most 'control' options can be done with POST, and different data
+types. In fact, you probably could just use multipart/form-data.
+
+&gt; My flame-retardant personal opinion is that supporting GETs is well
+&gt; within the ability of this group, that PUTs will get mired for long
+&gt; enough that some defacto industry implementation will set the lead and
+&gt; thus simplify the range of models that need supporting, and that the
+&gt; rest of version control via HTTP will follow after that.  But I welcome
+&gt; contrary opinions, because in this case I'd be glad to be wrong.
+
+It's hard to predict how things will go. There already are defacto
+implementations. But it seems like most of the vendors are either
+primarily client-only or server-only, so interoperability with others
+is pretty important.  Personally, I think the problems aren't really
+that hard, so it's mainly a matter of will to agree. I've found that
+speculation about this kind of stuff is pretty useless; let's just get
+on with the problem/solution discussion. OK?
+
+Larry
+</pre>
+<!-- body="end" -->
+<hr>
+<p>
+<ul>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0067.html">David J. Fiander: "First cut at Functional Requirements document"</a>
+<li> <b>Previous message:</b> <a href="0065.html">Daniel W. Connolly: "Re: version management and relative links"</a>
+<li> <b>Maybe in reply to:</b> <a href="0062.html">Christopher Seiwald: "what's doable in Web version control"</a>
+<!-- nextthread="start" -->
+<!-- reply="end" -->
+</ul>

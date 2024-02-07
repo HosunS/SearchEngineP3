@@ -1,0 +1,1784 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="GENERATOR" CONTENT="Globetrotter 1.1.1" />
+<META HTTP-EQUIV="AUTHOR" CONTENT="David G. Kay" />
+<META HTTP-EQUIV="UPDATED" CONTENT="Thursday, December 8, 2005 9:45 AM" />
+<TITLE>Answers to Sample Questions</TITLE>
+<META HTTP-EQUIV="X-GLOBETROTTERDATA" CONTENT="D20F328F" />
+<META HTTP-EQUIV=KEYWORDS CONTENT="final exam review" />
+<META HTTP-EQUIV="DESCRIPTION" CONTENT="Final exam details and review topics for Informatics 41, the first quarter of the Informatics Core Course in the Department of Informatics, Donald Bren School of Information and Computer Sciences, University of California, Irvine." />
+<META HTTP-EQUIV="COPYRIGHT" CONTENT="Copyright &#169; 2004 by David G. Kay.  All rights reserved." />
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+<P>
+  <FONT FACE="Goudy Old Style">Informatics 41 * Fall 2009 * David G. Kay *
+UC Irvine</FONT></P>
+<P>
+<FONT FACE="Goudy Old Style" SIZE=6><B>A<FONT SIZE=5>NSWERS TO </FONT>S<FONT SIZE=5>AMPLE
+</FONT>Q<FONT SIZE=5>UESTIONS</FONT></B></FONT></P>
+<P>
+<FONT FACE="Goudy Old Style">Below are some questions of the sort that could
+appear on our final exam.  This is not a sample exam--it&#39;s not the same
+length, it doesn&#39;t have the same mix of questions, it doesn&#39;t cover
+all the topics.  But these questions will help you review some important
+concepts and most of them have appeared on exams in the past.  Try to do
+them by yourself, but then compare your answers with your classmates. Do
+this long enough in advance that you&#39;ll have a chance to ask us if there
+are issues you can&#39;t resolve yourself.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(a.1)</B>  Write a definition for the function
+</FONT><FONT FACE="Courier New">vector-&gt;list</FONT><FONT FACE="AGaramond" SIZE=4>.
+ (Hints:  Remember that vectors are zero-based.  Be careful not to produce
+a reverse-order list.  Use an auxiliary function.)<A NAME="_14_819"></A></FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>; vector-&gt;list: vector  -&gt;  list</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>; Return a list containing the same elements
+as the vector argument, in the same order.</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>; (vector-&gt;list (vector 1 2 3) returns
+(list 1 2 3)<A NAME="_14_995"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define (vector-&gt;list
+V)
+<BR />
+&#160; (vtl-help V (vector-length V) empty))
+<BR />
+(define (vtl-help V i list-so-far)
+<BR />
+&#160; (cond
+<BR />
+&#160;   ((= i 0) list-so-far)
+<BR />
+&#160;   (else (vtl-help V 
+<BR />
+&#160;                   (sub1 i) 
+<BR />
+&#160;                   (cons (vector-ref V (sub1 i)) list-so-far)))))</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">; Scoring:  Deduct
+a point if they don't deal with the vector being zero-based (though they
+don't have to subtract 1 in the same place the solution above does).</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">; Deduct a point if
+they count upwards and thereby produce a reverse-order list.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(a.2)</B>  Write a definition for the function
+</FONT><FONT FACE="Courier New">list-&gt;vector</FONT><FONT FACE="AGaramond" SIZE=4>.
+ (Hint:  You can do this without an auxiliary function and without </FONT><FONT FACE="Courier New">vector-set!</FONT><FONT FACE="AGaramond" SIZE=4>,
+but you may use them if you need to.)<A NAME="_14_1694"></A></FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>; list-&gt;vector: list  -&gt;  vector</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>; Return a vector containing the same elements
+as the list argument, in the same order.</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>; (list-&gt;vector (list 1 2 3) returns
+(vector 1 2 3)<A NAME="_14_1871"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define (list-&gt;vector
+L)
+<BR />
+&#160; (build-vector (length L) (lambda (n) (list-ref L n))))
+<BR />
+; --------------------------------------------------------------- That&#39;s
+the nice way, but here&#39;s the other way:
+<BR />
+(define (list-to-vector L)
+<BR />
+&#160; (ltv-help L (build-vector (length L) (lambda (n) 1)) 0))
+<BR />
+(define (ltv-help L V i)
+<BR />
+&#160; (cond
+<BR />
+&#160;   ((empty? L) V)
+<BR />
+&#160;   (else (begin
+<BR />
+&#160;           (vector-set! V i (first L))
+<BR />
+&#160;           (ltv-help (rest L) V (add1 i))))))</FONT></P>
+<BR /><BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(b)</B>  Consider the following function:<A NAME="_14_2364"></A></FONT></P>
+<BR />
+<P>
+<FONT FACE="Courier New" SIZE=2>(define (DoSomething a b)  ; assume b &gt;=
+0</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160; (cond</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;   ((= b 0) a)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;   (else (DoSomething (sub1 a) (sub1
+b)))))</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(b.1)</B> What is returned by each of the
+following statements?</FONT></P>
+<P>
+<FONT FACE="Courier New">&#160;&#160; (DoSomething 3 1)<A NAME="_14_2568"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">2</FONT></P>
+<P>
+<FONT FACE="Courier New">&#160;&#160; (DoSomething 6 2)<A NAME="_14_2598"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">4</FONT></P>
+<P>
+<FONT FACE="Courier New">&#160;&#160; (DoSomething 29 5)<A NAME="_14_2629"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">24</FONT></P>
+<P>
+<FONT FACE="Courier New">&#160;&#160; (DoSomething 25000 23000)<A NAME="_14_2668"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">2000</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(b.2)</B> In one English word (or in mathematical
+notation), describe the value this function returns in terms of its arguments.<A NAME="_14_2811"></A></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">Subtraction:   a -
+b</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(b.3)</B>  Now look at this function:<A NAME="_14_2880"></A></FONT></P>
+<BR />
+<P>
+<FONT FACE="Courier New" SIZE=2>(define (DoSomethingElse a b)  ; assume
+b &gt;= 0</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160; (cond</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;   ((= b 0) a)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;   (else (sub1 (DoSomethingElse a
+(sub1 b))))))</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>Does </FONT><FONT FACE="Courier New">DoSomethingElse</FONT><FONT FACE="AGaramond" SIZE=4>
+produce the same results as </FONT><FONT FACE="Courier New">DoSomething</FONT><FONT FACE="AGaramond" SIZE=4>?
+ If not, explain how the results differ.<A NAME="_14_3129"></A></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">Yes, they produce
+the same results.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(b.4)</B>  Which of these routines are
+tail recursive--</FONT><FONT FACE="Courier New">DoSomething</FONT><FONT FACE="AGaramond" SIZE=4>,
+</FONT><FONT FACE="Courier New">DoSomethingElse</FONT><FONT FACE="AGaramond" SIZE=4>,
+neither, or both?  For any non-tail-recursive routine, indicate (by circling
+it) which specific operation in its code makes it non-tail-recursive.<A NAME="_14_3418"></A></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">DoSomethingElse is
+not tail-recursive because of the last subtraction (which is done after
+returning from the recursive call). </FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(c)</B>  A set is a collection of distinct
+objects (i.e., without duplicates).  Suppose you have the following operations
+defined on sets:
+<BR />
+</FONT><FONT FACE="Courier New">empty-set</FONT><FONT FACE="AGaramond" SIZE=4>
+is a constant representing the empty set.
+<BR />
+</FONT><FONT FACE="Courier New">(empty? S)</FONT><FONT FACE="AGaramond" SIZE=4>
+returns true if the set S is empty and false otherwise.
+<BR />
+</FONT><FONT FACE="Courier New">(element? S E)</FONT><FONT FACE="AGaramond" SIZE=4>
+returns true if E is an element of the set S, and false otherwise.
+<BR />
+</FONT><FONT FACE="Courier New">(insert S E)</FONT><FONT FACE="AGaramond" SIZE=4>
+returns the set S if E is already in S, or returns S with E added otherwise.
+<BR />
+</FONT><FONT FACE="Courier New">(intersection S1 S2)</FONT><FONT FACE="AGaramond" SIZE=4>
+returns a set containing only the elements that are in both S1 and S2.
+<BR />
+</FONT><FONT FACE="Courier New">(subtract S1 S2)</FONT><FONT FACE="AGaramond" SIZE=4>
+returns a set containing the elements of S1 that are not in S2.
+<BR />
+</FONT><FONT FACE="Courier New">(union S1 S2)</FONT><FONT FACE="AGaramond" SIZE=4>
+returns a set containing every element in either S1 or S2 (without  &#160;
+duplicates, of course).</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(c.1)</B>  Using any of the above routines
+where appropriate, but using no list processing functions, define a Scheme
+function called </FONT><FONT FACE="Courier New">ski-trip</FONT><FONT FACE="AGaramond" SIZE=4>
+that takes the following four sets as arguments</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>* &#160; </FONT><FONT FACE="Courier New">friends</FONT><FONT FACE="AGaramond" SIZE=4>,
+the set of all your friends;</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>* &#160; </FONT><FONT FACE="Courier New">early-risers</FONT><FONT FACE="AGaramond" SIZE=4>,
+the set of people you know (perhaps including people who aren&#39;t your
+friends) who will wake up early enough to get out on the slopes when the
+lifts open;</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>* &#160; </FONT><FONT FACE="Courier New">rowdy-people</FONT><FONT FACE="AGaramond" SIZE=4>,
+the set of people who are likely to get too excited and wreck your cabin;</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>* &#160; </FONT><FONT FACE="Courier New">fun-folks</FONT><FONT FACE="AGaramond" SIZE=4>,
+the set of people who really know how to party</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>and returns the set of people you&#39;d like
+to invite on your ski trip over winter break:  all your friends who are
+early risers and fun folks, but not rowdy people.<A NAME="_14_5069"></A></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define (ski-trip
+friends early-risers rowdy-people fun-folks)</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&#160;&#160; (subtract
+(intersection (intersection friends early-risers) fun-folks) rowdy-people))</FONT></P>
+<BR /><BR /><BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(c.2)</B>  Assuming we implement sets as
+normal Scheme lists, write a definition for the function </FONT><FONT FACE="Courier New">union</FONT><FONT FACE="AGaramond" SIZE=4>.<A NAME="_14_5342"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define union
+<BR />
+&#160;&#160; (lambda (s1 s2)
+<BR />
+&#160;&#160;  &#160; (cond
+<BR />
+&#160;&#160;  &#160; ((empty? s1) s2)
+<BR />
+&#160;&#160;  &#160; ((element? s2 (first s1)) (union (rest s1) s2))
+<BR />
+&#160;&#160;  &#160; (else (cons (first s1) (union (rest s1) s2))))))</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(c.3)</B>  Using the operations </FONT><FONT FACE="Courier New">map</FONT><FONT FACE="AGaramond" SIZE=4>,
+</FONT><FONT FACE="Courier New">filter</FONT><FONT FACE="AGaramond" SIZE=4>,
+</FONT><FONT FACE="Courier New">foldr</FONT><FONT FACE="AGaramond" SIZE=4>,
+and/or </FONT><FONT FACE="Courier New">for-each</FONT><FONT FACE="AGaramond" SIZE=4>,
+and without using any explicit recursion, write a definition for the function
+</FONT><FONT FACE="Courier New">intersection</FONT><FONT FACE="AGaramond" SIZE=4>.
+ (Hint:  This can be quite short.)<A NAME="_14_5741"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define intersection
+<BR />
+&#160;&#160; (lambda (s1 s2)
+<BR />
+&#160;&#160;  &#160; (filter (lambda (E) (element? s1 E)) s2)))</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(c.4)</B>  Write a definition for </FONT><FONT FACE="Courier New">subtract</FONT><FONT FACE="AGaramond" SIZE=4>
+and rewrite a definition for </FONT><FONT FACE="Courier New">union</FONT><FONT FACE="AGaramond" SIZE=4>,
+using the operations </FONT><FONT FACE="Courier New">map</FONT><FONT FACE="AGaramond" SIZE=4>,
+</FONT><FONT FACE="Courier New">filter</FONT><FONT FACE="AGaramond" SIZE=4>,
+</FONT><FONT FACE="Courier New">foldr</FONT><FONT FACE="AGaramond" SIZE=4>,
+and/or </FONT><FONT FACE="Courier New">for-each</FONT><FONT FACE="AGaramond" SIZE=4>
+and no explicit recursion.<A NAME="_14_6037"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define subtract
+<BR />
+&#160;&#160; (lambda (s1 s2)
+<BR />
+&#160;&#160;  &#160; (filter (lambda (E) (not (element? s2 E))) s1)))</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define union
+<BR />
+&#160;&#160; (lambda (s1 s2)
+<BR />
+&#160;&#160;  &#160; (foldr insert s1 (subtract (s2 s1)))))</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(d)</B>  In the <A HREF="http://www.ics.uci.edu/~kay/scheme/restaurants2.html">restaurants program</A>
+(a copy of which is provided), define the following function that could
+be used at the top level of the program (i.e., without knowing whether the
+collection is implemented as a list, a BST, a vector, or whatever; that
+means you have to call </FONT><FONT FACE="Courier New">collection-change</FONT><FONT FACE="AGaramond" SIZE=4>).<A NAME="_14_6499"></A>
+<BR />
+</FONT><FONT FACE="Courier New" SIZE=2>;; increase-price-for-cuisine: collection
+number symbol -&gt; collection
+<BR />
+;; The symbol is the name of a cuisine; the number is a number of dollars
+<BR />
+;; to add to the price of each restaurant serving that cuisine.  Return
+the
+<BR />
+;; collection with those price changes.<A NAME="_14_6765"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define increase-price-for-cuisine
+<BR />
+&#160; (lambda (RC amount c)
+<BR />
+&#160;   (collection-change RC 
+<BR />
+&#160;                   (lambda (r) (eq? (rrant-cuisine r) c))
+<BR />
+&#160;                   (lambda (r) (make-rrant (rrant-name r) (rrant-cuisine
+r) (rrant-phone r)
+<BR />
+&#160;                            (rrant-dish r) (+ amount (rrant-price
+r))))))</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(e)</B>  [This one is tough towards the
+end, probably tougher than would be on the test.]
+<BR />
+Anteater Airlines stores each of its scheduled flights in a structure with
+five fields:</FONT></P>
+<UL>
+<LI>
+<FONT FACE="AGaramond" SIZE=4>origin (the three-letter airport code, e.g..
+</FONT><FONT FACE="Courier New">&#39;LAX</FONT><FONT FACE="AGaramond" SIZE=4>)</FONT></LI>
+<BR />
+<LI>
+<FONT FACE="AGaramond" SIZE=4>departure (the departure time)</FONT></LI>
+<BR />
+<LI>
+<FONT FACE="AGaramond" SIZE=4>destination (a three-letter airport code)</FONT></LI>
+<BR />
+<LI>
+<FONT FACE="AGaramond" SIZE=4>arrival (the arrival time)</FONT></LI>
+<BR />
+<LI>
+<FONT FACE="AGaramond" SIZE=4>passengers (a list of passengers, each of
+whom is represented by a string, e.g.,</FONT><FONT FACE="Courier New"> &quot;Jane
+Jones&quot;</FONT><FONT FACE="AGaramond" SIZE=4>)</FONT></LI>
+</UL>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(e.1)</B>  Define the structure </FONT><FONT FACE="Courier New">flight</FONT><FONT FACE="AGaramond" SIZE=4>
+with the field names given above.<A NAME="_14_7608"></A></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define-struct flight
+(origin departure destination arrival passengers))</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">The parentheses here
+have to be correct.  In general, all the parentheses have to be correct,
+except for counting the parentheses at the end of a definition.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(e.2)</B>  Complete the following definition
+for the predicate function </FONT><FONT FACE="Courier New">valid-flight?</FONT><FONT FACE="AGaramond" SIZE=4>,
+which takes an expression and checks whether it appears to be a valid flight.
+ <A NAME="_14_8026"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>(define valid-flight?</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160; &#160; (lambda (X)</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160; (and              
+                ; and, like +, can take more than 2 arguments</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160;  &#160; (________________
+X)           ; is it a flight structure at all?  <A NAME="_14_8219"></A></TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">flight?<A NAME="_14_8232"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160;  &#160; (airport-code-valid?
+(flight-origin X))</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160;  &#160; (time-valid?
+(________________ X)) ; is the departure time valid?<A NAME="_14_8351"></A></TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">flight-departure<A NAME="_14_8373"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160;  &#160; (airport-code-valid?
+(flight-destination X))</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160;  &#160; (time-valid?
+(________________ X)) ; is the arrival time valid?    <A NAME="_14_8499"></A></TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">
+flight-arrival<A NAME="_14_8520"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160;  &#160; (list-of-strings?
+(flight-passengers X))))</TT></FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(e.3)</B>  Assume that you have already
+defined the variable </FONT><FONT FACE="Courier New">airport-code-list</FONT><FONT FACE="AGaramond" SIZE=4>,
+which is a list of all the valid three-letter airport abbreviations (e.g.,
+LAX, SFO, SNA).  Write a definition for the predicate function </FONT><FONT FACE="Courier New">airport-code-valid?</FONT><FONT FACE="AGaramond" SIZE=4>,
+which takes a symbol (an atom) and returns true if the symbol is contained
+in </FONT><FONT FACE="Courier New">airport-code-list</FONT><FONT FACE="AGaramond" SIZE=4>.
+ (Hint:  You can do this without recursion if you use a function we defined
+in class and in the book.)<A NAME="_14_9039"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define airport-code-valid?
+<BR />
+&#160;&#160; (lambda (c)
+<BR />
+&#160;&#160;  &#160; (member? c airport-code-list)))
+<BR />
+; Okay if the order of arguments to member? is switched.  Don&#39;t deduct
+but make a note if they use a cond to explicitly return #t or #f.  It&#39;s
+also okay if they write it out recursively and don&#39;t use member?</FONT></P>
+<BR /><BR /><BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(e.4)</B>  The predefined predicate </FONT><FONT FACE="Courier New">string?</FONT><FONT FACE="AGaramond" SIZE=4>
+takes a single argument and returns true (</FONT><FONT FACE="Courier New">#t</FONT><FONT FACE="AGaramond" SIZE=4>)
+if and only if the argument is a string.  Write a definition for the predicate
+</FONT><FONT FACE="Courier New">list-of-strings?</FONT><FONT FACE="AGaramond" SIZE=4>,
+which takes a list and returns true if and only if every element of the
+list is a string (or if the list is empty).<A NAME="_14_9655"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define list-of-strings?
+<BR />
+&#160;&#160; (lambda (L)
+<BR />
+&#160;&#160;  &#160; (cond
+<BR />
+&#160;&#160;  &#160;    ((null? L) #t)
+<BR />
+&#160;&#160;  &#160;    ((string? (first L)) (list-of-strings? (rest L)))
+<BR />
+&#160;&#160;  &#160;    (else #f))))
+<BR />
+This can also be done in just two cond clauses, with the second using AND.</FONT></P>
+<BR /><BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(e.5)</B>  Define the predicate </FONT><FONT FACE="Courier New">flight-goes-to?</FONT><FONT FACE="AGaramond" SIZE=4>,
+which takes two arguments, a flight structure and a symbol (representing
+an airport code), and returns true if the flight&#39;s destination matches
+that symbol.<A NAME="_14_10095"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define flight-goes-to?
+<BR />
+&#160;&#160; (lambda (F d)
+<BR />
+&#160;&#160;  &#160; (equal? (flight-destination F) d)))
+<BR />
+; Okay to use eq? or symbol=? instead of equal?</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(e.6)  </B>Anteater Airlines stores all
+of its scheduled flights in a list of flight structures--the same flight
+structure you defined in the previous problem. </FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>Write a definition for the function </FONT><FONT FACE="Courier New">first-flight-to</FONT><FONT FACE="AGaramond" SIZE=4>,
+which takes a flight list and a symbol (representing an airport code) and
+returns the first flight on the list whose destination matches that symbol
+(or the null list if there&#39;s no match).  Use </FONT><FONT FACE="Courier New">flight-goes-to?</FONT><FONT FACE="AGaramond" SIZE=4>
+as described above, whether or not your definition was correct.<A NAME="_14_10736"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define first-flight-to
+<BR />
+&#160; (lambda (L d)
+<BR />
+&#160;&#160; (cond
+<BR />
+&#160;&#160;  &#160; ((null? L) &#39;())
+<BR />
+&#160;&#160;  &#160; ((flight-goes-to? (first L) d) (first L))
+<BR />
+&#160;&#160;  &#160; (else (first-flight-to (rest L) d))))</FONT></P>
+<BR /><BR /><BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(e.7)</B>  Write a definition for the function
+</FONT><FONT FACE="Courier New">keep-flights-to</FONT><FONT FACE="AGaramond" SIZE=4>,
+which takes a flight list and a symbol (representing an airport code) and
+returns a list of flights containing only those flights in the original
+list whose destination matches that symbol.<A NAME="_14_11160"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define keep-flights-to
+<BR />
+&#160; (lambda (L d)
+<BR />
+&#160;&#160; (cond
+<BR />
+&#160;&#160;  &#160; ((null? L) &#39;())
+<BR />
+&#160;&#160;  &#160; ((flight-goes-to? (first L) d) (cons (first L) (keep-flights-to
+(rest L) d)))
+<BR />
+&#160;&#160;  &#160; (else (keep-flights-to (rest L) d))))</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(e.8)</B>  To enhance security, an anonymous
+air marshal will be assigned to every Anteater Airlines flight.  Write a
+definition of </FONT><FONT FACE="Courier New">add-marshals</FONT><FONT FACE="AGaramond" SIZE=4>,
+which takes a flight list and a code name and adds that code name at the
+beginning of the passenger list of each flight.  (Hint:  First write a function
+to take a single flight and add the name; then call that function from your
+definition of </FONT><FONT FACE="Courier New">add-marshals</FONT><FONT FACE="AGaramond" SIZE=4>.)<A NAME="_14_11777"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define add-marshals
+<BR />
+&#160; (lambda (L name)
+<BR />
+&#160;&#160; (cond
+<BR />
+&#160;&#160;  &#160; ((null? L) &#39;())
+<BR />
+&#160;&#160;  &#160; (else (cons (enhance (first L) name) (add-marshals
+(rest L) name)))))
+<BR />
+(define enhance 
+<BR />
+&#160; (lambda (F codename)
+<BR />
+&#160;&#160; (make-flight (flight-origin F) (flight-departure F) (flight-destination
+F) (flight-arrival F)
+<BR />
+&#160;&#160;  &#160; (cons codename (flight-passengers F)))))</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(e.9)</B>  Write a definition for </FONT><FONT FACE="Courier New">complete-passengers-list</FONT><FONT FACE="AGaramond" SIZE=4>,
+which takes a flight list and returns a list of strings containing all the
+passengers from all the flights on the list, with no duplications.  (You
+may assume that all the passengers on a single flight are unique.)<A NAME="_14_12390"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define complete-passengers-list
+<BR />
+&#160; (lambda (L)
+<BR />
+&#160;&#160; (cond 
+<BR />
+&#160;&#160;  &#160; ((null? L) &#39;())
+<BR />
+&#160;&#160;  &#160; (else (add-unique (flight-passengers (first L)) (complete-passengers-list
+(rest L))))))
+<BR />
+(define add-unique 
+<BR />
+&#160; (lambda (one-flights-list master-passengers-list)
+<BR />
+&#160;&#160; (cond
+<BR />
+&#160;&#160;  &#160; ((null? one-flights-list) master-passengers-list)
+<BR />
+&#160;&#160;  &#160; ((member? (first one-flights-list) master-passengers-list)
+<BR />
+&#160;&#160;  &#160;  &#160; (add-unique (rest one-flights-list) master-passengers-list))
+<BR />
+&#160;&#160;  &#160; (else (cons (first one-flights-list) (add-unique (rest
+one-flights-list) master-passengers-list)))))</FONT></P>
+<BR /><BR /><BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(e.10)</B>  (5 points)  Write the function
+</FONT><FONT FACE="Courier New">average-passengers</FONT><FONT FACE="AGaramond" SIZE=4>
+that takes a flight list and returns the average number of passengers on
+the flights on the flight list. <A NAME="_14_13100"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define average-passengers
+<BR />
+&#160; (lambda (L)
+<BR />
+&#160;&#160; (/ (total-passengers L) (length L))))
+<BR />
+(define total-passengers
+<BR />
+&#160; (lambda (L)
+<BR />
+&#160;&#160; (cond
+<BR />
+&#160;&#160;  &#160; ((null? L) 0)
+<BR />
+&#160;&#160;  &#160; (else (+ (length (flight-passengers (first L))) (total-passengers
+(rest L)))))))</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(e.11)</B>  Rewrite average-passengers
+to make it tail-recursive.  (If your answer for part <B>(a)</B> is already
+tail-recursive, just write &quot;I did this already,&quot; and if you did
+it correctly, you&#39;ll get full credit.)<A NAME="_14_13552"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define average-passengers
+<BR />
+&#160; (lambda (L)
+<BR />
+&#160;&#160; (/ (total-passengers L 0) (length L))))
+<BR />
+(define total-passengers
+<BR />
+&#160; (lambda (L acc)
+<BR />
+&#160;&#160; (cond
+<BR />
+&#160;&#160;  &#160; ((null? L) acc)
+<BR />
+&#160;&#160;  &#160; (else (total-passengers
+<BR />
+&#160;&#160;  &#160;              (rest L)
+<BR />
+&#160;&#160;  &#160;              (+ acc (length (flight-passengers (first
+L)))))))))</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(e.12)  </B>Anteater Airlines plans to
+merge with Aardvark Airlines to form a new airline, AAAir.  Luckily (and
+incredibly), both airlines store their flights in a list of flight structures
+as described above.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>Write the function </FONT><FONT FACE="Courier New">merge-flight-lists</FONT><FONT FACE="AGaramond" SIZE=4>,
+which takes two flight lists and returns a flight list containing all the
+flights from both arguments, except that when a flight from the first list
+matches a flight from the second list (i.e., they have the same origin,
+departure time, destination, and arrival time), the merged list contains
+just one flight with the two matching flights&#39; passenger lists combined.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>You may assume that you have already defined
+</FONT><FONT FACE="Courier New">flights-match?</FONT><FONT FACE="AGaramond" SIZE=4>,
+which takes two flight structures and returns true if they match as described
+above, and </FONT><FONT FACE="Courier New">merge-lists</FONT><FONT FACE="AGaramond" SIZE=4>,
+which takes two lists and returns a list that contains all the elements
+of both arguments.  You may also assume that the names on any single passenger
+list are unique and that within each of the original flight lists, no flights
+match.  (Hint:  Be careful and consistent about what types of data come
+into and go out of each function.)<A NAME="_14_14970"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define merge-flight-lists
+<BR />
+&#160; (lambda (F G)
+<BR />
+&#160;&#160; (cond
+<BR />
+&#160;&#160;  &#160; ((null? F) G)
+<BR />
+&#160;&#160;  &#160; (else (merge-flight-lists (rest F) (merge-a-flight
+(first F) G))))))
+<BR />
+(define merge-a-flight
+<BR />
+&#160; (lambda (f L)
+<BR />
+&#160;&#160; (cond
+<BR />
+&#160;&#160;  &#160; ((null? L) (list f))
+<BR />
+&#160;&#160;  &#160; ((flights-match? f (first L)) (cons (merge-flights
+f (first L)) (rest L))
+<BR />
+&#160;&#160;  &#160; (else (cons (first L) (merge-a-flight (f (rest L)))))))
+<BR />
+(define merge-flights
+<BR />
+&#160; (lambda (f g)
+<BR />
+&#160;&#160; (make-flight (flight-origin f) (flight-departure f) (flight-destination
+f) (flight-arrival f)
+<BR />
+&#160;&#160;  &#160;  (merge-lists (flight-passengers f) (flight-passengers
+g)))))</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(f)  </B>Evaluate each of the following
+expressions.  That is, what does the Scheme interpreter (DrScheme in our
+case) display when each of these expressions is executed? </FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(f.1)</B> </FONT><FONT FACE="Courier New">(*
+(- 15 4) (/ 40 4))<A NAME="_14_15728"></A></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">110 (1 point)</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(f.2)</B> </FONT><FONT FACE="Courier New">(&gt;
+(/ 55 5) 12)<A NAME="_14_15784"></A></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">#f or false (1 point)</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(f.3)</B> </FONT><FONT FACE="Courier New">(+
+100
+<BR />
+&#160;&#160;  &#160;  (cond
+<BR />
+&#160;&#160;  &#160;    ((&gt;= 5 (/ 10 2)) 37)
+<BR />
+&#160;&#160;  &#160;    (else 6)))<A NAME="_14_15892"></A></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">137 (2 points)</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(g.1)</B>  True or false:  The features
+and capabilities of Scheme make it the best choice for the great majority
+of programming tasks.  <A NAME="_14_16057"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">False</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(g.2)</B>  True or false:  A programmer
+with a knowledge of Java can be sure that his or her knowledge will be enough
+to sustain a productive and innovative 40-year career.  <A NAME="_14_16247"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">False</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(h)  </B>Students in the course Applied
+Epistemology 101 are graded on two items, a midterm and a final exam, each
+of which has 100 points possible.  The midterm&#39;s weight 40% of the course
+grade; the final is worth 60%.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>Write the function </FONT><FONT FACE="Courier New">AE101-score</FONT><FONT FACE="AGaramond" SIZE=4>
+that takes two arguments--a student&#39;s midterm score and final exam score--and
+returns that student&#39;s overall weighted score in the class (in the range
+0 to 100).  Write two constant definitions for the weights, a contract,
+a brief purpose statement, the Scheme function definition, and two tests
+in the form of boolean expressions that should return true if the function
+works correctly.<A NAME="_14_16911"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define MT-WEIGHT
+0.40) ; Could also be 40, if the arithmetic later is right
+<BR />
+(define FINAL-WEIGHT 0.60) ; Could be 60.  [ 1 point for defining both correctly]
+<BR />
+;; AE101-score: number number -&gt; number [1 point; part credit if &quot;midterm&quot;,
+e.g., for &quot;number&quot;]
+<BR />
+;; Compute weighted score given midterm and final scores (all 0-100) [-1/2
+if missing or blatantly untrue]
+<BR />
+(define AE101-score
+<BR />
+&#160; (lambda (midterm final)
+<BR />
+&#160;  (+ (* midterm MT-WEIGHT) (* final FINAL-WEIGHT))))
+<BR />
+;; Tests
+<BR />
+(= 0 (AE101-score 0 0))
+<BR />
+(= 100 (AE101-score 100 100))  [1 point for both correct tests, returning
+a boolean]</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">SCORING THE CODE:
+<BR />
+&#160; 1 point for correct form of define:  (define AE101-score (lambda
+(ANYTHING..., or (def (A-s ANYTHING) ...)
+<BR />
+&#160; 1 point for correct parameter list---two names in parentheses (with
+AE101-score if using Indiana style)
+<BR />
+&#160; 1 point for any attempt to add something involving both arguments
+<BR />
+&#160; 1 point for completely correct arithmetic
+<BR />
+&#160; 1 point for everything else correct.  Parentheses must be right except
+for counting all the trailing ones.</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(i)  </B>Complete the definition of the
+function </FONT><FONT FACE="Courier New">between?</FONT><FONT FACE="AGaramond" SIZE=4>
+below.<A NAME="_14_18033"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>;; between?:  number number number -&gt;
+boolean
+<BR />
+;; Return true if the first argument&#39;s value is between the second and
+the third, inclusive
+<BR />
+;; Examples:  (between? 7 0 10) is true; (between 3 3 4) is true; (between
+1 2 3) is false</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>(define between?   <A NAME="_14_18290"></A></TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">
+                   ;; 1 point for right form:  compare value to low and
+compare value to high<A NAME="_14_18390"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160; (lambda (value low high) <A NAME="_14_18423"></A></TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">;;
+1 pt for correctness:  going right way on =, not switching low and high<A NAME="_14_18503"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160; (and<A NAME="_14_18516"></A></TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">
+(&gt;= value low) (&lt;= value high))))</FONT><FONT FACE="Courier" SIZE=2><TT>
+ <A NAME="_14_18564"></A></TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">;;
+Parens around comparisons must be right (or -1/2);  &#160;  &#160;  &#160;
+ &#160;                         ;; trailing parens don&#39;t matter here.</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(j)  </B>Complete the definition of </FONT><FONT FACE="Courier New">item-on-list?</FONT><FONT FACE="AGaramond" SIZE=4>
+below.  <A NAME="_14_18762"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>;; item-on-list?:  expression list -&gt;
+boolean
+<BR />
+;; Return true if the expression occurs on the list</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>(define item-on-list?</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160; (lambda (item L)</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160; (cond<A NAME="_14_18915"></A></TT></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&#160;&#160;  &#160;
+   ((empty? L) false)</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&#160;&#160;  &#160;
+   ((equal? item (first L)) true)</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&#160;&#160;  &#160;
+   (else (item-on-list? item (rest L))))))</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">Scoring:  2 points
+for empty case---1 for test, 1 for returning false
+<BR />
+&#160;&#160;  &#160;    2 points for matching case---1 for test, 1 for returning
+true
+<BR />
+&#160;&#160;  &#160;    2 points for recursive case---1 for attempt at recursive
+call, 1 for getting it all correct.</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">It&#39;s okay if they
+use some other comparison besides equal?, but note it.  It&#39;s okay if
+they split this into nested conds as they do in the book.  Minus 3 if they
+cross out the cond and just call member? (correctly). [If anybody uses member?
+without deleting the cond--e.g. (cond (true (member? item L))(else &#39;whatever))--I
+want to hear about it.  They should get credit.] ** You may deduct points
+for nontrivial syntax problems, but beware of &quot;double jeopardy.&quot;
+** Some answers may be right but not follow the pattern of the rubric. 
+Score as appropriate and consult with me as necessary.</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(k)  </B>A </FONT><FONT FACE="Courier New">date</FONT><FONT FACE="AGaramond" SIZE=4>
+is a structure </FONT><FONT FACE="Courier New">(make-date month day year)</FONT><FONT FACE="AGaramond" SIZE=4>,
+where </FONT><FONT FACE="Courier New">month</FONT><FONT FACE="AGaramond" SIZE=4>
+is a symbol (</FONT><FONT FACE="Courier New">&#39;Jan</FONT><FONT FACE="AGaramond" SIZE=4>,
+</FONT><FONT FACE="Courier New">&#39;Feb</FONT><FONT FACE="AGaramond" SIZE=4>,
+and so on), </FONT><FONT FACE="Courier New">day</FONT><FONT FACE="AGaramond" SIZE=4>
+is a number from 1 to 31, and </FONT><FONT FACE="Courier New">year</FONT><FONT FACE="AGaramond" SIZE=4>
+is a number from 1000 to 3000.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(k.1)</B>  Define the structure </FONT><FONT FACE="Courier New">date</FONT><FONT FACE="AGaramond" SIZE=4>
+with the field names given above.<A NAME="_14_20162"></A></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define-struct date
+(month day year))</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">The parentheses here
+have to be correct.  In general, all the parentheses have to be correct,
+except for counting the parentheses at the end of a definition.  If they
+get any field names wrong, deduct 1/2 point.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(k.2)</B> Define a </FONT><FONT FACE="Courier New">date</FONT><FONT FACE="AGaramond" SIZE=4>
+object called </FONT><FONT FACE="Courier New">TODAY</FONT><FONT FACE="AGaramond" SIZE=4>
+with the appropriate values.<A NAME="_14_20507"></A></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define TODAY (make-date
+&#39;Oct 19 2004))</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">If the day is off
+by 1 or 2, I don&#39;t think I care.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(k.3)</B>  Complete the following definition
+for the predicate function </FONT><FONT FACE="Courier New">valid-date?</FONT><FONT FACE="AGaramond" SIZE=4>,
+which takes an expression and checks whether it appears to be a valid </FONT><FONT FACE="Courier New">date</FONT><FONT FACE="AGaramond" SIZE=4>.
+ Use the functions you defined in the previous problems where necessary.<A NAME="_14_20854"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>;; valid-date<A NAME="_14_20871"></A>?:
+ anything -&gt; boolean</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>(define MONTHLIST (list &#39;Jan &#39;Feb
+&#39;Mar &#39;Apr &#39;May &#39;Jun &#39;Jul &#39;Aug &#39;Sep &#39;Oct
+&#39;Nov &#39;Dec))</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>(define valid-date<A NAME="_14_21001"></A>?</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160; (lambda (D) <A NAME="_14_21017"></A></TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(line
+1) 1 point for date?; (line 2) 1 point for date-month, 1 point for MONTHLIST;<A NAME="_14_21106"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160; (and     <A NAME="_14_21124"></A></TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(line
+3/4) 1 point for both between?s; (line 4) 1 point for 1000 &amp; 3000<A NAME="_14_21201"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160;  &#160; (________________
+D)                             ; is it a date<A NAME="_14_21275"></A> structure
+at all?</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160;  &#160; (item-on-list?
+(________________ D)________________)        ; is the month valid?</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160;  &#160; (________________
+(date<A NAME="_14_21407"></A>-day D) 1 31)</TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">
+                                                    <A NAME="_14_21480"></A></FONT><FONT FACE="Courier" SIZE=2><TT>;
+is the day valid?</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160;  &#160; (________________
+(date<A NAME="_14_21533"></A>-year D) ________  ________))))      ; is the
+year valid?</TT></FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(k.4)</B>  Define the predicate function
+</FONT><FONT FACE="Courier New">all-valid-dates?</FONT><FONT FACE="AGaramond" SIZE=4>.<A NAME="_14_21661"></A>
+<BR />
+</FONT><FONT FACE="Courier" SIZE=2><TT>;; all-valid-date<A NAME="_14_21682"></A>s?:
+ list -&gt; boolean
+<BR />
+;; Return true if all the items on the list are valid date<A NAME="_14_21766"></A>s.
+ If the list is empty, return true.<A NAME="_14_21807"></A>
+<BR />
+</TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define
+all-valid-dates?
+<BR />
+&#160; (lambda (L)
+<BR />
+&#160;&#160; (cond
+<BR />
+&#160;&#160;  &#160; ((empty? L) true)
+<BR />
+&#160;&#160;  &#160; ((valid-date? (first L)) (all-valid-dates? (rest L)))
+<BR />
+&#160;&#160;  &#160; (else false))))</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">1 point for correct
+define/lambda/cond</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">5 points for the rest.
+Any logically equivalent version (e.g., one with and) is okay.  You might
+give a point each for the empty and non-matching cases and three points
+for the recursive case.</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(l)  </B>Suppose you wish to write a spelling
+checker that takes a string of text as input and returns a list of the misspelled
+words in that string.  Because the input may contain white space and punctuation,
+we will need to extract the words from the string, where a word is a string
+of characters that are separated from the next word by white space or punctuation.
+ (The precise characters that count as white space or punctuation we won&#39;t
+worry about here.)</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>Define the function </FONT><FONT FACE="Courier New">spell-check</FONT><FONT FACE="AGaramond" SIZE=4>,
+which takes a string and returns a list of the words in the string that
+are misspelled (more precisely, words that don&#39;t occur in the dictionary
+of all correctly spelled words).  You should use each of the following in
+your definition:
+<BR />
+* </FONT><FONT FACE="Courier New">first-word</FONT><FONT FACE="AGaramond" SIZE=4>,
+a function that takes a string and returns the first word in that string
+<BR />
+* </FONT><FONT FACE="Courier New">rest-of-words</FONT><FONT FACE="AGaramond" SIZE=4>,
+a function that takes a string and returns a copy of that string with the
+first word removed
+<BR />
+* </FONT><FONT FACE="Courier New">string-empty?</FONT><FONT FACE="AGaramond" SIZE=4>,
+a function that takes a string and returns true if it&#39;s empty or if
+it contains only white space and punctuation
+<BR />
+* </FONT><FONT FACE="Courier New">DICTIONARY</FONT><FONT FACE="AGaramond" SIZE=4>,
+a (long) list of correctly spelled words, where each word is a string.<A NAME="_14_23366"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>;; spell-check: string -&gt; list-of-strings
+<BR />
+;; Return a list of the words in the input string that aren&#39;t in the
+dictionary.<A NAME="_14_23494"></A>
+<BR />
+</TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define
+spell-check &#160; 1 point -- Correct define, lambda, and argument list
+<BR />
+&#160;&#160; (lambda (s) &#160; 1 point -- Dividing the problem into 3 cases
+that relate somehow to the arg
+<BR />
+&#160;&#160;  &#160; (cond &#160; 1 point -- Correctly identifying the empty/base
+case [continued below]
+<BR />
+&#160;&#160;  &#160;   ((string-empty? s) empty)
+<BR />
+&#160;&#160;  &#160;   ((item-on-list? (first-word s) DICTIONARY) (spell-check
+(rest-of-words s)))
+<BR />
+&#160;&#160;  &#160;   (else 
+<BR />
+(cons (first-word s) (spell-check (rest-of-words s)))))))
+<BR />
+1 point -- Correctly returning empty in the empty/base case
+<BR />
+1 point -- Attempt to use both first-word and rest-of-words to traverse
+list
+<BR />
+1 point -- Correct use of first-word and rest-of-words in at least one case
+to traverse list
+<BR />
+1 point -- Traversal of list using first-word and rest-of-words completely
+correct in both cases
+<BR />
+1 point -- Attempt to find first-word in DICTIONARY
+<BR />
+1 point -- Correct location of first-word in DICTIONARY (item-on-list? or
+member?; -1/2 for rewriting it)
+<BR />
+1 point -- Correct case where first-word is in the dictionary (no word added
+to return list)
+<BR />
+1 point -- Correct case where first-word isn&#39;t in dictionary (consing
+first-word onto return list)
+<BR />
+1 point -- Everything else correct</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(m)  </B>In this problem you may not use
+the predefined functions </FONT><FONT FACE="Courier New">member</FONT><FONT FACE="AGaramond" SIZE=4>
+or </FONT><FONT FACE="Courier New">list-ref</FONT><FONT FACE="AGaramond" SIZE=4>.
+ You may use other functions defined earlier in this exam (and you may lose
+points if you re-implement here something that was already described above).</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(m.1)</B>  Define the function </FONT><FONT FACE="Courier New">position-on-list</FONT><FONT FACE="AGaramond" SIZE=4>.<A NAME="_14_24941"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>;; position-on-list: any list-of-any -&gt;
+number
+<BR />
+;; Return the place on the list where the first input occurs, or zero if
+list is empty
+<BR />
+;; Examples:  (position-on-list &#39;a &#39;(a b c)) is 1; (position-on-list
+1 empty) is 0;
+<BR />
+;;            (position-on-list 3 &#39;(2 3 4)) is 2<A NAME="_14_25219"></A>
+<BR />
+</TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define
+position-on-list
+<BR />
+&#160; (lambda (item L)
+<BR />
+&#160;   (cond
+<BR />
+&#160;     ((empty? L) 0)
+<BR />
+&#160;     ((equal? item (first L)) 1)
+<BR />
+&#160;     (else (+ 1 (position-on-list item (rest L)))))))</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">SCORING:  1 for empty
+case,  2 for matching case, 3 for increment/recursive case.</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(m.2)</B>  Define the function </FONT><FONT FACE="Courier New">item-at-position</FONT><FONT FACE="AGaramond" SIZE=4>.<A NAME="_14_25536"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>;; item-at-position: number list-of-any
+-&gt; any
+<BR />
+;; From the input list, return the item specified by the input number, or
+empty if out of range
+<BR />
+;; Examples:  (item-at-position 3 &#39;(a b c)) is c; (item-at-position
+7 &#39;(a b)) is empty; 
+<BR />
+;;            (item-at-position 0 &#39;(3 4)) is empty<A NAME="_14_25828"></A>
+<BR />
+</TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define
+item-at-position
+<BR />
+&#160; (lambda (n L)
+<BR />
+&#160;   (cond
+<BR />
+&#160;     ((empty? L) empty)
+<BR />
+&#160;     ((&lt;= n 0) empty)
+<BR />
+&#160;     ((= n 1) (first L))
+<BR />
+&#160;     (else (item-at-position (- n 1) (rest L))))))</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">SCORING: 1 for handling
+empty input list; 1 for handling index &lt;= 0 (not checking negative is
+okay);  3 for recognizing the item at the right position and returning it;
+3 for the correct recursive case.  Partial credit as warranted.</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(m.3)</B>  Define </FONT><FONT FACE="Courier New">next-on-list</FONT><FONT FACE="AGaramond" SIZE=4>.
+ You may wish to use the predefined function </FONT><FONT FACE="Courier New">length</FONT><FONT FACE="AGaramond" SIZE=4>,
+which returns the number of items on a list.  [Hint:  Use prior definitions,
+not recursion.]<A NAME="_14_26443"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>;; next-on-list: any list-of-any -&gt; any
+<BR />
+;; Return the item on the input list that follows the first input, or empty
+if none
+<BR />
+;; Examples:  (next-on-list &#39;b &#39;(a b c)) is c; (next-on-list &#39;c
+(a b c)) is empty;
+<BR />
+;;            (next-on-list &#39;x &#39;(a b c)) is empty; (next-on-list
+&#39;a empty) is empty<A NAME="_14_26740"></A>
+<BR />
+</TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define
+next-on-list
+<BR />
+&#160; (lambda (item L)
+<BR />
+&#160;   (cond
+<BR />
+&#160;     ((= 0 (position-on-list item L)) empty)
+<BR />
+&#160;     ((= (length L) (position-on-list item L)) empty)
+<BR />
+&#160;     (else (item-at-position (+ 1 (position-on-list item L)) L)))))</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">SCORING:  2 points
+for correctly recognizing input not on list and returning empty; 2 points
+for correctly recognizing last item on list and returning empty; 3 points
+for returning correct next item otherwise.</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(m.4)</B>  Define </FONT><FONT FACE="Courier New">next-on-circular-list</FONT><FONT FACE="AGaramond" SIZE=4>.<A NAME="_14_27233"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>;; next-on-circular-list: expression list
+-&gt; expression
+<BR />
+;; Like next-on-list, but the item after the last on the list is the first
+item again
+<BR />
+;; Example:  (next-on-circular-list &#39;c &#39;(a b c)) is a.<A NAME="_14_27437"></A>
+<BR />
+</TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define
+next-on-circular-list
+<BR />
+&#160; (lambda (item L)
+<BR />
+&#160;   (cond
+<BR />
+&#160;     ((= 0 (position-on-list item L)) empty)
+<BR />
+&#160;     ((= (length L) (position-on-list item L)) (first L))
+<BR />
+&#160;     (else (item-at-position (+ 1 (position-on-list item L)) L)))))</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">SCORING:  3 points
+for correctly handling the circular case; 2 points for everything else right.
+ Don&#39;t deduct for the same mistakes as in the previous part, but do
+deduct if they messed something new up.</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(m.5)</B>  Define the function </FONT><FONT FACE="Courier New">next-month</FONT><FONT FACE="AGaramond" SIZE=4>
+that uses the constant </FONT><FONT FACE="Courier New">MONTHLIST</FONT><FONT FACE="AGaramond" SIZE=4>
+(see Problem <B>(k)</B>) to take in a symbol (</FONT><FONT FACE="Courier New">&#39;Jan</FONT><FONT FACE="AGaramond" SIZE=4>,
+</FONT><FONT FACE="Courier New">&#39;Feb</FONT><FONT FACE="AGaramond" SIZE=4>,
+...) representing a month and return the symbol for the following month.<A NAME="_14_28112"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>;; next-month:  symbol -&gt; symbol
+<BR />
+;; Take a month name (&#39;Jan, &#39;Feb, ...) and return the name of the
+following month.<A NAME="_14_28231"></A></TT></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define next-month</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&#160; (lambda (this-month)
+<BR />
+&#160;   (next-on-circular-list this-month MONTHLIST)))</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(m.6)</B>  Define the function </FONT><FONT FACE="Courier New">advance-a-month</FONT><FONT FACE="AGaramond" SIZE=4>
+that takes a </FONT><FONT FACE="Courier New">date</FONT><FONT FACE="AGaramond" SIZE=4>
+(see Problem <B>(k)</B>) and returns that date moved one month into the
+future.<A NAME="_14_28486"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>;; advance-a-month: date -&gt; date
+<BR />
+;; Advance the input date by one month (on the same day)<A NAME="_14_28581"></A>
+<BR />
+</TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define
+advance-one-month
+<BR />
+&#160; (lambda (d)
+<BR />
+&#160;   (make-date (next-month (date-month d)) (date-day d)
+<BR />
+&#160;&#160;  &#160;  &#160; (cond ((eq? (date-month d) &#39;Dec) (+ 1 (date-year
+d)))
+<BR />
+&#160;&#160;  &#160;  &#160;           (else (date-year d))))))</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">SCORING:  2 points
+for returning a date (call to make-date with three arguments);  2 points
+for correct call to next-month; 3 points for handling December correctly;
+1 point for everything else correct.</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(m.7)</B>  Suppose you have a list of dates
+representing events on your calendar, but you decide to take a month&#39;s
+skiing vacation in February.  You&#39;ll need to postpone all the events
+scheduled in February, perhaps moving them one month later.  Generalize
+this to the function </FONT><FONT FACE="Courier New">clear-the-month</FONT><FONT FACE="AGaramond" SIZE=4>.<A NAME="_14_29288"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>;; clear-the-month: symbol list-of-dates
+-&gt; list-of-dates
+<BR />
+;; Return the input list after advancing by one month 
+<BR />
+;; every date whose month matches the input symbol.<A NAME="_14_29458"></A>
+<BR />
+</TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define
+clear-the-month
+<BR />
+&#160; (lambda (m L)
+<BR />
+&#160;   (cond
+<BR />
+&#160;     ((empty? L) empty)
+<BR />
+&#160;     ((eq? (date-month (first L)) m) (cons (advance-one-month (first
+L)) (clear-the-month m (rest L))))
+<BR />
+&#160;     (else (cons (first L) (clear-the-month m (rest L)))))))
+<BR />
+SCORING:  1 point for empty case; 4 points for matching-month case; 1 point
+for non-matching case.</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(m.8)</B>   Define this function:<A NAME="_14_29846"></A>
+<BR />
+</FONT><FONT FACE="Courier" SIZE=2><TT>;; days-to-start-of-month: symbol
+-&gt; number
+<BR />
+;; Return the number of days from January 1 to the start of the named month
+in non-leap years
+<BR />
+;; Examples:  (days-to-start-of-month &#39;Jan) is 0; (days-to-start-of-month
+&#39;Feb) is 31
+<BR />
+(define DAYSINMONTH  &#39;(31 28 31 30 31 30 31 31 30 31 30 31)) ; this
+will be useful<A NAME="_14_30159"></A>
+<BR />
+</TT></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">No key
+currently available.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(m.9)</B></FONT><FONT FACE="Goudy Old Style">
+ </FONT><FONT FACE="AGaramond" SIZE=4>Define this function:<A NAME="_14_30242"></A>
+<BR />
+</FONT><FONT FACE="Courier" SIZE=2><TT>;; days-from-jan1: date -&gt; number
+<BR />
+;; Return number of days from January 1 of the same year to the specified
+date, inclusive
+<BR />
+;; Examples: (days-from-jan1 (make-date &#39;Jan 3 2005)) = 3; (days-from-jan1
+(make-date &#39;Feb 1 2005)) = 32<A NAME="_14_30477"></A></TT></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">No key currently available.</FONT></P>
+<BR /><BR /><BR /><BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(n)</B></FONT><FONT FACE="Goudy Old Style"><B>
+</B></FONT><FONT FACE="AGaramond" SIZE=4>  For each of the two sets of data
+shown below, draw the binary search tree that results from inserting the
+items in the order shown.  Distinguish left branches clearly from right
+branches.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(n.1a)</B> </FONT><FONT FACE="Courier New">
+(13 19 22 7 17 10 2) &#160; </FONT><FONT FACE="AGaramond" SIZE=4><B>(n.1b)</B>
+ </FONT><FONT FACE="Courier New">(Scheme Python Java Fortran C Basic)<A NAME="_14_30822"></A></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&#160;           
+ Balanced (2 points)                        &#160;              Linear to
+the left (2 points)</FONT></P>
+<BR /><BR /><BR /><BR /><BR /><BR /><BR /><BR /><BR /><BR /><BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(n.2) </B> For each of the trees above,
+if you traverse the tree in order, printing each node, what is the result?</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(n.2a) </B>[result of <B>(n.1a)</B>]  <A NAME="_14_31085"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">2
+7 10 13 17 19 22 &#160; </FONT><FONT FACE="AGaramond" SIZE=4><B>(n.2b)</B>
+[result of <B>(n.1b)</B>]<A NAME="_14_31145"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">
+Basic C Fortran Java Python Scheme</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(o)  </B>Evaluate each of the following
+Scheme expressions:</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(o.1)<A NAME="_14_31277"></A></B></FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>(local  &#160; ((define make-checker </FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160; (lambda
+(threshold)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;     &#160;  &#160;
+ &#160; (lambda (n) (&lt; n threshold))))</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  (define a1
+(filter (make-checker 6) &#39;(3 1 4 1 5 9 2 6)))</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  (define a2
+(filter (make-checker 4) &#39;(3 1 4 1 5 9 2 6))))</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160; (list a1 a2))<A NAME="_14_31511"></A></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">((3 1 4 1 5 2) (3
+1 1 2)) -- Correct numbers and order, but list structure wrong: -1. </FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">Branching the wrong
+way on equality: another -1</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(o.2)</B> <A NAME="_14_31666"></A></FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>(local  &#160; ((define make-checker</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160; (lambda
+(comparison-op threshold)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;     &#160;  &#160;
+ &#160; (lambda (n) (comparison-op n threshold))))</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  (define b1
+(filter (make-checker = 1) &#39;(3 1 4 1 5 9 2 6)))</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  (define b2
+(filter (make-checker &gt;= 3) &#39;(3 1 4 1 5 9 2 6))))</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160; (list b1 b2))<A NAME="_14_31931"></A></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">((1 1) (3 4 5 9 6))
+-- Don&#39;t deduct again for problems mentioned above.</FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(p)</B>  This problem involves the <A HREF="http://www.ics.uci.edu/~kay/scheme/restaurants2.scm">restaurant collection program</A>.
+ For each part below, indicate your answer by making any additions, changes,
+or deletions to the table of data shown in that part.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(p.1)</B> Suppose the collection C contains
+the information shown below.
+<BR />
+Thai Dishes &#160; Thai &#160; 434-3434 &#160; Mee Krob &#160; 10.95<A NAME="_14_32299"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--
+remove
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Jacopo&#39;s Pizzeria &#160; Pizza
+&#160; 343-3434 &#160; Goat Cheese Pizza &#160; 12.00
+<BR />
+Mitsuki &#160; Japanese &#160; 232-5353 &#160; Edamame &#160; 4.50
+<BR />
+Tommy Tang&#39;s &#160; Thai &#160; 454-4545 &#160; Paht Woon Sen &#160;
+8.75<A NAME="_14_32462"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--
+remove
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Thai Touch &#160; Thai &#160; 242-2424
+&#160; Larb Guy &#160; 9.95<A NAME="_14_32522"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--
+remove
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Kitayama &#160; Japanese &#160; 335-3535
+&#160; Okonomiyaki &#160; 8.50</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>What is the result returned by the following
+code?  (Show your results by making changes to the table above--change values,
+cross lines out, add new lines, as appropriate.)<A NAME="_14_32766"></A>
+<BR />
+</FONT><FONT FACE="Courier" SIZE=2><TT>(define Thai? &#160;  &#160;  &#160;
+ &#160;  &#160; 
+<BR />
+&#160;&#160; (lambda (R)
+<BR />
+&#160;&#160;  &#160; (equal? (rrant-<A NAME="_14_-32713"></A>cuisine R)
+&#39;Thai)))</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>(collection-remove C Thai?) </TT></FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(p.2)</B> Suppose the collection C contains
+the information shown below.
+<BR />
+Thai Dishes &#160; Thai &#160; 434-3434 &#160; Mee Krob &#160; 10.95
+<BR />
+Jacopo&#39;s Pizzeria &#160; Pizza &#160; 343-3434 &#160; Goat Cheese Pizza
+&#160; 12.00
+<BR />
+Mitsuki &#160; Japanese &#160; 232-5353 &#160; Edamame &#160; 4.50<A NAME="_14_-32441"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--
+remove
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Tommy Tang&#39;s &#160; Thai &#160;
+454-4545 &#160; Paht Woon Sen &#160; 8.75
+<BR />
+Thai Touch &#160; Thai &#160; 242-2424 &#160; Larb Guy &#160; 9.95
+<BR />
+Kitayama &#160; Japanese &#160; 335-3535 &#160; Okonomiyaki &#160; 8.50<A NAME="_14_-32291"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--
+remove</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>What is the result of the following expression?
+<A NAME="_14_-32214"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>(collection-remove C (lambda (R) (equal?
+(rrant-<A NAME="_14_-32162"></A>cuisine R) &#39;Japanese)))</TT></FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(p.3)</B> Suppose the collection C contains
+the information shown below.
+<BR />
+Thai Dishes &#160; Thai &#160; 434-3434 &#160; Mee Krob &#160; 10.95<A NAME="_14_-32016"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--
+remove
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Jacopo&#39;s Pizzeria &#160; Pizza
+&#160; 343-3434 &#160; Goat Cheese Pizza &#160; 12.00
+<BR />
+Mitsuki &#160; Japanese &#160; 232-5353 &#160; Edamame &#160; 4.50<A NAME="_14_-31899"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--
+remove
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Tommy Tang&#39;s &#160; Thai &#160;
+454-4545 &#160; Paht Woon Sen &#160; 8.75<A NAME="_14_-31832"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--
+remove
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Thai Touch &#160; Thai &#160; 242-2424
+&#160; Larb Guy &#160; 9.95<A NAME="_14_-31772"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--
+remove
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Kitayama &#160; Japanese &#160; 335-3535
+&#160; Okonomiyaki &#160; 8.50<A NAME="_14_-31707"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--
+remove</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>What is the result of the following expression?<A NAME="_14_-31631"></A>
+<BR />
+</FONT><FONT FACE="Courier" SIZE=2><TT>(collection-remove C 
+<BR />
+&#160;&#160; (lambda (R)
+<BR />
+&#160;&#160;  &#160; (or (Thai? R) (equal? (rrant-<A NAME="_14_-31557"></A>cuisine
+R) &#39;Japanese))))</TT></FONT></P>
+<BR /><BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(p.4)</B> Suppose the collection C contains
+the information shown below.
+<BR />
+Thai Dishes &#160; Thai &#160; 434-3434 &#160; Mee Krob &#160; 10.95<A NAME="_14_-31404"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">--&gt;
+11.95
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Jacopo&#39;s Pizzeria &#160; Pizza
+&#160; 343-3434 &#160; Goat Cheese Pizza &#160; 12.00
+<BR />
+Mitsuki &#160; Japanese &#160; 232-5353 &#160; Edamame &#160; 4.50
+<BR />
+Tommy Tang&#39;s &#160; Thai &#160; 454-4545 &#160; Paht Woon Sen &#160;
+8.75<A NAME="_14_-31242"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">--&gt;
+9.75
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Thai Touch &#160; Thai &#160; 242-2424
+&#160; Larb Guy &#160; 9.95<A NAME="_14_-31184"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">--&gt;
+10.95
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Kitayama &#160; Japanese &#160; 335-3535
+&#160; Okonomiyaki &#160; 8.50</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>What is the result of the following expression?<A NAME="_14_-31065"></A>
+<BR />
+</FONT><FONT FACE="Courier" SIZE=2><TT>(define raise-price
+<BR />
+&#160;&#160; (lambda (R)
+<BR />
+&#160;&#160;  &#160; (make-rrant<A NAME="_14_-31011"></A> (rrant-<A NAME="_14_-30997"></A>name
+R) (rrant-cuisine<A NAME="_14_-30969"></A> R) (rrant-<A NAME="_14_-30952"></A>phone
+R) &#160;  &#160;  &#160;  &#160;  &#160;    (rrant-<A NAME="_14_-30923"></A>dish
+R) (+ 1.00 (rrant-<A NAME="_14_-30894"></A>price R)))))</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>(collection-change C Thai? raise-price)</TT></FONT></P>
+<BR /><BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(p.5)</B> Suppose the collection C contains
+the information shown below.
+<BR />
+Thai Dishes &#160; Thai &#160; 434-3434 &#160; Mee Krob &#160; 10.95<A NAME="_14_-30712"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--
+remove (was 11.95)
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Jacopo&#39;s Pizzeria &#160; Pizza
+&#160; 343-3434 &#160; Goat Cheese Pizza &#160; 12.00<A NAME="_14_-30622"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--
+remove 
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Mitsuki &#160; Japanese &#160; 232-5353
+&#160; Edamame &#160; 4.50
+<BR />
+Tommy Tang&#39;s &#160; Thai &#160; 454-4545 &#160; Paht Woon Sen &#160;
+8.75<A NAME="_14_-30515"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">--&gt;
+9.75
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Thai Touch &#160; Thai &#160; 242-2424
+&#160; Larb Guy &#160; 9.95<A NAME="_14_-30457"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--remove
+(was 10.95)
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Kitayama &#160; Japanese &#160; 335-3535
+&#160; Okonomiyaki &#160; 8.50</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>What is the result of the following expression?<A NAME="_14_-30326"></A>
+<BR />
+</FONT><FONT FACE="Courier" SIZE=2><TT>(collection-remove (collection-change
+C Thai? raise-price) ; raise-price is defined above
+<BR />
+&#160;&#160;  &#160;  &#160;  &#160;  &#160;  &#160;  (lambda (R) (&gt;
+(rrant-<A NAME="_14_-30199"></A>price R) 10.00)))</TT></FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(p.6)</B> Suppose the collection C contains
+the information shown below.
+<BR />
+Thai Dishes &#160; Thai &#160; 434-3434 &#160; Mee Krob &#160; 10.95<A NAME="_14_-30055"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">--&gt;
+8.95
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Jacopo&#39;s Pizzeria &#160; Pizza
+&#160; 343-3434 &#160; Goat Cheese Pizza &#160; 12.00<A NAME="_14_-29979"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">--&gt;10.00
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Mitsuki &#160; Japanese &#160; 232-5353
+&#160; Edamame &#160; 4.50<A NAME="_14_-29921"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--remove
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Tommy Tang&#39;s &#160; Thai &#160;
+454-4545 &#160; Paht Woon Sen &#160; 8.75<A NAME="_14_-29854"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&lt;--remove
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Thai Touch &#160; Thai &#160; 242-2424
+&#160; Larb Guy &#160; 9.95<A NAME="_14_-29794"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">--&gt;
+7.95
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>Kitayama &#160; Japanese &#160; 335-3535
+&#160; Okonomiyaki &#160; 9.50</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>What is the result of the following expression?<A NAME="_14_-29676"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>(collection-change </TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160; (collection-remove C (lambda
+(R) (&lt; (rrant<A NAME="_14_-29609"></A>-price R) 9.00))) &#160; 
+<BR />
+&#160;&#160; (lambda (R) (or (equal? (rrant<A NAME="_14_-29557"></A>-cuisine
+R) &#39;Pizza) &#160; (equal? (rrant-cuisine R) &#39;Thai))) &#160; (lambda
+(R) (make-rrant<A NAME="_14_-29477"></A> (rrant-name R) (rrant-cuisine R)
+(rrant-phone R) &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160; 
+&#160;  &#160;  &#160;  &#160; (rrant<A NAME="_14_-29409"></A>-dish R) (-
+(rrant-price R) 2.00))))</TT></FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(q)  </B>Below are the definitions of five
+functions.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(q.1)</B>  Write &quot;R&quot; next to
+each of the five routines below that is recursive.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(q.2)</B>  Write &quot;T&quot; next to
+each of the five routines that is tail-recursive.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>Some routines may be both &quot;R&quot; and
+&quot;T&quot;; some may be neither.  Consider each function independently
+of the others (i.e., pay no attention to the other functions a given function
+calls).<A NAME="_14_-28970"></A></FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>(define print-stars-A   <A NAME="_14_-28934"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">R<A NAME="_14_-28927"></A>
+<BR />
+</FONT><FONT FACE="Courier New" SIZE=2>&#160; (lambda (N)
+<BR />
+&#160;   (cond
+<BR />
+&#160;     [(zero? N) (newline)]
+<BR />
+&#160;     [else (begin        &#160;  &#160;        ; do these two things,
+in the order shown:
+<BR />
+&#160;&#160;  &#160;  &#160; (print-stars-A (- N 1))     ; print n-1 stars
+<BR />
+&#160;        (display &quot;*&quot;))])))          ; print out a star</FONT></P>
+<BR />
+<P>
+<FONT FACE="Courier New" SIZE=2>(define print-stars-B   <A NAME="_14_-28660"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">RT<A NAME="_14_-28652"></A>
+<BR />
+</FONT><FONT FACE="Courier New" SIZE=2>&#160; (lambda (N)
+<BR />
+&#160;   (cond
+<BR />
+&#160;     [(zero? N) (newline)]
+<BR />
+&#160;     [else (begin  &#160;  &#160;  &#160;            ; do these two
+things, in the order shown:
+<BR />
+&#160;&#160;  &#160;  &#160; (display &quot;*&quot;) &#160;  &#160;  &#160;
+        ; print out a star 
+<BR />
+&#160;        (print-stars-B (- N 1)))]))) ; print n-1 stars</FONT></P>
+<BR />
+<P>
+<FONT FACE="Courier New" SIZE=2>(define keep-matches-A   <A NAME="_14_-28387"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">R<A NAME="_14_-28380"></A>
+<BR />
+</FONT><FONT FACE="Courier New" SIZE=2>&#160; (lambda (L X)
+<BR />
+&#160;   (cond
+<BR />
+&#160;     [(null? L) empty]
+<BR />
+&#160;     [(equal? X (first L)) (cons (first L) (keep-matches-A (rest L)
+X))]
+<BR />
+&#160;     [else (keep-matches-A (rest L) X)])))</FONT></P>
+<BR />
+<P>
+<FONT FACE="Courier New" SIZE=2>(define keep-matches-B   <A NAME="_14_-28178"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">neither<A NAME="_14_-28165"></A>
+<BR />
+</FONT><FONT FACE="Courier New" SIZE=2>&#160; (lambda (L X)
+<BR />
+&#160;   (keep-matches-help L X '()))) &#160; </FONT></P>
+<BR />
+<P>
+<FONT FACE="Courier New" SIZE=2>(define keep-matches-B-help   <A NAME="_14_-28075"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">RT<A NAME="_14_-28067"></A>
+<BR />
+</FONT><FONT FACE="Courier New" SIZE=2>&#160; (lambda (L X list-so-far)
+<BR />
+&#160;   (cond
+<BR />
+&#160;     [(null? L) list-so-far]
+<BR />
+&#160;     [(equal? X (first L)) (keep-matches-B-help (rest L) 
+<BR />
+&#160;&#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;                    X 
+<BR />
+&#160;&#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;                    (cons (first L) list-so-far))]
+<BR />
+&#160;     [else (keep-matches-B-help (rest L) X list-so-far)]))) </FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(r) </B>Suppose we have a list called RL
+of restaurants with menus, according to the usual definitions:<A NAME="_14_-27669"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>(define-struct rrant (name cuisine phone
+menu))
+<BR />
+</TT></FONT><FONT FACE="AGaramond" SIZE=4>where menu is a list of dishes<A NAME="_14_-27582"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>(define-struct dish (name price))</TT></FONT><FONT FACE="Goudy Old Style">.</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>Define the following function:<A NAME="_14_-27502"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>;; name-and-phone-serving-dish: (listof
+rrant) string -&gt; (listof name-phone-list)
+<BR />
+;; Returns a list of the names and phone numbers of all the restaurants
+that 
+<BR />
+;; serve the dish named in the second input.  Each name/phone-number pair
+<BR />
+;; should be in its own list; for example 
+<BR />
+;; ((&quot;Cobras and Matadors&quot; &quot;343-3434&quot;) (&quot;La Cote
+Basque&quot; &quot;344-3334&quot;)).<A NAME="_14_-27148"></A></TT></FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define name-and-phone-serving-dish
+<BR />
+&#160; (lambda (RL dishname)
+<BR />
+&#160;&#160; (map make-name-phone
+<BR />
+&#160;&#160;  &#160; (filter (lambda (R) (rrant-serves-dish? R dishname))
+RL))</FONT></P>
+<BR />
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">Probably the best
+way to handle this is to define functions like these individually first:
+<BR />
+;; menu-includes?: menu string -&gt; boolean [This appears above]
+<BR />
+;; Return true if string is the name of a dish on menu</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define (menu-includes?
+M s)</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&#160; (&gt; (length
+(filter (lambda (D) (string=? (dish-name D) s)) M)) 0))</FONT></P>
+<BR />
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">;; rrant-serves-dish?:
+rrant string -&gt;boolean
+<BR />
+;; Return true if string is the name of any menu item in rrant</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define (rrant-serves-dish?
+R s)</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&#160;&#160; (menu-includes?
+(rrant-menu R) s))</FONT></P>
+<BR />
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">;; make-name-phone:
+rrant -&gt; list
+<BR />
+;; Returns list containing rrant&#39;s name and phone</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define (make-name-phone
+R)</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">&#160;&#160; (list
+(rrant-name R) (rrant-phone R)))</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">Determining whether
+a given restaurant serves the specified dish:  3 points (2 points for examining
+the menu and 1 point for extracting the menu from the restaurant).  In my
+solution, the 2 points are captured by menu-includes?; if they rewrote the
+ same thing they wrote for (b.2), rather than just calling it, they should
+lose a point; if they did the task some different way, that's okay.  The
+1 point is captured by rrant-serves-dish?, but again, it's okay if they
+achieve this some other way.</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">Selecting restaurants
+from the list that pass some test [ideally, the test is whether the restaurant
+serves the dish in question, but for this point, credit if they select some
+restaurants from the list using any criterion]:  1 point</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">Specifying the correct
+restaurant-choice criterion [i.e., correctly applying the equivalent of
+ rrant-serves-dish? to the list]:  1 point</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">Returning a list of
+name/phone pairs [two-element lists---not technically pairs]:  2 points.
+ In my solution, this is captured in make-name-phone, but they could get
+the same result some other way.</FONT></P>
+<P>
+<FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">Everything else correct
+(including not using explicit recursion):  2 points [So this says if they
+coded it right using recursion, they can get 7/9]</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(s)  </B>Below are definitions of </FONT><FONT FACE="Courier New">map</FONT><FONT FACE="AGaramond" SIZE=4>
+and </FONT><FONT FACE="Courier New">filter</FONT><FONT FACE="AGaramond" SIZE=4>.<A NAME="_14_-25060"></A></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>(define (map f L) &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (define (filter p? L)</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160; (cond &#160;    &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+ &#160; (cond</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;   ((empty? L) empty) &#160;     
+&#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160; ((empty? L) empty)</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;   (else (cons (f (first L)) &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160; ((p? (first L)) </TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160;            (map f (rest
+L)))))) &#160;  &#160;      (cons (first L) (filter p? (rest L))))</TT></FONT></P>
+<P>
+<FONT FACE="Courier" SIZE=2><TT>&#160;&#160;  &#160;  &#160;      &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160; (else (filter p? (rest L)))))</TT></FONT></P>
+<BR />
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(s.1)</B>  Write a definition for the function
+</FONT><FONT FACE="Courier New">process</FONT><FONT FACE="AGaramond" SIZE=4>
+that abstracts both </FONT><FONT FACE="Courier New">map</FONT><FONT FACE="AGaramond" SIZE=4>
+and </FONT><FONT FACE="Courier New">filter</FONT><FONT FACE="AGaramond" SIZE=4>.
+ (Hint:  You may find it useful to think about these two functions:  
+<BR />
+</FONT><FONT FACE="Courier New">(define (always-true x) true)</FONT><FONT FACE="AGaramond" SIZE=4>
+and </FONT><FONT FACE="Courier New">(define (no-change x) x)</FONT><FONT FACE="AGaramond" SIZE=4>.)<A NAME="_14_-24484"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define (process
+f p? L)
+<BR />
+&#160; (cond
+<BR />
+&#160;   ((empty? L) empty)
+<BR />
+&#160;   ((p? (first L)) (cons (f (first L)) (process f p? (rest L))))
+<BR />
+&#160;   (else (process f p? (rest L)))))</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(s.2)</B>  Write new one-line definitions
+for </FONT><FONT FACE="Courier New">map</FONT><FONT FACE="AGaramond" SIZE=4>
+and </FONT><FONT FACE="Courier New">filter</FONT><FONT FACE="AGaramond" SIZE=4>
+that call </FONT><FONT FACE="Courier New">process</FONT><FONT FACE="AGaramond" SIZE=4>.<A NAME="_14_-24215"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define (map2
+f L) (process f always-true L))
+<BR />
+(define (filter2 p? L) (process no-change p? L))</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4><B>(t) </B>A nested list of items (NL) is
+either</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>1.  empty &#160; </FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">
+        </FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>2.  (cons item NL), or</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>3.  (cons NL NL). &#160;  &#160; </FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>Write a definition for the function deep-unique
+as described below.<A NAME="_14_-23909"></A>
+<BR />
+</FONT><FONT FACE="Courier New" SIZE=2>; deep-unique:  NL -&gt; list-of-items
+<BR />
+; Return a list of all the items that occur in the input, no matter how
+deeply nested,
+<BR />
+;    with no duplications.  Order of result doesn&#39;t matter.
+<BR />
+; Example:  (deep-unique &#39;(3 17 (3 Huey) Huey ((17)))) returns (3 17
+Huey)</FONT></P>
+<P>
+<FONT FACE="AGaramond" SIZE=4>You may assume that the predicate </FONT><FONT FACE="Courier New">list?</FONT><FONT FACE="AGaramond" SIZE=4>
+is already defined to return true if its argument is a list and false otherwise.<A NAME="_14_-23514"></A>
+<BR />
+</FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">(define (deep-unique
+L) (deep-unique-aux L empty))
+<BR />
+(define (deep-unique-aux L unique-list) 
+<BR />
+&#160; (cond</FONT><FONT FACE="AGaramond" SIZE=4> &#160; <A NAME="_14_-23402"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">((empty?
+L) unique-list)
+<BR />
+</FONT><FONT FACE="AGaramond" SIZE=4>&#160;<A NAME="_14_-23364"></A></FONT><FONT FACE="Gill Sans Condensed Bold" COLOR="#FF0000">
+&#160;  &#160; ((list? (first L)) (deep-unique-aux (rest L) (deep-unique-aux
+(first L) unique-list)))
+<BR />
+&#160;&#160;  &#160; ((member? (first L) unique-list) (deep-unique-aux (rest
+L) unique-list))
+<BR />
+&#160;&#160;  &#160; (else (deep-unique-aux (rest L) (cons (first L) unique-list)))))
+; produces reverse order, fwd or rev OK</FONT><BR />
+</P>
+<P>
+<FONT FACE="Helvetica" SIZE=1>Written by David G. Kay, 1995-2004.  Corrections
+to some solutions by Felix Morariu, Fall 2005.</FONT><BR CLEAR=ALL />
+</P>
+<HR />
+<address>
+<FONT FACE="Palatino"><A HREF="http://www.ics.uci.edu/~kay/">David G. Kay</A>,</FONT><a href=mailto:kay@uci.edu><font face="Goudy Old Style"> </font>kay@uci.edu</A>
+</address>
+<P>
+<FONT FACE="Palatino" SIZE=1>Wednesday, November 23, 2005 -- 8:40 AM</FONT></P>
+</BODY>
+</HTML>

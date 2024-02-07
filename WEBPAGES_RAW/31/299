@@ -1,0 +1,297 @@
+			Sorting: O(N) Sorting without Comparisons
+
+
+In this lecture, we will examine two sorting methods that do not use
+comparisons between values to sort the data. So, they are not constrained
+by the lower bound proved in the previous lecture. The algorithms are called
+Bucket Sort and Radix Sort. Both are a bit strange; they work well for integers
+(and Radix Sort for Strings) but don't work well for other kinds of data (e.g.,
+anything that is not "digital", in the same sense as a digital tree).
+
+
+Bucket Sort:
+
+Bucket Sort allows us to sort N data values, where each lies in the range 0-M
+in time O(N+M). Note that if we don't know the range of integers, we can scan
+the array first, to find the smallest and biggest one, and scale everything
+between those two values: scan the array (O(N)) to find S, the smallest value
+and B, the biggest value, scan it again (O(N)) subtracting S from every value
+(the range will be 0 to B-S), then sort these values, then scan it a final time
+(O(N)) adding S to every value. The scaling and unscaling processes are each
+O(N) (adding three O(N) passes to the data: more time but the same complexity
+class).
+
+We will analyze a few problems with various sizes of N and M below.
+
+For a first example, suppose that we needed to sort 1,000 exam scores, all in
+the range 0 to 100 (so N = 1,000 and M = 100).
+
+First, here is the psuedo-code for this algorithm. It uses an array much like
+a histogram (keeping track of the number of times a specific data value is
+seen in the array to be sorted).
+
+  1) Declare an int histogram array with indexes/buckets 0 to 100 and 
+     initialize each to 0 (there has been 0 of each index value seen so far).
+
+  2) Look at every data value in the array to sort, and increment by 1 the 
+     index (specified by that data value) in the histogram array. So, if 78 was
+     the next data value in the array to sort, increment the histogram array at
+     index 78.
+
+  3) Scan the entire histogram array from 0 to 100; whenever we get to an index
+     that stores c (with c != 0), put c values of that index into the next
+     positions in the array to sort (starting from the beginning, replacing the
+     values already in the array).
+     
+Step 1 is O(M), based only on the range of values (number of 0s we need to
+store in the array indexes) and not on N, the number of values to sort.
+
+Step 2 is O(N), based only on the number of values to sort, not the range of
+values. For each of the N values, we can access index i in an array in O(1)
+time to increment it. 
+
+Step 3 is O(N+M), based both on N, the number of values to sort (since we are
+putting each into the sorted array), and M, the range of values (since we must
+scan through each bucket, whether or not it contains a values != 0).
+
+Looking at raw numbers, Step 1 requires 100 operations, Step 2 requires 1,000
+operations, and Step 3 requires 1,100 operations (so the total operations is
+about 2,200). If we just sorted the array using an O(N Log2 N) algorithm (with
+a constant of 1), it would require about 10,000 operations. So here bucket sort
+looks pretty good, by a factor of 5.
+
+For a second example, suppose that we needed to sort 1,000,000 values from 0
+up to 1 billion (so N = 1,000,000 and M = 1,000,000,000). Here N << M (N is
+much less than M, by a factor of 1,000). We would
+
+  1) Declare an int histogram array with indexes 0 to 1 billion and initialize
+     it to 0 (0 of each index value seen so far).
+
+  2) Look at every value in the array to sort, and increment by 1 the index
+     (specified by that data value) in the histogram array. So, if 157,000,000
+     was the next value in the array to sort, increment the histogram array at
+     index 157,000,000.
+
+  3) Scan the entire histogram array from 0 to 1 billion; whenever you get to
+     an index that stores c (!= 0) put c values of that index into the next
+     position in the array to sort (starting from the beginning, replacing the
+     values already in the array).
+     
+Looking at raw numbers, Step 1 requires 1,000,000,000 operations, Step 2
+requires 1,000,0000 operations, and Step 3 requires 1,001,000,000 operations
+(for a total of about 2,002,000,000 operations). If we just sorted the array
+using an O(N Log2 N) algorithm (with a constant of 1), it would require about
+20,000,000 operations. So here bucket sort looks pretty bad, by a factor of 100.
+Note we are doing a tremendous number of operations to scan buckets that are
+likely empty (a maximum of 1 in 1,000 buckes is non-0, achieved when every
+value in the array to sort is different; with duplicate values fewer are non-0).
+
+If we have to sort many numbers in a small range (or even billions of numbers in
+the full int range: any time M<<N), then Bucket Sort would be more efficient
+than comparision-based sorting. But if the range of possible values is very big
+compared to the number of values to sort (N<<M), comparison-based sorting would
+probably be faster. This is all assuming enough memory to store all N values.
+
+Also, this method doesn't work well for Strings of even moderate size. If we
+converted each String of lower-case letters to an int to solve this problem,
+note that there are 26^N different String of N values: and, 26^7 is already
+over 8 billion (so M is very big even for 7-character Strings).
+
+
+Radix Sort:
+
+Finally, we will examine Radix Sort. It repeatedly does something like Bucket
+Sort, but always ensuring that M<<N, so the bucket sorts are effective. It is
+applicable when we sort numeric values that can be broken into pieces (the
+digits in a number) where the "significance" of the pieces will be processed
+from least to most significant, using a stable algorithm.
+
+So, Radix Sort works by repeatedly doing something like a Bucket Sort in the
+cases where Bucket Sort is efficient: sorting a large number of values each of
+which has a small range (say, sorting many numbers by one of their digits,
+where the range for each digit is 0-9).
+
+Generally, suppose that we need to sort N positive int values. Numbers in the
+range 0 to 1.5 billion have a most 10 digits (Log10 1.5 billion ~ 9.2). Here is
+the psuedo-code for radix sorting.
+
+Create an array of 10 buckets, each storing an empty queue
+for every "place" (10 digit numbers: 1s, 10s, 100s, 1,000s, ... 1,000,000,000s)
+  for every value in the array to sort
+    add it at the end of the queue in the correct bucket, according to the
+      digit in the current "place"
+  for every bucket (in order from 0 to 9)
+    move all the values in this queue back into the array to sort, left to
+    right in the array (leaving the queue empty)
+
+For the first "place" (1s), the numbers will be sorted by their last digit
+only. For the second "place" (10s), the numbers will be sorted by their next
+digit: really their last two digits (because of the "stability" property of the
+queue).... For the last "place" (1,000,000,000) the numbers will be sorted by
+all their digits. 
+
+Note that each iteration is taking a result (sorted by all the lower places)
+and extending it to the current "place". Because we are using a stable
+mechanism (copying from the queues back into the array), all numbers with an
+equal digit in "place" are kept in the same order: already sorted by all the 
+following digits/places.
+
+Let's do a quick example, with much more restricted numbers. Let's use Radix
+Sort to sort the following 10, three digit numbers (so we require three
+passes, with the places 1s, 10s, and 100s).
+
+  664, 947, 654, 305, 565, 424, 517, 252, 223, 326
+
+In the pictures below, the queues go downward from each bucket (takes less
+space in the pictures). First, we start with the 1s "place" and get
+
+    0   1   2   3   4   5   6   7   8   9
+  +---+---+---+---+---+---+---+---+---+---+
+  |   |   |   |   |   |   |   |   |   |   |
+  +---+---+---+---+---+---+---+---+---+---+
+           252 223 664 305 326 947     
+                   654 565     517            
+                   424                     
+
+Notice that each number is in the bucket based on its 1s "place": xx2, xx3,
+xx4, xx4, xx4, etc. The order the values appear in each queueu is the order
+they  appeared in the original aray scanned left to right.
+
+Then we put these values back into the array, from buckets 0-9 (in that order),
+removing each value from its queue. Notice that all numbers are sorted by their
+last digits, but not any others. If their last digits are the same, their order
+is the same order as they appeared in the input array (see 664, 654, and 424).
+
+  252, 223, 664, 654, 424, 305, 565, 326, 947, 517, 
+
+Then, we continue doing the same process on this new array with the 10s
+"place" and get
+
+    0   1   2   3   4   5   6   7   8   9
+  +---+---+---+---+---+---+---+---+---+---+
+  |   |   |   |   |   |   |   |   |   |   |
+  +---+---+---+---+---+---+---+---+---+---+
+   305 517 223     947 252 664                
+           424         654 565
+           326                             
+
+Notice that each number is in the bin based on its 10s "place": x05, x17, x23,
+x24, x25, etc.
+
+Then we put these values back into the array, from buckets 0-9 (in that order),
+removing each value from its queue. Notice that all numbers are sorted by their
+last two digits. If their second to last digits are the same, their order is
+the same order as they appeared in the input array, which was sorted on the
+last digit (see 223, 424, and 326) so now it is sorted on the last two digits.
+
+  305, 517, 223, 424, 326, 947, 252, 654, 664, 565
+                                           
+Then, we continue doing the same process on this new array with the 100s
+"place" (the most significant "place" and the final iteration) and get
+
+    0   1   2   3   4   5   6   7   8   9
+  +---+---+---+---+---+---+---+---+---+---+
+  |   |   |   |   |   |   |   |   |   |   |
+  +---+---+---+---+---+---+---+---+---+---+
+           223 305 424 517 654         947
+           252 326     565 664             
+                                           
+Notice that each number is in the bin based on its 100s "place" (the most
+significant one): 223, 252, 305, 326, 424, etc.
+
+Then we put these values back into the array, from buckets 0-9 (in that order),
+removing each value from its queue. Notice that all numbers are sorted by all
+their digits.  If all their digits are the same, their order is the same order
+as they appeared in the input array.
+
+  223, 242, 305, 326, 424, 517, 565, 654, 664, 947
+         
+So, this sorting mechanism requires O(N) extra space (the sum of the space
+occupied by all the queues is N and the original array is N) and it is stable.
+Actually, if we are using a queue implementation that doesn't shrink its storage
+when values are dequeued (ArrayQueue doesn't but LinkedQueue does) then the
+space occupied by all the queues could be much worse than 2N, it could be MN
+(or 10N, since M is 10 here), with each queue expanding to fit all its values
+(sorting 10 numbers, each 1,234,567,890 will require 10 values in each of the 10
+queues).
+
+Radix Sort's running time is based on the following: inside the outer loop, we
+do N operations to move the N values from the array into their correct queues
+(each queue operation is O(1)), and then do N more operations to transfer from
+the queues back to the array. But we must multiply this operation count by the
+number of outer loop iterations (which we will analyze below).
+
+If there are N distinct numbers to sort, say the integers 1-N, then the biggest
+number is N, and it has Log10 N digits, so the outer loop executes Log10 N
+times and the total complexity is O(N Log10 N). Does the base of the logarithm
+make difference for complexity classes? Mathematically no, because Log10 N =
+Log2 N/Log2 10, and Log2 10 is just a constant that is absorbed by the big-O
+notation we use for complexity classes. Of course, the actual running time
+depends on this constant.
+
+This argument says that we really can just write Log (without any base)
+in all our complexity classes, because different Logs, regardless of their
+bases, are only constant multiples of each other.
+
+Thus, we characterize Radix Sort as 
+  1) Worst case is O(N Log10 N)
+  2) Requires O(N) extra storage for the queues at any time
+  3) No comparisons; O(N Log10 N) data movements in all cases
+  4) Stable
+
+Instead of choosing a radix of 10, we can choose a radix of 100. With this
+choice, we have 100 buckets and we first sort by the last two digits (1s and
+10s), then the next two (100s and 1,000s), etc. Here we tradeoff space (10
+times as much space in the buckets, which is still much less than the space
+taken up by the numbers to sort) against loop iterations (1/2 as many). Now
+the worst case running time is O(N Log100 N) - using logarthmis base 100, which
+requires half the iterations in the outer loop.
+
+If we keep increasing the number of digits "sorted" by, eventually we get to
+something like bucket sort: the number of buckets is the same as the range of
+the numbers being sorted, and each queue stores only one value (the number of
+times it apears in the array to be sorted).
+
+This method works for "digital" keys: keys that can be broken into "digits",
+like integers and Strings (just as we did for storing/retrieving information in
+"digital trees"). For String Radix Sort we can use a # of bins equal to the
+number of possible ASCII characters (128 works for English characters). Note
+that the number of iterations in the outer loop is equal to the length of the
+longest String, so this method works best if all the Strings are about the
+same size.
+
+In the next quiz you will implement Radix Sort (easy to do given any simple
+queue implementation). When I put this unsophisticated code into my sorting
+tester, I found that Radix Sort (on a random array of 1,000,000) took a bit
+longer than Mergesort and bit less than Heapsort. Quicksort still beats them
+all (although it is unstable, unlike Mergesort and Radix Sort). When I made the
+radix larger (100, 1000, ...), I got close to the quicksort time, but radix
+sort still never quite ran as fast for the biggest-sized arrays I could test.
+I didn't spend time trying to optimize the Queue implementations.
+
+
+Some real numbers for sorting:
+
+I ran this on my home computer. I generated 3 arrays (storing Integer wrapper
+class values) of length N and called each sorting method 5 times. The results
+here are the averages.
+
+
+     N	   Selection   Insertion   Heap   Merge   Quick   Radix10   Radix100
+----------+----------+-----------+------+-------+-------+---------+----------+
+    10,000|   .454   |   .287    |  *   |  *    |   *   |    *    |    *     |
+----------+----------+-----------+------+-------+-------+---------+----------+
+   100,000| 47.0     | 27.4      | .059 | .050  | .031  |  .093   | .059     |
+----------+----------+-----------+------+-------+-------+---------+----------+
+ 1,000,000|   +      |   +       |1.359 | .890  | .478  | 1.411   | .919     |
+----------+----------+-----------+------+-------+-------+---------+----------+
+             U,I           S,I      U,I    S,N     U,I     S,N        S,N
+
+*   = Cannot be timed: <.001 seconds
++   = Not timed      : > 1 minute
+U/S = Unstable/Stable
+I/N = In place (requires < O(N) more space: O(1) or O(Log N))/Not in place
+
+For more details, look at the Wikipedia article on Sorting Algorithms:
+
+http://en.wikipedia.org/wiki/Sorting_algorithm

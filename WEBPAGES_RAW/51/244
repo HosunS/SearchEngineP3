@@ -1,0 +1,52 @@
+# $Id: makefile 1109 2007-04-17 00:04:26Z rvernica $
+
+# Copyright (C) 2007 by The Regents of the University of California
+
+# Redistribution of this file is permitted under the terms of the GNU
+# Public License (GPL).
+
+# Date: 01/30/2007
+# Author: Rares Vernica <rvernica@ics.uci.edu>
+
+TRUNK_PATH = ../
+
+CC = g++
+CPPFLAGS = -Wall -I$(TRUNK_PATH) -O3 # -g -O0
+
+all: unittest speedtest
+
+
+ed.o: ed.h misc.h
+
+jd.o: jd.h gram.h
+
+gram.o: gram.h misc.h
+
+misc.o: misc.h
+
+output.o: output.h
+
+input.o: input.h
+
+appsearch.o: ed.h input.h misc.h
+
+scan.o: scan.h ed.h
+
+speedtest.o: appsearch.h gram.h ed.h input.h misc.h \
+	$(TRUNK_PATH)partenum/partenum.h \
+	$(TRUNK_PATH)filtertree/filtertree.h \
+
+unittest.o: ed.h jd.h gram.h input.h output.h misc.h
+
+
+speedtest: scan.o appsearch.o gram.o ed.o input.o misc.o \
+	$(TRUNK_PATH)partenum/partenum.o \
+	$(TRUNK_PATH)filtertree/filtertree.o $(TRUNK_PATH)filtertree/buckethead.o \
+	$(TRUNK_PATH)filtertree/gram.o \
+
+unittest: unittest.o ed.o jd.o gram.o input.o output.o misc.o 
+
+
+.PHONY: clean
+clean:
+	-rm speedtest unittest *.o *~ *.bin *.wkey.txt *.words.txt

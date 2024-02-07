@@ -1,0 +1,153 @@
+//    Processing educational code
+//    Copyright (C) 2013  Lee Martie
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+//Max Power max_power288@hotmail.com drew the images
+
+public class Sprite {
+
+  ArrayList<PImage> goingLeft = new ArrayList<PImage>();
+  ArrayList<PImage> goingRight = new ArrayList<PImage>();
+  ArrayList<PImage> goingForward = new ArrayList<PImage>();
+  ArrayList<PImage> goingBack = new ArrayList<PImage>();
+
+  PImage currentImage;
+  //controls how we flip through the images
+  int stepCount = 0;
+
+  //delays the update since just holding a key is to fast
+  int delayCount = 5;
+
+  int callOutDelay = 0;
+
+  PVector location = new PVector(width/2, height/2);
+  PVector velocity = new PVector(0, 0);
+
+  ArrayList<String> randomPhrases = new ArrayList<String>();
+
+
+  String currentPhrase;
+  //index to phrases
+  int phraseIndex = 0;
+  
+  //constructor  
+  public Sprite(float x, float y) {
+    location = new PVector(x, y);
+
+
+    goingLeft.add(loadImage("zeldaSprites/left1.png"));
+    goingLeft.add(loadImage("zeldaSprites/left2.png"));
+
+    goingRight.add(loadImage("zeldaSprites/right1.png"));
+    goingRight.add(loadImage("zeldaSprites/right2.png"));
+
+    goingForward.add(loadImage("zeldaSprites/forward1.png"));
+    goingForward.add(loadImage("zeldaSprites/forward2.png"));
+
+    goingBack.add(loadImage("zeldaSprites/back1.png"));
+    goingBack.add(loadImage("zeldaSprites/back2.png"));
+
+    currentImage = goingForward.get(0);
+
+
+    randomPhrases.add("Hello!");
+    randomPhrases.add("How are you?");
+    randomPhrases.add("I guess that is good to hear?");
+    randomPhrases.add("Welp... What are we to do?");
+    randomPhrases.add("There is not much here...");
+    randomPhrases.add("I hope you have a boat ready for a quick escape!");
+    randomPhrases.add("JK... there is no boat here");
+    randomPhrases.add("It would be nice if you could program one!");
+    randomPhrases.add("Can you program a friend for me?");
+    
+
+
+     currentPhrase = randomPhrases.get(0);
+    
+  }
+
+
+  public void callOutBubble() {
+
+    fill(255);
+    fill(0);
+    PFont f = createFont("Arial", 10, true); 
+    textFont(f, 10); 
+
+    text(currentPhrase, location.x, location.y-10);
+    line(location.x+15, location.y, location.x+25, location.y-10);
+
+
+    if (callOutDelay == 150) {
+      phraseIndex++;
+      currentPhrase = randomPhrases.get(phraseIndex);
+      callOutDelay = 0;
+      if (phraseIndex == randomPhrases.size()-1) {
+        phraseIndex = 0;
+      }
+    }
+    callOutDelay++;
+  }
+
+
+
+  public void display() {
+
+    delayCount++;
+
+
+
+
+    location.add(velocity);
+
+    //checking keypressed stuff
+    if (keyPressed && delayCount >=5) {
+      if (stepCount > 1)
+        stepCount = 0;
+
+      if (key == CODED) {
+
+        if (keyCode == UP) {
+          currentImage = goingBack.get(stepCount);
+          stepCount = stepCount +1;
+
+          location.y += -3;
+        }
+        else if (keyCode == RIGHT) {
+          currentImage = goingRight.get(stepCount);
+          stepCount = stepCount +1;
+          location.x += 3;
+        }
+        else if (keyCode == LEFT) {
+          currentImage = goingLeft.get(stepCount);
+          stepCount = stepCount +1;
+          location.x += -3;
+        }
+        else if (keyCode == DOWN) {
+          currentImage = goingForward.get(stepCount);
+          stepCount = stepCount +1;
+          location.y += 3;
+        }
+      }
+      delayCount = 0;
+    }
+
+
+    image(currentImage, location.x, location.y);
+
+    callOutBubble();
+  }
+}
+

@@ -1,0 +1,262 @@
+<HTML>
+<HEAD>
+  <META NAME="GENERATOR" CONTENT="Adobe PageMill 2.0 Mac">
+  <TITLE>Chimera 2.0 Architecture</TITLE>
+</HEAD>
+<BODY LINK="#0000ff" VLINK="#ff0000" ALINK="#00bb00" BGCOLOR="#ffffff">
+
+<P><CENTER><TABLE BORDER="1" CELLSPACING="0" CELLPADDING="2">
+<CAPTION ALIGN="TOP">Local Site Map</CAPTION>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="index.html">Overview</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><B>Architecture</B></TD></TR>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="clientInteraction.html">Client Interactions</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="appletInteraction.html">Applet Interactions</A></TD></TR>
+</TABLE>
+</CENTER></P>
+
+<P><CENTER><HR></CENTER></P>
+
+<H1><CENTER>Chimera's Architecture</CENTER></H1>
+
+<P>The architecture of Chimera 2.0 is conceptually separated into two distinct
+environments. The first is the user's computing environment while the second
+is a Chimera-enhanced website. Each environment contains a set of Chimera-related
+components. The user's environment contains, for instance, a set of Chimera
+clients, a Chimera server, and a Java-enabled WWW browser. This latter element
+is able to host Java applets which can also be Chimera clients. A Chimera-enhanced
+website contains a WWW server, its associated set of documents, CGI scripts,
+and Java Applets, a hyperweb manager, a hyperweb server, a set of Chimera
+2.0 hyperwebs, and a set of Chimera servers. This architecture is displayed
+below.</P>
+
+<P><CENTER><TABLE BORDER="1" CELLSPACING="2" CELLPADDING="0" WIDTH="96%"
+HEIGHT="395">
+<TR>
+<TD ALIGN="CENTER" COLSPAN="2"><IMG SRC="../../images/arch.gif" WIDTH="575" HEIGHT="281" NATURALSIZEFLAG=
+"0" ALIGN="BOTTOM"></TD></TR>
+<TR>
+<TH COLSPAN="2">Legend</TH></TR>
+<TR>
+<TD WIDTH="50%" HEIGHT="17"><B>WS</B></TD>
+<TD WIDTH="50%">WWW Server</TD></TR>
+<TR>
+<TD HEIGHT="17" WIDTH="50%"><B>HWM</B></TD>
+<TD WIDTH="50%">Hyperweb Manager</TD></TR>
+<TR>
+<TD HEIGHT="17"><B>HWS</B></TD>
+<TD>Hyperweb Server</TD></TR>
+<TR>
+<TD HEIGHT="17"><B>CS</B></TD>
+<TD>Chimera Server</TD></TR>
+</TABLE>
+</CENTER></P>
+
+<P>The rest of this section is devoted to explaining in detail Chimera 2.0's
+architectural elements. There are also sections available which display
+the interactions of the elements in support of <A HREF="clientInteraction.html">clients</A>
+and <A HREF="appletInteraction.html">applets</A>.</P>
+
+<H2>User's Environment</H2>
+
+<P>The user's environment refers to the tools and information located in
+the user's local computing environment. This environment may be constrained
+to one machine or it may be distributed across a local-area network. The
+diagram above makes no attempt to display the possible configurations of
+the environment, however the key requirement is that the applications located
+within the environment have access to a shared file system. It is also assumed
+that the applications are generating output on a display connected to the
+user's physical machine. The idea behind this assumption is that the user
+must be able to supply input to these applications. This latter assumption
+also has the implication that a link traversal initiated by the end-user
+always ends within an application the user can manipulate. We now discuss
+the principle Chimera components found in a user's environment.</P>
+
+<H3>Chimera clients</H3>
+
+<P>As discussed in the <A HREF="../concepts/clients.html">client overview</A>,
+Chimera clients are applications which provide users with hypermedia services.
+These applications allow users to conduct work augmented by the authoring
+and navigational services of Chimera. Some clients may not interact directly
+with the user but instead provide services such as automatic link generation.
+For instance, a client may be designed to process source code and automatically
+link it back to its design documents. Other clients may provide Chimera-specific
+services, for instance generating maps of Chimera hyperwebs. Typically,
+users will invoke Chimera clients as needed through the course of their
+work. However, on occasion, they may traverse a link which leads to an application
+which is not executing. In this case, the Chimera server will invoke the
+relevant client automatically.</P>
+
+<P>Chimera clients contact Chimera-enhanced websites (where hypermedia information
+is stored) via the Chimera server. Chimera clients can automatically detect
+the presence of a local Chimera server and will connect to it when they
+are first invoked. If a client is invoked with no Chimera server present,
+the client will function as normal except that its hypermedia services will
+be unavailable. If a Chimera server comes on-line subsequently, a well-implemented
+client will allow the user to inform the client of this situation, e.g.,
+via a menu item. The client can then connect to the server and, once again,
+provide hypermedia services.</P>
+
+<H3>Chimera server</H3>
+
+<P>The Chimera server is an application the user invokes to interact with
+the Chimera open hypermedia system. Its primary responsibility is to act
+as a conduit between Chimera clients and the hyperwebs stored on Chimera-enhanced
+websites. However, its secondary responsibility is to provide a user-interface
+for the user to choose Chimera websites and hyperwebs, manipulate links,
+and configure Chimera's behavior. Finally, the Chimera server also implements
+link traversal and invokes clients needed as a result of a traversal. The
+Chimera server, thus, plays a very similar role as a Web browser does for
+the WWW. It is a single application which enables hypermedia services and
+utilizes URLs to specify the location of websites and hyperwebs. The primary
+difference is that the Chimera server does not display or retrieve hypermedia
+content. Rather, it hands the responsibility of manipulating content to
+Chimera clients while providing them access to the anchor and link information
+stored in a remote Chimera hyperweb.</P>
+
+<H3>WWW browser</H3>
+
+<P>Most users are familiar with the services of Web browsers. Within the
+Chimera context, Web browsers can be used in several different ways. First,
+they can browse the information stored in Chimera hyperwebs with the use
+of URLs. For instance the URL <CODE>&lt;http://www.some.domain/chimera/web1/links/&gt;</CODE>
+would retrieve information about all of the links stored in the hyperweb
+named <CODE>web1</CODE> located on the Chimera-enhanced website at <CODE>www.some.domain</CODE>.
+(For more information, see the <A HREF="../../dev/docs/index.html">on-line
+documentation</A>.) Second, the Hyperweb manager (discussed below) of a
+Chimera-enhanced website supports a subset of the HTTP protocol. This enables
+it to handle simple URL requests. For instance, the URL <CODE>&lt;http://www.some.domain:4009/hyperwebs/&gt;</CODE>
+causes the Hyperweb manager to generate information about the hyperwebs
+located on its site. Other URLs are available to query for other site-related
+information, and all of this can be done from a standard Web browser. Finally,
+a Java-enabled Web browser can execute Chimera clients which take the form
+of a Java applet.</P>
+
+<H3>Java applet</H3>
+
+<P>A powerful feature of Chimera is the ability to provide hypermedia services
+to Java applets. This allows a user to effortlessly link information stored
+in the Web with information stored in their environment. It also enables
+users to abandon the embedded links of HTML and to create links which are
+stored separate from the Web yet enable traversal between information in
+the Web. This change will ultimately lead to the integration into the WWW
+of more sophisticated hypermedia services.</P>
+
+<P>Java applets can be Chimera clients however they face obstacles not experienced
+by normal clients. For example, applets face restrictions imposed by Java
+itself. They cannot access the local file system, they can not determine
+the identity of their user, and they can only access information and servers
+located on the machine from which they were downloaded. These restrictions
+translate into two requirements on the applet in order to be a Chimera client.
+First, the applet and the information it provides must be located on a Chimera-enhanced
+website. This enables the applet to contact the Chimera-related servers
+executing at that site. Second, the applet must query the user for his or
+her username, since Chimera needs to know the identity of the user accessing
+its services. These two requirements are in addition to the <A HREF="../concepts/viewers.html#obligations">obligations</A>
+placed on all Chimera viewers and <A HREF="../concepts/clients.html#obligations">clients</A>.</P>
+
+<H2>Chimera-enhanced website</H2>
+
+<P>A Chimera-enhanced website is a standard WWW site augmented with the
+services of Chimera 2.0 servers. In addition to HTML documents and other
+standard Web media, the website will contain Chimera 2.0 CGI scripts, Java
+applets, and hyperwebs. The CGI scripts will enable the user to query and
+configure Chimera via a standard WWW browser. The applets are Chimera clients
+stored on the site to enable their communication with the Chimera 2.0 servers.
+Finally, the hyperwebs are databases which contain hypermedia information
+such as the anchors and links created on the views of hypermedia content.
+Each of these components are discussed in further detail.</P>
+
+<H3>WWW server</H3>
+
+<P>The WWW server is a critical component of any website. It enables the
+retrieval of documents, media, and applets from the site into a user's local
+Web browser. With respect to Chimera, the WWW server provides a namespace
+for Chimera hyperwebs. Each Chimera website and hyperweb has an associated
+URL. CGI scripts are used to enable access to the contents of hyperwebs
+from within a Web browser. Applets provide access to Chimera's services
+and offer the ability to link web information with external entities. The
+hierarchical nature of the WWW server's namespace nicely supports the hierarchical
+nature of Chimera hyperwebs. The Web server thus provides Chimera 2.0 with
+an operational context.</P>
+
+<H3>Hyperweb manager</H3>
+
+<P>The hyperweb manager is the high-level monitor of a Chimera-enhanced
+website. The hyperweb manager has a dedicated port number (4009) like a
+WWW server, easing a client's task of locating and connecting to it. It
+has two responsibilities. First, it provides operations to create, delete,
+and manipulate hyperwebs on its site. These operations are available via
+its application program interface or direct HTTP requests. Second, it tracks
+the connection information (hostname and port) for the other Chimera 2.0
+servers running on its site. In order to connect to these servers, clients
+first contact the hyperweb manager with a request for the connection information.
+Once retrieved, they can initiate a connection to the desired server. In
+this fashion, only the hyperweb manager need be in a pre-defined location,
+all other servers can run on different machines with dynamic port numbers
+for increased flexibility and efficiency yet be located easily by their
+clients.</P>
+
+<H3>Hyperweb server</H3>
+
+<P>The hyperweb server manages access to Chimera 2.0 hyperwebs. It is directly
+responsible for their persistence as well as their consistency in the face
+of change. The latter responsibility is twofold. First, it enforces all
+of the rules inherent in Chimera's hypermedia concepts. For instance, it
+is illegal for a <A HREF="../concepts/viewers.html">viewer</A> to create
+a <A HREF="../concepts/views.html">view</A> of an <A HREF="../concepts/objects.html">object</A>
+whose type it does not support. Another example is that when an anchor is
+deleted it must be removed from all links which contain it. Second, the
+hyperweb server must ensure that the updates of one client do not overwrite
+the updates of another. A simple locking mechanism is used to facilitate
+this responsibility.</P>
+
+<P>Chimera servers connect to hyperweb servers to provide their clients
+with access to Chimera hyperwebs. All operations which manipulate the structure
+of a hyperweb get forwarded from the Chimera server to the hyperweb server
+for processing. Any results from the hyperweb server in turn get passed
+back to the appropriate Chimera clients. In this fashion, a hyperweb server
+focuses solely on the management of hyperwebs while Chimera servers are
+free to focus on supporting and tracking the clients in their user's environment.</P>
+
+<H3>Chimera server</H3>
+
+<P>The Chimera server appears once again in the architecture due to the
+Java restriction that an applet can only connect to a server on the machine
+from which it was downloaded. Since applets can be Chimera clients and since
+Chimera clients must connect to Chimera servers, there must be a set of
+chimera servers running on the website to service applet requests. Note
+that once an applet is connected to a Chimera server it is not restricted
+to accessing the hyperwebs located on the site from which it was downloaded.
+This is because the Chimera server is the entity which connects to the Hyperweb
+server and being an application it has no connection restrictions. Thus
+an applet is not cut off from the rest of the Chimera world and can participate
+fully just as any other client due to the design of the architecture.</P>
+
+<H3>Chimera hyperwebs</H3>
+
+<P>A Chimera hyperweb is simply a database file located under a WWW server's
+namespace which is manipulated by the Hyperweb server. It consists of instances
+of Chimera's <A HREF="../concepts/index.html">hypermedia concepts</A> along
+with their attributes. A website can have one or more hyperwebs and each
+web can consist of a set of hierarchically composed subwebs.</P>
+
+<P><CENTER><HR SIZE="1" NOSHADE> <TABLE BORDER="1" CELLSPACING="0" CELLPADDING=
+"2">
+<CAPTION ALIGN="TOP">Local Site Map</CAPTION>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="index.html">Overview</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><B>Architecture</B></TD></TR>
+<TR>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="clientInteraction.html">Client Interactions</A></TD>
+<TD WIDTH="33%" BGCOLOR="#ffff99" ALIGN="CENTER"><A HREF="appletInteraction.html">Applet Interactions</A></TD></TR>
+</TABLE>
+</CENTER></P>
+
+<P><B>This page is part of the <A HREF="http://www.ics.uci.edu/pub/chimera/">Chimera</A>
+web site.<BR>
+Send feedback and questions to <A HREF="mailto:kanderso@ics.uci.edu">Ken
+Anderson</A>.</B>
+</BODY>
+</HTML>

@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>31.1 OEBinary Format Specification</title>
+<META NAME="description" CONTENT="31.1 OEBinary Format Specification">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="previous" HREF="node250.html">
+<LINK REL="up" HREF="node250.html">
+<LINK REL="next" HREF="node252.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node250.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node250.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node252.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node250.html">31. OEBinary Version 2</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node250.html">31. OEBinary Version 2</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node252.html">32. OpenEye Command Line</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION0034100000000000000000">
+31.1 OEBinary Format Specification</A>
+</H1>
+
+<P>
+A single OEBinary version 2 record consists of a data tag, followed by
+the data length, and finally by the data itself.  Simplifed, a single
+record looks like TAG|LENGTH|DATA.
+Embedding is accomplished by placing OEBinary records inside the data
+field of higher level OEBinary records.
+
+<P>
+The first byte of a tag field is used to determine the tag type.  If
+the first byte has the value 0x0 then the tag is a user-defined type.
+Non-zero values indicate that the tag is reserved for use by OpenEye
+Scientific Software.  The list of OpenEye private use tags may be
+requested from OpenEye Scientific Software by contacting
+support@eyesopen.com.  Extending the OEBinary format to include new
+types should be done using user-defined tags.  Again, a user-defined
+tag begins with a 0x0 byte to designate it as a user-defined tag.  The
+tag length in number of bytes is then specified using a variable
+number of bytes.  Valid OEBinary user defined tags must be a minimum
+of one non-zero byte long and less than or equal to 1024 bytes
+including the null terminator.  The lowest seven bits of each byte are
+used to represent the length of the data tag.  The final byte in the
+length specification is recognized when the high bit (0x80) is set.
+Tag lengths of up to 127 bytes can then be represented in a single
+byte, with lengths of 128 to 1023 characters stored in two bytes.  The
+tag itself should be a sequence of non-zero bytes of the length
+specified in the length field.  A zero value byte will be interpreted
+as a C string terminator and will effectively shorten the length of
+the intended data tag if string matching on the tag is performed.
+
+<P>
+The length field of an OEBinary record designates the length (in
+bytes) of the following data record. The field, as with the length of
+data tags, is itself specified in a variable number of bytes.  The
+lowest seven bits of each byte are used to represent data.  The
+terminating byte is designated by setting it's high bit (0x80).  Valid
+lengths may be in the range from 0 up to and including
+18446744073709551615 which is the maximum value for the C type long
+long unsigned int.  In practice, dealing with data sizes at the high
+end of the possible range would certainly exhaust the limits of
+physical memory on most machines. Representing the maximum data size
+using the variable width technique requires 10 bytes to store the
+value even though the data size to store the value in memory is 8
+bytes.  Unused high bit terminators, therefore, are a minimal cost in
+terms of space and do help keep the file size to a minimum. Most
+data lengths in OEBinary files will be represented in only one or two bytes.
+
+<P>
+The data field of an OEBinary record can be any sequence of bytes of
+the length specified by the length field.
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node250.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node250.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node252.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node250.html">31. OEBinary Version 2</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node250.html">31. OEBinary Version 2</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node252.html">32. OpenEye Command Line</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

@@ -1,0 +1,173 @@
+import java.util.ArrayList;
+import java.util.NoSuchElementException;
+
+// GenericList.java
+//
+// ICS 22 / CSE 22 Winter 2011
+// Project #2: You Won't Find Me There
+
+
+// The GenericList class is a generic class that stores a singly-linked list
+// of "E" objects, where "E" can be replaced by any kind of Object.  As with
+// the ArrayLists you've used in the past, you'll be able to specify what
+// kind of object is contained within each of your GenericLists by putting a
+// particular type in angle brackets; for example:
+//
+//     GenericList<ForwardingEntry> entries = new GenericList<ForwardingEntry>();
+//
+// I've provided you with a skeletal version to get started.  You may find
+// that you're not calling all of these methods in your program.  That's okay;
+// you may find these methods useful in future projects.
+
+public class GenericList<E>
+{
+
+	private ArrayList<E> list;
+
+
+	// The constructor initializes an array of size START_SIZE
+	public GenericList()
+	{
+		list = new ArrayList<E>( );
+	}
+
+
+	// addToFront() adds an element to the front of this list.
+	// We are actually storing the items in backwards order since
+	// that makes it easier to add an item to the front.
+	// So the front of our list is actually the back of the array.
+	public void addToFront(E e)
+	{
+		// put the new item at the back of the array.
+		list.add( e );
+	}
+
+
+
+	// remove() removes the first object from the list that is equivalent
+	// to the one passed as a parameter.  (Note that, by "equivalent," I
+	// mean that you should use the equals() method to compare the objects.)
+	// This method should throw a NoSuchElementException if no matching
+	// element is found and removed.  To throw the exception, write this:
+	//
+	//     throw new NoSuchElementException();
+	//
+	// Notice that there is no "throws" clause in this method's signature.
+	// That's because NoSuchElementException is an "unchecked" exception,
+	// meaning that it can be thrown without being included in a throws
+	// clause.
+	public void remove(E e)
+	{
+
+		// run through the array and look for an item that matches e
+		for ( int i = list.size()-1; i >= 0; i-- )
+		{
+			if ( list.get(i).equals( e ) )
+			{
+				list.remove(i);
+
+				return;
+			}
+		}
+		// if we reach this line, we never found a match
+		throw new NoSuchElementException();
+
+	}
+
+
+	// size() returns the number of elements in this list.
+	public int size()
+	{
+		return( list.size() );
+	}
+
+
+	// clear() makes this list empty.
+	public void clear()
+	{
+		list.clear();
+	}
+
+
+	// iterator() returns a new iterator that has not yet returned any of
+	// the elements of this list.
+	public Iterator iterator()
+	{
+		return new Iterator();
+	}
+
+
+	// An iterator is an object that allows access to each of the elements
+	// in a collection (such as a linked list) without requiring knowledge
+	// of how the collection is implemented.  In the case of our GenericList
+	// class, an iterator would allow you to write a loop that ran through
+	// all of the elements in the linked list in order, without having an
+	// understanding of nodes, next references, and so on.
+	//
+	// The Iterator class here is public, because we want code outside of
+	// the GenericList class to be able to use it.  It is non-static, because
+	// it is important for iterators to know something about the lists
+	// that they iterate over.
+	//
+	// The proper way to use an Iterator from outside of the GenericList
+	// class is something like this:
+	//
+	//     GenericList<String> list = new GenericList<String>();
+	//
+	//     // code that adds a bunch of elements to the list
+	//
+	//     GenericList<String>.Iterator iterator = list.iterator();
+	//     String s = "";
+	//
+	//     while (iterator.hasNext())
+	//     {
+	//         s += iterator.next();
+	//     }
+	//
+	public class Iterator
+	{
+		// you'll need to add fields here
+
+		int current;
+
+
+		// The constructor initializes a new iterator that has not yet
+		// returned any of the elements of the list.
+		public Iterator()
+		{
+			// our list is stored backwards in the array, so the first item
+			// is really at the end of the array
+			current = list.size()-1;
+		}
+
+
+		// hasNext() returns true if there are more elements in the list
+		// that have not been returned, and false if there are no more
+		// elements.
+		public boolean hasNext()
+		{
+			return ( current >= 0 );
+		}
+
+
+		// next() returns the next element in the list.  The first time next()
+		// is called on an iterator, the first element of the list is returned;
+		// the second time next() is called, the second element is returned;
+		// and so on.
+		//
+		// If there are no more elements in the list, a NoSuchElementException
+		// should be thrown.  You generally won't want to catch this exception,
+		// because it's an indication of a bug in your program; best to let
+		// the program crash (with useful information about where the crash
+		// occurred) so you can find and fix the problem.
+		public E next()
+		{
+			if ( current < 0 )
+				throw new NoSuchElementException();
+
+			// advance current and return the item we just passed.
+			current--;
+			return list.get( current + 1 );
+		}
+	}
+}

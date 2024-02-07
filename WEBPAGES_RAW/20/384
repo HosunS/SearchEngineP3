@@ -1,0 +1,566 @@
+// TournamentDoc.cpp : implementation of the CTournamentDoc class
+//
+
+#include "stdafx.h"
+#include "Tournament.h"
+
+#include "TournamentDoc.h"
+
+#ifdef _DEBUG
+#define new DEBUG_NEW
+#undef THIS_FILE
+static char THIS_FILE[] = __FILE__;
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+// CTournamentDoc
+
+IMPLEMENT_DYNCREATE(CTournamentDoc, CDocument)
+
+BEGIN_MESSAGE_MAP(CTournamentDoc, CDocument)
+	//{{AFX_MSG_MAP(CTournamentDoc)
+		// NOTE - the ClassWizard will add and remove mapping macros here.
+		//    DO NOT EDIT what you see in these blocks of generated code!
+	//}}AFX_MSG_MAP
+END_MESSAGE_MAP()
+
+/////////////////////////////////////////////////////////////////////////////
+// CTournamentDoc construction/destruction
+
+CTournamentDoc::CTournamentDoc()
+{
+	CWinApp* pApp = AfxGetApp();
+
+	CString szRetVal;
+
+	szRetVal = pApp->GetProfileString("Settings", "Old Directory");
+	if (szRetVal == "") 
+	{
+		pApp->WriteProfileString("Settings", "Old Directory", "C:\\Tournament\\Old");
+		m_szOldDir = "C:\\Tournament\\Old";
+	}
+	else 
+	{
+		m_szOldDir = szRetVal;
+	}
+
+	szRetVal = pApp->GetProfileString("Settings", "New Directory");
+	if (szRetVal == "")
+	{
+		pApp->WriteProfileString("Settings", "New Directory", "C:\\Tournament\\New");
+		m_szNewDir = "C:\\Tournament\\New";
+	}
+	else
+	{
+		m_szNewDir = szRetVal;
+	}
+
+	szRetVal = pApp->GetProfileString("Settings", "HTML Directory");
+	if (szRetVal == "")
+	{
+		pApp->WriteProfileString("Settings", "HTML Directory", "C:\\Tournament\\Html");
+		m_szHtmlDir = "C:\\Tournament\\Html";
+	}
+	else
+	{
+		m_szHtmlDir = szRetVal;
+	}
+
+	M = pApp->GetProfileInt("Settings", "M", 6);
+	pApp->WriteProfileInt("Settings", "M", M);
+
+	N = pApp->GetProfileInt("Settings", "N", 7);
+	pApp->WriteProfileInt("Settings", "N", N);
+
+	K = pApp->GetProfileInt("Settings", "K", 4);
+	pApp->WriteProfileInt("Settings", "K", K);
+
+	int nG = pApp->GetProfileInt("Setttings", "G", 1);
+	(nG) ?  G = true : G = false;
+	pApp->WriteProfileInt("Settings", "G", nG);
+
+	m_nTimeLimit = pApp->GetProfileInt("Settings", "Time Limit", 60);
+	pApp->WriteProfileInt("Settings", "Time Limit", m_nTimeLimit);
+
+	// game board
+	board = 0;
+	numOccupied = 0;
+
+	m_nNumMatches = 0;
+	m_nCompetitors = 0;
+}
+
+CTournamentDoc::~CTournamentDoc()
+{
+	if (board != 0)
+	{
+		for ( int i = 0; i < M; i++ )
+			delete [] board[i];
+
+		delete [] board;
+	}
+}
+
+BOOL CTournamentDoc::OnNewDocument()
+{
+	if (!CDocument::OnNewDocument())
+		return FALSE;
+
+	// TODO: add reinitialization code here
+	// (SDI documents will reuse this document)
+
+	return TRUE;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CTournamentDoc serialization
+
+void CTournamentDoc::Serialize(CArchive& ar)
+{
+	if (ar.IsStoring())
+	{
+		// TODO: add storing code here
+	}
+	else
+	{
+		// TODO: add loading code here
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// CTournamentDoc diagnostics
+
+#ifdef _DEBUG
+void CTournamentDoc::AssertValid() const
+{
+	CDocument::AssertValid();
+}
+
+void CTournamentDoc::Dump(CDumpContext& dc) const
+{
+	CDocument::Dump(dc);
+}
+#endif //_DEBUG
+
+/////////////////////////////////////////////////////////////////////////////
+// CTournamentDoc commands
+
+char CTournamentDoc::at(int row, int col)
+{
+	return board[row][col];
+}
+
+long CTournamentDoc::evaluate()
+{
+	int numX = 0;
+	int numO = 0;
+	long value = 0;
+	int row = 0;
+	int col = 0;
+	int i = 0;
+	int j = 0;
+
+	/* Check all the horizontal groups of K */
+	for ( row = 0; row < M; row++ )
+	{
+		for ( col = 0; col < N-K+1; col++, numX = 0, numO = 0 )
+		{
+			for ( j = col; j < K + col && j < N; j++ )
+			{
+                switch ( board[row][j] )
+			    {
+     			    case X:
+						numX++;
+					    break;
+				    case O:
+						numO++;
+					    break;
+				    default:
+					    break;
+			    }
+            }
+
+            if ( numX == K )
+                return WIN_X;
+            else if ( numO == K )
+                return WIN_O;
+            else if ( numX == 0 )
+                value = value - numO;
+            else if ( numO == 0 )
+                value = value + numX;
+		}
+	}
+
+	/* Check all the vertical groups of K */
+	for ( col = 0; col < N; col++ )
+	{
+		for ( row = 0; row < M-K+1; row++, numX = 0, numO = 0 )
+		{
+			for ( i = row; i < K + row && i < M; i++ )
+			{
+			    switch ( board[i][col] )
+			    {
+				    case X:
+					    numX++;
+					    break;
+				    case O:
+				        numO++;
+					    break;
+				    default:
+					    break;
+			    }
+			}						
+
+            if ( numX == K )
+                return WIN_X;
+            else if ( numO == K )
+                return WIN_O;
+            else if ( numX == 0 )
+                value = value - numO;
+            else if ( numO == 0 )
+                value = value + numX;
+		}
+	}
+
+	/* Check each diagonal forward group of K */
+	/*
+		  X
+		 X
+	    X
+	*/
+	for ( col = 0; col < N-K+1; col++ )
+	{
+		for ( row = K - 1; row < M; row++, numX = 0, numO = 0 ) 
+		{
+			for ( i = row, j = col; j < K + col && i >= 0 && j < N; i--, j++ )
+			{
+				switch ( board[i][j] )
+				{
+				    case X:
+					    numX++;
+					    break;
+				    case O:
+				        numO++;
+					    break;
+				    default:
+					    break;
+				}
+			}
+
+			if ( numX == K )
+                return WIN_X;
+            else if ( numO == K )
+                return WIN_O;
+            else if ( numX == 0 )
+                value = value - numO;
+            else if ( numO == 0 )
+                value = value + numX;
+		}
+	}
+	
+	/* Check each diagonal backward group of K */
+	/*
+	    X
+		 X
+		  X
+	*/
+	for ( col = 0; col < N-K+1; col++ )
+	{
+		for ( row = 0; row < M-K+1; row++, numX = 0, numO = 0 ) 
+		{
+			for ( i = row, j = col; i < K + row && i < M && j < N; i++, j++ )
+			{
+				switch ( board[i][j] )
+				{
+				    case X:
+					    numX++;
+					    break;
+				    case O:
+				        numO++;
+					    break;
+				    default:
+					    break;
+				}
+			}
+
+			if ( numX == K )
+                return WIN_X;
+            else if ( numO == K )
+                return WIN_O;
+            else if ( numX == 0 )
+                value = value - numO;
+            else if ( numO == 0 )
+                value = value + numX;
+		}
+	}
+
+	return value;
+}
+
+int CTournamentDoc::GameOverCheck()
+{
+	char winner;
+
+	if (win(winner))
+	{
+		if (winner == 'X')
+			return 1;
+		else
+			return 2;
+	}
+	else if (tie())
+	{
+		return 3;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+bool CTournamentDoc::inRange(int row, int col)
+{
+	return row > -1 && row < M && col > -1 && col < N;
+}
+
+bool CTournamentDoc::isMarkGood(char mark)
+{
+	switch (mark)
+	{
+		case X:
+		case O:
+		case BLANK:
+			return true;
+		default:
+//			cerr << "Error: bad marking." << endl;
+			return false;
+	}
+}
+
+bool CTournamentDoc::isOccupied(int row, int col)
+{
+	return board[row][col] != BLANK;
+}
+
+bool CTournamentDoc::occupy(int row, int col, char mark)
+{
+		int i = 0;
+
+	if ( !isMarkGood(mark) || !inRange(row, col) ) 
+		return false;
+
+	if ( G )    // if gravity is true, than we let the token fall...
+	{
+		for ( i = M - 1; i >= 0; i-- )
+		{
+			if ( !isOccupied(i, col) )   // ...until it hits another token or... 
+			{
+				board[i][col] = mark;
+				numOccupied++;
+				return true;
+			}
+		}
+
+	    return false;                    // ...until it hits the top
+	}
+	else								// otherwise the token can occupy
+	{									// any position
+		if ( isOccupied(row, col) )
+			return false;
+
+		board[row][col] = mark;
+		numOccupied++;
+		return true;
+	}
+}
+
+bool CTournamentDoc::tie()
+{
+	return numOccupied == M * N; 
+}
+
+bool CTournamentDoc::win(char & mark)
+{
+	switch ( evaluate() )
+	{
+		case WIN_X:
+		    mark = X;
+		    return true;
+	    case WIN_O: 
+		    mark = O;
+		    return true;
+        default:
+			mark = BLANK;
+		    return false;
+	}
+}
+
+void CTournamentDoc::newBoard()
+{
+	numOccupied = 0;
+
+	if ( M > 0 && N > 0 )
+	{
+		board = new CharArray[M];
+		for ( int i = 0; i < M; i++ )
+		{
+			board[i] = new char[N];
+			for ( int j = 0; j < N; j++ )
+				board[i][j] = BLANK;
+		}
+	}
+}
+
+void CTournamentDoc::deleteBoard()
+{
+	// re-initialize the board
+	if ( board != NULL )
+	{
+		for ( int i = 0; i < M; i++ )
+			delete [] board[i];
+		board = 0;	
+		delete [] board;
+
+		board = NULL;
+	}
+
+}
+
+void CTournamentDoc::MatchLog(CString strPlayer, int row, int col, __int64 nTime)
+{
+	CString rows, cols, str, strTime;
+
+	rows.Format("%i",row);
+	cols.Format("%i",col);
+	strTime.Format("%i milliseconds", nTime);
+
+	str = strPlayer + "'s move: (" + rows + ", " + cols + ")  \t\t\tTime used:  " + strTime + "\n";
+
+	CStdioFile logFile;
+
+	logFile.Open("matchlog.txt", CFile::modeCreate | CFile::modeNoTruncate | CFile::modeWrite);
+	logFile.SeekToEnd();
+	logFile.WriteString(str);
+	logFile.Close();
+}
+
+void CTournamentDoc::Log(CString strLog)
+{
+	CStdioFile logFile;
+	CString str;
+
+	str = strLog + "\n";
+	logFile.Open("matchlog.txt", CFile::modeCreate | CFile::modeNoTruncate | CFile::modeWrite);
+	logFile.SeekToEnd();
+	logFile.WriteString(str);
+	logFile.Close();
+}
+
+void CTournamentDoc::SortCompetitorsArray()
+{
+	for (int i = 0; i < m_nCompetitors - 1; i++)
+	{
+		for (int j = i + 1; j < m_nCompetitors; j++)
+		{
+			if (m_arCompetitors[i].nScore < m_arCompetitors[j].nScore)
+			{
+				COMPETITOR temp;
+
+				temp.nScore = m_arCompetitors[i].nScore;
+				temp.strCompetitor = m_arCompetitors[i].strCompetitor;
+
+				m_arCompetitors[i].nScore = m_arCompetitors[j].nScore;
+				m_arCompetitors[i].strCompetitor = m_arCompetitors[j].strCompetitor;
+
+				m_arCompetitors[j].nScore = temp.nScore;
+				m_arCompetitors[j].strCompetitor = temp.strCompetitor;
+			}
+		}
+	}
+
+	int nRank = 1;
+
+	if (m_nCompetitors > 0)
+	{
+		m_arCompetitors[0].nRank = 1;
+	}
+	for (int k = 1; k < m_nCompetitors; k++)
+	{
+		if( m_arCompetitors[k].nScore < m_arCompetitors[k-1].nScore)
+		{
+			nRank++;
+		}
+		m_arCompetitors[k].nRank = nRank;			
+	}
+}
+
+void CTournamentDoc::CreateHTMLPage()
+{
+	CStdioFile fileHtml;
+	CStdioFile fileMatchLog;
+
+	fileMatchLog.Open("matchlog.txt", CFile::modeRead);
+
+	CString strFileName;
+	strFileName = m_szHtmlDir + "\\index.html";
+
+	fileHtml.Open(strFileName, CFile::modeCreate | CFile::modeWrite);
+
+	CString strOut;
+
+	strOut = "<html><head><title>Tournament Results</title></head><body>";
+	fileHtml.WriteString(strOut);
+	strOut = "<h1>Current Tournament Standings</h1>";
+	fileHtml.WriteString(strOut);
+
+	strOut = "<table cellpadding=4 border=1><tr><td><b>RANK</b></td><td><b>POINTS</b></td><td><b>TEAM/PROGRAM NAME</b></td></tr>";
+	fileHtml.WriteString(strOut);
+
+	for (int i = 0; i < m_nCompetitors; i++)
+	{
+		CString strRank;
+		CString strScore;
+
+		strRank.Format("%.2i", m_arCompetitors[i].nRank);
+		strScore.Format("%.3i", m_arCompetitors[i].nScore);
+
+		strOut = "<tr><td>" + strRank + "</td><td>" + strScore + "</td><td>" + GetFileName(m_arCompetitors[i].strCompetitor) + "</td></tr>";
+		fileHtml.WriteString(strOut);
+	}
+
+	strOut = "</table><h1>Match Details (moves, times)</h1><pre>";
+	fileHtml.WriteString(strOut);
+
+	
+	while(fileMatchLog.ReadString(strOut))
+	{
+		strOut += "\n";
+		fileHtml.WriteString(strOut);
+	}
+
+	strOut = "</pre></body></html>";
+	fileHtml.WriteString(strOut);
+
+
+	fileHtml.Close();
+	fileMatchLog.Close();
+
+}
+
+CString CTournamentDoc::GetFileName(CString strPath)
+{
+	int n = 0;
+
+	n = strPath.ReverseFind('\\');
+
+	if (n != -1)
+	{
+		return strPath.Right(strPath.GetLength() - n - 1);
+	}
+	else
+	{
+		return "";
+	}
+}

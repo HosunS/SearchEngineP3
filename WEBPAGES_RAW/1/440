@@ -1,0 +1,997 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+  <title>Interfaces</title>
+</head>
+
+<body BGCOLOR="white">
+
+<center>
+<h1>Interfaces</h1>
+<p>
+<h2>Introduction to Computer Science I-III<br>
+ICS-21/-22/-23<br>
+</h2>
+<p>
+</center>
+
+
+<!-- Introduction -->
+
+<a name="Introduction"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Introduction</b></td>
+<td width ="80%">
+  In this lecture, we will take another big step (like our understanding of
+    <b>Object</b>) towards generalizing our understanding of Java classes,
+    through the use of <b>interfaces</b>.
+  This step will ultimately lead to us learning about class inheritance, class
+    hierarchies, abstract classes (and abstract methods), and other advanced
+    topics concerning classes.
+  But, we will start small; we will show how interfaces can be used to
+    generalize the concept of <i>type</i>: at present we know only that
+    primitive types and classes can serve as types for local variables,
+    parameter variables, and fields in classes.
+  We also know that a variable of the type <b>Object</b> can store a reference
+    to any object constructed from a class.
+  <p>
+  An interface specifies a constraint on a class: any class that implements an
+    interface must satisfy its constraints by defining all the methods
+    specified in the interface.
+  To understand all the material in this lecture about interfaces, we must
+    learn how the four facets of interfaces interconnect.
+  <ol>
+    <li>How to define an interface: each looks like a class defining only
+          method headers (not bodies): no constructors nor fields.
+    <li>How to write a class that <b>implements</b> an interface.
+    <li>How to write a method that specifies the type of a parameter using
+          the name of the interface.
+        This includes what arguments -references to objects- can be passed to
+          such a parameter and how the parameter can be used inside the method:
+          to call any methods specified in the interface.
+    <li>How to call such a method, by constructing an object from some class
+          that implements the interface type.
+  </ol>
+  Technically, interfaces are types that some classes implement.
+  <p>
+  To illustrate all these points concretely, we will first examine two simple
+     but powerful methods (both are <b>public static</b>) whose parameter types
+     are specified by interfaces: one rejects bad values entered by the user in
+     prompts; the other approximates the definite integral of any univariate
+     function.
+  Along with these methods we discuss the necessary interfaces, a few classes
+    that implement these interfaces, and a driver application that ties all
+    these facets together.
+  Please download, unzip, run and examine the entire
+    <a href="../../programs/interfacedemo.zip">Interface Demonstration</a>
+    application.
+  <p>
+  Next we will examine the <b>Comparator</b> interface, which is defined in
+    the standard Java library.
+  We will use this interface (whose central method specifies <b>Object</b>
+    parameters) along with the <b>sort</b> method defined in the <b>Arrays</b>
+    class (also in the standard Java library) to learn how to sort any array:
+    in the process, we will use lots of casting.
+  Please download, unzip, run and examine the entire
+    <a href="../../programs/sortingwithinterfaces.zip">
+      Sorting (with Interfaces) Demonstration</a>
+    application.
+  <p>
+  Each facet of interfaces is simple to undertand by itself: together they
+    provide a powerful programming tool.
+  We will discuss these four facets thrice: once for the prompting method,
+    once for the integration  method, and once for the sorting method.
+  Because these facets are so interrelated, it is useful to view everything
+    more than once.
+  Like many advanced Java features, the ability to discuss them technically is
+    critical.
+  Once you can connect up the words, connecting up the concepts (and actually
+    writing the Java code) becomes much simpler.
+</td>
+</tbody>
+</table>
+
+
+<!-- Specifying Interfaces -->
+
+<a name="SpecifyingInterfaces"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Facet 1:<br>Specifying Interfaces</b></td>
+<td width ="80%">
+  An interface specifies a <b>type</b> by specifying the prototypes of what
+    methods must be defined in any class implementing that interface.
+  For this reason, interfaces look a lot like class definitions; but, they 
+    cannot specify any constructors and typically do not specify any fields
+    (fields are allowed, with all sorts of special constraints, so we will
+     delay  studying them).
+  In fact, each method specification itself is a just a header followed by a
+    semi-colon (not the body of the header: interfaces specify WHAT methods
+    must be available but not HOW they are implemented).
+  Each is like a prototype (but with parameter names).
+  <p>
+  Interfaces are often very small; the classes implementing them are also as
+    small, or they may define some other methods (as well as constructors and
+    fields) not specified in the interface.
+  So, for example, the <b>DecisionInt</b> interface (shown below and in the
+    Interface Demonstration) is simply specified as
+<pre><b>  public interface DecisionInt {
+    public boolean isOK(int x);
+  }</b></pre>
+  First, notice that the word <b>interface</b> appears before the name
+    <b>DecisionInt</b> (we have seen <b>class</b> used similarly).
+  Any class implementing the <b>DecisionInt</b> interface must define a method
+    named <b>isOK</b> with its prototype; one <b>int</b> parameter returning
+     a <b>boolean</b> result.
+   All methods defined in an interface are implicitly <b>public</b> whether or
+    not they include that access modifier; for this reason, some programmers
+    never bother to write <b>public</b>, while I always write it for emphasis.
+  <p>
+ We will see a variety of classes that each implement this interface, with a
+     different meaning for each <b>isOK</b> method (some allowing the user to
+     enter only positive numbers, even numbers, prime numbers, or numbers in a
+     certain range).
+  Then we will see a method that prompts the user for an integer, and calls
+    <b>isOK</b> (on some object constructed from a class that implements this 
+    interface) to decide whether the entered value is to be accepted or
+    rejected; if rejected, the user is reprompted to enter an "OK" values.
+</tbody>
+</table>
+
+
+
+
+<!-- Implementing Interfaces -->
+
+<a name="ImplementingInterfaces"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Facet 2:<br>Classes Implementing Interfaces</b></td>
+<td width ="80%">
+  Classes implement interfaces by (a) explicitly specifying that they do, and
+    by  (b) implementing whatever methods are required by the interface.
+  For example, using the <b>isOK</b> interface specified above, we can define
+    the <b>IsEven</b> class as
+ <pre><b>  public class IsEven implements DecisionInt {
+    public boolean isOK(int x)
+    {return x%2 == 0;}
+  }</b></pre>
+  Notice the first line in this example: it defines the class name, and then
+    using the keyword <b>implements</b> specifies an interface that it
+    implements (more complicated classes can implement multiple interfaces).
+  Sure enough, this class does supply the required <b>isOK</b> method, having
+    the correct prototype.
+  This <b>isOK</b> method just returns <b>true</b> when its parameter is an
+    even number.
+  <p>
+  Notice that this class includes no constructor.
+  Recall that in such cases, Java automatically supplies a constructor, 
+    written as
+  <pre><b>  public IsEven ()
+  {}</b></pre>
+  Such a constructor takes no parameters and performs no actions (and obviously
+    initializes no instance variables: <b>IsEven</b> defines none).
+  We could have written exactly this code for the constructor inside the class,
+    but in classes like this one, most programmers let Java supply this
+    constructor automatically.
+  Likewise, it is simple to define classes whose <b>isOK</b> methods allows
+    only positive or prime numbers; their bodies would perform different
+    computations.
+  <p>
+  For a more interesting second example, here is another class that implements
+    the <b>DecisionInt</b> interface.
+  <pre><b>  public class IsBetween implements DecisionInt {
+
+    public IsBetween(int low, int high) {
+      if (low > high)
+        throw new IllegalArgumentException
+          ("IsBetween Constructor: low("+low+") not <= high("+high+")");
+    
+      this.low  = low;
+      this.high = high;
+    }
+
+    public boolean isOK(int x)
+    {return low <= x && x <= high;}
+ 
+    private int low;
+    private int high; 
+}</b></pre>
+  This class specifies two instance variables, and a constructor that checks
+    for legal values (<b>low</b> must be no bigger than <b>high</b>) before
+    storing its parameters into these instance
+   variables.
+  Instead of throwing an exception when the parameters are out of order, we
+    could just fix them, and  write this constructor as
+  <pre><b>  public IsBetween (int bound1, int bound2) {
+    low  = Math.min(bound1,bound2);
+    high = Math.max(bound1,bound2);
+  }</b></pre>
+  But, I'm not a big fan to automatically fixing such problems: better to
+    throw an exception and let someone know about the problem.
+  <p>
+  In either case, once an object is constructed and correctly stores these two
+    values, the <b>isOK</b> method determines whether its supplied parameter
+    is between them.
+  Of course, this class correctly implements the <b>DecisionInt</b> interface
+    with its <b>isOK</b> method.
+  What makes this class more interesting than <b>IsEven</b> is that it must
+    store instance variables, and therefore uses a constructor to initialize
+    them correctly.
+  The <b>isOK</b> method in <b>InBetween</b> compares its single parameter to
+    these instance variables; its prototype looks just like all the other
+    <b>isOK</b> methods (it just is more complex on the inside).
+  <p>
+  Note that if a class specifies that it implements some interface, the Java
+    compiler checks whether all the methods specified in the interface are
+    actually defined in the class (with their correct prototypes).
+  If not, the Java compiler detects and reports an error.
+  <p>
+  Finally, one class can implement many different interfaces (just as one
+    method can throw many different exceptions), as long as it defines all
+    the methods specified in each interface that it claims to implement.
+  We will see this more advanced feature used later in the course.
+</tbody>
+</table>
+
+
+
+<!-- Interfaces as Types -->
+
+<a name="InterfacesAsTypes"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Facet 3:<br>Interfaces as Types in Methods</b></td>
+<td width ="80%">
+  Interfaces are types.
+  We can use the names of interfaces to declare variables: local and parameter
+    variables in methods, and instance variables in classes.
+  This simple statement leads to some extremely interesting and deep ideas in
+    object-oriented programming.
+  What can we do with a variable whose type is declared by the name of an
+    interface?
+  <ul>
+    <li>We can store into it a reference to an object constructed from any 
+          class that says that it implements the interface.
+    <li>We can use it to call any of the methods specified in the interface.
+        The actual method called is the one defined in the object that such a
+          variable refers to.
+  </ul>
+  So, both of the following declaratins, and their pictures, make sense.
+ <p>
+</tbody>
+</table>
+   <img src="images/decisionint.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+<p>
+  This picture illustrates a situation that we have seen only once before,
+    when dealing with the type <b>Object</b>: the type of the variable is
+    COMPATIBLE, but NOT IDENTICAL to the type of the constructed object to
+    which it refers!
+  But unlike the <b>Object</b> type, which can store ANY reference, a variable
+    using an interface type can store REFERENCES ONLY TO OBJECTS CONSTRUCTED 
+    FROM A CLASS THAT IMPLEMENTS THAT INTERFACE.
+  Because the <b>IsEven</b> and <b>IsBetween</b> classes each implement the
+     <b>DecisionInt</b> interface, we can make variables declared from the
+    <b>DecisionInt</b> interface/type refer to objects constructed from either
+    of these classes.
+  <p>
+  Once we have variables like <b>d1</b> and <b>d2</b>, which refer to objects 
+    constructed from classes implementing an interface, we can use them to
+    call any method specified in the interface.
+  So, in these case, we can use each to call only a method named <b>isOK</b>.
+  Which <b>isOK</b> method is called depends entirely on the class of object
+     that the variable refers to.
+  <p>
+  Given the above variable declarations, calling <b>d1.isOK(3)</b> would
+    return <b>false</b>; it calls the <b>isOK</b> method declared in
+     <b>IsEven</b>, the class of the object that <b>d1</b> refers to.
+  Likewise calling <b>d2.isOK(3)</b> would return <b>true</b>; it calls the
+    <b>isOK</b> method declared in <b>IsBetween</b>, the class of the object
+    that <b>d2</b> refers to -and this object stores <b>1</b> and <b>5</b> for
+    its bounds.
+  <p>
+  Generally, a variable specifying an interface type knows WHAT method names it
+    can call (those specified in the interface) but not HOW these methods will
+    compute their result (that depends on what object was constructed to store
+    in such a variable.
+  This rule echoes what we know about the <b>Object</b> type too.
+  <ul>
+    <li>
+      Which methods a variable is allowed (by the compiler) to call depends
+        solely on its type.
+      Any variable declared with the <b>DecisionInt</b> type can call only the
+        <b>isOK</b> method.
+    <li>
+      Which method is actually called depends on the object the variable
+        refers to.
+      Both <b>d1</b> and <b>d2</b> are declared to be of the same type:
+        <b>DecisionInt</b>.
+      Which method is called by each depends on the class of the object the
+        variable refers to: <b>IsEven</b> in the first case and
+        <b>IsBetween</b> in the second.
+  </ul>
+  This distinction between the type of the variable and the class of the object
+    that it refers to is a critical first step in our eventual understanding of
+    class inheritance hierarchies.
+  <p>
+  Now, let's examine another useful prompting method; one that has a
+   <b>DecisionInt</b> parameter.
+  We will define this <b>forInt</b> method in a class named
+    <b>AdvancedPrompt</b>.
+  It actually specifies three parameters: a message to prompt the user,
+    a reference to an object constructed from some class that implements the
+    <b>DecisionType</b> interface, and another message -an "error" message.
+<pre><b>  public class AdvancedPrompt {
+
+    public static int forInt (String      message,
+                              DecisionInt check,
+                              String      errorMessage) {
+      for(;;) {
+          int answer = Prompt.forInt(message);
+          if (check.isOK(answer))
+            return answer;
+          System.out.println(errorMessage);
+      }
+    }
+
+  }</b></pre>
+  This method first prompts the user for an <b>int</b> value using the standard
+    <b>Prompt.forInt</b> method, storing its result in <b>answer</b> (all
+    possible problems with the user entering non-integer values are  handled by
+    <b>Prompt.forInt</b>).
+  It then uses <b>answer</b> as a parameter to the <b>isOK</b> method of the
+     object to which <b>check</b> refers; if the <b>isOK</b> method called
+     returns <b>true</b>, then this method returns <b>answer</b>; if not, then
+     this method prints an error message and repeats the prompt-check loop.
+  <p>
+  Notice that the only use of the <b>check</b> parameter inside the method is a
+    call to its <b>isOK</b> method.
+  Because we know that <b>check</b> refers to an object from some class
+    implementing the <b>DecisionInt</b> interface (the compiler doesn't allow
+    any arguments not constructed from such a class), we know that the object
+    it refers to will contain an <b>isOK</b> method.
+  <p>
+  So, we have written a very general method.
+  It accepts/rejects the information entered by users; its action depends on
+    whatever object is passed as an argument to the <b>check</b> parameter.
+  There might be hundreds of different criteria we want to use for different
+    prompts, but we can alway use this method, along with a class that
+    implements the criteria we want.
+</tbody>
+</table>
+
+
+
+<!-- Calling Methods with Interface Parameters -->
+
+<a name="CallingMethods"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Facet 4:<br>Calling Methods with Interface Parameters</b></td>
+<td width ="80%">
+  We can now complete the example, by showing how to call the
+    <b>AdvancedPrompt.forInt</b> method.
+  Given the declarations above, we can write
+  <pre><b>int even = AdvancedPrompt.forInt("Enter even",
+                                  d1,
+                                  "...not divisible by two");</b></pre>
+  which could have the following interaction in the console:
+  <pre><b>Enter even: 3
+...not divisible by two
+Enter even: 4</b></pre>
+  at which point the value <b>4</b> is stored into the variable <b>even</b>.
+  <p>
+  Likewise, we can use <b>d2</b> instead of <b>d1</b> and write
+  <pre><b>int selection = AdvancedPrompt.forInt("Enter selection",
+                                       d2,
+                                       "...not in range [1..5]");</b></pre>
+  which could have the following interaction in the console:
+  <pre><b>Enter selection: 7
+...not in range [1..5]
+Enter selection: 4</b></pre>
+  at which point the value <b>4</b> is stored into the variable
+  <b>selection</b>.
+  <p>
+  In fact, we do not even need to store an object in a variable before calling
+    <b>AdvancedPrompt.forInt</b>!
+  We could directly write
+  <pre><b>int selection = AdvancedPrompt.forInt("Enter selection",
+                                       new IsBetween(1,5),
+                                       "...not in range [1..5]");</b></pre>
+  Here, the second argument is an expression that evaluates to a reference to
+    an object constructed from the class <b>IsBetween</b>; its value is copied
+    into the <b>check</b> parameter in the method.
+  Here is a call frame illustrating everything (assuming the user enter 4, the
+     method returns 4).
+  <p>
+</tbody>
+</table>
+   <img src="images/callframe.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  <p>
+  What have we accomplished with these four facets of interfaces?
+  Primarily, we have separated the <b>AdvancePrompt.forInt</b> method from the
+    method(s) that determines whether to accept/reject the value entered by the
+    user (the <b>isOK</b> method, in whatever object we pass to 
+    this method, controls the semantics of choosing).
+  In the process, we have also specified the <b>DecisionInt</b> interface, as
+    what interconnects these methods.
+  <p>
+  If we want a new way to filter prompts, all we must do is plug an object from
+     a new class into machinery that we have created: write a class that
+     implements the <b>DecisionInt</b> interface, and construct an instance of
+     that class to pass as a parameter to <b>AdvancedPrompt.forInt</b>.
+  Thus, this mechanism provides a general structure for solving
+    yet-unspeciried problems of differentiating good or bad input values.
+</tbody>
+</table>
+
+
+
+
+<!-- Integration -->
+
+<a name="Integration"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>All Four Facets:<br>Integration</b></td>
+<td width ="80%">
+  Let's solve another completely different and general problem using
+    interfaces.
+  Suppose that we want to be able to write a method that allows us to
+    approximate the area under a curve.
+  We can do this by repeated summing the areas of small rectangles under the
+     curve.
+  Each rectangle's height corresponds to a value of the function <b>F(...)</b>;
+    each rectangle's width is the constant <b>h</b>.
+  So, to compute the area under the curve from <b>a</b> to <b>b</b>, we compute
+    <b>F(a)h + F(a+h)h + F(a+2h)h + F(a+3h)h + ... F(b-h)h</b>, as illustrated in the
+  following picture.
+ (This is not the best way to approximate this area, but it is the simplest.)
+<p>
+ </tbody>
+</table>
+   <img src="images/integral.gif"></image>
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%">&nbsp</td>
+<td width ="80%">
+  Let's examine the four facets of interfaces to solve this problem.
+  First, we must specify the interface, which supplies a method to compute the
+    value of  a function of one variable: a univariate function.
+  We don't know how this will be done (just as we didn't know how a method
+    would compute whether to accept/reject a value), but we know what the
+    prototype of the method must be.
+  So we can write this interface simply (as simply as <b>DecisionInt</b>)
+  <pre><b>  public interface Univariate {
+    public double evaluate (double x);
+  }</b></pre>
+  <p>
+  Second, we must write a class that implements this interface.
+  As an example, let's write a class that can easily represent all quadratic
+    forms:
+    <b>ax<sup>2</sup>+bx+c</b>.
+<pre><b>  public class Quadratic implements Univariate {
+  
+    public Quadratic (double a, double b, double c) {
+      this.a = a;
+      this.b = b;
+      this.c = c;
+    }
+  
+    public double evaluate (double x)
+    {return a*x*x + b*x + c;}
+  
+    private double a,b,c;
+  }</b></pre>
+  Third, we must write a method that approximates the integral for an
+    arbitrary univariate function.
+  We will call such a method <b>integrate</b> and define it in the
+    <b>AdvancedMath</b> class  as follows
+<pre><b>  public class AdvancedMath {
+
+    public static double integrate (Univariate f,
+                                    double low, double high,
+                                    double step)              {
+      double sum = 0.;
+      for(double x = low; x &lt; high; x+=step) 
+        sum += f.evaluate(x) * step;
+      return sum;
+    }
+  }</b></pre>
+  Note that we use the parameter <b>f</b> just once in this code, calling its
+    <b>evaluate</b> method for all the different values of <b>x</b> generated
+    by the <b>for</b> loop (so it does get called many times when the method
+    executes: once for each rectangle).
+  Note too that this <b>for</b> loop uses <b>double</b> values: a legal, but
+    not frequent choice.
+  <p>
+  Finally, let's combine all this information to write a call that approximates
+    the area under the curve <b>2x<sup>2</sup>-3x+5</b> between <b>1</b> and
+    <b>3.5</b> using a step-width/h of <b>.01</b>.
+  We can do this in one line.
+  <pre><b>double area = 
+  AdvancedMath.integrate(new Quadratic(2.,-3.,5.), 1., 3.5, .01);</b></pre>
+  <p>
+  We can also define many other methods in the <b>AdvancedMath</b> class that
+    operate on univariate functions: finding 0s, computing maxima/minima,
+    approximating derivatives, etc.
+  We can also define many other classes that implement the <b>Univariate</b>
+    interface: cubics, exponentials, trigononmetric functions, and combinations
+    of all these.
+  Then, we can mix and match these as necessary: say, use the <b>findZero</b>
+    method on an object constructed from the <b>Cubic</b> class.
+  The more we build these libraries, the more likely we are to find debugged
+    classes that we can use directly from them in our new applications.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Comparator and Sorting -->
+
+<a name="Sorting"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>The Comparator Interface and the sort method in Arrays</b></td>
+<td width ="80%">
+  The standard Java library contains an interface named <b>Comparator</b>,
+    defined in the <b>java.util</b> package.
+  Find the Javadoc for this interface and scan its documentation.
+  Notice that in the <b>All Classes</b> pane -interfaces appear here
+    too- its name appears italicized as <b><i>Comparator</i></b>.
+  In fact, the names of all interfaces appear here italicized, so you can
+    quickly tell whether an identifier names a class or an interface (these
+    are the only two possibilities).
+  The <b>Comparator</b> interface is defined by
+  <pre><b>  public interface Comparator {
+    public int compare (Object o1, Object o2);
+  }</b></pre>
+  Classes implementing this interface use <b>compare</b> to perform a
+    trichotomous comparison of two arguments: telling whether the
+    first parameter is (a) less than (returning any negative number) the
+    second parameter, (b) equal to (returning <b>0</b>) the second parameter,
+    or (c) greater than (returning any positive number) the second parameter.
+  <p>
+  Interfaces are general, allowing lots of different class to implement them.
+  In addition, this interface uses the type <b>Object</b> for parameters in
+    the <b>compare</b> methods.
+  This is a tipoff that this interface is very general and very useful!
+  <p>
+  Let's first write a class implementing the <b>Comparator</b> interface for
+    objects constructed from the <b>Integer</b> wrapper class.
+  Then we will see how to use objects constructed from this class in a sorting
+    method in the standard Java library.
+  <pre><b>  public class IntegerComparator implements Comparator {
+    public int compare (Object o1, Object o2) {
+      Integer i1 = (Integer)o1;
+      Integer i2 = (Integer)o2;
+      return i1.compareTo(i2);
+    }
+  }</b></pre>
+  Notice that the <b>compare</b> method first casts both parameters
+    and stores their references into <b>Integer</b> local variables; if
+    either cast fails, Java will automatically throw
+    a <b>ClassCastException</b>: because at least one value is not an
+    <b>Integer</b>, therefore they cannot be compared as expected.
+  Then it calls the <b>compareTo</b> method on the first <b>Integer</b>, using
+    the second as an argument.
+  This method conveniently is defined in the <b>Integer</b> wrapper class
+   (look it up) to compute the trichotomous result easily: it returns exactly
+   the value that we want <b>compare</b> to return!
+ In fact, because the non-<b>static</b> <b>compareTo</b> method has the
+     prototype  <b>int compareTo(Object)</b> we could simplify the body of
+     <b>compare</b> to just <b>return ((Integer)o1).compareTo(i2);</b> because
+     <b>compareTo</b> will by itself cast its argument to be an <b>Integer</b>.
+  (Why can't we write just <b>return o1.compareTo(o2);</b>?)
+  <p>
+  Finally, Java will automatically write the constructor
+    <b><pre>  public IntegerComparator()
+  {}</pre></b>
+  Now, let's see how to use an object constructed from the 
+   <b>IntegerComparator</b> class.
+  Examine the <b>sort</b> method in the <b>Arrays</b> class, which
+    is defined in the <b>java.lang</b> package.
+  It is a highly overloaded method.
+  The prototype that we are most interested in is
+  <b><pre>  public static void sort(Object[] a, Comparator c)</pre></b>
+  First, note that this method is <b>static</b>; as in the <b>Math</b> and
+    <b>Prompt</b> classes,  all the methods here are <b>static</b>.
+  When called, it will efficiently sort any <b>Object[]</b> (<b>Object</b>
+    array) using the ordering specified by a class implementing
+    <b>Comparator</b>.
+  It actually permutes the values in the parameter array <b>a</b> such that it
+    has the postcondition
+  <ul>
+    <li><b>a</b> stores all its original values, as many times as they
+          originally occurred (e.g., there might be duplicates, etc.)
+    <li>these values are ordered in the array such that
+  <b><pre>  c.compare(a[0],a[1]) <= 0</b> and<b>
+  c.compare(a[1],a[2]) <= 0</b> and<b>
+  ....
+  c.compare(a[a.length-2],a[a.length-1]) <= 0</pre></b>
+  </ul>
+  That is, it sorts  <b>Object[] a</b> according to <b>Comparator c</b>.
+  <p>
+  So, if Java executed the code
+<b><pre>
+  //Declare arrays
+  int[]     temp = new int[]{3,7,4,1,10,2,8,5,9,6};
+  Integer[] x    = new Integer[temp.length];
+
+  //Fill wrapper array x with values from temp
+  for (int i=0; i&lt;temp.length; i++)
+    x[i] = new Integer(temp[i]);
+
+  //Sort wrapper array
+  Arrays.sort(x,new IntegerComparator());
+
+  //Print wrapper array
+  for (int i=0; i&lt;x.length; i++)
+    System.out.println(x[i]+" ");</pre></b>
+  Then it would print <b>1 2 3 4 5 6 7 8 9 10</b>: sorting the
+    array in ascending order (technically, non-descending order because
+    a value can be followed by another one that is equal to it).
+  <p>
+  How hard would it be to sort the array in the other direction:
+    from biggest to smallest.
+  We could just replace the call
+<b><pre>  Arrays.sort(x,new IntegerComparator());</pre></b>
+  by
+<b><pre>  Arrays.sort(x,new ReverseIntegerComparator());</pre></b>
+    and define
+  <pre><b>  public class ReverseIntegerComparator implements Comparator {
+    public int compare (Object o1, Object o2) {
+      Integer i1 = (Integer)o1;
+      Integer i2 = (Integer)o2;
+      return -i1.compareTo(i2);   //Notice negation!
+    }
+  }</b></pre>
+  By negating the original returned result
+    <ul>
+      <li>if <b>i1</b> normally compares less than <b>i2</b> (returns a
+            negative value, meaning <b>i1</b> should occur in the array before
+            <b>i2</b>) the result this  method returns will be positive
+            (indicating that <b>i1</b> is considered greater than <b>i2</b> and
+            belong after it in the array)
+      <li>if <b>i1</b> compares equal to <b>i2</b> (returns <b>0</b>,
+            </b>-0</b> is returned, the same as <b>0</b>
+      <li>if <b>i1</b> normally compares greater than <b>i2</b> (returns a
+            positive value, meaning <b>i1</b> should occur in the array after
+            <b>i2</b>) the result this  method returns will be negative
+            (indicating that <b>i1</b> is considered less than <b>i2</b> and
+            belong after it in the array)
+   </ul>
+  Remember that the smaller values, according to the comparator, appear
+    towards the front of a sorted array.
+  <p>
+  In fact, we can write a class with the following amazing property:
+    its constructor will take any <b>Comparator</b> and produce an
+    object that is also implements <b>Comparator</b>, but one whose
+    <b>compare</b> method returns the opposite result of the <b>Comparator</b>
+    passed to its constructor.
+  With this class in our library (<b>ReverseAComparator</b> is in fact in the
+    course library), we can instead of the above write
+<b><pre>  Arrays.sort(x,new ReverseAComparator(new IntegerComparator()));</pre></b>
+  We can use an object constructed from <b>ReverseAComparator</b> whenever we
+    want to reverse any comparator that we have already written, no matter what
+    types the comparator is comparing!
+  It stores the object it is constructed with and calls its <b>compare</b>
+    method, negating the result, whenever its <b>compare</b> method is called.
+  We can define this class as follows: it isn't long and therefore it should
+     be easy to understand.
+   But, I'll admit, understanding is tortuous; it is much easier to understand
+     how to use this class than to understand how it works; or put another
+     way, we can easily use it without caring how it works: the pinnacle for
+     useful tool.
+   It is also beautiful.
+  <pre><b>  public class ReverseAComparator implements Comparator {
+
+    public ReverseAComparator(Comparator c)
+    {realComparator = c;}
+
+    public int compare (Object o1, Object o2)
+    {return -realComparator.compare(o1,o2);}
+
+    private final Comparator realComparator;
+  }</b></pre>
+  This class uses a <b>decorator</b> pattern: it produces an object
+    on which we can call the same methods as the object that it was 
+    constructed with: it decorates the original object.
+   I vastly prefer to write and debug a general class and use it multiple
+     times than write multiple classes.
+   Decorators capture exactly this desire.
+  <p>
+  As a final example of a class that implements <b>Comparator</b>, imagine that
+    we have declared <b>DiceEnsemble[] ds;</b> and stored into it a reference
+    to an array object filled with references to <b>DiceEnsemble</b>) objects.
+  Now, suppose that we wanted to sort these ensembles, so that the fewer times
+    they were  rolled, the early they appear in the sorted array.
+  Here is the class needed by <b>Arrays.sort</b>:
+  <pre><b>  public class RolledComparator implements Comparator {
+    public int compare (Object o1, Object o2) {
+      DiceEnsemble d1 = (DiceEnsemble)o1;
+      DiceEnsemble d2 = (DiceEnsemble)o2;
+      return d1.getRollCount() - d2.getRollCount();
+    }
+  }</b></pre>
+  Notice how simple this class is to write; it looks just like the
+    other classes we wrote implementing the <b>Comparator</b> interface.
+  Thus, we should consider it simple to use <b>Arrays.sort</b> to sort
+    any array, using any ordering criteria; all we need to do is to write a
+    simple class implementing the <b>Comparator</b> interface that establishes
+    the ordering, and call <b>Arrays.sort</b> with it and the array to sort.
+  So, it would also be simple to sort a <b>DiceEnsemble[]</b>, either in
+    increasing or decreasing order, the number of times each ensemble was
+    rolled, by the number of dice in each ensemble, by the sum of the pips
+    showing in each ensemble, etc.
+  <p>
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Loose Ends -->
+
+<a name="LooseEnds"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Loose Ends</b></td>
+<td width ="80%">
+  In this section we will discuss a few loose ends about interfaces.
+  First, what happens if a class does not specify that it implements an
+    interface (doesn't use that keyword in its definition) but actually 
+    defines all the methods that the interface specifies?
+  Can we construct an object from this class and store it in a variable whose
+    type is the interface?
+  The answer is no.
+  <p>
+  More concretely, if we define (notice, no <b>implements DecisionInt</b>)
+  <pre><b>  public class IsPositive {
+    public boolean isOK(int x)
+    {return x > 0;}
+  }</b></pre>
+  then we CANNOT write 
+  <pre><b>  int answer = AdvancedPrompt.forInt("Enter Positive",
+                                      new IsPositive(),
+                                      "...bad choice");</b></pre>
+  The Java compiler believes that an object constructed from the class
+    <b>IsPositive</b> cannot be passed to a parameter whose type is specified
+    by <b>DecisionInt</b>.
+  So, when it comes to interfaces, it does not matter whether or not a class
+    implements the specifications in an interface: it does matter whether or
+    not its definitions says that it implements the interface.
+  Of course, if it says it does, but really doesn't, the Java compiler will
+    detect and report an error when it tries to compile that class.
+  <p>
+  Second, what happens if we have a variable whose type is specified by an
+    interface, and we try to use it to call a method that is not specified
+    in the interface.
+  Whether or not the object that it refers to has such a method, the Java
+     compiler will detect and  report an error.
+  The only methods that the Java compiler allows to be called on a variable
+    whose type is an interface, are those methods specified in the interface.
+  Again, this is very important for our future study of Java.
+  <p>
+  Third, even if we leave off <b>public</b> when specifying an interface, it
+    is declared <b>public</b> by default (the same holds for all its method
+    specifications).
+  The whole purpose of an interface is to specify methods that a class must
+    define, that we can call: so they can be only <b>public</b>.
+  <p>
+  Fourth, can we construct an object from an interface?
+  Again, the answer is no.
+  If we tried, the Java compiler would detect and report an error.
+  So, writing <b>DecisionInt d = new DecisionInt();</b> is MEANINGLESS
+    to Java and NOT ALLOWED.
+  Thus, the declare/constuct pattern that we've seen does not work for
+    interfaces (but see below for how we can use an interface to
+    construct an object from an anonymous class)!
+  <p>
+  Finally, in reality interfaces can also specify <b>public static</b> fields.
+  Although doing so it legal, it is not often done.
+  In fact, even if the fields are not specified with these access modifiers,
+    they are automatically applied by Java.
+  <p>
+  One more generalization.
+  We can use the names of interfaces in <b>instanceof</b> and class casting.
+  If <b><i>x</i></b> is the name of a reference variable and
+     <b><i>I</i></b> is the name of an interface, Java's returns true for
+     <b><i>x</i> instanceof <i>I</i></b> if <b><i>x</i></b> refers to an object
+     constructed from any class that implements <b><i>I</i></b>.
+  If we cast <b>(<i>I</i>)<i>x</i></b>, Java treats the resulting reference as
+    if it refers to an object constructed from any class that implements
+    <b><i>I</i></b>; thus, we can call any methods specified in <b><i>I</i></b>
+    on the casted reference, or store it in a variable whose type is specified 
+    by <b><i>I</i></b>.
+</td>
+</tbody>
+</table>
+
+
+
+
+
+<!-- Anonymous Classes  -->
+
+<a name="Anonymous"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Anonymous Classes</b></td>
+<td width ="80%">
+  Sometimes we want to construct just one object from a class that
+    implements an interface; and often, that class is very small: it
+    defines few members because interfaces are often small.
+  If that class has no constructor too, Java allows us to construct an object
+    from it anonymously, by using the name of the interface directly.
+  <p>
+  Now, Java allows us to construct an object from an anonymous class by
+    directly using an interface.
+  For example, we can call
+  <b><pre>  Arrays.sort(x, new Comparator() {
+                  public int compare(Object o1, Object o2)
+                  {return ((Integer)o1).compareTo(o2);}
+                 });</pre></b>
+  Here, for the second argument, Java constructs an object from an anonymous
+    class, using the <b>Comparator</b> interface.
+  The anonymous class implements this interface by defining <b>compare</b>,
+    the one required method (not inherited).
+  Note that we don't need to cast the argument to <b>compareTo</b> because
+    the parameter specifies <b>Object</b>.
+  Writing this is the  equivalent of writing
+  <b><pre>  public class <i>SomeName</i> implements Comparator {
+    public int compare(Object o1, Object o2)
+    {return ((Integer)o1).compareTo(o2);}
+  }
+
+  Arrays.sort(x, new <i>SomeName</i>());</pre></b>
+  Sometimes programmers construct objects from anonymous classes when they
+    don't want to go to the "bother" of definining a class; technically in
+    Java, every class should be placed in its own file (with the same name
+    as the name of the class), which requires even more work.
+  We will find it convenient to use anonymous classes sporadically.
+</td>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+<!-- Problem Set -->
+
+<a name="ProblemSet"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Problem Set</b></td>
+<td width ="80%">
+  To ensure that you understand all the material in this lecture, please solve
+    the the announced problems after you read the lecture.
+  <p>
+  If you get stumped on any problem, go back and read the relevant part of the
+     lecture.
+  If you still have questions, please get help from the Instructor, a CA,
+    or any other student.
+
+<ol> 
+<li>Write a class named <b>IsSquare</b> that implements the <b>DecisionInt</b>
+      interface, whose <b>isOK</b> method returns <b>true</b>
+      when its parameter is a perfect square.
+    Hint: use casting, <b>Math.sqrt</b> and one (or more) relational operators.
+<p>
+<li>Write a class named <b>Contraction</b> that implements the
+      <b>Univariate</b> interface, whose <b>evaluate</b> method computes the
+      formula <b>Math.sqrt(1. - v<sup>2</sup>/c<sup>2</sup>)</b> where <b>c</b>
+      represent the speed of light (assume it is <b>2.99x10<sup>8</sup></b>
+      meters per second)
+<p>
+<li>If we construct the object <b>new IsBetween(5,5)</b>, for what values
+      (if any) will its <b>isOK</b> method return <b>true</b>?
+<p>
+<li>Rewrite the <b>integrate</b> method to use the trapezoid rule: the height
+      of the rectangle for the interval[x,x+h] is [f(x)+f(x+h)]/2.
+    Write a version that computes f(x) only once for each value of x.
+<p>
+<li>Read the Javadoc of the <b>Point</b> class, which store <b>int</b> x,y
+      coordinates.
+    Assume that we declare <b>Point[] ps;</b> and store in it a reference to
+      an array object filled with <b>Point</b> objects.
+    Write a class named <b>OriginDistance</b> that implements the
+      <b>Comparator</b> interface.
+    By calling <b>Arrays.sort(ps, new OriginDistance());</b> the <b>Point</b>s 
+      in the array should be sorted from closest-to-the-origin (coordinate 0,0)
+      to farthest away from the origin.
+<p>
+<li>Read the previous problem.
+    But this time, generalize the class you are to write.
+    Call it <b>DistanceFrom</b> and allow passing its constructor a
+      <b>Point</b> object.
+    The <b>Point</b>s in the array become sorted based on how close they
+      are to the specified point (closer ones appear earlier in the array).
+    For example, calling
+      <b><pre>  Arrays.sort(ps, new DistanceFrom(new Point(0,0)));</pre></b>
+      would produce the same result as in the previous problem.
+<p>
+<li>Assume that we declare
+  <b><pre>
+  Comparator c1 = new IntegerComparator();
+  Comparator c2 = new ReverseAComparator(new ReverseAComparator(c1));</pre></b>
+  Will <b>c1.compare(x,y)</b> ever return a different result from
+             <b>c2.compare(x,y)</b>? If so, for what value(s); if not, why?
+<p>
+<li>Assume that the postconditon of sorting <b>Object[] a</b> by
+      <b>Comparator</b> c was only
+<b><pre>  c.compare(a[0],a[1]) <= 0</b> and<b>
+  c.compare(a[1],a[2]) <= 0</b> and<b>
+  ....
+  c.compare(a[a.length-2],a[a.length-1]) <= 0</pre></b>
+  (constrast this with the actual, two part postcondition above)
+  Describe how <b>sort</b> could work to satisfy this postcondition, but
+    not satisfy our intuitive understanding of sorting.
+<p>
+<li>Why can't we write a constructor for an anonymous class?
+    How can we still use an anonymous class when calling
+      <b>AdvancedPrompt.forInt</b> when trying to accept values only
+      in a specified range (as in the <b>IsBetween</b> class)?
+    Hint: What other way, besides a constructor, can we use to initialized
+      instance variables.
+<p>
+<li>Write a class named <b>NegateADecision</b> that implements the
+    <b>DecisionInt</b> interface, and performs the equivalent purpose
+    as <b>ReverseAComparator</b>.
+<p>
+<li>Which is Java's rule for automatically writing the constructor
+  <b><pre>  public class <i>Name</i>()
+  {}</pre></b>
+  <ol>
+    <li>It is automatically written if NO PARAMETERLESS CONSTRUCTOR is 
+           defined in the class.
+    <li>It is automatically written if NO CONSTRUCTOR is 
+           defined in the class.
+  </ol>
+<p>
+<li>If an interface specifies
+<b><pre>  public boolean isOK(int x);</pre></b>
+is it legal or not for Java to write a method implementing that interface
+  with a different parameter name? e.g.,
+<b><pre>  public boolean isOK(int i);</pre></b>
+<p>
+<li>Without using the negate operator, rewrite the line
+<b>return -realComparator.compare(o1,o2);</b> in a different way to
+    return the correct result (I can describe the change in 4 words).
+   Argue which way is simpler to understand.
+</ol>
+</td>
+</tbody>
+</table>
+
+
+</body>
+</html>

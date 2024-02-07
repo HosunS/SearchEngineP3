@@ -1,0 +1,153 @@
+# R code for chapter 8
+
+
+
+############ Trauma data
+traumadata <- read.table(file="F:\\MyDocuments\\BAYES\\LogisticRegression\\TraumaData\\trauma300.txt",header=T,sep="\t")
+attach(traumadata)
+traumadata
+
+## Original variables
+#  ID  death   ISS    TI    RTS  AGE 
+##
+
+
+
+# Boxplots.  Figure 8.1
+par(mfrow=c(2,2))
+
+g=factor(death,c(0,1),c("DIE","LIVE"))
+boxplot(ISS~g,range=0,boxwex=0.5,ylab="ISS",xlab="")
+lines(rep(1.32,length(ISS[death==0])),ISS[death==0],type="p")
+lines(rep(2.32,length(ISS[death==1])),ISS[death==1],type="p")
+
+boxplot(RTS~g,range=0,boxwex=0.5,ylab="RTS",xlab="", ylim=c(0,10))
+lines(rep(1.32,length(RTS[death==0])),RTS[death==0],type="p")
+lines(rep(2.32,length(RTS[death==1])),RTS[death==1],type="p")
+
+boxplot(AGE~g,range=0,boxwex=0.5,ylab="AGE",xlab="")
+lines(rep(1.32,length(AGE[death==0])),AGE[death==0],type="p")
+lines(rep(2.32,length(AGE[death==1])),AGE[death==1],type="p")
+
+x <- c(sum(TI[death==1]==0),sum(TI[death==1]==1),  sum(TI[death==0]==0),sum(TI[death==0]==1)) 
+names(x) <- c("TI=0","TI=1","TI=0","TI=1")
+barplot(x, ylim=c(0,250), space=c(0,0,0.5,0))
+lines(c(0,4.5),c(0,0),lty=1)
+mtext("DIE", side=1,at=1,line=2.5)
+mtext("LIVE", side=1, at=3.5,line=2.5)
+
+
+
+
+## Plot posterior means of log(odds) for two groups.  
+## Figure 8.2 
+lordata <- read.table(file="F:\\MyDocuments\\BAYES\\LogisticRegression\\TraumaData\\logoddsdata.txt",header=T,sep="\t")
+attach(lordata)
+lordata
+
+plot(Age, g1, xlab="Age", ylab="log(Odds)", type="l", lwd=2)
+lines(Age, g2, lty=2, lwd=2)
+legend("bottomright",c("Blunt","Penetrating"), lty=1:2, bty="n")
+legend("topleft",c("RTS=3.34","ISS=40"), bty="n")
+
+
+
+
+
+## Plot prior and posterior of beta2 using std covariate
+## Figure 8.6
+
+post <- read.table(file="F:\\MyDocuments\\BAYES\\LogisticRegression\\Oring\\posterioriterates.txt",header=T,sep="\t")
+attach(post)
+post
+
+prior <- read.table(file="F:\\MyDocuments\\BAYES\\LogisticRegression\\Oring\\prioriterates.txt",header=T,sep="\t")
+attach(prior)
+prior
+
+beta2post <- posterior[20001:40000]
+beta2prior <- priorits[20001:40000]
+plot(density(beta2post),type='l',xlab=expression(beta[2]), ylab="Density", xlim=c(-3.5,2.5), lwd=2, main="")
+lines(density(beta2prior),lty=2,lwd=2)
+legend("topright", c("Posterior","Prior"),lty=c(1,2))   
+
+
+
+
+
+
+## Plot posterior means of log(odds) for several groups.  
+## Figure 8.7
+lordata1 <- read.table(file="F:\\MyDocuments\\BAYES\\LogisticRegression\\TraumaData\\logoddstrauma.txt",header=T,sep="\t")
+attach(lordata1)
+lordata1
+
+par(mfrow=c(2,2))
+
+plot(C2, abl, xlab="ISS", ylab="log(Odds)", type="l", lwd=2, ylim=c(-5,5))
+lines(C2,apen, lty=2, lwd=2)
+legend("bottomright",c("Blunt","Penetrating"), lty=1:2, bty="n")
+legend("topleft",c("RTS=3.34","AGE=60"), bty="n")
+
+plot(C2, bbl, xlab="ISS", ylab="log(Odds)", type="l", lwd=2, ylim=c(-5,5))
+lines(C2,bpen, lty=2, lwd=2)
+legend("bottomright",c("Blunt","Penetrating"), lty=1:2, bty="n")
+legend("topleft",c("RTS=3.34","AGE=10"), bty="n")
+
+plot(C2, cbl, xlab="ISS", ylab="log(Odds)", type="l", lwd=2, ylim=c(-5,5))
+lines(C2,cpen, lty=2, lwd=2)
+legend("bottomright",c("Blunt","Penetrating"), lty=1:2, bty="n")
+legend("topleft",c("RTS=5.74","AGE=60"), bty="n")
+
+plot(C2, dbl, xlab="ISS", ylab="log(Odds)", type="l", lwd=2, ylim=c(-5,5))
+lines(C2,dpen, lty=2, lwd=2)
+legend("bottomright",c("Blunt","Penetrating"), lty=1:2, bty="n")
+legend("topleft",c("RTS=5.74","AGE=10"), bty="n")
+
+
+
+
+
+
+
+
+
+## Ztilde and its inverse
+## Section 8.4:  Trauma data
+Xtilde <- c(1,25,7.84,60,0,0,
+            1,25,3.34,10,0,0,
+            1,41,3.34,60,1,60,
+            1,41,7.84,10,1,10,
+            1,33,5.74,35,0,0,
+            1,33,5.74,35,1,35)
+Xtilde <- matrix(Xtilde, nrow=6, ncol=6, byrow=TRUE)
+Xtinv <- solve(Xtilde)
+m.iss <- mean(ISS)
+sd.iss <- sd(ISS)
+m.rts <- mean(RTS)
+sd.rts <- sd(RTS)
+m.age <- mean(AGE)
+sd.age <- sd(AGE)
+Ztilde <- matrix(0,6,6)
+Ztilde[,1] = Xtilde[,1]
+Ztilde[,2] = (Xtilde[,2] - m.iss)/sd.iss # ISS mean 14.28 sd 10.98
+Ztilde[,3] = (Xtilde[,3] - m.rts)/sd.rts # RTS mean 7.287 sd 1.25
+Ztilde[,4] = (Xtilde[,4] - m.age)/sd.age # AGE mean 31.4 sd 17.06
+Ztilde[,5] = Xtilde[,5]  # TI 0/1 variate
+Ztilde[,6] = Ztilde[,4]*Ztilde[,5] # Interaction
+Ztinv <- solve(Ztilde)
+round(Ztinv,3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+

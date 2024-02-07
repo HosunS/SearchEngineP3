@@ -1,0 +1,404 @@
+				Writing Classes
+
+Every value object in Python is an instance of a class: for example, the value
+object 'abc' is an instance of the str class. If o is a name that refers to a
+value object, then type(o) refers to the class that value object is an instance
+of (the class the value object was constructed from). Type('abc') is str, as is
+type (s) if s = 'abc'.
+
+In this lecture we will primarly learn about instance names, which are defined
+in the namespace/dictionary of a value object; and learn about method names,
+which are defined in the namespace of a class. Specifically, we will learn how
+to initialize instance names in the __init__ method defined in a class, and how
+to manipulate (both examine and update) instance names in other methods defined
+in a class. In a large sense, these two features are what writing a class is
+all about. In the process we will learn about special names preceded by one or
+two underscore characters.
+
+We will continue to use the Dice class as our primary example. All of the
+knowledge we need to gain about classes can be observed and discussed in this
+class, which uses its information in a relatively straightforward way. We have
+seen that to construct a Dice object modeling two 6-sided dice, we can define
+
+d = Dice([6,6])
+
+When we construct a value object from a class, as above, we treat the name of
+the class like a function and we call it, passing it arguments (in this example,
+one argument: the list [6,6]). Python does three things to construct a value
+object:
+
+(1) It calls a special function that creates a value object (that is the
+    instance of the class we are constructing. Note that this object
+    automatically has an empty namespace associated with it: no names.
+
+(2) It calls the special __init__ method for the class, passing the empty object
+    created in (1) to the first parameter (always named self) of __init__, and
+    following this argument with all the other arguments used in the call to
+    construct this instance. This special method checks the arguments, and if
+    they are OK, uses them to initialize the namespace of the value object.
+    In summary, the __init__ method defines and initializes instance names
+    in a value object's namespace.
+
+(3) A reference to the object that was created in (1) and initialized in (2) is
+    returned as the result of constructing the object. Typically such a
+    reference is either bound to a variable or passed to a function call: e.g.,
+    defining d = Dice([6,6]) or calling experiment(Dice([6,6]), 100000) are
+    uses of .
+
+------------------------------------------------------------------------------
+
+The __init__ method
+
+Generally any method lead and followed by two underscores is a special method
+that Python will call automatically in certain circumstances (we can, but
+generally don't call such methods directly). In classes, __init__ is the
+critical method to understand, and we describe it now (and describe __str__ and
+__repr__ later; ICS-33 describes dozens of such methods).
+
+The dice class defined its __init__ method as follows. Let's follow how Python
+executes the __init__ methods for Dice([6,6]).
+
+def __init__(self : Dice, max_pips : [int]):
+    assert len(max_pips) >= 1, 'Dice.__init__: max_pips is empty'
+    for i in range(0,len(max_pips)):
+        p = max_pips[i]
+        assert p >= 1, 'Dice.__init__: max_pips['+str(i)+']='+str(p)+': must be an int >= 1'
+    self._max_pips   = max_pips[:]       #Copy to avoid aliasing
+    self._pips      = [0]*len(max_pips)
+    self._roll_count = 0
+
+By (1) Python creates a value object with a empty namespace
+
+By (2) Python calls the __init__ method defined in the Dice class, passing the
+new value object it created to the first parameter (always named self) and the
+list [6,6] to the second parameter named max_pips. Recall len(max_pips)
+determines how many dice (here, 2) and the values in the max_pips list
+determines how many sides are on each die (here, 6 and 6). Now Python executes
+the body of this method to ultimately define and initialize instance names in
+this value object.
+
+The first four statements in __init__ check that max_pips is a reasonable list:
+
+  (a) The list must contain at least 1 value (at least one die)
+  (b) Every value is the list must be at least 1 (at least one side on that die)
+
+If any of these assertions are False, Python raises an AssertionError exception
+and does not complete executing the __init__ method: it cannot successfully
+create a Dice object with bad arguments. Note that I could have simplified the
+loop and written it as follows (iterating over list values not list indexes)
+
+    for p in max_pips:
+        assert p >= 1, 'Dice.__init__: str(p)+': must be an int >= 1'
+
+But with this code, the error message couldn't contain the index in the
+max_pips list at which the first illegal value was found; it would still show
+the value itself.
+
+Many __init__ methods verify that a parameter has received a legal and
+reasonable argument value, and raise an exception to indicate that the object
+being constructed cannot be initialized properly. Sometimes it raises an
+exception explicitly, using an if statement that tests for an illegal value.
+Sometimes it uses an assert statement to check for an illegal value.
+
+Once these assertions all succeed, there are three statements that define names
+in the namespace of the this object and initialize them appropriately. This is
+similar to defining/initializing a name in another module: e.g., 
+
+  import m 		# access module m
+  m.x = 1		# define a name x in module m and intialize it to 1
+
+All these instance names start with an underscore: _max_pips, _pips, and
+_roll_count. Generally starting an instance name with an underscore in Python
+is a convention that indicates that only methods in the class should access
+this name. Most (often all) instance should start with an undersscore. We will
+examine how to access names in value object later, when we discuss other
+methods defined in the class.
+
+self._max_pips = max_pips[:]
+
+binds the name _max_pips (in the self object) to a copy of the parameter list.
+By coping the parameter list, we can ensure that a user cannot "mess up" this
+name by mutating a shared object. Such a "mess up" is impossible when a literal
+[6,6] is passed in, but avoids the following problem. If we wrote
+
+  l = [6,6]
+  d = Dice(l)
+  l[0] = -10
+
+then, if we did not copy the argument as shown above, and wrote just
+self._max_pips = max_pips, the instance name would refer to the same
+list object as l, whose first value is now -10, which is not allowed for Dice
+objects.
+
+self._pips = [0]*len(max_pips)
+
+binds the name _pips (in the self object) to a list object filled with
+len(max_pips) 0s. The roll method described below will set the _pips instance
+name to random values, appropriate for max_pips. The _pips instance name will
+be used by many other methods, but typically only if self._roll_count > 0;
+when self._roll_count is 0, this list does not contain good values yet.
+
+self._roll_count = 0
+
+binds the name _roll_count (in the self object) to the value object 0. This
+instance name gets incremented in roll and examined in othe methods.
+
+By (3) a reference to this object, which is now initialized by defining and
+initializing three instance names, is returned. for d = Dice([6,6]) that
+reference is bound to the name d. So d now refers to a Dice object whose state
+consists of three instance names bound to values (two lists, one int).
+
+Note that we can put print statements inside __init__ to display relevant
+information when __init__ is called (possibly helping us debug this special
+method).
+
+The top picture accompanying this lecture illustrate how we would think about
+d = Dice([6,6]) using the name and object diagrams that we studied earlier.
+
+Again, the purpose of __init__, whichi is called automatically called when we
+write Dice([6,6]), is to create and initialize names the initially empty object
+created by Python and passed to the self parameter.
+
+Next, let's see how the other methods in the class, when called, can
+examine/update these names (and return values based on them).
+
+------------------------------------------------------------------------------
+
+Dice methods: commands/mutators
+
+The Dice class defines the method roll, which is its only mutator method: a
+method that changes the state of a Dice object.
+
+Recall if we call d.roll() then Python uses the fundamental equation of object-
+oriented programming to translate this call to type(d).roll(d) or Dice.roll(d),
+calling the roll method declared in the Dice class with the argument d matching
+the self parameter. We can also directly write Dice.roll(d) but that is not
+what programmers write. The roll method is defined in the Dice class as follows.
+
+def roll(self : Dice) -> Dice:
+    self._roll_count += 1
+    self._pips = [ random.randint(1,max_pips) for max_pips in self._max_pips ]
+    return self
+
+When called, self refers to the same object d refers to; so any change to the
+names in self actually change those names in d. So, the statement
+
+  self._roll_count += 1
+
+increments _roll_count by 1 (from 0 to 1 the first time it is called).
+
+The statement
+
+  self._pips = [ random.randint(1,max_pips) for max_pips in self._max_pips ]
+
+binds ._pips to a comprehension that iterates through every value in 
+self._max_pips and collects random integers from 1 to each value . For example
+self._max_pips might refer to [5,2]: 5 pips showing on the first die and 2
+pips showing on the second.
+
+We can also write this code without a comprehension, mutating the values (0)
+in the list created when __init__ was called:
+
+  for i in range(len(self._pips)):
+      self._pips[i] = random.randint(1,self._max_pips[i])
+
+So, we have now advanced the roll counter and computed/stored the number of pips
+showing on the side of each die.
+
+The bottom picture accompanying this lecture illustrate how we would think about
+d.roll() mutating the Dice object d refers to, updating the object diagram.
+
+Finally Python executes the statement4
+
+  return self
+
+returns the mutated object (the object that d still refers to). If we write just
+
+  d.roll()
+
+we tell Python to do nothing with the returned result; but we can also chain
+another call using this returned value: writing
+
+ print(d.roll().pip_sum())
+
+uses the returned result (a reference to d) to call the pip_sum method.
+
+Alternatively, we could have written return None, in which case if we called
+call d.roll().pip_sum() Python would raise an exception saying that we cannot
+call pip_sum() on a NoneType object. If we wrote no return statement, Python
+would even automatically return None.
+
+Notice that we do NOT need to write d = d.roll() (although this code is
+technically correct) because after calling just d.roll(), d refers to updated
+instance of Dice, with an update _roll_count and _pips list.
+
+
+------------------------------------------------------------------------------
+
+Dice methods: queries/accessors
+
+All the remaining methods defined in the Dice class are queries/accessors. They
+examine the state of a Dice value object but do not change any of its instance
+names. Here are the method and a brief description of how the body of each
+computes its value correctly.
+
+Typically in classes, each method implements some interesting operation, and
+each is typically short and to the point.
+
+  def number_of_dice(self : Dice) -> int:
+      return len(self._pips)
+
+Returns the number of dice, which is just the length of either self._pips or
+self._max_pips lists. The __init__ method ensured these two lists have the same
+number of vaues.
+
+  def all_pip_maximums(self : Dice) -> [int]:
+     return self._max_pips[:]
+
+Returns a list of the maximum number of pips that can show on each side. Again
+we return a copy, because we don't want whoever binds this result list to be
+able to change/mutate any values in the list d._max_pips: that would affect the
+results produced by roll.
+
+  def rolls(self : Dice) -> int:
+      return self._roll_count
+
+Returns the number of times the dice have been rolled, which is counted and
+stored in the _roll_count instance name.
+
+  def pips_on(self : Dice, i : int) -> int:
+      assert self._roll_count > 0, 'Dice.pips_on: dice not rolled' 
+      assert 0<= i < len(self._pips), \
+        'Dice.pips: die index i('+str(i)+') must be >= 0 and <'+str(len(self._pips))
+      return self._pips[i]
+
+Returns the number of pips showing on dice i, by returning self._pips[i]. Note
+that if the dice have never been rolled, the first assertion fails and the
+method raises an exception (because there are no random values in the ._pips
+lists). If the second asserton fails, we have not specified a legal index for
+the number of dice we have.
+
+  def all_pips(self : Dice) -> [int]:
+      return self._pips[:]
+
+Returns a list of all the pips (even if the dice hasn't been rolled, in which
+case it returns all 0s).  Again we return a copy, because we don't want whoever
+binds this result list to be able to change/mutate any values in it.
+
+  def pip_sum(self : Dice) -> int:
+      assert self._roll_count > 0, 'Dice.pip_sum: dice not rolled' 
+      return sum(self._pips)
+
+Returns the sum of all the values in the pips list. Note that the sum function
+adds up all the values in the list self._pips: e.g., sum([5,1,3,7]) returns 16.
+
+We could write this sum explicitly as
+
+      sum = 0
+      for p in self._pips:
+          sume += p
+      return sum
+
+Next,
+       
+  def pips_same(self : Dice) -> bool:
+      return all( [self._pips[0] == p for p in self._pips] )
+
+Returns whether or not all the pips are the same. The all function returns True
+if all the values in the list (constructed here with a comprehension) are True,
+and False if any are False. In the comprehension, it computes a bool expression
+determining whether every value in the pip list is equal to the first value.
+All pips have the same value if all pips have the same value as the first pip.
+We could rewrite this code as without the comprehension as follows.
+
+      for p in self._pips:
+          if p != self._pips[0]:
+              return False
+      return True
+  
+
+------------------------------------------------------------------------------
+
+Special Methods
+
+First we discuss the __str__ method
+
+  def __str__(self):
+      return 'Dice('+str(self._pips)+')'
+
+The __str__ method returns some useful information about the state of the
+object. The method above returns a list showing the nuumber of pips on each die:
+possibly 'Dice([4,2])'. That is, we can call d.__str__() and it might return the
+string 'Dice([4,3])'. But there is a better way to make this call: str(d)
+
+Calling str(d) works because Python's str function is designed to call __str__ 
+on its argument. It is defined like
+
+  def str(o : object)-> str:
+      return o.__str__()
+
+So like the __init__ method, we typically do not directly call the __str__
+method, but call the str(...) function, which calls __str__.
+
+Also recall that when we call a print function, Python automatically calls the
+str function on all its arguments, printing the string value of each argument,
+for easier reading. But if you concatenate string together, you must call str:
+for example I can write either
+
+print('d =',d)
+
+where no call to str is needed; or write the following where calling str(...)
+is required (otherwise Python would raise an exception about not being able
+to catenate a str to a Dice object).
+
+print('d = ' + str(d))
+
+Now we discuss the repr function:
+
+  def __repr__(self : object):
+      return 'Dice('+str(self._max_pips)+')'
+
+The __repr__ method should return a str which if eval'ed would return an
+equivalent object to the one it was called on.  The method above returns the
+string 'Dice([6,6])' which includes the Dice class and all the information
+needed to define a new Dice object. eval('Dice([6,6])') returns another dice
+object representing the same 2, 6-sided dice.
+
+Again, although we can call d.__repr__() in Python we call repr(d); it works
+because Python's repr function is designed to call __repr__ on its argument. It
+is defined like
+
+  def repr(o : object)-> str:
+      return o.__repr__()
+
+Finally, the method
+
+   def standard_rolls_for_debugging(self):
+      random.seed(12161949)
+
+uses knowledge (which you don't have) about the random module to change the
+seed of its random number generator. After this method is called, random.randint
+(called in the roll method) generates the same random values, so calling the
+roll method in the Dice class generates the same pips. This feature is useful
+for debugging (so our program gets the same sequence of rolls; when we debug
+some sequence of calls, it will always produce the same values).
+
+Some classes (not his one) define special helper methods that are called by
+other methods in the class to get their jobs done. Such methods should start
+with a single underscore, to signal to anyone who reads a a class that those
+methods should not be called explicitly (just as using instance names starting
+with a single underscore indicates that only methods in the class should access
+those instance names).
+
+------------------------------------------------------------------------------
+
+Final Words
+
+When beginners write classes, they very often forget to use self everywhere it
+is needed: prefacing any instance names (when examined or stored) or class
+methods (when called by other methods in the class: not used in Dice). 
+
+The debugger shows a disclosure +/- in front of every value object constructed
+from a class (including builtins like lists, tuples, ...). By clicking the
+disclosure, Eclipse shows/hides all the instance names defined in the value
+object.

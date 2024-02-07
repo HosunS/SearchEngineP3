@@ -1,0 +1,208 @@
+WebDAV Advanced Collections Conference Call - 1/19/99
+
+Attending: Judy Slein, Geoff Clemm, Tyson Chihaya, Jim Davis, Jim Whitehead, Chuck Fay
+ 
+ACTION ITEMS
+
+Geoff: Send a message on the semantics of COPY for references to the WebDAV mailing list.
+Jim W: Revise last week's minutes as Yaron requested.
+Judy: Add to the issues list all the ***** notes in the spec 
+Judy: Spec changes
+Judy: Add to the issues list: How should COPY behave for references?
+
+LOGISTICS
+
+From now on, Judy will send updates to documents only to Jim W.  Jim in turn will post them 
+to the design Web site and announce the updates to the team.
+
+Future meetings will use the same phone number / PIN.  They have been scheduled through
+March.
+
+ISSUE 3A: REF-INTEGRITY HEADER
+
+Are there real cases where the client will prefer to have a weak link? 
+The Fielding scenarios: create a collection populated with references before the content
+is available, or temporarily remove content but don't want to have to delete / recreate
+references.
+Configuration Management systems typically support both weak and strong links.
+
+The only defined value will be DAV:do-not-enforce.  If the header is not present, the
+server follows the policy of its choice.  That may be to enforce referential integrity
+in some particular way or not to enforce it at all.
+
+Values need to be extensible.  
+
+Geoff wants clients to be able to submit other values that might specify a particular kind
+of strong reference, which servers will ignore if they do not understand them, but will
+at least result in some sort of strong reference.
+
+Conclusion: We confirmed last week's decision to keep the Ref-Integrity header.  Its only
+defined value will be DAV:do-not-enforce, and extensions will explicitly be allowed.
+
+ISSUE 3B: DAV:REFINTEGRITY PROPERTY
+
+Last week we were unable to come up with a scenario where a client would want to examine
+this property, since the only values we can provide are "weak" and "other".
+
+If a reference is broken, a client might look at DAV:refintegrity as a first step in
+investigating.  It's a natural part of investigating what sort of object I'm looking at,
+like ls -l in Unix.
+
+There is no harm in defining such a property.  It's just displaying part of the state of
+the resource.  In general, it should be possible to examine the state of a resource.
+
+The number of properties is growing, and we should be careful not to define unnecessary
+properties.
+
+What should its values be?
+
+We decided early on not to tackle issues about strong references, but only to provide
+place-holders for future treatment of strong references.
+
+We don't want to choose values that will be difficult for servers to fit themselves into.
+No matter what policies on enforcing referential integrity we choose as values, there will 
+likely be servers that don't quite follow any of them.
+
+weak / strong, where we leave the definition of "strong" deliberately vague, and tell
+clients not to assume any particular policy on how to enforce referential integrity based
+on a value of "strong"
+weak / everything else
+weak / extensions
+
+The values have to be extensible, so that servers can use other values by private agreement
+now and so that we can add more values to the standard later.
+
+In the worst case, client can ask server for its identification to figure out what policy
+it follows.
+
+Conclusion:  Keep the DAV:refintegrity property, with "weak" as the only defined value and
+extensions allowed
+
+DANGLING REFERENCES
+
+The current specification is ok, *except* for the following:
+
+Add a discussion of behavior when No-Passthrough is used.  In that case, methods should
+succeed.  The client will not be informed that the reference is broken.
+
+PROPFIND gets 404 (acts just like GET).
+PROPPATCH gets 404.
+
+Behavior of COPY for a broken reference will depend on what we decide for the general
+behavior of COPY for references.
+
+COPY SEMANTICS
+
+It's not clear that COPY should be treated like MOVE / DELETE.  There needs to be a way
+to create a new reference at the destination, and also a way to copy the content to the
+destination.  We may want to use MKREF to create the new reference, and COPY to copy the
+content of the target resource.
+
+Judy will add this to the issues list, and Geoff will send mail to WebDAV on this subject.
+
+DAV:REFTARGET PROPERTY
+
+Ref-Target Property -- pressure to delete backpointers
+part of the state of the resource -- if no other problems caused by making it visible, 
+make visible 
+for versioning, it's needed
+(use access control if want to hide state)
+
+409 STATUS CODE
+
+Is it acceptable to use this code in response to MKREF when the conflict is not with the 
+state of the request-URI, but with the state of something else?
+
+412 (Precondition Failed) might be better, but this will cause problems with If headers.
+
+Conclusion: Keep 409 unless Roy Fielding or someone else knowledgeable about HTTP status
+codes complains.
+
+ISSUE 7: HEADERS FOR MOVE / COPY
+
+Is it possible to use Ref-Target, Ref-Type, or Ref-Integrity with COPY / MOVE?
+
+No to all of these.  There's no real gain from MOVE / COPY vs. DELETE / MKREF for
+references.  And they would really be causing a different reference to be created.
+
+NO-PASSTHROUGH HEADER
+
+Can we find a better (positive, rather than negative) name?
+
+The current name seems intuitively clear -- people understand what it means.
+It has no value, so we don't have to worry about double negatives when its value is false.
+
+Conclusion: Keep the current name unless a better proposal is made.
+
+LOCKING
+
+We could choose to ignore down-level clients for locking redirect resources.
+We would like to be able to keep the semantics consistent between locking a redirect
+reference and locking a collection that contains some redirect references.
+We would like a server *not* to have to go off to another server to lock a redirect
+reference.
+We would like to be able to extend locking to other new types of resources in the
+future, using the same technique we choose here.
+
+Chuck: Is there a similar problem for 302s unrelated to referencing, that should have been
+dealt with in WebDAV?
+
+We could have a special header to get the behavior we want, for example, lock both the
+redirect reference and its target.  But that would force the server to go off-server in
+some cases.
+
+Would it be acceptable to have the lock fail whenever a collection contains redirect
+references (because each redirect reference gets a 302)? No.
+
+Proposal: Let LOCK on a collection lock just the redirect references.  Let LOCK on an
+individual redirect reference work the same way.  So 302 never gets returned for either one.
+There's no way for down-level client to lock the target of a redirect reference.
+
+Chuck: This would produce surprising results.  A client would think that the
+target resources had been locked, but it would turn out that they had not.
+Jim W: The (referencing) client would discover that there was a redirect reference when it
+tries to operate on that resource and gets a 302, and would then realize that the target
+had not been locked.
+
+Surprising results are a bad thing, but it would be worse to have the whole LOCK fail
+because it couldn't get to the target. 
+
+Conclusion: LOCK on a redirect reference does lock the reference, and does not get a 302
+response.  This means that there is no way for a down-level client to lock the target of
+a redirect reference.  LOCK on a collection that has redirect references locks the
+redirect references and does not cause 302s for them.  LOCK on a direct reference locks
+both the reference and its target.  LOCK on a collection that has direct references locks
+both the direct references and their targets.  (All these decisions are for the cases where
+No-Passthrough is *not* being used.)
+
+REFERENCES AS SYNONYMS RATHER THAN RESOURCES
+
+Jim W: Maybe we should reconsider the semantics for direct references.  WebDAV already
+assumes that multiple URLs may point to the same resource.  Think of direct references as
+a way for a client to create alternative URLs for the same resource. Can we let direct
+references just be alternative URLs for the same resource?  Can we give up the idea that
+references have their own properties? Can we give up treating them as full-fledged resources?
+
+We could do the same for redirect references, as well.
+
+Objection: If we have a chain of direct references, we may want to do something in the
+middle of the chain.  This is common in configuration management.  For this, we need 
+the reftarget property.
+
+There is a requirement for properties on references.  The examples presented for that 
+requirement were who created the reference, when, etc.  Should we reconsider this
+requirement?
+
+The history of changes to collection membership can be treated as a property of the
+collection.
+
+The mapping of references to their targets could also just be in server someplace, 
+not a property on a referential resource.
+
+There needs to be a way to discover and control linkages.  Clients need to be able to find
+out which things in a collection are references and which have their own content.
+
+Keeping references as independent resources is better than changing the nature and
+semantics of collections, which would require changes to the WebDAV specification.
+
+Conclusion: References are resources.

@@ -1,0 +1,876 @@
+<HTML>
+
+<HEAD>
+
+<TITLE>Untitled</TITLE>
+
+<META NAME="GENERATOR" CONTENT="Internet Assistant for Microsoft Word 2.0z">
+</HEAD>
+
+<BODY>
+
+<PRE>
+WEBDAV Working Group 						J.A. Slein
+INTERNET-DRAFT 						Xerox Corporation 
+&lt; &gt; 								E.J. Whitehead, Jr.
+								U.C. Irvine
+								D.G. Durand
+								Boston University
+								F. Vitali
+								University of Bologna 
+								February 1997
+
+Expires August 1997
+
+</PRE>
+
+<H1><CENTER>Requirements on HTTP for Distributed Authoring and
+Versioning<BR>
+</CENTER></H1>
+
+<H2>Status of this Memo
+</H2>
+
+This document is an Internet draft. Internet drafts are working
+documents of the Internet Engineering Task Force (IETF), its areas
+and its working groups. Note that other groups may also distribute
+working information as Internet drafts.
+<P>
+Internet Drafts are draft documents valid for a maximum of six
+months and can be updated, replaced or obsoleted by other documents at
+any time. It is inappropriate to use Internet drafts as reference
+material or to cite them as other than as &quot;work in progress&quot;.
+<P>
+To learn the current status of any Internet draft please check
+the &quot;lid-abstracts.txt&quot; listing contained in the Internet
+drafts shadow directories on ftp.is.co.za (Africa), nic.nordu.net (Europe),
+munnari.oz.au (Pacific Rim), ds.internic.net (US East coast) or
+ftp.isi.edu (US West coast). Further information about the IETF
+can be found at URL: http://www.ietf.org/
+<P>
+Distribution of this document is unlimited. Please send comments
+to the WWW Distributed Authoring and Versioning mailing list,
+&lt;w3c-dist-auth@w3.org&gt;, which may be joined by sending a
+message with subject &quot;subscribe&quot; to &lt;w3c-dist-auth-request@w3.org&gt;.
+Discussions are archived at URL:
+http://www.w3.org/pub/WWW/Archives/Public/w3c-dist-auth/. The
+HTTP working group at &lt;http-wg@cuckoo.hpl.hp.com&gt; also discusses
+the HTTP protocol. Discussions of the HTTP working group are archived at
+URL: http://www.ics.uci.edu/pub/ietf/http/. General discussions about
+HTTP and the applications which use HTTP should take place on the
+&lt;www-talk@w3.org&gt; mailing list.
+<H2>Abstract</H2>
+
+The HyperText Transfer Protocol, version 1.1 (HTTP/1.1), provides
+simple support for applications which allow remote editing of
+typed data. In practice, the existing capabilities of HTTP/1.1 have
+proven inadequate to support efficient, scalable remote editing free
+of overwriting conflicts. This document presents a list of features
+in the form of requirements which, if implemented, would improve
+the efficiency of common remote editing operations, provide a locking
+mechanism to prevent overwrite conflicts, improve relationship
+management support between non-HTML data types, provide a simple
+attribute-value metadata facility, provide for the creation and
+reading of container data types, and integrate versioning into
+the WWW.
+<H2>1. Introduction</H2>
+
+This document describes functionality which, if provided in the
+HyperText Transfer Protocol (HTTP) [4], would support the
+interoperability of tools which allow remote loading, editing
+and saving (publishing) of various media types using HTTP. As much
+as possible, this functionality is described without suggesting a
+proposed implementation, since there are many ways to perform the functionality
+within the HTTP framework. It is also possible that a single mechanism
+within HTTP could simultaneously satisfy several requirements.
+<P>
+<I>***Fabio - Many of the versioning requirements call for extensions
+to URLs, not to HTTP.
+</I>
+<P>
+<I>***Judy - There is controversy in the group about whether we
+should be extending HTTP or defining a separate protocol.</I>
+<H2>2. Rationale</H2>
+
+The HTTP protocol contains functionality which enables the editing
+of web content at a remote location, without direct access to the
+storage media via an operating system. This capability is exploited by
+several existing HTML distributed authoring tools, and by a growing number
+of mainstream applications (e.g. word processors) which allow users
+to write (publish) their work to an HTTP server. To date, experience
+from the HTML authoring tools has shown they are unable to meet their
+users' needs using the facilities of the HTTP protocol. The consequence
+of this is either postponed introduction of distributed authoring
+capability, or the addition of nonstandard extensions to the HTTP
+protocol. These extensions, developed in isolation, are not 
+interoperable.
+<P>
+Other authoring applications have wanted to access document repositories
+or version control systems through Web gateways, and have been
+similarly frustrated. Where this access is available at all, it is through
+nonstandard extensions to HTTP that force clients to use a different
+interface for each vendor's service.
+<P>
+This document describes requirements for a set of standard extensions
+to HTTP that would allow distributed Web authoring tools to provide
+the functionality their users need by means of the same standard
+syntax across all compliant servers. The broad categories of 
+functionality that need to be standardized are:
+<UL>
+<LI>Attributes
+<LI>Relationships
+<LI>Locking
+<LI>Notification of Intent to Edit
+<LI>Retrieval of Unprocessed Source for Editing
+<LI>Partial Write
+<LI>Name Space Manipulation
+<LI>Collections
+<LI>Versioning
+</UL>
+<H2>3. General Principles</H2>
+
+This section describes a set of general principles that the HTTP
+extensions should follow. These principles cut across categories
+of functionality.
+<H3>3.1. User Agent Interoperability</H3>
+
+All clients should be able to work with any WebDAV-compliant HTTP
+server. It is acceptable for some client/server combinations to
+provide special features that are not universally available, but the protocol
+should be sufficient that a basic level of functionality will
+be universal. It should be possible for servers and clients to negotiate
+the use of optional features.
+<H3>3.2. Legacy Client Support</H3>
+
+WebDAV-compliant servers should be able to interoperate with non-WebDAV
+clients.
+<H3>3.3. Data Format Compatibility.</H3>
+
+WebDAV-compliant servers should be able to work with existing
+resources and URLs. Special additional information should not become a mandatory
+part of document formats.
+<H3>3.4. HTTP Compatibility (new)</H3>
+
+Our aim is to make extended authoring capabilities available through
+HTTP. In extending HTTP, we are obligated to follow its design
+conventions and stay within its spirit. This means, for example,
+that methods should operate only on resources. It means that parameters
+should be communicated in headers. These and other conventions
+should be observed in the design of the extensions.
+<H3>3.5. Replicated, Distributed Systems (new)</H3>
+
+Distribution and replication are at the heart of the Internet.
+All WebDAV extensions should be designed to allow for distribution
+and replication. Version trees should be able to be split across multiple
+servers. Collections may have members on different servers. Resources
+may have attributes on different servers. Any resources may be
+cached or replicated for mobile computing or other reasons. Consequently,
+we must keep these issues in mind through all our design efforts.
+<H2>4. Requirements</H2>
+
+In the requirement descriptions below, the requirement will be
+stated, followed by its rationale. If any distributed authoring tools
+currently implement the requirement, this is also mentioned. It
+is assumed that &quot;server&quot; means &quot;a program which receives
+and responds to HTTP requests,&quot; and that &quot;distributed authoring tool&quot;
+or &quot;intranet enabled tool&quot; means &quot;a program which can retrieve a
+source entity via HTTP, allow editing of this entity, and then save/publish this
+entity to a server using HTTP.&quot; A &quot;client&quot; is &quot;a
+program which issues HTTP requests and accepts responses.&quot;
+<P>
+(Get rid of references to current tools altogether, or do more
+thorough research.)
+<H3>4.1. Attributes</H3>
+
+Via HTTP, it should be possible to create, modify, query, read
+and delete arbitrary attributes on resources of any media type.
+<P>
+<I>***Judy - Query is not supported in the specification.
+</I>
+<P>
+Attributes can be used to define fields such as author, title,
+subject, and organization, on resources of any media type. These attributes
+have many uses, such as supporting searches on attribute contents,
+and the creation of catalog entries as a placeholder for an object which
+is not available in electronic form, or which will be available later.
+<H3>4.2. Relationships</H3>
+
+Via HTTP, it should be possible to create, query, and delete typed
+relationships between resources of any media type.
+<P>
+A hypertext link is a relationship between resources which is
+browsable using a hypertext style point-and-click user interface. Relationships,
+whether they are browsable hypertext links, or simply a means
+of capturing a interrelation between resources, have many purposes.
+<P>
+Relationships can support pushbutton printing of a multi-resource
+document in a prescribed order, jumping to the access control
+page for an resource, and quick browsing of related information, such as
+a table of contents, an index, a glossary, help pages, etc. While relationship
+support is provided by the HTML &quot;LINK&quot; element, this
+is limited only to HTML resources, and does not support bitmap image types, and other
+non-HTML media types.
+<P>
+AOLpress from America Online [1] currently &quot;allows pages
+to add toolbar buttons on the fly using the HTML 3.2 &lt;LINK REL....&gt; tag.
+For example, your page can add toolbar buttons that link to a home page, table
+of contents, index, glossary, copyright page, next page, previous
+page, help page, higher level page, or a bookmark in the document.&quot;
+<P>
+<I>***Fabio - The definition of locking here conflicts with the
+one that was used in the versioning requirements paper. More in a separate
+mail note.</I>
+<H2>4.3. Locking</H2>
+
+<H3>4.3.1. General Principles</H3>
+
+<B>4.3.1.1. Independence of locks.</B> It should be possible to
+lock a resource without re-reading the resource, and without committing to editing
+the resource.
+<P>
+<B>4.3.1.2. Multi-Resource Locking.</B> It should be possible
+to take out a lock on multiple resources in the same action, and this locking
+operation must be atomic across these resources.
+<P>
+<I>***Judy - Multi-resource locking is not in the specification.
+</I>
+<P>
+<B>4.3.1.3. Partial-Resource Locking.</B> It should be possible
+to take out a lock on subsections of an resource.
+<P>
+<I>***Judy - Controversy on this issue at Irvine.
+</I>
+<P>
+<B>4.3.1.4. Multi-Person Locking.</B> It should be possible to
+assign a lock to a single person or to multiple persons with a single action.
+<P>
+<I>***Judy - Multi-person locking is not in the specification.
+</I>
+<P>
+<I>***Fabio - Add a statement that support for locking is optional.
+Also say that systems that do not support locking should provide
+some other type of consistency management.</I>
+<H3>4.3.2. Functional Requirements</H3>
+
+<B>4.3.2.1. Write Locks.</B> It should be possible, via HTTP,
+to restrict modification of a resource to a specific person, or list of persons.
+<P>
+<I>***Fabio - The definition of a write lock should be this: A
+write lock states that no consistency problem will ever occur by changing
+the resource, not that no one else is allowed access to that resource.
+On the other hand, it can be said that access rights to successfully
+Unlocked resources should be allowed to all authorized users.
+</I>
+<P>
+<B>4.3.2.2. Read Locks.</B> It should be possible, via HTTP, to
+indicate to the HTTP server that the contents of a resource should not be
+modified until the read lock is released.
+<P>
+<I>***Judy - Read locks are not in the specification.
+</I>
+<P>
+<B>4.3.2.3. Lock Query.</B> It should be possible to query for
+whether a given URL has any active modification restrictions, and if so, 
+who currently has modification permission.
+<P>
+<I>***Judy - Should add Unlock.</I>
+<H3>4.3.3. Rationale</H3>
+
+At present, HTTP provides limited support for preventing two or
+more from overwriting each other's modifications when they save
+to a given URL. Furthermore, there is no way for people to discover
+if someone else is currently making modifications to a resource.
+This is known as the &quot;lost update problem,&quot; or the &quot;overwrite
+problem.&quot; Since there can be significant cost associated with discovering and
+repairing lost modifications, preventing this problem is crucial for supporting
+distributed authoring. A &quot;write&quot; lock ensures that only
+one person (or list of persons) may modify a resource, preventing overwrites.
+Furthermore, locking support is also a key component of many versioning
+schemes, a desirable capability for distributed authoring.
+<P>
+An author may wish to lock an entire web of resources even though
+he is editing just a single resource, to keep the other resources
+from changing. In this way, an author can ensure that if a local hypertext
+web is consistent in his distributed authoring tool, it will then
+be consistent when he writes it to the server. Because of this, it
+should be possible to take out a lock without also causing transmission
+of the contents of a resource. Since it should not be assumed that because
+a resource is locked, that it will necessarily be modified, and
+since many people may wish to have simultaneous guarantees that a resource
+will not be modified, but still not want to modify the resource
+themselves, it is desirable to have a &quot;read&quot; lock capability.
+A read lock, by being less restrictive, provides better support than
+a write lock for providing a guarantee that a resource will not be modified.
+Put differently, a read lock states that the resource is guaranteed
+not to change for the duration of the lock. A write lock states that
+a resource is guaranteed not to change only if the owner of the
+lock does not change it, and only the owner of the lock may change
+it.
+<P>
+It is often necessary to guarantee that a lock or unlock operation
+occurs at the same time across multiple resources, a feature which
+is supported by the multiple-resource locking requirement. This is
+useful for preventing a collision between two people trying to establish
+locks on the same set of resources, since with multi-resource locking,
+one of the two people will get a lock. If this same multiple-resource
+locking scenario was repeated by using atomic lock operations iterated
+across the resources, the result would be a splitting of the locks between
+the two people, based on resource ordering and race conditions.
+<P>
+Partial resource locking provides support for collaborative editing
+applications, where multiple users may be editing the same resource
+simultaneously. Partial resource locking also allows multiple
+people to simultaneously work on a database type resource. 
+<H2>4.4. Notification of Intention to Edit. </H2>
+
+It should be possible to notify the HTTP server that a resource
+is about to be edited by a given person. It should be possible to query
+the HTTP server for the list of people who have notified the server of
+their intent to edit a resource.
+<P>
+<I>***Judy - It should be possible to notify the server that one
+no longer intends to edit the resource.
+</I>
+<P>
+<I>***Judy - Support for notification of intent to edit is found
+in the specification only in the context of version management. The
+specification does not allow such notification for non-versioned
+resources.</I>
+<P>
+Experience from configuration management systems has shown that
+people need to know when they are about to enter a parallel editing situation.
+Once notified, they either decide not to edit in parallel with
+the other authors, or they use out-of-band communication (face-to-face,
+telephone, etc.) to coordinate their editing to minimize the difficulty
+of merging their results. Notification is separate from locking,
+since a write lock does not necessarily imply a resource will be edited,
+and a notification of intention to edit does not carry with it any
+access restrictions. This capability is supportive of versioning, since
+a check-out typically involves taking out a write lock, making a
+notification of intention to edit, and getting the resource to
+be edited.
+<H2>4.5. Retrieval of Unprocessed Source for Editing </H2>
+
+The source of any given entity should be retrievable via HTTP.
+<P>
+<I>***Judy - Not in the specification.
+</I>
+<P>
+There are many cases where the source stored on a server does
+not correspond to the actual entity transmitted in response to
+an HTTP GET. Current known cases are server side include directives, and
+Standard Generalized Markup Language (SGML) source which is
+converted on the fly to HyperText Markup Language (HTML) [2] output
+entities. There are many possible cases, such as automatic conversion
+of bitmap images into several variant bitmap media types (e.g.
+GIF, JPEG), and automatic conversion of an application's native media
+type into HTML. As an example of this last case, a word processor could
+store its native media type on a server which automatically converts
+it to HTML. A GET of this resource would retrieve the HTML. Retrieving
+the source would retrieve the word processor native format.
+<P>
+This requirement should be met by a general mechanism which can
+handle both the &quot;single-step&quot; source processing described above,
+where the source is converted into the transmission entity via a single
+conversion step, as well as &quot;multi-step&quot; source processing,
+where there are one or more intermediary processing steps and outputs. An
+example of multi-step source processing is the relationship between an
+executable binary image, its object files, and its source language
+files. It should be noted that the relationship between source
+and transmission entity could be expressed using the relationship
+functionality described above in &quot;4.2. Relationships.&quot;
+
+<H2>4.6. Partial Write. </H2>
+
+After editing a resource, it should be possible, via HTTP, to
+write only the changes to the resource, rather than retransmitting the
+entire resource.
+<P>
+<I>***Judy - Not in the specification.
+</I>
+<P>
+During distributed editing which occurs over wide geographic separations
+and/or over low bandwidth connections, it would be extremely inefficient
+(and frustrating) to rewrite a large resource after minor changes,
+such as a one-character spelling correction. Ideally, support will
+be provided for transmitting &quot;insert&quot; (e.g., add this sentence
+in the middle of a document) and &quot;delete&quot; (e.g. remove this
+paragraph from the middle of a document) style updates. Support for partial resource
+updates will make small edits more efficient, and allow distributed
+authoring tools to scale up for editing of large documents.
+<H2>4.7. Name Space Manipulation</H2>
+
+<I>***Fabio - A general treatment of server's name space management
+from clients should be introduced here.
+</I>
+<P>
+<I>***Judy - Need more details of the semantics of copy and move,
+especially for collections, versioned resources, and resources with attributes.
+</I>
+<P>
+<I>***Judy - In the specification, but not mentioned here: Destroy, Undelete, 
+CopyHead, MoveHead.</I>
+<H3>4.7.1. Copy. </H3>
+
+Via HTTP, it should be possible to make a byte-for-byte duplicate
+of a resource without a client loading, then resaving the resource.
+This copy should leave an audit trail.
+<P>
+There are many reasons why a resource might need to be duplicated,
+such as change of ownership, a precursor to major modifications, or
+to make a backup. In combination with delete functionality, copy can be
+used to implement rename and move capabilities, by performing a copy to
+a new name, and a delete of the old name. Due to network costs associated
+with loading and saving a resource, it is far preferable to have
+a server perform a resource copy than a client. If a copied resource
+records which resource it is a copy of, then it would be possible
+for a cache to avoid loading the copied resource if it already locally
+stores the original.
+<H3>4.7.2. Move/Rename. </H3>
+
+Via HTTP, it should be possible to change the URL of a resource
+without a client loading, then resaving the resource under a different
+name.
+<P>
+It is often necessary to change the name of a resource, for example
+due to adoption of a new naming convention, or if a typing error was
+made entering the name originally. Due to network costs, it is undesirable
+to perform this operation by loading, then resaving the resource,
+followed by a delete of the old resource. Similarly, a single
+rename operation is more efficient than a copy followed by a delete operation.
+Ideally an HTTP server should record the move operation, and issue
+a &quot;301 Moved Permanently&quot; status code for requests on
+the old URL. A move operation, if implemented with attribute support, should also
+preserve most attributes across a move. Note that moving a resource is
+considered the same function as renaming a resource.
+<H2>4.8. Collections</H2>
+
+<B>4.8.1. List Collection.</B> A listing of all resources, along
+with their media type, and last modified date, which are located in
+a specific collection should be accessible via HTTP.
+<P>
+<I>***Judy - Not in the specification.
+</I>
+<P>
+In [3] it states that, &quot;some URL schemes (such as the ftp,
+http, and file schemes) contain names that can be considered hierarchical.&quot;
+Especially for HTTP servers which directly map all or part of
+their URL name space into a filesystem, it is very useful to get a listing
+of all resources located at a particular hierarchy level. This functionality
+supports &quot;Save As...&quot; dialog boxes, which provide a
+listing of the entities at a current hierarchy level, and allow navigation through
+the hierarchy. It also supports the creation of graphical visualizations
+(typically as a network) of the hypertext structure among the
+entities at a hierarchy level, or set of levels. It also supports a tree
+visualization of the entities and their hierarchy levels.
+<P>
+In addition, document management systems may want to make their
+documents accessible through HTTP. They typically allow the 
+organization of documents into collections, and so also want their
+usersto be able to view the collection hierarchy through HTTP.
+<P>
+There are many instances where there is not a strong correlation
+between a URL hierarchy level and the notion of a collection. One example
+is a server in which the URL hierarchy level maps to a computational
+process which performs some resolution on the name. In this case, the
+contents of the URL hierarchy level can vary depending on the input to
+the computation, and the number of resources accessible via the computation
+can be very large. It does not make sense to implement a directory
+feature for such a namespace. However, the utility of listing
+the contents of those URL hierarchy levels which do correspond to
+collections, such as the large number of HTTP servers which map
+their namespace to a filesystem, argue for the inclusion of this capability,
+despite not being meaningful in all cases. If listing the contents
+of a URL hierarchy level does not makes sense for a particular URL,
+then a &quot;405 Method Not Allowed&quot; status code could be issued.
+<P>
+AOLpress from America Online currently supports &quot;Save As...&quot;
+dialog boxes, and graphical network visualization of a portion of a site's
+hypertext structure, which they term a &quot;mini-web.&quot; FrontPage
+from Microsoft [6] also currently supports a graphical network visualization
+and additionally supports a tree visualization of a portion of
+a site's structure.
+<P>
+<B>4.8.2. Make Collection.</B> Via HTTP, it should be possible
+to create a new collection.
+<P>
+The ability to create collections to hold related resources supports
+management of a name space by packaging its members into small,
+related clusters. The utility of this capability is demonstrated by the
+broad implementation of directories in recent operating systems. The
+ability to create a collection also supports the creation of &quot;Save
+As...&quot; dialog boxes with &quot;New Level/Folder/Directory&quot; capability,
+common in many applications.
+<P>
+AOLpress from America Online currently supports this capability
+through their &quot;Save As...&quot; dialog box, and their custom
+MKDIR method.
+<H2>4.9. Versioning</H2>
+
+In the following discussion, &quot;versioned resource&quot; means
+a resource that has the structure of a directed acyclic graph, each node of which
+is a version. &quot;Version&quot; means a node in this structure,
+which is itself a resource. Each version typically stands in a &quot;derived from&quot;
+relationship to its predecessor(s).
+<P>
+<I>***Judy - new definitions
+</I>
+<H3>4.9.1. General Principles</H3>
+
+<B>4.9.1.1. Stableness of versions.</B> Most versioning systems
+are intended to provide an accurate record of the history of evolution of a document.
+This accuracy is ensured by the fact that a version eventually
+becomes &quot;frozen&quot; and immutable. Once a version is frozen, further
+changes will create new versions rather than modifying the original. In order
+for caching and persistent references to be properly maintained, a
+client must be able to determine that a version has been frozen. We require
+that unlocked resource versions be frozen. This enables the common
+practice of keeping unfrozen &quot;working versions&quot;. Any
+successful attempt to retrieve a frozen version of a resource will always retrieve
+exactly the same content, or return an error if that version (or the resource
+itself) are no longer available. Since URLs may be reassigned
+at a server's discretion this requirement applies only for that period
+of time during which a URL identifies the same resource. HTTP 1.1's
+Entity tags will need to be integrated into the versioning strategy in
+order for caching to work properly.
+<P>
+<I>***Judy - Does the specification support this?
+</I>
+<P>
+<B>4.9.1.2. Policy-free Versioning.</B> Haake and Hicks [5] have
+identified the notion of versioning styles (referred to here as versioning
+policies, to reflect the nature of client/server interaction)
+as one way to think about the different policies that versioning systems
+implement. Versioning policies include decisions on the shape
+of version histories (linear or branched), the granularity of change
+tracking, locking requirements made by a server, etc. The protocol
+should not unnecessarily restrict version management policies
+to any one paradigm. For instance, locking and version number assignment
+should be inter-operable across servers and clients, even if there
+are some differences in their preferred models.
+<P>
+<B>4.9.1.3. Separation of resource retrieval and concurrency control.</B>
+The protocol must separate the reservation and release of versioned
+resources from their access methods. Provided that consistency
+constraints are met before, during and after the modification
+of a versioned resource, no single policy for accessing a resource
+should be enforced by the protocol. For instance, a user may declare an
+intention to write before or after retrieving a resource via GET, may PUT
+a resource without releasing the lock, and might even request a
+lock via HTTP, but then retrieve the document using another communication
+channel such as FTP.
+<P>
+<I>***Judy - The specification assumes that it's the server, not
+the user, that determines the policy -- order of operations and what
+operations are required.</I>
+<P>
+<I>***Judy - &quot;Separation of resource retrieval and concurrency
+control&quot; is supported by the Request-Lock, Request-Intent, and 
+Request-Working-Loc parameters to the CheckOut method and the discovery mechanism.
+This is all embroiled in the controversy over how much latitude we
+want to give servers, how simple we want to make things for clients, whether
+we want to rely on the discovery mechanism, etc.</I>
+<H3>4.9.2. Functional Requirements
+</H3>
+
+<I>***Judy - In the specification, but not mentioned here: Diff/Merge,
+ServerMerge, UnVersion.
+</I>
+<P>
+<B>4.9.2.1. Access to specific versions via a URL.</B> For each
+version of a resource, on a server, there should be a URL to refer to that
+version. That is, a version is itself a resource.
+<P>
+This is required for version-specific linking, and for non-versioning
+client support.
+<P>
+<B>4.9.2.2. A URL to denote a versioned resource itself, rather
+than specific versions of it.
+</B>
+<P>
+This identifier is needed for queries about the versioning status
+of a resource, that do not apply only to one version of that resource.
+It is also used to perform operations (such as adjusting attributes,
+changing locks, or reassigning URLs) that affect all versions of a resource,
+rather than any specific version.
+<P>
+<B>4.9.2.3. Direct access to a server-defined &quot;default&quot;,
+&quot;current&quot; or &quot;tip&quot;version of a resource.
+</B>
+<P>
+This is one of the simplest ways to guarantee non-versioning client
+compatibility. If no special version information is provided,
+the server will provide a default. This does not rule out the possibility
+of a server returning an error when no sensible default exists,
+but it does provide a standard way to support non-versioning clients,
+and one of the most common version access disciplines.
+<P>
+<B>4.9.2.4. A way to access common related URLs from the URL of
+a particular version or of a versioned resource:</B>
+<UL>
+<LI>root version(s) of this document
+<LI>predecessor version(s) of this document
+<LI>successor version(s) of this document
+<LI>default version of this document
+</UL>
+<P>
+It must be possible in some way for a versioning client to access
+versions related to a resource whose URL it has. In particular,
+access to the &quot;default&quot; version of a resource is an extremely
+important operation, that a client should be able to perform at any time
+that a URL for a particular version or for a versioned resource is
+seen.
+<P>
+<I>***Judy - Specification provides some, but not all, of these
+navigationpaths.
+</I>
+<P>
+<B>4.9.2.5. A way to retrieve the complete version topology for
+a resource.</B> There should be a way to retrieve information about all versions
+of a resource. The format for this information must be standardized
+so that the basic information can be used by all clients. Other specialized
+formats should be accomodated, for servers and clients that require
+information that cannot be included in the standard topology.
+<P>
+<B>4.9.2.6. A way to determine whether a given URL points to a
+version of a versioned resource.
+</B>
+<P>
+<I>***Judy - Are we requiring that you be able to tell this just
+by examining the URL?
+</I>
+<P>
+<B>4.9.2.7. A way to distinguish, given a URL of a version, the
+part of the URL that identifies the version from the part that identifies
+the versioned resource.
+</B>
+<P>
+<I>***Judy - Do we really have to (want to) require that you be
+able to find out the URL of the versioned resource by examining the
+URL of the version? Is the requirement really just that there be some
+way to find out, for any version, the URL of its versioned resource?
+</I>
+<P>
+<I>***Judy - Specification does not provide a way to find out
+the URL of the versioned resource(s) to which a version belongs.</I> 
+<P>
+Being able to determine the URL of the versioned resource makes
+it possible to implement browsing the version tree.
+<P>
+It also supports some comparison operations: It makes it possible
+to determine whether two URLs designate versions of the same versioned
+resource. However, given the phenomenon of URL aliasing, it 
+is insufficient to determine that they are not versions of the
+same resource.
+<P>
+<I>***Judy - If  4.9.2.8 - 14 are intended to require separate
+operations for each of these functions, they conflict with the approach
+taken in the WEBDAV specification.
+</I>
+<P>
+<B>4.9.2.8. A way to request exclusive access to a version of
+a resource (Lock).</B> (See Section 4.3 &quot;Locking&quot; above.)
+<P>
+Since not all systems implement lock-based access, the protocol
+should not require clients to take out a lock before editing, nor should
+it require servers to support locking.
+<P>
+<B>4.9.2.9. A way to release exclusive access to a resource (Unlock).</B>
+This is the inverse of Lock.
+<P>
+<B>4.9.2.10. A way for a client to declare an intention to modify
+a resource (Reserve).</B> (See Section 4.4 &quot;Notification
+of Intent to Edit&quot;above.)
+<P>
+This operation is required before any versioned update. Its effects
+may vary depending on server policy, from locking a resource, to forking
+a new variant, to a NOOP on servers that do not track sessions or
+restrict updates. If this operation returns a version number, the client
+is required to make sure that it uses a copy of the data associated
+with that version number of the resource for any update operations
+it carries out. Servers that wish to enforce a mandatory GET operation
+before update, should simply use a fresh version identifier on
+the return from this operation.
+<P>
+<B>4.9.2.11. A way to declare the end of an intention to write
+a resource (Release).</B> This is the inverse of Reserve. Typically, servers
+will commit updates at this time, and return a final version identifier
+if possible and if it was not already returned.
+<P>
+<B>4.9.2.12. A way to submit a new version of a resource (PUT).</B>
+The server should be able to attach it to the correct part of the version
+tree, based on the version number associated with the resource before
+its modification.
+<P>
+<B>4.9.2.13. A way for a client to request a version identifier
+for a checked out version.</B> Such an identifier will not be used
+by any other client in the meantime. The server may refuse the request.
+<P>
+<B>4.9.2.14. A way for a client to propose a version identifier
+upon submitting a version of a resource.</B> The server may refuse
+to to use the client's suggested version identifier.
+<P>
+<B>4.9.2.15. A way for a client to supply metadata to be associated
+with a version.</B> (See Section 4.1 &quot;Attributes&quot; above.)
+<P>
+The kinds of data supplied here might be simple textual comments
+or more structured data. An ability to attach arbitrary fields and
+content is probably required, but a standard set of attributes that would
+enable interoperation would be useful. At a minimum, it must be
+possible to associate comments with a version, explaining what
+changes were made, when it is checked in.
+<P>
+<B>4.9.2.16. A way for a server to provide a version identifier
+to be used for a resource in further operations.
+</B>
+<P>
+This identifier must accompany client requests to manipulate the
+resource. In particular, if a resource is being modified, the
+identifier must be used when submitting an update. This allows servers to
+track active sessions by assigning version identifiers when documents
+are retrieved, locked, or reserved.
+<P>
+<B>4.9.2.17. A way to track resources that have been Reserved
+(Session Tracking). </B>This allows the server to ensure that the user
+operating on a resource is the same one who Reserved it.
+<P>
+<I>***Judy -- Not in the specification.
+</I>
+<P>
+<I>***Judy - Uncheckout is neither in the requirements nor in
+the specification. Do we need it?
+</I>
+
+<H3>4.9.3. Rationale</H3>
+
+Versioning in the context of the world-wide web offers a variety
+of benefits:
+<P>
+It provides infrastructure for efficient and controlled management
+of large evolving web sites. Modern configuration management systems
+are built on some form of repository that can track the revision history
+of individual resources, and provide the higher-level tools to manage
+those saved versions. Basic versioning capabilities are required
+to support such systems.
+<P>
+It allows parallel development and update of single resources.
+Since versioning systems register change by creating new objects, they
+enable simultaneous write access by allowing the creation of variant
+versions. Many also provide merge support to ease the reverse
+operation.
+<P>
+It provides a framework for access control over resources. While
+specifics vary, most systems provide some method of controlling
+or tracking access to enable collaborative resource development.
+<P>
+It allows browsing through past and alternative versions of a
+resource. Frequently the modification and authorship history of a resource
+is critical information in itself.
+<P>
+It provides stable names that can support externally stored links
+for annotation and link-server support. Both annotation and link servers
+frequently need to store stable references to portions of resources
+that are not under their direct control. By providing stable states
+of resources, version control systems allow not only stable pointers
+into those resources, but also well-defined methods to determine the
+relationships of those states of a resource.
+<P>
+It allows explicit semantic representation of single resources
+with multiple states. A versioning system directly represents the fact
+that a resource has an explicit history, and a persistent identity
+across the various states it has had during the course of that history.
+<H2>5. Acknowledgements (Get current mailing list)</H2>
+
+Our understanding of these issues has emerged as the result of
+muchthoughtful discussion, email, and assistance by many people, who
+deserve recognition for their effort.
+<P>
+Martin Cagan, Continuus Software, Marty_Cagan@continuus.com
+Dan Connolly, World Wide Web Consortium, connolly@w3.org
+Ron Fein, Microsoft, ronfe@microsoft.com
+David Fiander, Mortice Kern Systems, davidf@mks.com
+Roy Fielding, U.C. Irvine, fielding@ics.uci.edu
+Yaron Goland, Microsoft, yarong@microsoft.com
+Phill Hallam-Baker, MIT, hallam@ai.mit.edu
+Dennis Hamilton, Xerox PARC, hamilton@parc.xerox.com
+Andre van der Hoek, University of Colorado, Boulder,
+andre@bigtime.cs.colorado.edu
+Gail Kaiser, Columbia University, kaiser@cs.columbia.edu
+Rohit Khare, World Wide Web Consortium, khare@w3.org
+Dave Long, America Online, dave@sb.aol.com
+Henrik Frystyk Nielsen, World Wide Web Consortium, frystyk@w3.org
+Ora Lassila, Nokia Research Center, ora.lassila@research.nokia.com
+Larry Masinter, Xerox PARC, masinter@parc.xerox.com
+Murray Maloney, SoftQuad, murray@sq.com
+Jim Miller, World Wide Web Consortium, jmiller@w3.org
+Andrew Schulert, Microsoft, andyschu@microsoft.com
+Christopher Seiwald, Perforce Software, seiwald@perforce.com
+Richard Taylor, U.C. Irvine, taylor@ics.uci.edu
+Robert Thau, MIT, rst@ai.mit.edu
+<H1>6. References</H1>
+
+[1] America Online, &quot;AOL Web Tools -- AOLpress 1.2 Features.&quot;
+WWW page. http://www.aolpress.com/press/1.2features.html.
+<P>
+[2] T. Berners-Lee, D. Connolly. &quot;HyperText Markup Language
+Specification - 2.0.&quot; RFC 1866, MIT/LCS, November 1995.
+<P>
+[3] T. Berners-Lee, L. Masinter, M. McCahill. &quot;Uniform Resource
+Locators (URL).&quot; RFC 1738, CERN, Xerox PARC, University of
+Minnesota, December 1994.
+<P>
+[4] R. Fielding, J. Gettys, J. C. Mogul, H. Frystyk, and
+T. Berners-Lee. &quot;Hypertext Transfer Protocol -- HTTP/1.1.&quot;
+RFC 2068, U.C. Irvine, DEC, MIT/LCS, January 1997.
+<P>
+[5] A. Haake, D. Hicks. &quot;VerSE: Towards Hypertext Versioning
+Styles&quot;, Proc. Hypertext'96, the Seventh ACM Conference on Hypertext, 1996,
+pages 224-234.
+<P>
+[6] Microsoft. &quot;Microsoft FrontPage for Windows Data Sheet.&quot;
+WWW page. http://www.microsoft.com/msoffice/frontpage/productinfo/brochure/
+default.htm.
+<P>
+[7] K. Osterbye. &quot;Structural and Congitive Problems in Providing
+Version Control for Hypertext&quot;, Proceedings of the ACM Conference
+on Hypertext, Milano, Italy, 1992, pp 33-42.
+<P>
+[8] &quot;Version Control in Hypermedia Databases&quot; Technical
+report TAMU-HRL-91-004, Hypertext Research Lab, Texas A&amp;M University.
+1991.
+<H2>Authors' Addresses</H2>
+
+<PRE>
+Judith Slein
+Xerox Corporation
+800 Phillips Road 128-29E
+Webster, NY 14580
+
+EMail: slein@wrc.xerox.com
+
+E. James Whitehead, Jr.
+Department of Information and Computer Science
+University of California
+Irvine, CA 92697-3425
+
+Fax: 714-824-4056
+EMail: ejw@ics.uci.edu
+
+David G. Durand
+Department of Computer Science
+Boston University
+Boston, MA<BR>
+
+EMail: dgd@cs.bu.edu
+
+Fabio Vitali
+Department of Computer Science
+University of Bologna
+ITALY
+
+EMail: fabio@cs.unibo.it
+</PRE> 
+</BODY>
+
+</HTML>
+

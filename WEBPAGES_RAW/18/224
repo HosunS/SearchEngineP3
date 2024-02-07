@@ -1,0 +1,408 @@
+### R functions for
+### A Bayesian Discovery Procedure
+### by Guindani, Muller, Zhang
+
+library(MCMCpack)
+library(mvtnorm)
+library(Matrix)
+
+
+## MCMC function
+## for the analysis in section 5.2
+
+cDPODP <-  function(y, B=B, p0=0.5, up.mcmc=T, nu=1,  sigma=1, tau=1, alpha.sig=1, beta.sig=1, alpha.tau=1, beta.tau=1, dbg=1)
+{
+  ## y -- data (z scores)
+  ## B -- number of iterations
+  ## p0 -- prior probability of the null
+  ## dbg -- debug (yes/no)
+  ## up.mcmc=T --  mcmc update of sigma and tau
+  ## alpha.sig and beta.sig -- hyperparameters for sigma (up.mcmc=T)
+  ## alpha.tau and beta.tau -- hyperparameters for tau (up.mcmc=T)
+  ## sigma -- sampling variability  (up.mcmc=F)
+  ## tau -- G0 prior variance (up.mcmc=F)
+
+  output <- file("output_DP.txt", "w")
+
+  MM <- length(y)
+  inizval <- inizcDP(y, nu, sigma, tau, p0)
+  label <- inizval$label
+
+  matlabel <- matrix(0, B, MM)
+  lpost <- rep(0, B)
+   if(up.mcmc==T) sigma.up <- rep(0, B)
+   if(up.mcmc==T) tau.up <- rep(0, B)
+
+  # runs the simulation over B iterations
+  for(b in 1:B){
+                                        #cat(b,": ")
+    for(k in 1:MM){
+        L <- max(label)
+        j0 <- label[k]
+        label[k] <-  -1
+        if(j0>1)
+          {
+            if (sum(label==j0)==0) # lonely guy
+              label <- ifelse(label > j0, label-1, label)
+          }
+        L <- max(label)
+        freq <- tabulate(label[-k])
+
+        if(dbg==1){
+          if(sum(freq) != MM-1)
+            cat("\n **** ERRROR something fishy with label.\n")
+        }
+        label[k] <- qsampleconfig(y, k, label, freq,  L, nu, sigma, tau, p0=p0, iniz=0)
+        L <- max(label)
+        freq <- tabulate(label)
+      }# k
+      ##browser()
+      ##end of the sweep
+
+    if(up.mcmc==T)
+      {
+        ## find centroids
+        L <- max(label)
+        freq <- tabulate(label)
+        centr.vec <- rep(NA, L)
+        yj <- rep(NA, L)
+        for(j in 1:L) yj[j] <- sum(y[label==j])
+        ## sigma update
+        centr.var <-  c(NA, (sigma*tau)/(tau * freq[2:L]+sigma))
+        centr.mean <- c(NA, (centr.var[2:L] * yj[2:L] /(sigma)))
+        centr.vec  <- c(0, rnorm(rep(1,(L-1)), centr.mean[2:L], sqrt(centr.var[2:L])))
+
+        alpha.sig.up <- alpha.sig+0.5*MM
+        sum.temp=0.0
+        for(j in 1:L) sum.temp <- sum.temp+sum((y[label==j]-centr.vec[j])^2)
+        beta.sig.up <- beta.sig+0.5*sum.temp
+        sigma <- 1/rgamma(1, alpha.sig.up, rate=beta.sig.up)
+        sigma.up[b] <- sigma
+
+        ## update tau, var of G0
+
+        alpha.tau.up <- alpha.tau+0.5*(L-1) ## L-1 because tau is not on the first component
+        beta.tau.up <- beta.tau+0.5*sum(centr.vec^2)
+
+        tau <- 1/rgamma(1, alpha.tau.up, rate=beta.tau.up)
+        tau.up[b] <- tau
+
+        llikl <- lprior  <- 0
+        llikl <- dnorm(yj[1:L], centr.vec[1:L], sqrt(sigma), log=T)
+        lprior <- dnorm(centr.vec[1:L], 0, sqrt(tau), log=T)+log(dinvgamma(tau, alpha.tau, beta.tau))+log(dinvgamma(sigma, alpha.sig, beta.sig))
+        lpost[b] <- sum(lprior+llikl)
+
+      }
+
+    matlabel[b,] <- label
+
+    cat("Iteration ", b , " L=",L , " sigma=", sigma, " tau=", tau, "\n", file=output)
+  }# b
+  cat("DP done \n", file=output)
+  close(output)
+  list(label=label, matlabel=matlabel, logpost=lpost, sigma=sigma.up, tau=tau.up)
+   ## label <- last iteration labels
+   ## matlabel <- matrix of labels across iterations
+   ## lpost <- log posterior
+   ## sigma.up <- chain for sigmas
+   ## tau.up <- chain for tau
+}
+
+### the previous function relies on the following
+
+### initialization of the DP algorithm
+
+inizcDP <-  function(y, nu, sigma, tau, p0)
+{
+  MM <- length(y)
+  label <- rep(0, MM)
+  label[1] <- 1
+  for(k in 2:MM){
+    L <- max(label[1:(k-1)])
+    freq <- tabulate(label[1:(k-1)])
+    label[k] <- qsampleconfig(y, k, label, freq,  L, nu, sigma, tau,p0, iniz=1)
+    L <- max(label)
+  }# k
+  list(label=label)
+}
+
+### simple DP Polya Urn scheme
+### based on configurations (labels)
+### section 5.2 (data -- z scores)
+
+
+
+qsampleconfig <- function(y, k, label, freq,  L, nu, sigma, tau, p0, iniz=0, dbg=0)
+  {
+    ## y -- data (z scores)
+    ## k -- current update is for the k-observation (y[k])
+    ## label -- vector of configurations at the current iteration (excluding obs k)
+    ## freq -- vector of label frequencies (excluding obs k)
+    ## L -- current number of DP clusters
+    ## nu -- DP mass parameter
+    ## sigma -- sampling variability
+    ## tau -- G0 prior variance
+    ## p0 -- prior probability of the null
+    ##  iniz=1 inizialization step yes(1), no(0)
+    yj <- rep(0,L)
+    post.pred.mean <- rep(0,L)
+    post.pred.var <- rep(0,L)
+
+    for(j in 1:L){
+      yj[j] <- sum(y[label==j]) # note label[k]= -1
+                                        # compute p(s[k]=L+1 | ...)
+                                        # browser()
+                                        #quadyj[j] <- sum(y[label==j]%*%y[label==j])
+    }
+
+                                        # quadyk <- quadyj[j]+y[k]*y[k]
+    if((dbg==0)  & (iniz==1))
+      {
+        if (round(sum(yj),5) != round(sum(y[1:(k-1)]),5)){
+          cat("\n **** ERRROR something fishy with yj.\n")
+          browser()}
+      }
+    q <- rep(0,L+1)
+    q[1] <- log(nu*p0+freq[1])
+    q[1] <- q[1]+dnorm(y[k],0,sqrt(sigma),log=T)
+
+    if(L>1){
+      ## posterior predictive parameters
+      post.pred.var[2:L] <- (sigma*tau)/(tau * freq[2:L]+sigma)
+      post.pred.mean[2:L] <- post.pred.var[2:L] *  yj[2:L]/sigma
+      q[2:L] <- log(freq[2:L])+dnorm(y[k], post.pred.mean[2:L], sqrt(post.pred.var[2:L]+sigma), log=T)
+    }
+    q[L+1]<- log(nu*(1-p0))+dnorm(y[k],0,sqrt(sigma+tau),log=T)
+
+    q <- exp(q-max(q))
+
+    sk <- sample(1:(L+1),1,T,q)
+    sk
+  }
+
+
+## BDP function for section 5.2
+
+cBayesODP <- function(z, data, label, mu0,  sigma)
+  {
+  ## z -- value where to compute BDP(z)
+  ## data -- z scores
+  ## label -- configuration taken into consideration
+  ## mu0 -- mean under the null
+  ## sigma -- sampling variability
+  
+    num <- 0.0
+    den <- 0.0
+    L <- max(label)
+    f <- tabulate(label)
+                                        # compute num (alternatives)
+                                        # and den (true null)
+    mustar <- rep(0,L)
+    for(j in 1:L)
+      {
+        mustar[j]=sum(data[label==j])/f[j]
+      }
+    for(i in 1:length(label))
+      {
+        if(label[i]==1)
+          den <- den + dnorm(z, mu0, sigma) else
+        {for(j in 2:L)
+           {
+             if(label[i]==j)
+                       num <- num + dnorm(z, mustar[j], sigma)
+           }
+       }
+      }
+    ratio <- num/den
+    ratio
+
+  }
+  
+  
+###################################
+## MCMC implementation
+## for full data in sec 5.2 (eq 16)
+## now we consider the raw data
+
+
+## MCMC function
+
+
+cDPODP_full <-  function(y, tlabel, B=B, p0=0.5, nu=1, sigma0, df0, const0, dbg=1)
+{
+  ##  y -- data
+  ## tlabel -- vector of conditions  (e.g. 1 or 2)
+  ## B -- number of iterations
+  ## p0 -- prior probability of the null
+  ## nu -- DP mass parameter
+  ## sigma0 -- prior hyperparameter for the Inv-Gamma on sigma
+  ## df0 -- prior hyperparameter for the Inv-Gamma on sigma
+  ## const0 -- k0 in the expression of G_0 (eq 16)
+  ## dbg -- debug (yes/no)
+
+  output <- file("output_DP.txt", "w")
+
+  ## determine the groups (here I assume 2 groups)
+
+  MM <- dim(y)[1]
+
+  inizval <- inizcDP_full(y, tlabel, p0, nu, sigma0, df0, const0)
+  label <- inizval$label
+
+  matlabel <- matrix(0, B, MM)
+  lpost <- rep(0, B)
+
+  # runs the simulation over B iterations
+  for(b in 1:B){
+    for(k in 1:MM){
+        L <- max(label)
+        j0 <- label[k]
+        label[k] <-  -1
+        if(j0>1)
+          {
+            if (sum(label==j0)==0) # lonely guy
+              label <- ifelse(label > j0, label-1, label)
+          }
+        L <- max(label)
+        freq <- tabulate(label[-k])
+
+        if(dbg==1){
+          if(sum(freq) != MM-1)
+            cat("\n **** ERRROR something fishy with label.\n")
+        }
+        label[k] <- qsampleconfig_full(y, k, tlabel, label, freq,  L, nu, sigma0, df0, const0, p0)
+        L <- max(label)
+        freq <- tabulate(label)
+      }# k
+
+    matlabel[b,] <- label
+
+    cat("Iteration ", b , " L=",L , "\n")##, file=output)
+  }# b
+  cat("DP done \n", file=output)
+  close(output)
+  list(label=label, matlabel=matlabel, logpost=lpost)
+
+}
+
+## function for the initialization
+
+inizcDP_full <-  function(y,  tlabel, p0, nu, sigma0, df0, const0)
+{
+  ## y - data
+  ## tlabel -- samples (e.g., 1 or 2)
+  ## p0, nu, sigma0, df0 and const0 as in cDPODP_full
+  MM <- dim(y)[1]
+  label <- rep(0, MM)
+  label[1] <- 1
+  for(k in 2:MM){
+    ##if(k>5) browser()
+    L <- max(label[1:(k-1)])
+    freq <- tabulate(label[1:(k-1)])
+    label[k] <- qsampleconfig_full(y, k, tlabel, label, freq,  L, nu, sigma0, df0, const0, p0)
+    L <- max(label)
+    ##cat(" k = ",  k, " L=", L, "\n")
+  }# k
+  list(label=label)
+}
+
+###  DP Polya Urn scheme
+### based on configurations (labels)
+### section 5.2 (data -- full data)
+
+qsampleconfig_full <- function(y, k, tlabel, label, freq, L, nu, sigma0, df0, const0, p0, dbg=0)
+  {
+    ##  y -- data
+    ##  k -- current observation update is y[k]
+    ##  tlabel= vector of condition indicator
+    ##  label -- vector of indicators (excluding k)
+    ##  L -- total number of cluster
+    ##  nu -- DP mass parameter
+    ##  sigma0, df0, p0 as before
+    ##  iniz=1 inizialization step yes(1), no(0)
+
+    y1 <- y[, tlabel==1]
+    y2 <- y[, tlabel==2]
+    n1 <- length(tlabel[tlabel==1])
+    n2 <- length(tlabel[tlabel==2])
+
+    ## computation of the weights
+
+    q <- rep(0,L+1)
+    q[1] <- log(nu*p0+freq[1])
+    dfst <- df0+freq[1]*(n1+n2)
+    sigma2st <- (df0*sigma0 + sum(y[label==1,]^2))/dfst
+    Sigma <- sigma2st * diag(1, n1+n2)
+    Mu <- rep(0, (n1+n2))
+
+    q[1] <- q[1]+dmvt(y[k,], delta=Mu, sigma=Sigma, df=dfst, log=TRUE)
+
+    if(L>1){
+      for(j in 2:L){
+        q[j] <- log(freq[j])
+        const_st <- const0+ freq[j] * n2
+        dfst <- df0+freq[j]*(n1+n2)
+        sigma2st <- (df0*sigma0 + sum(y[label==j,]^2))/dfst
+        Sigma <- as.matrix(sigma2st * bdiag(diag(1, n1), (1+1/const_st)* diag(1, n2)))
+        Mu <- c(rep(0, n1), rep((1/const_st)*sum(y[label==j,tlabel==2]), n2))
+        q[j] <- q[j]+dmvt(y[k,], delta=Mu, sigma=Sigma, df=dfst, log=TRUE)
+      }
+    }
+    q[L+1] <- log(nu*(1-p0))
+    Mu <- rep(0, (n1+n2))
+    Sigma <- as.matrix(sigma0 *  bdiag(diag(1, n1), diag(1+1/const0, n2)))
+    q[L+1] <- q[L+1]+dmvt(as.vector(y[k,]), delta=Mu, sigma=Sigma, df=dfst, log=TRUE)
+
+
+    q <- exp(q-max(q))
+
+    sk <- sample(1:(L+1),1,T,q)
+    sk
+  }
+
+## Function to compute the BDP for the full dataset
+
+cBayesODP_full <- function(vett, f, mustar1, mustar2, sdstar1, sdstar2, vtlab1, vtlab2, nlab1, nlab2, L)
+  {
+    ## vett --  vector (matrix of data actually) to compute BDP(vett)
+    ## f --  vector of frequencies (computed from the vector of labels outside this function)
+    ##       i.e. L <- max(label); f <- tabulate(label)
+    ## mustar1 -- posterior mean for the samples in condition 1
+    ## mustar2 -- posterior mean for sample in condition 2
+    ## sdstar 1 -- post sd for samples in condition 1
+    ## sdstar 2 -- post sd for samples in condition 2
+    ## vtlab1 -- samples in condition 1 vtlab1 <- which(tlabel==1)
+    ## vtlab2 -- samples in condition 2 vtlab2 <- which(tlabel==2)
+    ## nlab1 -- number of samples in condition 1
+    ## nlab2 -- number of samples in condition 2
+
+
+    num <- 0.0
+    den <- 0.0
+
+    n  <-  dim(vett)[2]
+
+    mv.mu <- matrix(0,n, L)
+    mv.sd <- matrix(0,n, L)
+
+    BDP <- rep(0, dim(vett)[1])
+
+    mv.mu[vtlab1, 1:L]  <- matrix(mustar1, nlab1, L, byrow=T)
+    mv.mu[vtlab2, 1:L]  <- matrix(mustar2, nlab2, L, byrow=T)
+    mv.sd[vtlab1, 1:L]  <- matrix(sdstar1, nlab1, L, byrow=T)
+    mv.sd[vtlab2, 1:L]  <- matrix(sdstar2, nlab2, L, byrow=T)
+
+    for(r in 1:dim(vett)[1])
+      {
+        num <- rep(0, L)
+        ## semplification
+
+        den <- f[1] * dmvnorm(vett[r,], mean=mv.mu[,1],  sigma=diag(mv.sd[,1]^2, n))
+        for(j in 2:L) num[j]  <- f[j] * dmvnorm(vett[r,], mv.mu[,j], sigma=diag(mv.sd[,j]^2, n))
+
+        BDP[r] <- sum(num)/den
+
+
+      }
+    BDP
+  }

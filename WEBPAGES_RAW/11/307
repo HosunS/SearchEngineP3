@@ -1,0 +1,137 @@
+# Program3-2.py
+#
+# This is version 2 of a program to find candidate genes on the given
+# and reverse strands of DNA sequences, with each candidate gene translated
+# to amino acid sequences.  It reads DNA sequences from an AlexDNA file
+# and searches within them.
+#
+# This program is based heavily on Program2-2.py, with one new function
+# that translates a DNA sequence to the corresponding amino acids, and a
+# couple of other minor changes to "plug" the function into the program.
+
+
+# The readDnaSequences function takes a filename as a parameter and
+# returns a list of all the DNA sequences stored in the file with that
+# filename.  It is assumed that the filename refers to a file that's in
+# AlexDNA format.
+
+def readDnaSequences(filename):
+    dnaFile = open(filename)
+
+    # Create an empty list of DNA sequences.  We'll add DNA sequences
+    # to the list as we find them.
+    dnaSequences = []
+
+    for line in dnaFile:
+
+        # This removes the last character of the line, which is
+        # necessary because Python, when it reads a line from a
+        # file, leaves a "newline" character on the end of the line.
+        # This newline character is not part of a DNA sequence, so
+        # it's best for us to eliminate it now so it doesn't cause
+        # us any problems later.
+
+        line = line[0 : len(line)-1]
+
+        if line != "" and line[0] != "#":
+
+            # The line is a DNA sequence!  Add it to the list of
+            # DNA sequences.
+            dnaSequences.append(line)
+
+    # When we're done, we return the list as the output of the function.
+    return dnaSequences
+
+
+
+# The convertDnaSequenceToAminoAcids function takes a DNA sequence
+# and converts it to the corresponding amino acid sequence.
+
+def convertDnaSequenceToAminoAcids(dnaSequence):
+    dnaToAminoAcid = { 'TTT':'F', 'TTC':'F', 'TTA':'L', 'TTG':'L',
+                       'TCT':'S', 'TCC':'S', 'TCA':'S', 'TCG':'S',
+                       'TAT':'Y', 'TAC':'Y', 'TAA':'!', 'TAG':'!',
+                       'TGT':'C', 'TGC':'C', 'TGA':'!', 'TGG':'W',
+                       'CTT':'L', 'CTC':'L', 'CTA':'L', 'CTG':'L',
+                       'CCT':'P', 'CCC':'P', 'CCA':'P', 'CCG':'P',
+                       'CAT':'H', 'CAC':'H', 'CAA':'Q', 'CAG':'Q',
+                       'CGT':'R', 'CGC':'R', 'CGA':'R', 'CGG':'R',
+                       'ATT':'I', 'ATC':'I', 'ATA':'I', 'ATG':'M',
+                       'ACT':'T', 'ACC':'T', 'ACA':'T', 'ACG':'T',
+                       'AAT':'N', 'AAC':'N', 'AAA':'K', 'AAG':'K',
+                       'AGT':'S', 'AGC':'S', 'AGA':'R', 'AGG':'R',
+                       'GTT':'V', 'GTC':'V', 'GTA':'V', 'GTG':'V',
+                       'GCT':'A', 'GCC':'A', 'GCA':'A', 'GCG':'A',
+                       'GAT':'D', 'GAC':'D', 'GAA':'E', 'GAG':'E',
+                       'GGT':'G', 'GGC':'G', 'GGA':'G', 'GGG':'G' }
+
+    aminoAcidSequence = ""
+
+    for i in range(0, len(dnaSequence)-2, 3):
+        aminoAcidSequence = aminoAcidSequence + dnaToAminoAcid[dnaSequence[i : i+3]]
+
+    return aminoAcidSequence
+
+
+
+# The printCandidateGenes function takes a DNA sequence as a parameter
+# (i.e., as its input), finds any candidate genes using the rules we've
+# used previously, then prints information about it.  For each, it prints
+# the start position of the candidate gene, as well as its length (measured
+# in codons.  It also takes a sequence number as a parameter, allowing it
+# to print the sequence number along with its output.  Lastly, it takes a
+# "boolean" (True or False) value that indicates whether the DNA sequence
+# is the given or reverse strand.
+
+def printCandidateGenes(dnaSequence, sequenceNumber, isGivenStrand):
+    for i in range(0, len(dnaSequence)-2):
+        if dnaSequence[i : i+3] == 'ATG':
+            for j in range(i+3, len(dnaSequence)-2, 3):
+                if dnaSequence[j : j+3] == 'TAA' or dnaSequence[j : j+3] == 'TAG' or dnaSequence[j : j+3] == 'TGA':
+                    if j+3-i >= 60:
+                        print "-----"
+
+                        if isGivenStrand:
+                            print "Candidate gene found on given strand of sequence number", sequenceNumber
+                        else:
+                            print "Candidate gene found on reverse strand of sequence number", sequenceNumber
+                        
+                        print "     Start position     :", (i+1)
+                        print "     Length (in codons) :", (j+3-i)/3
+                        print "     Amino acid sequence:", convertDnaSequenceToAminoAcids(dnaSequence[i:j])
+                    break
+
+
+
+# The findReverseComplement function takes a DNA sequence as a parameter
+# and returns its reverse complement.
+
+def findReverseComplement(dnaSequence):
+    basePairTranslator = {}
+    basePairTranslator['A'] = 'T'
+    basePairTranslator['C'] = 'G'
+    basePairTranslator['G'] = 'C'
+    basePairTranslator['T'] = 'A'
+
+    reverseStrand = ""
+
+    for i in range(len(dnaSequence)-1, -1, -1):
+        c = dnaSequence[i]
+        reverseC = basePairTranslator[c]
+        reverseStrand = reverseStrand + reverseC
+
+    return reverseStrand
+
+
+
+filename = raw_input("Enter the name of an AlexDNA file: ")
+
+dnaSequences = readDnaSequences(filename)
+
+sequenceNumber = 1
+
+for dnaSequence in dnaSequences:
+    printCandidateGenes(dnaSequence, sequenceNumber, True)
+    printCandidateGenes(findReverseComplement(dnaSequence), sequenceNumber, False)
+    sequenceNumber = sequenceNumber + 1
+

@@ -1,0 +1,110 @@
+<HTML>
+<HEAD>
+<TITLE>ICS 180, February 2, 1999</TITLE>
+<META name="Owner" value="eppstein">
+<META name="Reply-To" value="eppstein@ics.uci.edu">
+</HEAD><BODY>
+<IMG SRC="icslogo2.gif" WIDTH=472 HEIGHT=72 ALT=""><P>
+<A HREF="index.html">
+<H1>ICS 180, Winter 1999:<BR>
+Strategy and board game programming</H1></A>
+
+<H2>Lecture notes for February 2, 1999<BR>
+Forcing progress in Winning Positions</H2>
+
+If the game reaches a point where a win can be forced,
+alpha-beta search will find it.  But, paradoxically, making a winning move at each turn 
+is not always enough to win the game.  The problem is in games like 
+checkers or chess, one can make a sequence of moves that each lead to a 
+forced win, but that don't cause the win to get any closer.
+
+<P>For example, consider the following chess position:
+<P><CENTER><IMG SRC="990202a.gif" WIDTH=292 HEIGHT=292
+ALT="White: Kd6, Qa7; Black: Ke8"></CENTER>
+
+<P>White to move can win immediately by moving the queen to square e7,
+checkmating the black queen.  But white also has other moves that win more 
+slowly; in fact there is only one move white can make that does not win.
+For instance, suppose white moves his king to e6; black's only moves are d8 
+and f8, after either of which white still has a checkmate possible.
+If black moves to d8, white can still win by moving back to d6.
+But after the sequence of moves 1. Ke6 Kd8 2. Kd6 Ke8 we are back where we 
+started!  White is making winning moves, but he isn't making progress to a 
+win.
+
+<P>If an alpha-beta search gives the same evaluation to any winning 
+position, it can easily fall into this trap.  To prevent this, we need to 
+change the evaluation of winning positions, so that a win in fewer moves 
+is counted slightly better than a delayed win.  The code is 
+straightforward: if we keep a variable "ply" denoting how far the current 
+position is from the root of the search, we can adjust the score for a 
+winning position by subtracting the ply.  The following pseudocode assumes 
+that we have defined a constant "WIN" which refers to the maximum score 
+possible in a game (in chess, a typical value for WIN would be 100 or 1000 times 
+the value of a pawn).
+
+<PRE>
+    // Alpha-beta search with WIN scores adjusted for ply
+
+    int ply;    // global variable initialized to zero at start of search
+    int alphabeta(int depth, int alpha, int beta)
+    {
+        if (game over and current player has won) return WIN - ply;
+        else if (game over and current player has lost) return -WIN + ply;
+        else if (depth <= 0) return eval();
+        ply++;
+        for (each possible move m) {
+            make move m;
+            alpha = max(alpha, -alphabeta(depth - 1, -beta, -alpha);
+            unmake move m;
+            if (alpha >= beta) break;
+        }
+        ply--;
+        return alpha;
+    }
+</PRE>
+
+Now in the example above, the immediate checkmate is seen at ply=1,
+and gets a score of 999 (WIN-1), while moving the king to e8 forces a win 
+at ply=3, with a score of 997.  The program will move to the position 
+maximizing its score, and take the immediate checkmate.
+
+<P>For some games, such as Othello, there is a natural limit to the length of 
+the game: each move adds a piece to the board, so there can be at most 64 
+moves before the game finishes.  For those games, there is no way to get 
+into the same sort of infinite loop, and we can just use a score of WIN 
+or -WIN without worrying about the ply adjustment.
+
+<P>
+There is one further complication with this ply adjustment trick: how does 
+it interact with the hash table?  The problem is that the ply may differ 
+between the time we store a move in the hash table, and the time we 
+retrieve it. In order to make the retrieved score's ply adjustment correct, 
+we should store scores in the hash table adjusted relative to the 
+<I>current</I> position, rather than the position at the root of the 
+search.
+
+<P>That is, when storing a position in the hash table,
+use something like the following pseudocode,
+where MAX_PLY is a constant defined to be greater than the maximum depth 
+possible in a search (WIN=1000 and MAX_PLY=100 might be reasonable).
+The variable x is just the index of the current position in the hash table.
+<PRE>
+    if (score > WIN - MAX_PLY) hash[x].score = score + ply;
+    else if (score < -WIN + MAX_PLY) hash[x].score = score - ply;
+    else hash[x].score = score;
+</PRE>
+
+<P>When retrieving a position from the hash table, the opposite adjustment 
+needs to be made:
+<PRE>
+    if (hash[x].score > WIN - MAX_PLY) score = hash[x].score - ply;
+    else if (hash[x].score < -WIN + MAX_PLY) score = hash[x].score + ply;
+    else score = hash[x].score;
+</PRE>
+
+<P><HR>
+<A HREF="/~eppstein/">David Eppstein,
+<A HREF="/">Dept. Information & Computer Science</A>,
+<A HREF="http://www.uci.edu/">UC Irvine</A>.
+</BODY></HTML>

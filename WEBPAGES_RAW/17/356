@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ReactionProcessor: SMIRKS Based Product Library Generation</title>
+    <meta charset="utf-8"> 
+    <!-- Include JQuery for tabs and UI plugins -->     
+    <script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.unserialize.js"></script>
+    <script type="text/javascript" src="/js/jquery-ui-1.8.16.custom.min.js"></script>    
+    <script type="text/javascript" src="/js/jquery.colorbox-min.js"></script>    
+    <script type="text/javascript" src="/js/jquery.ui.selectmenu.js"></script>
+    <script type="text/javascript" src="/js/chemdb.js"></script>
+    <!-- Include styling -->
+    <link rel="stylesheet" type="text/css" href="/css/chemdb.css" />
+    <link rel="stylesheet" type="text/css" href="/css/colorbox.css" /> 
+    <link type="text/css" href="/css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="/css/jquery.ui.selectmenu.css" /> 
+        
+    <script type="text/javascript">
+    $(document).ready(function(){
+        // Initialize buttons and selects
+        $(".button").button();
+        $(".selectfull").selectmenu({style:"dropdown"});
+        
+        // Bind function to form submission event
+        $("#ReactionProcessorWeb").submit(function(){
+            // Load molecule images into results div
+            var url = $(this).attr("action");
+            var params = $(this).serialize();
+            $.post(url, params, function(data){
+                var products = $("#products").val()
+                $("#results").html($(data).find("#results").contents());                
+                // Init convert buttons
+                $(".convert-button").button({
+                    icons: {                
+                        secondary: "ui-icon-shuffle"
+                    }
+                });                                              
+                
+                // Init view structures button
+                $(".view-button").button({
+                    icons: {                
+                        primary: "ui-icon-newwin"
+                    }
+                });
+                
+                if( products.length > 0 )
+                    $(".hide").show();
+            });
+            $(".hide").show();
+            return false;
+        });
+        
+        // Use the same form but submit to Smi2Depict
+        $("#Smi2DepictWeb").live("click",function(){                    
+            var url = "../Smi2DepictWeb.py";
+            $("#smiles").val($("#products").val());
+            var params = $("#ReactionProcessorWeb").serialize() + "&Smi2DepictWeb=View%20Structures%20in%20New%20Window";
+            var jqxhr = $.post(url, params, function(data){
+                $("#img-results").html($(data).find("#molecule-images").contents());
+                $("#img-results").find("img").addClass("shadow");                               
+                $("#Smi2DepictWeb").colorbox({inline:true, open:true, width:"900px", height:"500px"});
+            })
+            .error(function() { 
+            	$("#dialog").dialog({
+            		modal: true,
+                    buttons: {
+                        Ok: function() {
+                            $( this ).dialog( "close" );
+                        }
+                    }
+            	}); 
+            });
+            return false;
+        });
+    });
+    </script>
+</head>
+
+<body>
+<div id="background">           
+    <div id="content">
+        <div id="header">
+            <div id="chemdb-logo"></div>
+            <span>ReactionProcessor: SMIRKS Based Product Library Generation</span>
+            <div id="top-nav">
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Tools</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/BabelWeb.py">Babel</a></li>
+                        <li><a href="/cgibin/Mass2Structure.py">Mass2Structure</a></li>                        
+                        <li class="odd"><a href="/cgibin/tools/MolInfoWeb.py">MolInfo</a></li>
+                        <li><a href="/cgibin/MSFragment.py">MSFragment</a></li>
+                        <li class="odd"><a href="/cgibin/PatternCountScreenWeb.py">Pattern Count Screen</a></li>
+                        <li><a href="/cgibin/PatternMatchCounterWeb.py">Pattern Match Counter</a></li>
+                        <li class="odd"><a href="/cgibin/Smi2DepictWeb.py">Smi2Depict</a></li>
+                        <li><a href="/cgibin/reaction/ReactionProcessorWeb.py">Reaction Processor</a></li>
+                        <li class="odd"><a href="/cgibin/tools/AquaSolWeb.py">AquaSol</a></li>
+                    </ul>
+                </div>                                                                          
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Applications</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/ChemicalIndexWeb.py">Chemical Search</a></li>
+                        <li><a href="http://cosmos.igb.uci.edu/">COSMOS</a></li>
+                        <li class="odd"><a href="/cgibin/tutorial/ReactionTutorialSetupWeb.py">Reaction Explorer</a></li>
+                        <li><a href="http://reactions.igb.uci.edu/">Reaction Predictor</a></li>                        
+                        <li class="odd"><a href="/cgibin/reaction/VirtualSpaceWeb.py">Virtual Chemical Space</a></li>
+                    </ul>
+                </div>
+            </div>   
+            <div id="crumbs"><!-- <a class="breadcrumb" href="http://chemdb.ics.uci.edu" target="_top">ChemDB</a>
+ --><a href="/">Home</a> <img class="crumb-arrow" src='/images/arrow.png' /> <a class="breadcrumb" href="#">ReactionProcessor</a></div>
+        </div>
+        
+        <div id="loadingDiv"><img src="/images/loading.gif" /></div>
+
+        <form id="ReactionProcessorWeb" name="ReactionProcessorWeb" action="ReactionProcessorWeb.py" method=post>
+            <div class="ui-widget-header">Reactant &amp; SMIRKS</div>                
+            <div class="module">
+                <div>                                                   
+                    <div class="float-left">
+                        <div class="module-sub-header">Reactant Format</div>                    
+                        <select name="reactantFormatSelect" class="selectfull" style="width:350px">
+                            <option value="1">SMI - SMILES, Absolute</option>
+<option value="10">CAN - Canonical SMILES</option>
+<option value="7" selected>ISM - Isomeric SMILES</option>
+<option value="9">SDF - MDL SD File</option>
+<option value="2">MDL - MDL Mol File</option>
+<option value="4">MOL2 - Tripos Sybyl mol2 file</option>
+<option value="8">MOL2H - Sybyl mol2 with explicit hydrogens</option>
+<option value="3">PDB - Protein Databank PDB file</option>
+<option value="5">BIN - Old Style OEBinary</option>
+<option value="11">MF  - Molecular Formula (Hill order)</option>
+<option value="12">XYZ - XMol XYZ format</option>
+<option value="13">FASTA - FASTA protein sequence</option>
+<option value="14">MOPAC - MOPAC file format(s)</option>
+<option value="15">OEB - New Style OpenEye OEBinary</option>
+
+                        </select>
+                    </div>
+                    
+                    <div class="float-right">
+                        <div class="module-sub-header">Product Format</div>                    
+                        <select name="productFormatSelect" class="selectfull" style="width:350px">
+                            <option value="1">SMI - SMILES, Absolute</option>
+<option value="10">CAN - Canonical SMILES</option>
+<option value="7" selected>ISM - Isomeric SMILES</option>
+<option value="9">SDF - MDL SD File</option>
+<option value="2">MDL - MDL Mol File</option>
+<option value="4">MOL2 - Tripos Sybyl mol2 file</option>
+<option value="8">MOL2H - Sybyl mol2 with explicit hydrogens</option>
+<option value="3">PDB - Protein Databank PDB file</option>
+<option value="5">BIN - Old Style OEBinary</option>
+<option value="11">MF  - Molecular Formula (Hill order)</option>
+<option value="12">XYZ - XMol XYZ format</option>
+<option value="13">FASTA - FASTA protein sequence</option>
+<option value="14">MOPAC - MOPAC file format(s)</option>
+<option value="15">OEB - New Style OpenEye OEBinary</option>
+
+                        </select>
+                    </div>                 
+                </div>
+                
+                <div class="clear">
+                    <span class="module-sub-header margin-top-big float-left">Reactants</span>                    
+                    <a class="sketch-button float-right margin-top" href="../JMEPopupWeb.py?parentForm=ReactionProcessorWeb&smilesField=reactants&JMEPopupWeb=True">Sketch <img src="../../resource/edit.gif" style="border:0; float:none;" alt="Draw structure" /></a>
+                    <textarea class="margin-top" rows=10 style="width:100%" id="reactants" name="reactants" wrap=off>CCC(C)=O Butanone
+CN  Methamine
+c1ccccc1C(=O)O  Benzoic acid
+C1CCCC1[N+]#[C-]    Isonitrile
+NC(Cc1ccccc1)C(=O)O Phenylalanine
+NC(CO)C(=O)O    Serine
+</textarea>                               
+                </div>
+                
+                <div class="margin-top">                
+                    <div class="module-sub-header"><a target="_blank" href="http://www.daylight.com/dayhtml_tutorials/languages/smirks/index.html">SMIRKS</a></div>
+                    <textarea rows=10 style="width:100%" name="smirks" wrap=off>[#1,#6:11][C:1](=[O:2])[#1,#6:12].[!$(C=O):13][N:3]([H:4])[H:5].[*:14][C:6](=[O:7])[O:8][H:9].[*:15][N+:10]#[C-:20]>>[*:14][C:6](=[O:7])[N:3]([!$(C=O):13])[C:1]([#1,#6:11])([#1,#6:12])[C+0:20](=[O:8])[N+0:10]([H:9])[*:15].[O:2]([H:4])[H:5] Ugi4Components
+[O:1]=[C:2][O:3][H:7].[H:8][N:4][H:5]>>[O:1]=[C:2][N:4][H:8].[H:7][O:3][H:5] Amide_Formation 
+[O:1]=[C:2][O:3][H:6].[H:8][O:7][C:4][H:5]>>[O:1]=[C:2][O:3][C:4][H:5].[H:6][O:7][H:8]  Ester_Formation 
+[C:1]=[C:2].[C:3]=[C:4][C:5]=[C:6]>>[C:1]1[C:2][C:3][C:4]=[C:5][C:6]1   Diels-Alder    
+[C:1]=[C:2][C:3](=[O:4])[C:5]([H:6])[H:7].[H:11][C:8][C:9]=[O:10]>>[C:1]1[C:2]([H:11])[C:3](=[O:4])[C:5]=[C:9][C:8]1.[H:6][O:10][H:7]   Robinson_Annulation 
+[C;$(*([#1,#6])[#1,#6]):1]=[O:2].[H:3][C:4]([H:5])[C:6]=[O:7]>>[C:1]=[C:4][C:6]=[O:7].[H:3][O:2][H:5]    Aldol_Condensation  
+([Br,Cl,F,I:1][C:2](=[O:3]).[O,N:4][H:5])>>[C:2](=[O:3])[O,N:4].[Br:1][H:5] Internal_Nucleophilic_Acylation 
+([Br,Cl,F,I:1][C:2][H:5].[O,N:3][H:4])>>[O,N:3][C:2][H:5].[Br:1][H:4]   Internal_SN2_Cyclization    
+[O:1]=[C:2][CX4;!H1:3][H:4].[O:5]=[C:6][H:7]>>[O:1]=[C:2][CX4;!H0:3][C:6]([O:5][H:4])[H:7]  Aldol_Addition
+[O,N:1]=[C:2][CX4;!H1:3][H:4].[CX4;!H0:5][Cl,Br,I,+300:6]>>[O,N:1]=[C:2][CX4;!H0:3][CX4;!H0:5].[H:4][Cl,Br,I,+300:6]    Enolate_Substitution    
+</textarea>                                       
+                </div>
+                
+                <div>
+                    <div class="module-sub-header margin-top">Options</div>
+                    <input type=checkbox name="includeReactants" value="checked" checked>
+                    <span>Include Reactants</span>
+                    <input type=checkbox name="uniqueResults" value="checked" checked>
+                    <span>Unique Results Only</span>
+                </div>
+                
+                <div class="clear">
+                    <input type="hidden" name="ReactionProcessorWeb" value="Generate Products">
+                    <button class="convert-button float-right" type="submit">Generate Products</button>                    
+                </div>
+            </div>
+                        
+            <div id="results" class="hide">
+                <div class="ui-widget-header">Generated Products (SMILES)</div>
+                <div class="module">
+                    <textarea rows=10 style="width:100%" id="products" name="products" wrap=off></textarea>
+                    <textarea class="hidden" id="smiles" name="smiles"></textarea>
+                    <div class="margin-top clear">
+                        <input type="hidden" name="formatDBFile" value="Prepare for DB Input" />
+                        <a class="view-button" type="button" id="Smi2DepictWeb" href="#img-results">View Structures</a>
+                        <button class="convert-button float-right" type="submit" name="formatDBFile">Prepare for DB Input</button>
+                    </div>
+                </div>
+            
+                <div class="ui-widget-header hide">Formatted for DB Input</div>
+                <div class="module hide">
+                    <textarea rows=10 style="width:100%" name="dbInput" wrap=off></textarea>
+                </div>
+            </div>
+            
+            <div class="hidden">
+                <div id="dialog">Sorry, this feature is only available when the <b>Product Format</b> is SMILES.</div>
+                <table id="img-results"></table>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ChemDB Web Interface Index</title>
+    <meta charset="utf-8">
+    <!-- Include JQuery for tabs and UI plugins -->     
+    <script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.unserialize.js"></script>
+    <script type="text/javascript" src="/js/jquery-ui-1.8.16.custom.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.colorbox-min.js"></script>
+    <script type="text/javascript" src="/js/chemdb.js"></script>
+    <!-- Include styling -->
+    <link rel="stylesheet" type="text/css" href="/css/chemdb.css" />
+    <link rel="stylesheet" type="text/css" href="/css/colorbox.css" />
+    <link type="text/css" href="/css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />
+    
+    <script type="text/javascript">
+        // Define AJAX submission
+        function ajax_submit(formID, targetID){
+            var values = $(formID).serialize();         
+            var url = $(formID).attr('action');         
+            $.post(url, values, function(data){
+            	$("#results").html($(data).find("#results").contents());                             
+            	initialize(targetID);
+            });
+        }
+        
+        // Initilation function
+        function initialize(targetID){
+        	if (targetID == "#results"){
+        		$("#results").find("img").addClass("shadow float-left");        		
+        		$(".hide").show();
+        	}
+        }
+        
+        $(document).ready(function(){
+        	// Initialize buttons
+        	$(".button").button();
+        	
+        	// Bind ajax submit to form
+        	$("#Mass2Structure").submit(function(){
+        		ajax_submit("#Mass2Structure", "#results");
+        		return false;
+        	});
+        });
+    </script>
+</head>
+
+<body>
+<div id="background">           
+    <div id="content">
+        <div id="header">
+            <div id="chemdb-logo"></div>
+            <span>Mass2Structure: Mass-based Structure Searching for Mass Spec Analysis</span>
+            <div id="top-nav">                
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Tools</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/BabelWeb.py">Babel</a></li>
+                        <li><a href="/cgibin/Mass2Structure.py">Mass2Structure</a></li>                        
+                        <li class="odd"><a href="/cgibin/tools/MolInfoWeb.py">MolInfo</a></li>
+                        <li><a href="/cgibin/MSFragment.py">MSFragment</a></li>
+                        <li class="odd"><a href="/cgibin/PatternCountScreenWeb.py">Pattern Count Screen</a></li>
+                        <li><a href="/cgibin/PatternMatchCounterWeb.py">Pattern Match Counter</a></li>
+                        <li class="odd"><a href="/cgibin/Smi2DepictWeb.py">Smi2Depict</a></li>
+                        <li><a href="/cgibin/reaction/ReactionProcessorWeb.py">Reaction Processor</a></li>
+                        <li class="odd"><a href="/cgibin/tools/AquaSolWeb.py">AquaSol</a></li>
+                    </ul>
+                </div>                                                                          
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Applications</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/ChemicalIndexWeb.py">Chemical Search</a></li>
+                        <li><a href="http://cosmos.igb.uci.edu/">COSMOS</a></li>
+                        <li class="odd"><a href="/cgibin/tutorial/ReactionTutorialSetupWeb.py">Reaction Explorer</a></li>
+                        <li><a href="http://reactions.igb.uci.edu/">Reaction Predictor</a></li>                        
+                        <li class="odd"><a href="/cgibin/reaction/VirtualSpaceWeb.py">Virtual Chemical Space</a></li>
+                    </ul>
+                </div>
+            </div>   
+            <div id="crumbs"><!-- <a class="breadcrumb" href="../index.htm" target="_top">ChemDB</a>
+ --><a href="/">Home</a> <img class="crumb-arrow" src='/images/arrow.png' /> <a class="breadcrumb" href="#">Mass2Structure</a></div>
+        </div>
+
+        <div id="loadingDiv"><img src="/images/loading.gif" /></div>
+        
+        <form id="Mass2Structure" name="Mass2Structure" action="Mass2Structure.py" method=post>
+            <div class="ui-widget-header">Search Parameters</div>
+        	<div class="module">
+                <div class="half-column float-left">
+        			<div>
+        				<span class="module-sub-header">Mass (Da)</span>    			
+        				<input type="text" name="mass" value="100.0480" style="width:100%" />
+                    </div>
+                    
+                    <div class="margin-top">
+                        <span class="module-sub-header">Mass Tol.</span>
+                        <input type="text" name="mass_tol" value="0.5" style="width:100%" />
+                        <br />
+                        <input type="radio" name="mass_tol_unit" value="da" checked />Da
+                        <input type="radio" name="mass_tol_unit" value="ppm" />ppm
+                    </div>
+                </div>
+        		
+                <div class="half-column float-right">                
+                    <div>
+                        <span class="module-sub-header"><a href="javascript:alert(document.forms[0].mol_formula_text.value);">Formula</a></span>
+                        <input type=hidden name="mol_formula_text" value="An optional molecular formula can be entered in the format: elementSymbol:frequency elementSymbol:frequency ... (e.g. H:2 O:1 or C:6 H:12 O:6).  Spaces are need between each element:frequency pair.  When provided, only molecules with same molecular formula as the one provided are returned.">
+                        <input type="text" name="mol_formula" value="" style="width:100%">                    
+                        <input type="hidden" name="Mass2Structure" value="Search">
+                    </div>
+                                  		
+                    <div class="margin-top">               
+                        <span class="module-sub-header"><a href="javascript:alert(document.forms[0].adjust_mass_text.value);">Adjust Mass</a></span>
+                        <input type=hidden name="adjust_mass_text" value="Perform search by adding/removing the mass of specified atoms.  The expected format of the input string is: elementSymbol:frequency elementSymbol:frequency ... (e.g. H:2 O:1 or C:6 H:12 O:6).  Spaces are need between each element:frequency pair.  The search will be performed using the input mass +/- the mass of the entered atoms.  When removing atoms, the atom mass will be ADDED to the input mass, and vice versa.">
+                        <input type="text" name="adjust_atoms" value="" style="width:100%" />
+                        <br />
+                        <input type="radio" name="add_remove" value="+" />Add
+                        <input type="radio" name="add_remove" value="-" checked />Remove                    
+                    </div>
+        		</div>
+                
+                <div class="float-left margin-top" style="width:100%">
+                    <div class="float-left margin-top">
+                        <span class="module-sub-header">SMILES</span>
+                    </div>
+                    <a class="sketch-button float-right" href="JMEPopupWeb.py?parentForm=Mass2Structure&smilesField=filter_smiles&JMEPopupWeb=True">Sketch <img src="../resource/edit.gif" style="border:0; float:none;" alt="Draw structure" /></a>
+                    <!-- <a href="javascript:alert(document.forms[0].filter_smiles_text.value);">?</a>  -->
+                    <input type=hidden name="filter_smiles_text" value="An optional SMILES can be entered/drawn and used for substructure filtering.  When provided, only substructures of the filter SMILES that also meet the other search criteria will be returned.">
+                    <input type="text" id="filter_smiles" name="filter_smiles" class="margin-top" style="width:100%" value="O=C(CCCC(=O)ON1C(=O)CCC1=O)ON2C(=O)CCC2=O DSG"/>
+                </div>
+        		<!-- <tr valign=right>
+        			<td class="labelCell"></td>
+        			<td></td>
+        			<td class="labelCell" align=right></td>
+        			<td>
+        			    <input type="submit" name="Mass2Structure" value="Search">
+        			</td>
+        		</tr> -->
+        		
+        		<!-- <tr valign=right>
+        			<td class="labelCell"></td>
+        			<td></td>
+        			<td class="labelCell"></td>
+        			<td>
+        			    <input type="submit" name="Mass2Structure" value="Fragment Linkers">
+        			</td>
+        			<td>
+        				<input type="checkbox" name="outputOnly" value="checked">Output Only
+        			</td>
+        		</tr> -->
+                
+                    <div class="clear float-right margin-top"><button class="search-button" type="submit">Search</button></div>
+                </div>
+        </form>
+        
+        <!-- <table class="dataTable" cellspacing=0 cellpadding=4>
+        	<tr valign=top>
+        		<td class="subheading" colspan=5>
+        			Results
+        		</td>
+        	</tr>
+        	
+        	<tr valign=top>
+        		<td class="labelCell">
+            		Fragments <br> and <br> Mol. Wt.
+        		</td>
+        
+        		<td>
+        		    <textarea rows=10 cols=42.9 name="hits" wrap=off></textarea>
+        		</td>
+        	</tr>
+        </table>
+        
+        <br> -->
+        <div id="results">
+            <div class="ui-widget-header hide">Results ( hits)</div>
+            <div class="module hide">
+                  		
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,105 @@
+
+##### gif animation for simulated data. Gaussian Mixture model, EM algorithm
+#choose your path that you will store the figures. Here is MINE
+setwd("Z:/teaching/stat240/2016/Image/GM_Sim")
+set.seed(1);
+x=c(rnorm(8,1), rnorm(12,3))
+n=length(x)
+z=rbinom(n,1,0.5)
+k0=c(1:n)[!z]
+k1=setdiff(1:n, k0)
+p.old=mean(z)
+u.old=c(mean(x[k0]), mean(x[k1]) )
+sd.old=c(sd(x[k0]), sd(x[k1]) )
+p.new=p.old
+u.new=u.old
+sd.new=sd.old
+
+i=0
+while(i==0 || max(abs(u.new-u.old))>0.0001) 
+{
+p.old=p.new
+u.old=u.new
+sd.old=sd.new
+
+#e-step
+ez1=p.old*dnorm(x, u.old[2], sd.old[2]) / 
+	((1-p.new)*dnorm(x, u.old[1], sd.old[1]) + p.old*dnorm(x, u.old[2], sd.old[2]))
+ez0=1-ez1
+
+#m-step
+p.new=mean(ez1)
+u.new=c( weighted.mean(x, ez0), weighted.mean(x, ez1))
+sd.new=c( sqrt(weighted.mean((x-u.new[1])^2, ez0)) , 
+	sqrt(weighted.mean((x-u.new[2])^2, ez1)))
+
+i=i+1
+if(i==1) cat("\t", "p \t", "u0 \t", "u1 \n")
+cat("iteration", i, "\n")
+print(c(p.new, u.new))
+
+ if (i < 10) {name = paste('000',i,'plot.png',sep='')}
+ if (i < 100 && i >= 10) {name = paste('00',i,'plot.png', sep='')}
+ if (i >= 100) {name = paste('0', i,'plot.png', sep='')}
+ png(name)
+ tmp=rbind(ez1,1-ez1)
+ colnames(tmp)=1:n
+ barplot(tmp, ylim=c(0,1),col=c(2,4),main=paste("Estimated Prob from EM: iteration=", i),ylab="prob")
+ dev.off()
+}
+#"H:\teaching\stat240\2016\Image\Iris\GM_Sim\magick *.png -delay 3 -loop 0 GM_EM.gif"
+
+
+##### gif animation for iris data. Gaussian Mixture model, EM algorithm
+### two species: Setosa, Versicolor. One variable: petal length
+library(MASS)
+setwd("Z:/teaching/stat240/2016/Image/Iris")
+set.seed(1);
+x=c(iris3[,3,1],iris3[,3,2])
+n=length(x)
+z=rbinom(n,1,0.5)
+k0=c(1:n)[!z]
+k1=setdiff(1:n, k0)
+p.old=mean(z)
+u.old=c(mean(x[k0]), mean(x[k1]) )
+sd.old=c(sd(x[k0]), sd(x[k1]) )
+p.new=p.old
+u.new=u.old
+sd.new=sd.old
+
+i=0
+while(i==0 || max(abs(u.new-u.old))>0.0001) 
+{
+p.old=p.new
+u.old=u.new
+sd.old=sd.new
+
+#e-step
+ez1=p.old*dnorm(x, u.old[2], sd.old[2]) / 
+	((1-p.new)*dnorm(x, u.old[1], sd.old[1]) + p.old*dnorm(x, u.old[2], sd.old[2]))
+ez0=1-ez1
+
+#m-step
+p.new=mean(ez1)
+u.new=c( weighted.mean(x, ez0), weighted.mean(x, ez1))
+sd.new=c( sqrt(weighted.mean((x-u.new[1])^2, ez0)) , 
+	sqrt(weighted.mean((x-u.new[2])^2, ez1)))
+
+i=i+1
+if(i==1) cat("\t", "p \t", "u0 \t", "u1 \n")
+cat("iteration", i, "\n")
+print(c(p.new, u.new))
+
+ if (i < 10) {name = paste('000',i,'plot.png',sep='')}
+ if (i < 100 && i >= 10) {name = paste('00',i,'plot.png', sep='')}
+ if (i >= 100) {name = paste('0', i,'plot.png', sep='')}
+ png(name)
+ tmp=rbind(ez1,1-ez1)
+ colnames(tmp)=1:n
+ barplot(tmp, ylim=c(0,1),col=c(2,4),main=paste("Estimated Prob (Iris Data): iteration=", i),ylab="prob")
+ dev.off()
+}
+
+#"H:\teaching\stat240\2016\Image\Iris\magick *.png -delay 3 -loop 0 GM_EM.gif"
+
+

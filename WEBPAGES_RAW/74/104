@@ -1,0 +1,353 @@
+			External Merge Sort
+
+
+In this lecture we will continue our examination of algorithms that use more
+space than is available in main memory. We will analyze them with respect to
+how often they move blocks of data between main and external memory (discussed
+in the previous lecture). Typically the cost of such memory transfers dominates
+the cost of executing code on the block while it is in memory. That is, a
+transfer between main and external memory might take 10 milliseconds, while
+processing the data in the block might take microseconds (a few 1/1000ths of a
+millisecond). A processor executing 10^9 instructions per second can process
+10^7 (10 million) instructions in 10 ms. So, we can virtually ignore the time
+taken to process each block retrieved from memory.
+
+
+------------------------------------------------------------------------------
+
+Sorting:
+
+Our external sorting algorithm is a variant of Merge Sort, which can be run
+efficiently in terms of external storage use. We will characterize it as
+follows. We will assume the array of T is stored on external memory.
+
+  template<class T>
+  void external_merge_sort(int low, int high) {
+    if (high-low < memory_size)
+      read_into_memory_sort_write_back(low,high);
+    else {
+      int mid = (low + high)/2;
+
+      external_merge_sort(low, mid);
+      external_merge_sort(mid+1, high);
+
+      external_merge(low, mid, mid+1,high);
+    }
+  }
+
+To sort an array that fits in memory (high-low < memory_size) we bring it into
+main memory from from external memory, sort it, and then write it back onto
+external memory. This operation would take just two large memory transfers and
+running some fast sorting code. If we were sorting trillions of values in a
+machine whose memory stored billions of values, sorting billions of values
+could take as much time (or more) than transferring the billions.
+
+To sort an array that is too big to fit in memory, we recursively sort its first
+and second halves, and then use a special external_merge method to merge these.
+
+Merging is an operation that operates on input and output data linearly,
+processing values in order, and processing each value only once. Such
+processing is tailor-made for transfering blocks into main memory, processing
+them, and then transfering the result blocks back to external memory.
+Schematically we can represent this process as follows.
+
+
+            Main memory         |       External memory
+                                |
+    	   	  +-+-+...-+-+  |  +-+-+...-+-+  +-+-+...-+-+  +-+-+...-+-+
+		  | | |... | |  |  | | |... | |  | | |... | |  | | |... | | ... 
+		  +-+-+...-+-+  |  +-+-+...-+-+  +-+-+...-+-+  +-+-+...-+-+
++-+-+...+-+-+     input 1 block |  input 1 external blocks
+| | |   | | |                   |
++-+-+...+-+-+                   |
+output block                    |
+    	   	  +-+-+...-+-+  |  +-+-+...-+-+  +-+-+...-+-+  +-+-+...-+-+
+		  | | |... | |  |  | | |... | |  | | |... | |  | | |... | | ... 
+		  +-+-+...-+-+  |  +-+-+...-+-+  +-+-+...-+-+  +-+-+...-+-+
+		  input 2 block |  input 2 external blocks
+                                |
+                                |
+		      	   	|  +-+-+...-+-+  +-+-+...-+-+  +-+-+...-+-+
+				|  | | |... | |  | | |... | |  | | |... | | ... 
+		  		|  +-+-+...-+-+  +-+-+...-+-+  +-+-+...-+-+
+				|  output external blocks (twice as many)
+
+When merging starts, the values in each input's external blocks have been
+sorted. When merging ends, the output external blocks contain the merge of both
+input's external blocks (sorted)
+
+Main memory is partitioned into 3 large blocks. Initially we tranfer the first
+input 1 external block and input 2 external block into main memory. The merging
+algorithm process data in these input blocks sequentially, writing information
+into an output block (also in main memory). Main memory operations doing the
+merging continue, but...
+
+  1) When the output block is filled, it is transferred to external memory
+     (and reset to empty)
+
+  2) When an input block is fully processed (all its values are in an output
+     block) it next input external block is transferred to main memory from
+     external memory.
+
+Every value will participate in exactly 2 block transfers: one to read it into
+main memory and one to write it out to external memory again. So if the inputs
+are each N blocks, the output will be 2N blocks: there are  2N block transfers
+into main memory and 2N block transfers back to external memory, for a total
+of 4N block transfers.
+
+Here is an example where the block size if just 4.
+
+
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |  |  |  |  |12|24|26|34|  |37|49|50|57|  |62|64|70|72|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 1 block  |  input 1 external blocks
++--+--+--+--+                  |
+|  |  |  |  |                  |
++--+--+--+--+                  |
+output block                   |
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |  |  |  |  | 4|25|35|40|  |43|44|53|56|  |58|60|62|90|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 2 block  |  input 2 external blocks
+                               |
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+			       |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                	       |  output external blocks
+
+So, to start the first two input blocks are transferred into memory.
+
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|12|24|26|34|  |  |12|24|26|34|  |37|49|50|57|  |62|64|70|72|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 1 block  |  input 1 external blocks
++--+--+--+--+                  |
+|  |  |  |  |                  |
++--+--+--+--+                  |
+output block                   |
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		| 4|25|35|40|  |  | 4|25|35|40|  |43|44|53|56|  |58|60|62|90|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 2 block  |  input 2 external blocks
+                               |
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+			       |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                	       |  output external blocks
+
+Then we start merging these input blocks. Eventually the output block is filled.
+Here I have replaced each value transferred from input block to output block by
+a blank, just to make the state of the merging clearer.
+
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |26|34|  |  |12|24|26|34|  |37|49|50|57|  |62|64|70|72|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 1 block  |  input 1 external blocks
++--+--+--+--+                  |
+| 4|12|24|25|                  |
++--+--+--+--+                  |
+output block                   |
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |35|40|  |  | 4|25|35|40|  |43|44|53|56|  |58|60|62|90|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 2 block  |  input 2 external blocks
+                               |
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+			       |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                	       |  output external blocks
+
+So we transfer it to the first output external block and clear it.
+
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |26|34|  |  |12|24|26|34|  |37|49|50|57|  |62|64|70|72|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 1 block  |  input 1 external blocks
++--+--+--+--+                  |
+|  |  |  |  |                  |
++--+--+--+--+                  |
+output block                   |
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |35|40|  |  | 4|25|35|40|  |43|44|53|56|  |58|60|62|90|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 2 block  |  input 2 external blocks
+                               |
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+			       |  | 4|12|24|25|  |  |  |  |  |  |  |  |  |  |  
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                	       |  output external blocks
+
+Then we continue merging these input blocks. Eventually one input block is
+fully processed.
+
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |  |  |  |  |12|24|26|34|  |37|49|50|57|  |62|64|70|72|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 1 block  |  input 1 external blocks
++--+--+--+--+                  |
+|26|34|  |  |                  |
++--+--+--+--+                  |
+output block                   |
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |35|40|  |  | 4|25|35|40|  |43|44|53|56|  |58|60|62|90|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 2 block  |  input 2 external blocks
+                               |
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+			       |  | 4|12|24|25|  |  |  |  |  |  |  |  |  |  |  
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                	       |  output external blocks
+
+So we transfer the second external block from input 1 into the input 1 block.
+
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|37|49|50|57|  |  |12|24|26|34|  |37|49|50|57|  |62|64|70|72|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 1 block  |  input 1 external blocks
++--+--+--+--+                  |
+|26|34|  |  |                  |
++--+--+--+--+                  |
+output block                   |
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |35|40|  |  | 4|25|35|40|  |43|44|53|56|  |58|60|62|90|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 2 block  |  input 2 external blocks
+                               |
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+			       |  | 4|12|24|25|  |  |  |  |  |  |  |  |  |  |  
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                	       |  output external blocks
+
+Then we continue merging these input blocks. Eventually the output block is
+filled.
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |49|50|57|  |  |12|24|26|34|  |37|49|50|57|  |62|64|70|72|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 1 block  |  input 1 external blocks
++--+--+--+--+                  |
+|26|34|35|37|                  |
++--+--+--+--+                  |
+output block                   |
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |  |40|  |  | 4|25|35|40|  |43|44|53|56|  |58|60|62|90|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 2 block  |  input 2 external blocks
+                               |
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+			       |  | 4|12|24|25|  |  |  |  |  |  |  |  |  |  |  
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                	       |  output external blocks
+
+So we transfer it to the second output external block and clear it.
+
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |49|50|57|  |  |12|24|26|34|  |37|49|50|57|  |62|64|70|72|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 1 block  |  input 1 external blocks
++--+--+--+--+                  |
+|  |  |  |  |                  |
++--+--+--+--+                  |
+output block                   |
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |  |40|  |  | 4|25|35|40|  |43|44|53|56|  |58|60|62|90|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 2 block  |  input 2 external blocks
+                               |
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+			       |  | 4|12|24|25|  |26|34|35|37|  |  |  |  |  |  
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                	       |  output external blocks
+
+Then we continue merging these input blocks. Eventually one input block is
+fully processed.
+
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |49|50|57|  |  |12|24|26|34|  |37|49|50|57|  |62|64|70|72|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 1 block  |  input 1 external blocks
++--+--+--+--+                  |
+|40|  |  |  |                  |
++--+--+--+--+                  |
+output block                   |
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |  |  |  |  | 4|25|35|40|  |43|44|53|56|  |58|60|62|90|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 2 block  |  input 2 external blocks
+                               |
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+			       |  | 4|12|24|25|  |26|34|35|37|  |  |  |  |  |  
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                	       |  output external blocks
+
+
+So we transfer the second external block from input 2 into the input 2 block.
+
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |49|50|57|  |  |12|24|26|34|  |37|49|50|57|  |62|64|70|72|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 1 block  |  input 1 external blocks
++--+--+--+--+                  |
+|40|  |  |  |                  |
++--+--+--+--+                  |
+output block                   |
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|43|44|53|35|  |  | 4|25|35|40|  |43|44|53|56|  |58|60|62|90|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 2 block  |  input 2 external blocks
+                               |
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+			       |  | 4|12|24|25|  |26|34|35|37|  |  |  |  |  |  
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                	       |  output external blocks
+
+Then we continue merging these input blocks. Eventually the output block is
+filled.
+
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |50|57|  |  |12|24|26|34|  |37|49|50|57|  |62|64|70|72|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 1 block  |  input 1 external blocks
++--+--+--+--+                  |
+|40|43|44|49|                  |
++--+--+--+--+                  |
+output block                   |
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |53|35|  |  | 4|25|35|40|  |43|44|53|56|  |58|60|62|90|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 2 block  |  input 2 external blocks
+                               |
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+			       |  | 4|12|24|25|  |26|34|35|37|  |  |  |  |  |  
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                	       |  output external blocks
+
+So we transfer it to the third output external block and clear it.
+
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |50|57|  |  |12|24|26|34|  |37|49|50|57|  |62|64|70|72|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 1 block  |  input 1 external blocks
++--+--+--+--+                  |
+|  |  |  |  |                  |
++--+--+--+--+                  |
+output block                   |
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+		|  |  |53|35|  |  | 4|25|35|40|  |43|44|53|56|  |58|60|62|90|
+                +--+--+--+--+  |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                input 2 block  |  input 2 external blocks
+                               |
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+			       |  | 4|12|24|25|  |26|34|35|37|  |40|43|44|49|  
+                	       |  +--+--+--+--+  +--+--+--+--+  +--+--+--+--+
+                	       |  output external blocks
+
+
+This process continues until all input external block have been transferred to
+main memory and processed, and all output blocks have been transfered to
+external memory.
+
+If needed, the output blocks can be transferred into memory sequentially and
+then transferred back to overwrite the input external blocks (similar to how
+merging overwrites the array it processes). Doing so would up the number of
+block transfers from 4N to 6N.

@@ -1,0 +1,1619 @@
+<html>
+<head>
+	<title>Ucigame - Reference - version 2010.12.16a</title>
+<link href="stylesheet.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+
+<center>
+<h2>Ucigame Reference
+<br>
+2010.12.16a version</h2>
+</center>
+
+<h4>
+<a href="index.html">Home</a> |
+<a href="getting-started.html">Getting Started</a> |
+<a href="reference.html">Reference</a> |
+<a href="java.html">Introduction to Java</a> |
+<a href="gallery.html">Gallery</a>
+</h4>
+
+
+<h4>Running your Ucigame program</h4>
+
+<p>
+</p>
+<li>The code in the Ucigame package was compiled with Java
+version 1.5.  You can use Java 1.5 or any later version to
+compile and run your Ucigame game.
+</li>
+<li>When you compile or run a Ucigame game, ucigame.jar must be in
+the classpath.
+</li>
+<li>When running a Ucigame game from the Command Prompt, the
+game name must be repeated.  For example:
+<blockquote><tt>
+	java MyGame MyGame
+</tt></blockquote>
+</li>
+
+<li>In a Ucigame program E<sc>sc</sc>
+(the Escape key) has magic powers.
+	<ul>
+	<li> Pressing E<sc>sc</sc> stops the game (permanently).</li>
+	<li> Pressing Shift-E<sc>sc</sc> (that is, hold down the Shift
+		key while pressing E<sc>sc</sc>) suspends the game.  The
+		animation pauses (but any playing sounds continue).
+		Pressing Shift-E<sc>sc</sc> again resumes play.
+	<li> When the game is paused with Shift-E<sc>sc</sc>, pressing
+		F1 causes draw() to be invoked once.  This is a handy way
+		to "single step" through your game.
+	</ul>
+</li>
+
+<h4>Different methods are called in different ways</h4>
+
+<p>
+Some Ucigame methods are associated with specific
+built-in objects.  They are invoked like this:
+<i>objectname.methodname</i>(<var>parameters</var>).
+An example is window.size(200, 300).
+</p>
+
+<p>Some Ucigame methods are associated with classes; to
+use them you must first create an object of that class.
+In this example, the position() method is called using
+a Sprite object called sprite1:
+<blockquote>
+	sprite1 = makeSprite(getImage("images/sprite1.png", 0));<br>
+	sprite1.position(10, 5);
+</blockquote>
+</p>
+
+<p>Finally, some Ucigame methods are associated with the
+Ucigame class itself. Since your game class extends Ucigame,
+you can use these methods without an <i>objectname.</i>
+prefix.  An example is the call to makeSprite() above.
+</p>
+
+<h4>Summary of objects and classes</h4>
+
+<p>
+The <a href="#window"><i>window</i></a> object represents the entire window in
+which the game is played, and specifically the borders and
+frame of the window.
+It has the following methods:
+size(), title(), showFPS(), hideFPS().
+</p>
+
+<p>
+The <a href="#canvas"><i>canvas</i></a> object represents the rectangular
+interior of the window.
+It has the following methods:
+width(), height(), background(),
+<!-- line(), oval(), -->
+font(), and putText().
+</p>
+
+<p>
+The <a href="#keyboard"><i>keyboard</i></a> object represents the
+computer keyboard.
+It has several methods for finding out the most recently pressed key:
+isDown(), lastCharacter(), isBackspace(), key(), shift(), ctrl(), and alt().
+The typematic (auto-repeat) feature can be turned on and off
+with typematicOn() and typematicOff().
+</p>
+
+<p>
+The <a href="#mouse"><i>mouse</i></a> object represents the
+mouse and the associated cursor symbol on the monitor.
+It has the following methods:
+x(), y(), Xchange(), Ychange(), button(),
+isAltDown(), isControlDown(), isMetaDown(), isShiftDown(),
+wheelClicks(), sprite(), and setCursor().
+</p>
+
+<p>
+Each object in the <a href="#Sprite"><i>Sprite</i></a> class
+is a sprite.
+To create new Sprite objects, there are three versions of
+makeSprite(), as well as makeTiledSprite(), and makeButton().
+A Sprite object has the following methods:
+addFrame(), pin(), framerate(),
+draw(), font(), putText(),
+setTiles(),
+defineSequence(), currSequence(), play(),
+restart(), setToFrame(),
+width(), height(), hide() show(), isShown(), position(),
+motion(), move(), x(), y(), xPixel(), yPixel(),
+nextX(), nextY(), xspeed(), yspeed(),
+rotate(), flipHorizontal(), flipVertical(),
+bounceIfCollidesWith(), stopIfCollidesWith(),
+checkIfCollidesWith(), pauseIfCollidesWith(), collided().
+</p>
+
+<p>
+Each object in the <a href="#Image"><i>Image</i></a> class is
+a rectangular image.
+A Image object has the following methods:
+draw(), width(), height(), and transparent().
+</p>
+
+<p>
+Each object in the <a href="#Sound"><i>Sound</i></a> class is
+a sound or piece of music.
+A Sound object has the following methods:
+play(), loop(), and stop().
+</p>
+
+<p>
+The <a href="#Ucigame"><i>Ucigame</i></a> class contains
+the functionality of the other classes and objects.
+It also has several useful methods of its own:
+framerate(), actualFPS(), randomSeed(), random(),
+randomInt(), arrayOfAvailableFonts(), isAvailableFont(),
+setIconImage(),
+startScene(), startTimer, and stopTimer().
+There are also Ucigame methods that create objects:
+getImage(), getSound(),
+makeSprite(), makeTiledSprite(), and makeButton().
+</p>
+
+<p>
+</p>
+
+<a name="window"></a>
+<h4>The window object</h4>
+
+<p>
+Every Ucigame has one window object named <tt>window</tt>.
+When the program is running as an applet in a browser window,
+the window is part of the web page.
+</p>
+<li>window.size(<var>width</var>, <var>height</var>)
+<blockquote>
+	Sets the width and height of the window's canvas.
+	The entire window, including caption bar and borders, will
+	be slightly larger.
+	Values must be between 50 and 1000, inclusive.
+	If values are invalid or window.size is not called, the
+	windows width and height are 100.
+	This method should only be called once, in setup();
+	Demo'd in: <a href="Gallery/BallFollower.html">BallFollower</a>.
+	<br>
+	Applets: method is ignored.
+</blockquote>
+</li>
+
+<li>window.title(<var>titleTextString</var>)
+<blockquote>
+	Sets the window's title text.  If not called, the
+	title text is "No Title".  May be called multiple times.
+	Demo'd in: <a href="Gallery/BallFollower.html">BallFollower</a>.
+	<br>
+	Applets: method is ignored.
+</blockquote>
+</li>
+
+<li>window.showFPS()
+<blockquote>
+	Causes the current actual rate of frames per second to
+	be displayed in the title text.
+	Demo'd in: <a href="Gallery/BallFollower.html">BallFollower</a>.
+	<br>
+	Applets: frames per seconds will display in the browser's
+		status bar (somewhat browser-dependent).
+</blockquote>
+</li>
+
+<li>window.hideFPS()
+<blockquote>
+	Removes the display of current frames per second from the title text.
+	<br>
+	Applets: removes the display from the status bar.
+</blockquote>
+</li>
+
+<a name="canvas"></a>
+<h4>The canvas object</h4>
+
+<p>
+The <tt>canvas</tt> object represents the area in the window
+where the game's images appear.
+</p>
+
+<li><var>w</var> = canvas.width() (returns int)
+</li>
+<li><var>h</var> = canvas.height() (returns int)
+<blockquote>
+	These methods return the value of the game canvas's width and height.
+	Demo'd in: <a href="Gallery/BallFollower.html">BallFollower</a>.
+</blockquote>
+</li>
+
+<li>canvas.background(<var>shade</var>)
+<blockquote>
+	This method determines the color of the canvas's background.
+	To actually set the background to that color, call the
+	canvas.clear() method inside of draw().
+	The one parameter version of background() sets the background
+	color to a shade of gray.
+	The varible <var>shade</var> can range from 0 (black)
+	to 128 (gray) to 255 (white).
+	If <var>shade</var> is less than 0 or greater than 255,
+	the method call has no effect.
+	The default background color is white.
+	See the <a href="reference-colors.html">about color page</a> for
+	more information about colors in Ucigame and computer graphics.
+	Demo'd in: <a href="Gallery/SpinIt.html">SpinIt</a>.
+</blockquote>
+</li>
+
+<li>canvas.background(<var>red</var>, <var>green</var>, <var>blue</var>)
+<blockquote>
+	The three parameter version background() can set
+	the background to any color.
+	See <a href="reference-colors.html">the about color page</a> for
+	more information about colors in Ucigame and computer graphics.
+	Demo'd in: <a href="Gallery/PushMe.html">PushMe</a>.
+</blockquote>
+</li>
+
+<li>canvas.background(<var>image</var>)
+<blockquote>
+	If background's parameter is a Image, then the background is
+	set to that image, which will be displayed when
+	canvas.clear() is called in draw().
+	Demo'd in: <a href="Gallery/Pong.html">Pong</a>.
+</blockquote>
+</li>
+
+<li>canvas.clear()
+<blockquote>
+	Clears the canvas by setting all pixels to the specified
+	color or to the colors of specified image.
+	Typically canvas.clear() is called at the start of draw().
+	Demo'd in: <a href="Gallery/BallFollower.html">BallFollower</a>.
+</blockquote>
+</li>
+
+<li>canvas.font(<var>fontNameString</var>, <var>style</var>, <var>size</var>)
+<blockquote>
+
+	This method specifies the font to use in subsequent calls
+	to canvas.putText().
+	See <ax href="">the about fonts page</a>
+	(coming soon!) for more information
+	about fonts in Ucigame and computer graphics.
+	The <var>style</var> parameter must be one of the following:
+	PLAIN, BOLD, ITALIC, BOLDITALIC.
+	Demo'd in: <a href="Gallery/FontDemo.html">FontDemo</a>.
+</blockquote>
+</li>
+
+<li>canvas.font(<var>fontNameString</var>, <var>style</var>, <var>size</var>,
+					<var>r</var>, <var>g</var>, <var>b</var>)
+<blockquote>
+	Similar to the three parameter version of <tt>font()</tt>, and
+	also sets the font color to the RGB value specified by the
+	last three parameters.  (These values must all be between 0 and 255, inclusive.)
+	Demo'd in: <a href="Gallery/MegaBounce.html">MegaBounce</a>.
+</blockquote>
+</li>
+
+<li>canvas.putText(<var>text</var>, <var>x</var>, <var>y</var>)
+<blockquote>
+	Draws the specified text (which can be a string, such as
+	"Press Here" or a number) on the canvas,
+	using the canvas's current font.
+	The upper left hand corner of <var>text</var> is
+	located <var>x</var> pixels to the right and
+	<var>y</var> pixels below the upper left hand corner of
+	the canvas.
+	Demo'd in: <a href="Gallery/FontDemo.html">FontDemo</a>.
+</blockquote>
+</li>
+
+
+<a name="keyboard"></a>
+<h4>The keyboard object</h4>
+
+<p>
+Every Ucigame has one object named <tt>keyboard</tt>; the
+object's methods reveal the most recently pressed key.
+</p>
+<li><var>keydown</var> = keyboard.isDown(any number of keyboard keys) (returns boolean)
+<blockquote>
+	This method indicates whether any of the specified keyboard
+	keys is currently down.  The values passed to this method
+	should each be one of those
+	<a href="reference-keyboard.html">listed here</a>.
+	This method is usually used inside the game's onKeyPress() method.
+	For example:
+	<blockquote>
+	<tt>
+	if (keyboard.isDown(keyboard.UP, keyboard.W))<br>
+	&nbsp;&nbsp;paddle.nextY(paddle.y() - 2);
+	</tt></blockquote>
+	Demo'd in: <a href="Gallery/Pong.html">Pong</a>.
+</blockquote>
+</li>
+
+<li><var>keypressed</var> = keyboard.key()  (returns int)
+<blockquote>
+	Returns the value of the most recently pressed keyboard key.
+	The value will be one of those
+	<a href="reference-keyboard.html">listed here</a>.
+	Note that the escape key (Esc) is handled in a special way
+	by Ucigame programs, and thus cannot be detected using keyboard.key().
+	If Esc is pressed without the Shift key down, the program immediately stops.
+	If Esc is pressed with Shift, then the program is suspended;
+	if can be restarted with another Shift-Esc combination.
+</blockquote>
+</li>
+
+<li><var>shiftWasPressed</var> = keyboard.shift() (returns boolean)
+<blockquote>
+	Returns <tt>true</tt> if the Shift key was held down when the
+	last key was pressed; <tt>false</tt> otherwise.
+</blockquote>
+</li>
+
+<li><var>ctrlWasPressed</var> = keyboard.ctrl() (returns boolean)
+<blockquote>
+	Returns <tt>true</tt> if the Ctrl key was held down when the
+	last key was pressed; <tt>false</tt> otherwise.
+</blockquote>
+</li>
+
+<li><var>altWasPressed</var> = keyboard.alt() (returns boolean)
+<blockquote>
+	Returns <tt>true</tt> if the Alt key was held down when the
+	last key was pressed; <tt>false</tt> otherwise.
+</blockquote>
+</li>
+
+<li>keyboard.typematicOn()
+</li>
+<li>keyboard.typematicOff()
+<blockquote>
+	These methods turn on and off the typematic (auto-repeat) feature.
+	When typematic is on (the default), a key which is held down
+	will cause <tt>onKeyPress()</tt> to be called multiple times.
+	When typematic is off, holding a key down is only a single key press.
+	These methods apply to all keyboard keys.
+	Demo'd in: <a href="Gallery/ClickAndClack.html">ClickAndClack</a> and
+	           <a href="Gallery/TypeAway.html">TypeAway</a>.
+</blockquote>
+</li>
+
+<li>keyboard.typematicOn(any number of keyboard keys)
+</li>
+<li>keyboard.typematicOff(any number of keyboard keys)
+<blockquote>
+	The values passed to these methods should each be one of those
+	<a href="reference-keyboard.html">listed here</a>.
+	These methods turn on and off the typematic (auto-repeat) feature
+	for specific keys, without changing the typemetic status of
+	other keys.
+	Demo'd in: <a href="Gallery/TypeAway.html">TypeAway</a> and
+	           <a href="Gallery/BounceHouse.html">BounceHouse</a>.
+</blockquote>
+</li>
+
+<li><var>characterPressed</var> = keyboard.lastCharacter()  (returns String)
+<blockquote>
+	Returns a String containing the last "regular" keyboard character
+	pressed, that is, letters, digits, and punctuation, but not
+	the function keys and arrow keys.
+	The returned value is affected by the Shift and Caps Lock keys.
+	Once this function is called, subsequent calls will return the
+	empty string ("") until the user presses another key or the
+	operating system's auto-repeat feature generates another key press.
+	This method is not affected by keyboard.typematicOn() or
+	keyboard.typematicOff();
+	Thus, in
+	<blockquote><tt>
+	println(keyboard.lastCharacter()); <br>
+	println(keyboard.lastCharacter());
+	</tt></blockquote>
+	the second line will print the empty string.
+	Demo'd in: <a href="Gallery/TypeAway.html">TypeAway</a>.
+</blockquote>
+</li>
+
+<li><var>bkPressed</var> = keyboard.isBackspace(<var>string</var>)  (returns boolean)
+<blockquote>
+	Returns <i>true</i> if <var>string</var> is a one character String
+	containing a "backspace" character.
+	Demo'd in: <a href="Gallery/TypeAway.html">TypeAway</a>.
+</blockquote>
+</li>
+
+
+<a name="mouse"></a>
+<h4>The mouse object</h4>
+
+<p>
+Every Ucigame has one object named <tt>mouse</tt>; the
+object's methods reveal the location of the mouse and
+the topmost sprite under the mouse.
+</p>
+
+<li><var>xpos</var> = mouse.x()  (returns int)
+</li>
+<li><var>ypos</var> = mouse.y()  (returns int)
+<blockquote>
+	Returns the current x and y position of the mouse,
+	relative to the upper left hand corner of the game
+	window, which is at position (0, 0).
+	Demo'd in: <a href="Gallery/BallFollower.html">BallFollower</a>.
+</blockquote>
+</li>
+
+<li><var>xdelta</var> = mouse.Xchange()  (returns int)
+</li>
+<li><var>ydelta</var> = mouse.Ychange()  (returns int)
+<blockquote>
+	When the mouse is being dragged, these methods
+	return the difference between the current and previous
+	x and y positions of the mouse.
+	Demo'd in: <a href="Gallery/MouseTrap.html">MouseTrap</a>.
+</blockquote>
+</li>
+
+<li><var>whichButton</var> = mouse.button()  (returns int)
+<blockquote>
+	Returns the value of the mouse button involved
+	when the mouse is pressed, released, moved, or dragged.
+	The return value will be one of:
+	mouse.NONE, mouse.LEFT, mouse.MIDDLE, mouse.RIGHT.
+	Demo'd in: <a href="Gallery/MouseTrap.html">MouseTrap</a>.
+</blockquote>
+</li>
+
+<li><var>altDown</var> = mouse.isAltDown()  (returns boolean)
+</li>
+<li><var>controlDown</var> = mouse.isControlDown()  (returns boolean)
+<li><var>metaDown</var> = mouse.isMetaDown()  (returns boolean)
+<li><var>shiftDown</var> = mouse.isShiftDown()  (returns boolean)
+<blockquote>
+	These methods return <tt>true</tt> or <tt>false</tt>
+	depending on the state of the corresponding keyboard key
+	when the mouse is pressed, released, moved, or dragged.
+	Demo'd in: <a href="Gallery/MouseTrap.html">MouseTrap</a>.
+</blockquote>
+</li>
+
+<li><var>clicks</var> = mouse.wheelClicks()  (returns int)
+<blockquote>
+	Returns the number of clicks as of the last time the
+	wheel (a special kind of middle mouse button) was rotated.
+	A negative value means the mouse wheel was rotated up/away
+	from the user, and a positive value means the mouse wheel
+	was rotated down/towards the user.  The value is usually
+	-1 or 1.
+	Demo'd in: <a href="Gallery/MouseTrap.html">MouseTrap</a>.
+</blockquote>
+</li>
+
+<li><var>sprite</var> = mouse.sprite()  (returns Sprite)
+<blockquote>
+	Returns the topmost Sprite object under the current
+	mouse position.  The return value will be <tt>null</tt>
+	if the mouse position is not over a sprite.
+	The value returned from mouse.sprite() can be
+	compared with sprite objects using <tt>==</tt>.
+	Example code:
+	<blockquote<tt>
+	Sprite thing1, thing2, thing3;		<br>
+	...									<br>
+	void onMousePressed()				<br>
+	{									<br>
+	&nbsp;	if (mouse.sprite() == thing1)	<br>
+	&nbsp;&nbsp;		// do something				<br>
+	&nbsp;	if (mouse.sprite() == null)		<br>
+	&nbsp;&nbsp;		// do something	else		<br>
+	}									<br>
+	</tt></blockquote>
+	Demo'd in: <a href="Gallery/ClickAndClack.html">ClickAndClack</a>.
+</blockquote>
+</li>
+
+<li>mouse.setCursor(<var>cursorType</var>)
+<blockquote>
+	Changes the cursor to one of the standard system cursors.
+	Legal values for <var>cursorType</var> are:
+	mouse.CROSSHAIR, mouse.DEFAULT, mouse.HAND, mouse.MOVE,
+	mouse.TEXT, mouse.WAIT,
+	mouse.N_RESIZE, mouse.NE_RESIZE, mouse.E_RESIZE,
+	mouse.SE_RESIZE, mouse.S_RESIZE, mouse.SW_RESIZE,
+	mouse.W_RESIZE, mouse.NW_RESIZE.
+	Demo'd in: <a href="Gallery/FoiledAgain.html">FoiledAgain</a>.
+</blockquote>
+</li>
+
+<li>mouse.setCursor(<var>image</var>, <var>xPos</var>, <var>yPos</var>)
+<blockquote>
+	Changes the cursor to the image supplied.
+	The size of the cursor is determined by the operating system,
+	and the image will be scaled if necessary.
+	In practice 32 pixels by 32 pixels works well.
+	The <var>xPos</var> and <var>yPos</var> values indicate the position
+	of the cursor's "hot spot," relative to the upper left hand
+	corner of the image.
+	Demo'd in: <a href="Gallery/FoiledAgain.html">FoiledAgain</a>.
+</blockquote>
+</li>
+
+<a name="Sprite"></a>
+<h4>The Sprite class</h4>
+
+<p>
+A sprite is an image that can be moved around in the game window.
+Ucigame uses many kinds of sprites: they can be stationary;
+they can cycle between multiple images, and they can act like
+buttons and be sensitive to mouse clicks.
+Sprites can have text written on them, and multiple sprites can
+be "pinned" together so that when one moves the others follow.
+</p>
+
+<p>
+There are several ways to control the movement of a sprite, and
+the flexibility can be confusing.  Each Sprite object holds some
+position and movement related information:
+<ul>
+<li>Its current position: <i>currentX</i> and <i>currentY</i>
+<li>Its movement: <i>moveX</i> and <i>moveY</i>
+<li>Its next position: <i>nextX</i> and <i>nextY</i>
+</ul>
+</p>
+<p>
+Note that <i>currentX</i>, <i>currentY</i>, <i>nextX</i>, and <i>nextY</i>
+all refer to the sprite's upper left hand corner.
+The main reason for keeping track of current and next positions
+is to facilitate the built-in collision detection.
+Here is how various Sprite methods use and update this information:
+<ul>
+<li>position(<var>x</var>, <var>y</var>):
+	<i>currentX</i> &larr; <var>x</var> &nbsp;&nbsp;
+	<i>currentY</i> &larr; <var>y</var>&nbsp;&nbsp;
+	<i>nextX</i> &larr; <var>x</var>&nbsp;&nbsp;
+	<i>nextY</i> &larr; <var>y</var>&nbsp;&nbsp; (warning: messes up collision detection)
+<li> motion(<var>xchange</var>, <var>ychange</var>):
+	<i>moveX</i> &larr; <var>xchange</var> &nbsp;&nbsp;
+	<i>moveY</i> &larr; <var>ychange</var>&nbsp;&nbsp;
+<li>move():
+	<i>nextX</i> &larr; <i>currentX</i> + <i>moveX</i>&nbsp;&nbsp;
+	<i>nextY</i> &larr; <i>currentY</i> + <i>moveY</i>&nbsp;&nbsp;
+<li>draw():
+	<i>currentX</i> &larr; <i>nextX</i> &nbsp;&nbsp;
+	<i>currentY</i> &larr; <i>nextY</i>&nbsp;&nbsp;
+	(and then sprite is drawn at (<i>currentX, currentY</i>))
+<li> nextX(<var>xvalue</var>):
+	<i>nextX</i> &larr; <var>xvalue</var>&nbsp;&nbsp;
+	<i>moveX</i> &larr; 0 &nbsp;&nbsp;
+<li> nextY(<var>yvalue</var>):
+	<i>nextY</i> &larr; <var>yvalue</var>&nbsp;&nbsp;
+	<i>moveY</i> &larr; 0 &nbsp;&nbsp;
+<li>x() returns <i>currentX</i>
+<li>y() returns <i>currentY</i>
+<li>xPixel() returns <i>currentX</i> rounded to the closest integer
+<li>yPixel() returns <i>currentY</i> rounded to the closest integer
+<li>xspeed() returns <i>moveX</i>
+<li>yspeed() returns <i>moveY</i>
+<li>xxxIfCollidesWith(): detects a collision as sprites move from
+	(<i>currentX, currentY</i>) to (<i>nextX, nextY</i>).
+</ul>
+</p>
+
+
+<p>
+In Ucigame sprites are objects in the Sprite class.
+In the following, we assume that a reference to a Sprite
+called <var>sprite1</var> has been defined:
+<blockquote>
+	Sprite <var>sprite1</var>;
+</blockquote>
+</p>
+
+<li><var>sprite1</var> = makeSprite(<var>image</var>)
+<blockquote>
+	This makeSprite method takes an already loaded Image object,
+	and creates a Sprite with the same width and height as the
+	image.  Usually used for creating sprites with a single image.
+	Demo'd in: <a href="Gallery/BallFollower.html">BallFollower</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var> = makeSprite(<var>image</var>,
+						<var>width</var>, <var>height</var>)
+<blockquote>
+	This makeSprite method takes an already loaded Image object,
+	and creates a Sprite with the specified width and height.
+	If <var>width</var> is larger than <var>image</var>'s width,
+	and/or <var>height</var> is larger than <var>image</var>'s height,
+	then the <var>image</var> will be tiled to cover the complete sprite.
+	Demo'd in: <a href="Gallery/FlippedOut.html">FlippedOut</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var> = makeSprite(<var>width</var>, <var>height</var>)
+<blockquote>
+	This makeSprite method creates a sprite with the specified width
+	and height, but with no image(s).  Usually used when multiple
+	images will be added later with addFrame() or addFrames().
+	Demo'd in: <a href="Gallery/TimeTrial.html">TimeTrial</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var> = makeTiledSprite(<var>numCols</var>,
+		<var>numRows</var>, <var>tileWidth</var>, <var>tileHeight</var>)
+<blockquote>
+	Use makeTiledSprite() to create a sprite which is a matrix
+	of tiles.  Each tile has the specified width and height.
+	The matrix can have any positive number of columns and rows.
+	The matrix entries are filled in with <tt>setTiles()</tt>.
+</blockquote>
+</li>
+
+<li>Constructors
+<blockquote>
+	The Sprite class has four constructors, which correspond to
+	the three <tt>makeSprite()</tt> methods and the
+	<tt>makeTiledSprite()</tt> method described above:
+	<ul>
+	<li>Sprite(<var>image</var>)
+			Demo'd in: <a href="Gallery/MegaBounce.html">MegaBounce</a>
+			via a call to <tt>super()</tt> in a subclass.
+	<li>Sprite(<var>image</var>, <var>width</var>, <var>height</var>)
+	<li>Sprite(<var>width</var>, <var>height</var>)
+	<li>Sprite(<var>numCols</var>,
+		<var>numRows</var>, <var>tileWidth</var>, <var>tileHeight</var>)
+	</ul>
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.addFrame(<var>image</var>,
+						<var>x</var>, <var>y</var>)
+<blockquote>
+	A sprite can have multiple frames, or images, assigned to
+	it with addFrame().
+	Each time the sprite is displayed on the canvas with draw(), it will
+	automatically cycle to the next frame.
+	<var>image</var> is an already loaded Image object.
+	The <var>x</var> and <var>y</var> parameters specify the
+	upper left hand corner of a rectangle in the image that
+	will be <var>sprite1</var>'s next frame.  The width and height
+	of that rectangle are same as <var>sprite1</var>'s width and height.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.addFrames(<var>image</var>,
+					any number of <var>x</var>, <var>y</var> pairs)
+<blockquote>
+	This method is a variant of addFrame() which allows multiple
+	frames from one Image object
+	to be added to <var>sprite1</var> with one method call.
+	For instance, three frames might be added with
+	<blockquote>
+		<var>sprite1</var>.addFrames(<var>image</var>, 10, 20,
+						85, 100, 8, 52, 55, 0);
+	</blockquote>
+	Demo'd in: <a href="Gallery/TimeTrial.html">TimeTrial</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.setTiles(<var>image</var>,
+		<var>x</var>, <var>y</var>,
+		any number of <var>col</var>, <var>row</var> pairs)
+<blockquote>
+	This method can only be used if <var>sprite1</var> was
+	created with <tt>makeTiledSprite</tt>.
+	The method takes a frame from <var>image</var>
+	(with an upper left hand corner as specified by <var>x</var> and <var>y</var>
+	and with width and height as specified in <tt>makeTiledSprite()</tt>),
+	and puts that frame into one or more of <var>sprite1</var>'s tiles
+	as specified by the <var>col</var> and <var>row</var> pairs.
+	Note that counting columns and rows starts from zero, and that
+	position (0, 0) is in the matrix's upper left hand corner.
+	Here is an example, which references a 50 pixel by 50 pixel
+	image called <tt>colorblocks.png</tt>.
+	<img width="50" height="50" src="reference-image1.png">
+	<blockquote><tt>
+		Image cb = getImage("colorblocks.png"); <br>
+		Sprite bkg = makeTiledSprite(4, 3, 25, 25); <br>
+		bkg.setTiles(cb, 0, 0, /* red */<br>
+		&nbsp;&nbsp;&nbsp;&nbsp;0,0, 1,0, 2,0, 3,0); <br>
+		bkg.setTiles(cb, 25, 0, /* blue */<br>
+		&nbsp;&nbsp;&nbsp;&nbsp;0,1, 1,1); <br>
+		bkg.setTiles(cb, 25, 25, /* black */<br>
+		&nbsp;&nbsp;&nbsp;&nbsp;0,2, 1,2, 2,2, 3,2); <br>
+		bkg.setTiles(cb, 0, 25,, /* green */<br>
+		&nbsp;&nbsp;&nbsp;&nbsp;3,1); <br>
+	</tt></blockquote>
+	The resulting <var>bkg</var> will look like this:
+	<img width="100" height="75" src="reference-image2.png">
+	Note that the tile at column 2, row 1 was not set to an image.
+	On this web page it appears white; in a game it would be transparent.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.pin(<var>sprite2</var>, <var>x</var>, <var>y</var>)
+<blockquote>
+	Pins <var>sprite2</var> on top of <var>sprite1</var>, which
+	means that <var>sprite2</var> will be drawn whenever
+	<var>sprite1</var>.draw() is performed.
+	The upper left hand corner of <var>sprite2</var> is
+	located <var>x</var> pixels to the right and
+	<var>y</var> pixels below the upper left hand corner of
+	<var>sprite1</var>;
+	thus <var>sprite2</var> moves when <var>sprite1</var> is moved.
+	Any number of other sprites can be pinned to a sprite.
+	A sprite cannot be pinned to itself.
+	If a sprite is hidden, all sprites pinned to it are hidden.
+	A sprite can be pinned to multiple sprites; thus
+	<tt>sprite1.pin(sprite9, 10, 10);
+	    sprite2.pin(sprite9, 50, 60);
+	    sprite3.pin(sprite9, 20, 70);</tt> is legal.
+	If <var>sprite2</var> is pinned to <var>sprite1</var> more than
+	once, the second call to pin() effectively "re-pins" <var>sprite2</var>
+	to a new location.  Thus
+	<tt>sprite1.pin(sprite2, 10, 10);
+	    sprite1.pin(sprite2, 50, 60);
+	</tt> is legal, but <var>sprite2</var> will only appear once, offset
+	(50, 60) from <var>sprite1</var>.
+	Demo'd in: <a href="Gallery/BounceHouse.html">BounceHouse</a>,
+	           <a href="Gallery/SpinIt.html">SpinIt</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.framerate(<var>number</var>)
+<blockquote>
+	Sets a framerate for this sprite; Ucigame will try to
+	change the sprite's current frame <var>number</var> times per second, although
+	there is no guarantee that it will be successful.
+	This method has no effect if <var>number</var> is negative
+	or greater than the framerate specified for the entire game.
+	Demo'd in: <a href="Gallery/TimeTrial.html">TimeTrial</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.draw()
+<blockquote>
+	Causes the sprite, and any other sprites pinned to this sprite,
+	to be drawn on the canvas, unless the sprite is hidden.
+	Can only be called inside the game class's draw() method.
+	Demo'd in: <a href="Gallery/BallFollower.html">BallFollower</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.show()
+<blockquote>
+	Makes <var>sprite1</var> not hidden; that is, normally visible.
+	Demo'd in: <a href="Gallery/BounceHouse.html">BounceHouse</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.hide()
+<blockquote>
+	Makes <var>sprite1</var> hidden, which means that it (and
+	any sprites pinned to it) will not display when
+	<var>sprite1</var>.draw() is invoked.
+	Demo'd in: <a href="Gallery/BounceHouse.html">BounceHouse</a>,
+	           <a href="Gallery/LunchTimer.html">LunchTimer</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.position(<var>x</var>, <var>y</var>)
+<blockquote>
+	Moves the sprite so that its upper left hand corner is
+	at the specified position, relative to the upper left hand
+	corner of the canvas.
+	Demo'd in: <a href="Gallery/Pong.html">Pong</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.motion(<var>xchange</var>, <var>ychange</var>)
+<blockquote>
+	Sets the x and y motion amounts (<i>moveX</i> and <i>moveY</i>)
+	for this sprite. See move().
+	Demo'd in: <a href="Gallery/Pong.html">Pong</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.motion(<var>xchange</var>, <var>ychange</var>, SET)
+<blockquote>
+	Sets the x and y motion amount for this sprite.
+	Note that positive values represent rightwards and downwards motion;
+	negative values represent leftwards and upwards motion.
+	(Same as the two parameter version of motion()).
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.motion(<var>xchange</var>, <var>ychange</var>, MULTIPLY)
+<blockquote>
+	Multiplies the sprite's x and y motion amounts by the specified
+	amounts.  For instance,
+	if a sprite's x motion and y motion amounts are both 10, after
+	motion(0.5, 3.2, MULTIPLY) is called the x motion amount will be
+	5.0, and the y motion amount will be 32.0.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.motion(<var>xchange</var>, <var>ychange</var>, ADD)
+<blockquote>
+	Increments the sprite's x and y motion amounts by the specified
+	amounts.  For instance,
+	if a sprite's x motion and y motion amounts are both 10, after
+	motion(0.5, 3.2, ADD) is called the x motion amount will be
+	10.5, and the y motion amount will be 13.2.
+	Demo'd in: <a href="Gallery/BounceHouse.html">BounceHouse</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.motion(<var>xchange</var>, <var>ychange</var>, ADDONCE)
+<blockquote>
+	Increments, for the next call of <var>sprite1</var>.move() only,
+	the sprite's x and y motion amounts by the specified
+	amounts.  For instance,
+	if a sprite's x motion and y motion amounts are both 10, after
+	motion(0.5, 3.2, ADDONCE) is called the x motion amount will be
+	10.5, and the y motion amount will be 13.2 for the next
+	<var>sprite1</var>.move(); afterwards the motion amounts will
+	revert to 10 and 10.
+	Demo'd in: <a href="Gallery/MouseTrap.html">MouseTrap</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.move()
+<blockquote>
+	Moves the sprite by its x and y motion amounts.
+	Typically this method is called once for every moving sprite,
+	before collision detection.
+	Demo'd in: <a href="Gallery/Pong.html">Pong</a>.
+</blockquote>
+</li>
+
+<li><var>x</var> = <var>sprite1</var>.x()  (returns double)
+</li>
+<li><var>y</var> = <var>sprite1</var>.y()  (returns double)
+</li>
+<li><var>x</var> = <var>sprite1</var>.xPixel()  (returns int)
+</li>
+<li><var>y</var> = <var>sprite1</var>.yPixel()  (returns int)
+<blockquote>
+	These methods return the <i>x</i> and <i>y</i> values
+	of the sprite's upper left hand corner (relative to the
+	upper left hand corner of the canvas).
+	Pixel versions return a value rounded to the nearest integer;
+	sometimes useful since pixel locations are always integers.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.nextX(<var>xvalue</var>)
+<li><var>sprite1</var>.nextY(<var>yvalue</var>)
+<blockquote>
+	Sets the sprite's next x and y positions (relative to the upper
+	left hand corner of the canvas).
+	These methods are usually used instead of motion() and move(),
+	but like move() they
+	are called before collision detection and before draw().
+	Calling these method sets the sprite's x and y motion amounts to 0.
+	Demo'd in: <a href="Gallery/BallFollower.html">BallFollower</a>,
+	           <a href="Gallery/Pong.html">Pong</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.rotate(<var>angle</var>)
+<blockquote>
+	Rotates the sprite clockwise by the number of
+	degrees specified.
+	The center of rotation is the center of the sprite.
+	Any sprites pinned to <var>sprite1</var> are also rotated
+	around the same center of rotation.
+	Note that rotation occurs immediately before
+	<var>sprite1</var>.draw() is executed, no matter when
+	the call to rotate() is made (as long as rotate() is
+	called before draw()).  This means that rotation does
+	not affect collision detection; collision detection
+	is computed on the unrotated sprite.
+	(Defined as a feature, but could well be considered a bug.)
+	After draw() is called on a sprite any rotation is
+	removed; thus if a sprite should be rotated in every
+	frame rotate() must be called before every draw().
+	Demo'd in: <a href="Gallery/FlippedOut.html">FlippedOut</a>,
+	           <a href="Gallery/SpinIt.html">SpinIt</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.rotate(<var>angle</var>, <var>x</var>, <var>y</var>)
+<blockquote>
+	Same as the one parameter version of rotate(), except that
+	the center of rotation is <var>x</var> pixels to the right
+	and <var>y</var> pixels down from the upper left hand corner
+	of the sprite.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.flipHorizontal()
+</li>
+<li><var>sprite1</var>.flipVertical()
+<blockquote>
+	These methods flip the sprite around its center.
+	flipHorizontal() flips the sprite around a vertical line running
+	through the center of the sprite.
+	flipVertical() flips the sprite around a horizontal line running
+	through the center of the sprite.
+	After either method is called on a sprite any flipping is
+	removed; thus if a sprite should be flipped in every
+	frame flipHorizontal() and/or flipVertical() must be called before every draw().
+	Demo'd in: <a href="Gallery/FlippedOut.html">FlippedOut</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.defineSequence(<var>sequenceName</var>,
+                          one or more frame indices)
+<blockquote>
+	For an animated sprite, defines a sequence of one or more
+	animation frames, which can later be cycled through while
+	the sprite is displayed.
+	The <var>sequenceName</var> cannot be "All" as the name
+	"All" is reserved to refer to the sequence of all frames
+	in the order they were specified with addFrame() or addFrames().
+	The indices specify the frames in the sequence.
+	A frame's index is based on the order it was added to the
+	sprite with addFrame() or addFrames(); the first frame has index 0.
+	A frame index may be repeated in the list of frame indices.
+	Demo'd in: <a href="Gallery/Arrownaut.html">Arrownaut</a>.
+</blockquote>
+</li>
+
+<li><var>sequenceName</var> = <var>sprite1</var>.currSequence()   (returns String)
+<blockquote>
+	Returns the name of the sprite's current sequence.
+	If no squence has been specified (with play()), the
+	the name of the default sequence "All" is returned.
+	Demo'd in: <a href="Gallery/Arrownaut.html">Arrownaut</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.play(<var>sequenceName</var>) </li>
+<li><var>sprite1</var>.play(<var>sequenceName</var>, ONCE)
+<blockquote>
+	Sets the sprite's animation sequence to the series of frames
+	indicated by <var>sequenceName</var>.
+	If <var>sequenceName</var> is different than the sprite's current
+	sequence, then the newly specified sequence of frames is started.
+	Calling play() with <var>sequenceName</var> equal to the current
+	sequence does not restart the animation loop at the first frame;
+	use restart() to achieve that.
+	If the ONCE option is used, then the specified sequence is played
+	through once, and when it is complete the sprite shows the last
+	frame in the sequence.  If ONCE is not used, then the sprite cycles
+	from the last frame in the sequence back to the first one.
+	Demo'd in: <a href="Gallery/Arrownaut.html">Arrownaut</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.play(<var>sequenceNameOnce</var>, <var>sequenceNameLoop</var>) </li>
+<li><var>sprite1</var>.play(<var>sequenceNameOnce</var>, <var>sequenceNameLoop</var>, ONCE)
+<blockquote>
+	These convenience methods are the same as
+	<blockquote><tt>
+		<var>sprite1</var>.play(<var>sequenceNameOnce</var>, 1, <var>sequenceNameLoop</var>)
+	</tt></blockquote>
+	or
+	<blockquote><tt>
+		<var>sprite1</var>.play(<var>sequenceNameOnce</var>, 1, <var>sequenceNameLoop</var>, ONCE)
+	</tt></blockquote>
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.play(<var>sequenceNameRepeat</var>, <var>times</var>, <var>sequenceNameLoop</var>) </li>
+<li><var>sprite1</var>.play(<var>sequenceNameRepeat</var>, <var>times</var>, <var>sequenceNameLoop</var>, ONCE)
+<blockquote>
+	Sets the sprite's animation sequence to the series of frames
+	indicated by <var>sequenceNameRepeat</var>, and plays that
+	sequence <var>times</var> times.
+	The sprite then switches to the <var>sequenceNameLoop</var>
+	sequence.
+	If the ONCE option is used, <var>sequenceNameLoop</var> is played
+	through once, and when it is complete the sprite shows the last
+	frame in that sequence.  If ONCE is not used, then the sprite cycles
+	from the last frame in that sequence back to the first one.
+	Demo'd in: <a href="Gallery/Arrownaut.html">Arrownaut</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.setToFrame(<var>frameNumber</var>)
+<blockquote>
+	For an animated sprite, sets the next frame to display
+	(when <var>sprite1</var>.draw() is next called)
+	to the specified frame in the current sequence.
+	Note that the first frame is numbered 0, and for
+	a sequence with <i>n</i> frames the last frame is <i>n-1</i>.
+	This method has no effect when <var>sprite1</var> is a
+	button, or when <var>frameNumber</var> is less than 0 or
+	greater than the highest frame number.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.restart()
+<blockquote>
+	Same as <var>sprite1</var>.setToFrame(0).
+	Demo'd in: <a href="Gallery/Arrownaut.html">Arrownaut</a>.
+</blockquote>
+</li>
+
+<li><var>w</var> = <var>sprite1</var>.width()  (returns int)
+</li>
+<li><var>h</var> = <var>sprite1</var>.height()  (returns int)
+<blockquote>
+	These methods return the sprite's width and height.
+</blockquote>
+</li>
+
+<li><var>xspeed</var> = <var>sprite1</var>.xspeed() (returns double)
+</li>
+<li><var>yspeed</var> = <var>sprite1</var>.yspeed() (returns double)
+<blockquote>
+	These methods return the sprite's current x change and y change
+	amounts.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.bounceIfCollidesWith(any number of <var>sprite</var>s)
+</li>
+<li><var>sprite1</var>.bounceIfCollidesWith(any number of <var>sprite</var>s, PIXELPERFECT)
+<blockquote>
+	This methods tests whether <var>sprite1</var> overlaps with
+	one or more other <var>sprite</var> objects listed as parameters.
+	The built-in non-moving off-screen sprites TOPEDGE, BOTTOMEDGE,
+	LEFTEDGE, and RIGHTEDGE can also be used as parameters.
+	Specifically, the sprites' next x and y positions are compared, not
+	the current ones.
+	If more than one sprite is specified in the parameter list, the
+	method stops checking after the first overlap is detected.
+	Note that if PIXELPERFECT is not specified as the final argument,
+	all overlaps and collisions in these methods and the other
+	xxxIfCollidesWith() methods are based on the entire rectangular sprite,
+	and not on the possibly smaller visible (non-transparent) figure within
+	the image.
+	If the PIXELPERFECT option is used, then a collision requires the
+	overlap of the two sprites' visible (non-transparent) areas.
+	If there is an overlap,
+	Ucigame changes the position and speed of <var>sprite1</var> so
+	that it "bounces."
+	Demo'd in: <a href="Gallery/Pong.html">Pong</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.stopIfCollidesWith(any number of <var>sprite</var>s)
+</li>
+<li><var>sprite1</var>.stopIfCollidesWith(any number of <var>sprite</var>s, PIXELPERFECT)
+<blockquote>
+	Similar to the bounceIfCollidesWith() method, except that
+	<var>sprite1</var> stops instead of bouncing.
+	Stopping means that <var>sprite1</var> moves as far as possible
+	without overlapping another sprite, and then its x and y motion
+	amounts are set to 0.
+	Demo'd in: <a href="Gallery/Pong.html">Pong</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.pauseIfCollidesWith(any number of <var>sprite</var>s)
+</li>
+<li><var>sprite1</var>.pauseIfCollidesWith(any number of <var>sprite</var>s, PIXELPERFECT)
+<blockquote>
+	Similar to the stopIfCollidesWith() method, except that
+	<var>sprite1</var> pauses instead of stopping.
+	Pausing means that <var>sprite1</var> moves as far as possible
+	without overlapping <var>sprite2</var>, and its x and y motion
+	amounts are unchanged.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.checkIfCollidesWith(any number of <var>sprite</var>s)
+</li>
+<li><var>sprite1</var>.checkIfCollidesWith(any number of <var>sprite</var>s, PIXELPERFECT)
+<blockquote>
+	Like the other xxxIfCollidesWith() methods, this method tests whether
+	<var>sprite1</var> and another sprite will overlap in the next x and y positions.
+	However, this method doesn't change the position or motion of
+	either sprite.  The programmer can then test whether an overlap
+	occurred with collided() and code the desired behavior.
+	Demo'd in: <a href="Gallery/FlippedOut.html">FlippedOut</a>.
+</blockquote>
+</li>
+
+<li><var>collision</var> = <var>sprite1</var>.collided() <i>returns boolean</i>
+<blockquote>
+	This method returns a boolean value of <i>true</i> or <i>false</i>,
+	depending on whether a collision was detected in the immediately
+	preceeding xxxIfCollidesWith() call.  Use this no-argument version
+	if the xxxIfCollidedWith call specified PIXELPERFECT.
+	Demo'd in: <a href="Gallery/FlippedOut.html">FlippedOut</a>.
+</blockquote>
+</li>
+
+<li><var>collision</var> = <var>sprite1</var>.collided(any combination of TOP, BOTTOM, LEFT, RIGHT) <i>returns boolean</i>
+<blockquote>
+	This method returns a boolean value of <i>true</i> or <i>false</i>,
+	depending on whether a collision was detected in the immediately
+	preceeding xxxIfCollidesWith() call on the specified side or sides
+	of <var>sprite1</var>.  TOP, BOTTOM, LEFT, and RIGHT
+	refer to the sides of <var>sprite1</var>. One or more of the four
+	variables can be used in the method call.  For example:
+	<tt>
+		<br>&nbsp;&nbsp; ball.bounceIfCollidesWith(paddle);
+		<br>&nbsp;&nbsp; if (ball.collided(LEFT))
+		<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 	println("Left");
+		<br>&nbsp;&nbsp; if (ball.collided(TOP, BOTTOM))
+		<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 	println("Top or Bottom");
+	</tt>
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.font(<var>fontNameString</var>, <var>style</var>, <var>size</var>)
+<blockquote>
+	This method specifies the font to use in subsequent calls
+	to <var>sprite1</var>.putText().
+	See <ax href="">the about fonts page</a>
+	(coming soon!) for more information
+	about fonts in Ucigame and computer graphics.
+	The <var>style</var> parameter must be one of the following:
+	PLAIN, BOLD, ITALIC, BOLDITALIC.
+	Demo'd in: <a href="Gallery/PushMe.html">PushMe</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.font(<var>fontNameString</var>, <var>style</var>, <var>size</var>,
+					<var>r</var>, <var>g</var>, <var>b</var>)
+<blockquote>
+	Similar to the three parameter version of <tt>font()</tt>, and
+	also sets the font color to the RGB value specified by the
+	last three parameters.  (These values must all be between 0 and 255, inclusive.)
+	Demo'd in: <a href="Gallery/MegaBounce.html">MegaBounce</a>.
+</blockquote>
+</li>
+
+<li><var>sprite1</var>.putText(<var>text</var>, <var>x</var>, <var>y</var>)
+<blockquote>
+	Draws the specified text (which can be a string, such as
+	"Press Here" or an int) on <var>sprite1</var>,
+	using the sprite's current font (and font color, if specified).
+	The lower left hand corner of <var>text</var> is
+	located <var>x</var> pixels to the right and
+	<var>y</var> pixels below the upper left hand corner of
+	<var>sprite1</var>.
+	Any part of <var>text</var> that lies outside the sprite
+	is clipped (not displayed).
+	Demo'd in: <a href="Gallery/PushMe.html">PushMe</a>.
+</blockquote>
+</li>
+
+
+<h4>Sprites which are buttons</h4>
+<p>
+Buttons in Ucigame are made from Sprites created with the makeButton()
+method.  A button has the following properties:
+</p>
+<ol>
+<li>It changes slightly when the mouse moves over it.
+<li>It changes again when the mouse button is pressed on it.
+<li>When the mouse is pressed down and released over the button,
+	Ucigame calls a specified method.
+</ol>
+
+<li><var>sprite1</var> = makeButton(<var>nameString</var>, <var>image</var>,
+						<var>width</var>, <var>height</var>)
+
+<blockquote>
+	The makeButton method takes an already loaded Image object,
+	and creates a button Sprite with the specified name.
+	A button can be composed of one or three images, all of
+	which are in the <var>image</var> object.
+	If three images are supplied, then the first is the "at rest"
+	appearance of the button, the second is the "mouse over" image,
+	and the third is the "mouse down" image.
+	The <var>image</var> can have one of three shapes:
+	<ol>
+	<li>width = <var>width</var> and height = <var>height</var>, in
+		which case <var>image</var> contains one image;
+	<li>width = <var>width</var> * 3 and height = <var>height</var>,
+		in which case <var>image</var> contains three images;
+	<li>width = <var>width</var> and height = <var>height</var> * 3,
+		in which case <var>image</var> contains three images;
+	</ol>
+
+	When the player clicks on the button, Ucigame calls a method
+	called onClick<var>nameString</var>().  For instance, if
+	<var>nameString</var>&nbsp;=&nbsp;"Start" then the method called is
+	onClickStart().
+	Demo'd in: <a href="Gallery/PushMe.html">PushMe</a>.
+</blockquote>
+</li>
+
+
+<a name="Image"></a>
+<h4>The Image class</h4>
+
+<p>
+An image is a rectangular array of pixels that is read in
+from the disk.
+One color from the disk image can be designated as transparent,
+which means that pixels of that color in the image will not
+appear on the canvas.
+</p>
+<p>
+	In Ucigame images are objects in the Image class.
+	In the following, we assume that a reference to a Image
+	called <var>image1</var> has been defined:
+<blockquote>
+	Image <var>image1</var>;
+</blockquote>
+</p>
+
+<li><var>image1</var> = getImage(<var>filenameString</var>)
+<blockquote>
+	This method reads in the specified image file from disk.
+	The file can be in GIF, JPEG, or PNG format.
+	Since this version of getImage() does not specify a
+	transparent pixel color, no pixels will be transparent.
+	Demo'd in: <a href="Gallery/Pong.html">Pong</a>.
+</blockquote>
+</li>
+
+<li><var>image1</var> = getImage(<var>filenameString</var>, <var>shade</var>)
+<blockquote>
+	Reads in an image file from disk, and makes transparent all
+	pixels with shade of grey specified by <var>shade</var>.
+	Demo'd in: <a href="Gallery/PushMe.html">PushMe</a>.
+</blockquote>
+</li>
+
+<li><var>image1</var> = getImage(<var>filenameString</var>,
+		<var>red</var>, <var>green</var>, <var>blue</var>)
+<blockquote>
+	Reads in an image file from disk, and makes transparent all
+	pixels with the color specified by the last three parameters.
+	Demo'd in: <a href="Gallery/BallFollower.html">BallFollower</a>.
+</blockquote>
+</li>
+
+<li><var>w</var> = <var>image1</var>.width() (returns int)
+</li>
+<li><var>h</var> = <var>image1</var>.height() (returns int)
+<blockquote>
+	These methods return the width and height of the image.
+</blockquote>
+</li>
+
+<li><var>image1</var>.transparent(<var>shade</var>)
+</li>
+<li><var>image1</var>.transparent(<var>red</var>, <var>green</var>, <var>blue</var>)
+<blockquote>
+	These methods set the image's transparent color to the
+	specified shade or red green blue color.
+</blockquote>
+</li>
+
+<li><var>image1</var>.draw(<var>x</var>, <var>y</var>)
+<blockquote>
+<!-- Perhaps this method isn't meant to be public.</font> -->
+	Draws the image so that its upper left hand corner is
+	at the specified position, relative to the upper left hand
+	corner of the canvas.
+	Can only be called inside the game class's draw() method.
+</blockquote>
+</li>
+
+
+<a name="Sound"></a>
+<h4>The Sound class</h4>
+
+<p>
+An Sound object can contain music, sound effects, or any kind
+of sound recording, of any length.
+Many file formats and recording formats exist.
+Ucigame can
+play sound files in certain uncompressed formats (the exact
+possibilities seem to vary from computer to computer)
+and in the MP3 format, thanks to the JavaZoon JLayer
+library included in Ucigame.
+Multiple sound files can be played at the same time.
+</p>
+
+<p>
+In the following, we assume that a reference to a Sound
+called <var>sound1</var> has been defined:
+<blockquote>
+	Sound <var>sound1</var>;
+</blockquote>
+</p>
+
+<li><var>sound1</var> = getSound(<var>filenameString</var>)
+<blockquote>
+    This method reads in the specified sound file from disk.
+    If the file is in a format that cannot be played, subsequent
+    calls to play() or loop() will have no effect.
+	Demo'd in: <a href="Gallery/FlippedOut.html">FlippedOut</a>.
+</blockquote>
+</li>
+
+<li><var>sound1</var>.play()
+<blockquote>
+    Plays the sound once, from beginning to end.
+	Demo'd in: <a href="Gallery/FlippedOut.html">FlippedOut</a>.
+</blockquote>
+</li>
+
+<li><var>sound1</var>.loop()
+<blockquote>
+    Plays the sound continuously; when the end is reached it starts over.
+	Demo'd in: <a href="Gallery/FlippedOut.html">FlippedOut</a>.
+</blockquote>
+</li>
+
+<li><var>sound1</var>.stop()
+<blockquote>
+    Stops the sound if it is currently playing (or looping).
+	Demo'd in: <a href="Gallery/FlippedOut.html">FlippedOut</a>.
+</blockquote>
+</li>
+
+
+<a name="Ucigame"></a>
+<h4>The Ucigame class</h4>
+
+<li>framerate(<var>number</var>)
+<blockquote>
+	This method sets the desired framerate; Ucigame will try to
+	refresh the window <var>number</var> times per second, although
+	there is no guarantee that it will be successful.
+	This method has no effect if <var>number</var> is negative
+	or greater than 1000.  In practice, most monitors can only be
+	refreshed between 70 and 100 times per second.
+	For most games, a framerate of 20 to 30 frames per second is optimal.
+	Demo'd in: <a href="Gallery/BallFollower.html">BallFollower</a>,
+	           <a href="Gallery/FlippedOut.html">FlippedOut</a>.
+</blockquote>
+</li>
+
+<li><var>fps</var> = actualFPS()  (returns int)
+<blockquote>
+	The method returns the number of times the window
+	has been refreshed in the last second.
+</blockquote>
+</li>
+
+<li>void randomSeed(<var>seed</var>)
+<blockquote>
+	Ucigame can generate "pseudorandom" numbers.  Pseudorandom numbers
+	appear to be random, but are actually created by a specific formula,
+	which uses a starting number called a seed.
+	The same pseudorandom numbers will be generated by calls to random()
+	if the same seed is used in randomSeed().
+	If this method is not used, then calls to random() and
+	randomInt() will return different values each time the
+	game is run.
+</blockquote>
+</li>
+
+<li><var>x</var> = random(<var>limit</var>)  (returns a double)
+<blockquote>
+	Returns a random number (with a fractional part) greater than or equal to
+	0.0 and less than <var>limit</var>.  If <var>limit</var> is not positive,
+	this method returns 0.0.
+	 Demo'd in <a href="Gallery/LunchTimer.html">LunchTimer</a>.
+</blockquote>
+</li>
+
+<li><var>x</var> = random(<var>lowerlimit</var>, <var>upperlimit</var>)  (returns a double)
+<blockquote>
+	Returns a random number (with a fractional part) greater than or equal to
+	<var>lowerlimit</var> and less than or equal to <var>upperlimit</var>.
+	If <var>upperlimit</var> is less than <var>lowerlimit</var>,
+	this method returns <var>lowerlimit</var>
+	Demo'd in: <a href="Gallery/ClickAndClack.html">ClickAndClack</a>.
+</blockquote>
+</li>
+
+<li><var>x</var> = randomInt(<var>limit</var>) (returns an int)
+<blockquote>
+	Returns a random whole number greater than or equal to
+	0 and less than <var>limit</var>.  If <var>limit</var> is not positive,
+	this method returns 0.
+</blockquote>
+</li>
+
+<li><var>x</var> = randomInt(<var>lowerlimit</var>, <var>upperlimit</var>)  (returns an int)
+<blockquote>
+	Returns a random whole number greater than or equal to
+	<var>lowerlimit</var> and less than <var>upperlimit</var>.
+	If <var>upperlimit</var> is less than <var>lowerlimit</var>,
+	this method returns <var>lowerlimit</var>
+</blockquote>
+</li>
+
+<li><var>stringArray</var> = arrayOfAvailableFonts() (returns an array of String)
+<blockquote>
+	This method is used to find all fonts available on the computer.
+	Demo'd in: <a href="Gallery/FontDemo.html">FontDemo</a>.
+</blockquote>
+</li>
+
+<li><var>fontIsAvailable</var> = isAvailableFont(<var>FontNameString</var>) (returns a boolean)
+<blockquote>
+	Returns <tt>true</tt> if the specified font is installed and
+	available on the computer, and <tt>false</tt> otherwise.
+	The font name is not case sensitive.
+	Demo'd in: <a href="Gallery/BounceHouse.html">BounceHouse</a>,
+	           <a href="Gallery/PushMe.html">PushMe</a>.
+</blockquote>
+</li>
+
+<li>setIconImage(<var>iconImage</var>)
+<blockquote>
+	Sets the game window's icon to the specified iconImage.
+	This method has no effect when the game is running as an applet.
+	The default icon for Java programs is usually the steaming
+	coffee cup logo; the icon appears on the title bar and when
+	the game is minimized.
+	<var>iconImage</var> should be created by getImage(); the
+	image can have transparent pixels.
+	Demo'd in: <a href="Gallery/Pong.html">Pong</a>.
+</blockquote>
+</li>
+
+<li>startScene(<var>sceneNameString</var>)
+<blockquote>
+	Defines a new scene for the game.
+	A scene is frequently part or all of a level.
+	Calling startScene(<i>SceneName</i>) has the following effects:
+	<ol>
+	<li>The current method completes normally.
+	<li>If the program has a public method called start<i>SceneName</i> with no parameters
+		and returning void, then that method is performed.
+	<li>Every time the window needs to be repainted, the public method
+		draw<i>SceneName</i> is called (instead of draw()).
+		This method must take no parameters and return void.
+	<li>If the user presses a keyboard key and there is a public method called
+		onKeyPress<i>SceneName</i> with no parameters and returning void, then
+		that method is invoked.
+	<li>If the user releases a keyboard key and there is a public method called
+		onKeyRelease<i>SceneName</i> with no parameters and returning void, then
+		that method is invoked.
+	</ol>
+	Demo'd in: <a href="Gallery/PongWithScenes.html">PongWithScenes</a>.
+</blockquote>
+</li>
+
+<li>startTimer(<var>timerNameString</var>, <var>milliseconds</var>)
+<blockquote>
+	Executing this method causes the method <var>timerNameString</var><tt>Timer()</tt>
+	to be run <var>milliseconds</var> milliseconds later, and every
+	<var>milliseconds</var> milliseconds afterwards.
+	The <var>timerNameString</var><tt>Timer()</tt> method must be defined
+	as <tt>public</tt>, must return <tt>void</tt>, and must not take
+	any parameters.
+	Demo'd in: <a href="Gallery/BounceHouse.html">BounceHouse</a>,
+	           <a href="Gallery/LunchTimer.html">LunchTimer</a>.
+</blockquote>
+</li>
+
+<li>stopTimer(<var>timerNameString</var>)
+<blockquote>
+	Cancels subsequent executions of the <var>timerNameString</var><tt>Timer()</tt>
+	method.
+	Demo'd in: <a href="Gallery/BounceHouse.html">BounceHouse</a>,
+	           <a href="Gallery/LunchTimer.html">LunchTimer</a>.
+</blockquote>
+</li>
+
+<li>print(<var>information</var>)
+</li>
+<li>println(<var>information</var>)
+<blockquote>
+	Prints <var>information</var> on the console.  The <tt>println</tt>
+	version adds a new line at the end.
+	<var>information</var> can be composed of multiple fields joined
+	with <tt>+</tt>, for example:
+	<blockquote><tt>
+		println("The value of x is " + x);
+	</tt></blockquote>
+	Demo'd in: <a href="Gallery/FontDemo.html">FontDemo</a>,
+	           <a href="Gallery/ClickAndClack.html">ClickAndClack</a>.
+</blockquote>
+</li>
+
+<p>
+The following Ucigame methods create objects.
+They are defined above.
+</p>
+<ul>
+	<li>getImage()
+	<li>getSound()
+	<li>makeSprite()
+	<li>makeTiledSprite()
+	<li>makeButton()
+</ul>
+
+
+<a name="ExtendsUcigame"></a>
+<h4>The Class You Write Extending Ucigame</h4>
+<p>
+A number of methods, if coded by the programmer in the class that
+extends Ucigame, have special roles.
+</p>
+
+<li> <tt>public void setup()</tt>
+<blockquote>
+	This method is performed once, at the start of the game.
+	It's a good place to set up the window, load images, and
+	create sprites.
+</blockquote>
+</li>
+
+<li> <tt>public void draw()</tt> or <tt>public void draw<i>SceneName</i>()</tt>
+<blockquote>
+	The draw method is called every time the window needs
+	to be repainted--either because of the requested framerate
+	of because part or all of the window has been exposed.
+</blockquote>
+</li>
+
+<li> <tt>public void onKeyPress()</tt> <i>or</i> <tt>public void onKeyPress<i>SceneName</i>()</tt>
+<blockquote>
+	This method should be coded if the game needs to be alerted
+	when the user presses a key on the keyboard.
+	If one or more keys is down, onKeyPress is called once per frame,
+	just before draw().
+	Note that if the typematic or auto-repeat feature is on, which
+	it is by default, and a key is held down and not released, the method
+	will be invoked multiple times.
+	Demo'd in: <a href="Gallery/Pong.html">Pong</a>,
+	           <a href="Gallery/Tank.html">Tank</a>.
+</blockquote>
+</li>
+
+<li> <tt>public void onKeyRelease()</tt> <i>or</i> <tt>public void onKeyRelease<i>SceneName</i>()</tt>
+<blockquote>
+	This method should be coded if the game needs to be alerted
+	when the user releases a key on the keyboard that was held down
+	If one or more keys is released, onKeyRelease is called once per frame,
+	just before draw().
+	Demo'd in: <a href="Gallery/Tank.html">Tank</a>.
+</blockquote>
+</li>
+
+<li> <tt>public void onMousePressed()</tt>
+<li> <tt>public void onMouseMoved()</tt>
+<li> <tt>public void onMouseDragged()</tt>
+<li> <tt>public void onMouseReleased()</tt>
+<li> <tt>public void onMouseWheelMoved()</tt>
+<blockquote>
+	The methods are called in response to various mouse events.
+	<tt>onMousePressed()</tt> is called when a mouse button is pressed down.
+	<tt>onMouseReleased()</tt> is called when a mouse button is released;
+	Demo'd in: <a href="Gallery/FontDemo.html">FontDemo</a>.
+	<tt>onMouseMoved()</tt> is called when the mouse is moved and no
+		button is being held down.
+	<tt>onMouseDragged()</tt> is called when the mouse is moved and a
+		button is being held down.
+	<tt>onMouseDragged()</tt> is called when the mouse is moved and a
+		button is being held down.
+	All are demo'd in: <a href="Gallery/ClickAndClack.html">ClickAndClack</a>.
+	<tt>onMouseWheelMoved()</tt> is called when the mouse wheel is rotated;
+	Demo'd in: <a href="Gallery/MegaBounce.html">MegaBounce</a> and
+	           <a href="Gallery/MouseTrap.html">MouseTrap</a>.
+</blockquote>
+</li>
+
+<br>
+<br>
+
+</body>
+</html>

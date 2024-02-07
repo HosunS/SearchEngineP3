@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>3.7 Flavored Reading and Writing of Molecules</title>
+<META NAME="description" CONTENT="3.7 Flavored Reading and Writing of Molecules">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="previous" HREF="node20.html">
+<LINK REL="up" HREF="node14.html">
+<LINK REL="next" HREF="node22.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node20.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node14.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node22.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node20.html">3.6 Format control from</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node14.html">3. Reading and Writing</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node22.html">4. Properties of Molecules</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION006700000000000000000">
+3.7 Flavored Reading and Writing of Molecules</A>
+</H1>
+
+<P>
+The general goal of the oemolstream input and output classes in OEChem
+is to provide the user with transparent access to the very complex task
+of reading and writing molecules in a wide variety of formats.
+However, occasionally, a programmer may want to tweak the behavior of
+specific writers without abandoning the oemolstreams to use the low
+level writers (such as <code>OEWriteMDLFile</code>).  For these instances,
+oemolstreams provide the <code>SetFlavor</code> and <code>GetFlavor</code>
+methods.
+
+<P>
+The <code>SetFlavor</code> function takes two unsigned int arguments, the first
+is the format for which the flavor is being specified and the second is the
+flavor itself.  The formats are specified as discussed above for
+<code>SetFormat</code>.  The input flavors are specified in the OEChem namespace
+OEIFlavor and the output flavors are specified int the OEChem namespace
+OEOFlavor.  Unlike the formats, the flavors are a bitmask and may be or'ed
+together.  Under the OEIFlavor and OEOFlavor namespaces, there is a
+namespace for each format as well as a generic namespace.  The generic
+namespace is used to control aromaticity perception and other properties
+common to all of formats.  To completely specify a flavor, one would
+typically binary-OR a generic flag and a format specific flag and pass the
+resultant value to <code>SetFlavor</code>.
+
+<P>
+The default behavior for the PDB reader is that TER specifies the
+termination of a disconnected fragment within the same molecule while END
+specified the termination of a connection table (see the API manual for
+details).  However, some users may want to have the reader split PDB input
+files into different molecules every time a TER appears.
+
+<P>
+The following code is an example of changing the PDB reader flavor.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+
+using namespace OEChem;
+using namespace OESystem;
+using namespace std;
+
+int main()
+{
+  OEMol mol;
+  oemolistream ims("input.pdb");
+  oemolostream oms("output.mol2");
+
+  unsigned int flavor = OEIFlavor::Generic::Default |
+                        (OEIFlavor::PDB::Default | OEIFlavor::PDB::TER);
+
+  ims.SetFlavor(OEFormat::PDB,flavor);
+
+  if (ims)
+  {
+    if (oms)
+    {
+      while (OEReadMolecule(ims,mol))
+        OEWriteMolecule(oms,mol);
+    }
+    else cerr &lt;&#60; "Error: Unable to write output.mol2" &lt;&#60; endl;
+  }
+  else cerr &lt;&#60; "Error: Unable to read input.pdb" &lt;&#60; endl;
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch4-9.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+Similar low-level control can be exerted over both input and output stream
+readers using the powerful <code>SetFlavor</code> command.  See the API documentation
+of each low-level reader for details on the effects of specific flavor
+flags.
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node20.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node14.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node22.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node20.html">3.6 Format control from</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node14.html">3. Reading and Writing</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node22.html">4. Properties of Molecules</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

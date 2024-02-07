@@ -1,0 +1,630 @@
+			General and Special Trees
+
+
+In this lecture we will look at generalizations of simple binary trees (beyond
+BSTs, Heaps, and AVL trees). Specifically, we will see N-ary trees, for storing
+nodes that have an arbitrary number of childen; expression trees, for storing
+formulas, quadtrees for storing pictures, and digital trees for storing
+dictionaries (and Sets and Maps). In these trees we will also see examples of
+how to store a node's children by using the set, queue, priority queue, and map
+templated classes, and even by using just two pointers (as in binary trees: a
+surprising result).
+
+------------------------------------------------------------------------------
+
+N-ary Trees with Templated Classes:
+
+To start, we will examine a simple way to store N-ary trees: trees that can
+have any number (N) of children.  Each parent can have a differnt number of
+children. Examples of information that we can represent in N-ary trees are
+simple inheritance hierarchies (where each derived class can be extended by any
+number of classes, but each class still has a unique base class: smalltalk and
+Java use this kind of inheritance) and file structures (each folder can contain
+an arbitrary number of files and other folders). To store the later we might
+declare
+
+class Folder_or_File {
+  public:
+    Folder_or_File
+      (bool item_is_file, std::string item_name, std::string item_contents)
+        : is_file(item_is_file), name(item_name), contents(item_contents),
+          children()
+    {}
+
+    bool                          is_file;
+    std::string                   name;     //for file or folder
+
+    std::string                   contents; //used if is_file
+    ics::ArraySet<Folder_or_File> children; //used if !is_file
+};
+
+which can represent an arbitrary file structure. There are actually few things
+missing from this class (like a default constructor, operator== and operator<<
+that are required for instantiating the ArraySet, but let's not worry about
+these details now; in fact, this is a good place to use a union structure).
+
+An example of how we can process such a structure, say to print all the names
+(files and folders) inside a folder (including names inside folders inside that
+folder, etc. indented for each folder level), is shown below: basically it
+implements a preorder traversal of an N-ary tree.
+
+void print_names (const Folder_or_File& ff, std::string indent = "") {
+  if (is_file)
+    std::cout << indent << ff.name;
+  else {
+    std::cout << indent << ff.name;
+    for (Folder_or_File f :  ff.children)
+      print_names(f, indent+"  ");
+  }
+}
+
+Here there is no nullptr base case, becaue there are no pointers. The base 
+case is a leaf: a file, which has no children (its children set is empty, so
+the loop immediately stops without processing any children). We can
+"top-factor" the output and simplify this code to 
+
+void print_names (const Folder_or_File& ff, std::string indent = "") {
+  std::cout << indent << ff.name;
+  if (!is_file)
+    for (Folder_or_File f :  ff.children)
+      print_names(f, indent+"  ");
+}
+
+In fact, because for anything that is a file, the set of children is always
+empty, we could simplify this code to the following, where the loop would always
+execute 0 times for a file (because children.empty() is true).
+
+void print_names (const Folder_or_File& ff, std::string indent = "") {
+  std::cout << indent << ff.name;
+  for (Folder_or_File f :  ff.children)
+    print_names(f, indent+"  ");
+}
+
+If we wanted to print the children in alphabetical order, we could use a
+PriorityQueue instead of Set (or a Queue or Stack if simpler orders are
+appropriate) to organize the children. The for-each loop in the code above in
+print_names works regardless of the  kind of templated class we use to
+implement children, because all template classes have similar-working iterators.
+
+------------------------------------------------------------------------------
+
+N-ary Trees embedded as Binary Trees:
+
+Interestingly enough, we can use a strange kind of binary tree (it has enough
+complexity) to store all the information in an N-ary tree! We would define such
+a class as follows
+
+template<class T>
+class NTN_Binary {
+  public:
+    NTN_Binary ()
+      : first_child(nullptr), next_sibling(nullptr)
+    {}
+
+    NTN_Binary (const NTN_Binary<T>& n)
+      : value(n.value), first_child(n.first_child), next_sibling(n.next_sibling)
+    {}
+
+    NTN_Binary (T value,
+                NTN_Binary<T>* fc = nullptr, NTN_Binary<T>* ns = nullptr)
+      : value(value), first_child(fc), next_sibling(ns)
+    {}
+
+  T              value;
+  NTN_Binary<T>* first_child;     //First for a linked list of children
+  NTN_Binary<T>* next_sibling;    //Next in linked list of siblings
+};
+
+Here we use the two "recursive" pointers differently than in a binary tree
+(where we represent pointers to left and right subtrees) and differently than
+in a doubly-linked list (where we represent previous and next pointers). So,
+this is a third, and different, two-pointer data structure.
+
+Each node points to its FIRST child and to its NEXT sibling. We can find all
+the children of a parent node by examining its first child and all its siblings.
+Note that the root node is guaranteed to have no siblings, but all other nodes
+can have siblings (but don't have to: each can be an only child or just the last
+child in the sibling linked list).
+
+It is interesting to think about how a node with two pointers can be used to
+represent three such different structures as doubly-linked lists, binary trees,
+and N-ary trees, each with a very different uses of it pointers than the others.
+
+The picture accompanying this lecture shows the equivalent of a small directory
+represented with the NTN_Binary data structure.
+
+As a translation of the printing example above, we can write code that will 
+print all values inside an NTN_Binary tree, indented, by using a preorder
+traversal of an N-ary tree). Here we print the value for a node, and then all
+the values reachable from its children.
+
+template<class T>
+void print_values (NTN_Binary<T>* root, std::string indent = "") {
+  if (root == nullptr)
+    return;
+  else {
+    std::cout << indent << root->value;
+    for (NTN_Binary<T>* c= root->first_child; c != nullptr; c = c->next_sibling)
+      print_values(c,indent+"  ");
+  }
+}
+
+Here we return to a data structure with pointers, so we have nullptr (an empty
+tree) as the base case. It prints its n subtrees by combining iterating over
+the n children of root (the first child and its siblings) with recursively
+printing each child of the root (and all its subtree information).
+
+In fact, we can rewrite this function purely recusively, which traverses the
+trees in the same (prefix: every node before its children) order.
+
+template<class T>
+void print_values (NTN_Binary<T>* root, std::string indent = "") {
+  if (root == nullptr)
+    return;
+  else {
+    std::cout << indent << root->value;
+    print_values(root->first_child,indent+"  ");
+    print_values(root->next_sibling,indent);
+  }
+}
+
+Here we continue to check the base case root == nullptr, to terminate both
+recursive calls (the subtree call and the sibling call, which is checked as
+c != nullptr in the for loop above). Each node prints its own name, all the
+names reachable from its first child, and all the names reachable from its next
+sibling (which will include the next sibling's children, etc.).
+
+It might also be useful to add a parent pointer in the NTN_Binary class, so
+that every node could know/point to its unique parent. With such pointers we
+can traverse the tree in more interesting patterns (much like adding a prev
+pointer to a linear linked list to get a doubly-linked list).
+
+------------------------------------------------------------------------------
+
+Quad Trees:
+
+We next will briefly discuss Quad trees, which we can use to represent pictures
+that are rendered (drawn) on the screen NOT from top to bottom, but from fuzzy
+pictures to sharp pictures. Also, for pictures that contain large areas of the
+same color, a Quad tree can store a picture more compactly than an array of
+pixels.
+
+In a Quad tree, each node has exactly 4 children. We can represent a quad tree
+to store a picture by
+
+class QTN {
+  public:
+    QTN (){}
+
+    QTN (int s, int r, int g, int b, bool is_leaf)
+      : size(s), avg_red(r), avg_green(g), avg_blue(b) {
+      if (!is_leaf)
+         children = new QTN[4];
+    }   
+
+    int   size      = 0;      //represents a patch: size x size
+    int   avg_red   = 0;      //  with a computed average RGB
+    int   avg_green = 0;      //  intensity of all the pixels
+    int   avg_blue  = 0;
+    QTN*  children  = nullptr;//nullptr or points to an array of 4 children
+  }
+
+Each Quad tree node represent a square (we could store rectangles, but let's use
+squares to simplify things) of size^2 pixels. If the entire square has a
+uniform color, then the "avg" instance variables store its exact red, green,
+and blue pixel components, and the children field stores nullptr. Actually,
+even if the square is not one uniform color, the "avg" instances store the
+average amount of red, green, and blue for pixels). If the square is not a
+uniform color, the children divide the square into four quadrants (numbered
+0-3), where each represents one quadrant of a child, whose vertical and
+horizontal size is 1/2 that of its parent (each of the 4 quadrants is
+1/2 * 1/2 = 1/4 the size of its parent).
+
+  +--------+--------+
+  |        |        |
+  |   0    |   1    |
+  |        |        |
+  +--------+--------+
+  |        |        |
+  |   2    |   3    |
+  |        |        |
+  +--------+--------+
+
+This process of creating children to represent the picture continues, at each
+level breaking its picture into four 1/4-sized pictures, until a child QTN is
+all one color. This might be because the quadrant is one single pixel (its base
+case), or it might be because the quadrant is a square of pixels with a uniform
+color, so no further subdivision is useful.
+
+By using a Quad tree we can render a picture, not so much top to bottom in full
+detail, but by refining each quadrant, quadrants in a quadrant, etc. until the
+entire picture is rendered. In this way the picture starts out as a blur at the
+root, but with the right approximate color distribution, and the picture gets
+sharper and sharper as we process each subtree (breadth first) in the picture,
+filling in more of its its details.
+
+This is accomplished with a breadth first traversal of the Quad tree, where we
+render the picture completely with one color at depth 0, then render each
+quadrant a depth 1 (four different color squares), then each quadrant of a
+quadrant a depth 2, etc. Each increase in depth can increase the number of
+squares by a factor of 4 and can improve the resolution by a factor of 4.
+Eventually we render squares that are a uniform color (either being 1x1 pixel
+or more pixels that are all a uniform color).
+
+Obviously, storing all the information in this tree can take more space than
+just storing all the pixels, but the space requirements can be less if many
+small (or a few large) squares store the same color.
+
+Let's do a simple analysis. We will assume the picture has N pixels and is an
+MxM square, where M is perfect power of 2. So, for example, M might be 2^10
+(about 1,000), so N is 2^10 x 2^10 or 2^20 (about 1 million). Furthermore, lets
+assume adjacent pixels are always different (so the tree is full: each internal
+node has 4 children). There is no space saving; that would be the "worst case".
+
+The first question is, "how many depths can be in the tree": remember, the root
+is at depth 0. Well, there is 1 node at depth 0, 4 nodes at depth 1, 16 nodes
+at depth 2, etc. Generally, the number of nodes at depth d is 4^d. So, we want
+to know for what depth d, 4^d = N meaning every pixel appears by itself in a
+leaf node. Solving here, d = Log4 N. Likewise, the size of the square rendered
+at depth 0 is N; the size of each of the 4 squares rendered at depth 1, is
+N/2 x N/2 (or N/4 pixels), ...., the size of each square rendered at depth d is
+N/(4^d), so  again, we get a rendering size of 1 (a single pixel) when N = 4^d,
+or d = Log4 N.
+
+Every node stores a red, green, and blue value (along with its rendering size,
+and 4 pointers to its subtrees). When we do a breadth first traversal of this
+tree, every node renders by duplicating its red, green, blue pixel values in a
+square of size. So the next question is, "how many renderings occur". This
+question is just asking how many internal and leaf nodes are in a quadtree of
+depth d (where every depth is fully filled). The answer is a sum of the number
+of nodes at each depth, or
+
+  nodes = 1 +  4 + 16 + 64 + ....  + 4^d-1 + 4^d
+
+If we multiply each side of this equality by 4, we get
+
+4*nodes = 4 + 16 + 64 + .... + 4^d + 4^d+1
+
+by subtracting the first equation from the second (each side) all but the first
+and last terms cancel, so we get.
+
+3*nodes = 4^d+1 - 1, or
+  nodes = (4^d+1 -1)/3
+
+But, we know N = 4^d, so nodes = (4N-1)/3
+
+Assuming N is big, we ignore the -1 and, nodes ~ 4N/3; certainly we can say
+the total number of nodes in a quadtree is O(N).
+
+So, to render all the nodes in the tree is 1/3 more work than rendering all N
+pixels (in the leaf nodes). Recall that in a full binary tree about 1/2 the
+nodes are leaves; in a quad tree (remember 4^d = N) 
+
+  number of leaf nodes/total number of nodes =
+  4^d / (4N-1)/3  ~ 4^d / 4N/3 =  N / 4N/3 = 3/4
+
+So, most (3/4 ths) of the number of nodes in a full quadtree are leaf nodes. The
+overhead of rendering the intermediate/internal nodes is just a fraction of the
+total number of pixels that are rendered in the final picture.
+
+------------------------------------------------------------------------------
+
+Expression Trees:
+
+Compilers first PARSE a program (using the syntax of the language) by
+converting it into a tree representing its syntactic structures/components. In
+this section we will use expression trees to represent and process expression.
+
+For example, given an expression we can use operator precedence and a stack to
+translate it into an expression tree and use a different stack to evaluate the
+tree easily: compute what value the tree represents. In the example below, we
+use just one class to store and process such trees; in reality, it would be
+useful to have a subclass for each different operator, but those many classes
+would obscure the main point I'm trying to make here.
+
+typedef TN<std::string> Expr_Tree;
+
+Here std::string is either an operator ("*") or the string representation of
+an integer ("3"). Expression trees are drawn in the standard way (although we
+simplify things a bit by writing just * and 3 instead of their strings values.
+
+Note that when converting an expression to an Expr_Tree, the later an operator
+is applied, the higher it appears in the tree. So, we have the following
+examples. I have written all the character strings without quotes.
+
+  2 + 3 * 5          (2+3) * 5          1 + 2 + 3
+
+      +                  *                  +
+    /   \              /   \              /    \
+   2    *             +     5            +      3
+       /  \          /  \               /  \
+      3    5        2    3             1   2
+
+Notice in the last example, because + is "left associative", the first + is
+evaluated before the second one. To be completely accurate in drawing
+expression trees, you must follow associativity rules for equal precendence
+operators. Note that there are no empty (nullptr) expression trees: the smallest
+expression a tree contains a value: e.g., new Expr_Tree("3",nullptr,nullptr).
+
+We will discuss in class, for a uniprocessor, that the number of time steps it
+takes to evaluate such an expression is equal to the number of internal nodes
+(each internal node specifies an operation) in the tree; for a multiprocessor
+with enough cores, it is the height of the tree (using the multiprocessor to
+simultaneously evaluate all nodes at a depth, going upward).
+
+Let us see some simple recursive code to evaluate an expression. Note that we
+can recognize an Expr_Tree as a base case value, if nullptr stored is stored in
+its left and right subexpressions. Note that if we introduced unary operators,
+the left subexpression for one would be nullptr but the right subexpression
+would refer to the value the unary operator operated on. I assume a function
+named str_to_int converts a string (like "3") to an int equivalent (3).
+
+int evaluate (Expr_Tree* e) {
+  if (e->left == nullptr && e->right == nullptr)
+    return str_to_int(e->value);
+
+  else {
+    if (e->value == "+")
+      return evaluate(e->left) + evaluate(e->right);
+
+    if (e->value == "-")
+      return evaluate(e->left) - evaluate(e->right);
+
+    if (e->value == "*")
+      return evaluate(e->left) * evaluate(e->right);
+
+    if (e->value == "/")
+      return evaluate(e->left) / evaluate(e->right);
+
+    throw IllegalOperatorException(e->value + "is not an operator");
+  }
+}
+
+This code performs is a postorder traversal of a tree: computing the values of
+the left and right subtrees, then using knowledge of the operator at the root
+of the tree to return the correct result for the operator at the root applied
+to the values of the subtrees.
+
+Given a function is_int (which determines whether a string represents an int)
+we could extend this function to be able to process trees that specify strings
+representing variable names (any string that isn't representing an int).
+
+To compute the value of the variable, we could use a
+Map<std::string,std::string>, where the keys in this map are variable names and
+the values in this map are the values stored in these variables.
+Such a map is called an "environment"; we can rewrite our evaluate code as
+follows:
+
+int evaluate (Expr_Tree* e, ArrayMap<std::string,std::string>& env) {
+  if (e->left == nullptr && e->right == nullptr)
+    if (is_int(e->value))
+      return str_to_int(e->value);           //->value represents int: e.g., "3"
+    else
+      return str_to_int(env[e->value]);      //->value represent name: e.g., "x"
+ 
+  else {
+    if (e->value == "+")
+      return evaluate(e->left) + evaluate(e->right);
+
+    if (e->value == "-")
+      return evaluate(e->left) - evaluate(e->right);
+
+    if (e->value == "*")
+      return evaluate(e->left) * evaluate(e->right);
+
+    if (e->value == "/")
+      return evaluate(e->left) / evaluate(e->right);
+
+    throw IllegalOperatorException(e->value + "is not an operator");
+   }
+}         
+
+Problem: What if we allowed the = operator (which changes the value assocciated
+with a variable and results in that new value); how could we update evaluate to
+include the semantics/meaning of this other operator? We could add the
+following code at the bottom of the operator-decoding if statements. Assume
+is_var determines if a string is a legal variable name and int_to_str returns
+the string representation of an int: int_to_str(3) returns "3".
+
+    if (e->value == "=")                                //var = val
+      if (!is_var(e->left->value) || !env.has_key(e->left->value))
+        throw IllegalVariableException(e->left->value + " is not a variable");
+      else {
+        int right_value = evaluate(e->right);           //computer rhs
+        env[e->left->value] = int_to_str(right_value);  //env[var] = val
+        return right_value;   				//return val
+      }
+
+We would require something similar for other state-change operators, like ++.
+
+We can also use variants of such trees (often with inheritance) to store code/
+statements in a language: like a block class to store a sequence of statements;
+and if class to store a boolean expression, and two block classes (for what to
+execute when the test is true, and what to execute when the test is false). 
+We could write function like evaluate (say, named execute) to execute the code
+we store as such trees.
+
+
+------------------------------------------------------------------------------
+
+Digital Trees:
+
+Finally, we will examine Digital Trees (also known as "tries", pronounced as
+in the word reTRIEval -so just like "tree"). As an example we can use digital
+trees to store a dictionary of words for a spelling correction utility. The
+standard way to store such a structure would be as a Set of legal words. So
+far, the most efficient way we have seen to store such a collection is an AVL
+tree. Recall that an AVL tress is a special kind of BST that is guaranteed to
+be well balanced, so the time to search for a word would be at worst O(Log N).
+
+Using a digital tree, we can reduce the complexity of many of its important
+operations (find, add, and remove) to O(1)! The time doesn't depend on the
+number of of words stored in the digital tree; but it does depend on how many
+letters are stored in the word we are adding, removing, or inserting). So, we
+might say if a word contained M letters in a digital tree containing N values,
+the time to add/remove/insert is O(M), which is independent of N.
+
+Using this new way to characterize words, since each comparison in the AVL tree
+might requiring looking at all M letters in a word (string comparisons are
+letter by letter comparisons until there is a letter mismatch or one of the
+strings runs out of letters), we would then have to list the AVL tree's
+complexity, if using the same metric, as O(M Log N). So digital trees do save
+a factor of Log N. Although, the digital tree very often requires looking at ALL
+M characters, while comparisons in BSTs often find a difference in the first
+few letters. 
+
+A digital tree means the value that we want to look up can be broken down into
+its "digits". For example, to look up the integer 153 we look at the digit 1,
+then the digit 5, then the digit 3; likewise, to look up the string "yes" we
+look at the "digit" "y", then the "digit" "e", then the "digit" "s". So, the
+characters are the "digits" for a string. 
+
+To store a digital tree for processing Strings, we might represent it as
+follows. Note here, the children are collected in an ArrayMap, with each key a
+char and each value another DTN.
+
+class DTN {
+  public:
+    DTN (bool iw, std::string wth) :
+      is_word(iw), word_to_here(wth), children()
+    {}
+
+    bool                is_word;
+    std::string         word_to_here; //Cache this value; can computed from root
+    ArrayMap<char,DTN>  children;
+  }
+
+How do we add a word into a digital tree?
+
+We always start with a root DTN (whose is_word is alway false and whose
+word_to_here is "": the empty string). It represents a word of 0 characters (of
+which there aren't any!). To add a word, say "ant", we start at the root.
+
+  If its children map contains the first letter, "a", we find the value DTN
+  assocated with this letter: a subtree containing all the words starting with
+  the letter "a". We then repeat this process again from there, with the next
+  letter, "n". If we get to the end of the word and we have not needed to
+  create a new DTN to reach that spot, we set is_word of that DTN is true.
+
+  If at any time a DTN's children map does not contain the letter we need, we
+  put that new letter into the map (with a value that is a DTN with its is_word
+  false and its word_to_here containing all the needed letters) and follow it.
+  So, if the root's children map DOES NOT contain the first letter, "a", we add
+  to that map a key of "a" with a value DTN whose is_word is false and
+  word_to_here is ""+"a" (the word_to_here of its parent, extended by its
+  letter). We use this DTN to represent the root of a subtree whose children
+  are all the words starting with "a". Then we repeat this process with all
+  subsequent letters: for the last DTD, we set its is_word to true (since we
+  have processed all the letters in a word)
+
+Note that each map will contain at most 26 entries, one for each possible
+letter in a word: we'll assume only lowercase letters; of course we could use
+both cases and increase the map's size at most to 52). In fact, we could use
+an array to store these 26 pointers: to look up character c we use the array
+indexed at c-'a' (C++ subtracts from the ASCII value of c the ASCII value of
+'a': 'a'-'a' = 0, 'b'-'a' = 1, ... 'z'-'a' = 25. Using an array would be faster
+than any kind of map.
+
+Thus, the word "anteater" and "anthem" share the structure "ant", then
+in the children map for "ant", the key "e" leads to a DTN on the path to
+"anteater" and the key "h" leads to a different DTN on the path to "anthem".
+This sharing is illustrated in the picture below.
+
+                          root
+                            |a				  a -> node
+                         "a" false
+                            |n				  n -> node
+                         "an" false (unless "an" added)
+                            |t				  t -> node
+                         "ant" false (unless "ant" added)
+                    /e          \h			  e -> node; h -> node
+             "ante" false     "anth" false
+               |a               |e			  ...
+             "antea" false    "anthe" false
+               |t               |m			  ...
+             "anteat" false   "anthem" true
+               |e					  ...
+             "anteate" false
+               |r					  ...
+             "anteater" true
+
+Note that there is one true for every word. If we put "a" in the digital tree
+above, the only change would be change the is_word from false to true in the
+child of the root.
+             
+To search for a word, we use each of its letters, in sequence, to "get" the
+next DTN, until we either run off the tree (word not present) or get to the
+last letter -in which case is_word tells whether or not it is a word. That is,
+in the above example, looking up "ant" would return true (in the tree, marked
+as a word); "anthemly" would  return false (not in the tree); "anthe" would
+also return false (in the tree but not marked as a word).
+
+The function for this is easy to write.
+
+bool is_a_word (const DTN& root, std::string remaining_letters) {
+  if (remaining_letters.empty())
+    return root.is_word;          //all letters in tree; is it a word?
+  else if (root.children.has_key(remaining_letters[0]) == false)
+    return false;                 //some letters not in tree: it isn't a word
+  else
+    return is_a_word(root.children[remaining_letters[0]], //check the subtree
+                     remaining_letters.substr(1));        //for the next letter
+  }
+
+Here remaining_letters[0] is a char that is the first letter (the key to the
+map, used to get to one of its subtrees), and remaining_letters.substr(1) is a
+std::string containing all but the first letter: both the tree and the string
+are getting "smaller" in each recursive call: the tree getting closer to a leaf
+base case; the string getting closer to the empty ("") base case. One will
+will be reached first.
+
+The algorithm for removing a word is a bit more subtle: we can search for the
+word and set its is_word to false; we can actually remove its DTN from the tree,
+but only if it has no children (otherwise removing the DTN would remove all its
+children, some of which might be words); we  can do the same with its ancestors
+that are not words until we find a DTN whose is_word is true or a DTN that has
+other children or the root; from that point on we must leave this DTN in the
+tree so it and all its children words can be found. Note that there are lots of
+DTNs in a tree that don't represent words.
+
+So, in the tree above, if we remove "ant", we set its is_word to false and that
+is all we can do. But if we then remove "anteater", we get rid of DTNs with the
+words "anteater", "anteate", "anteat", "antea", "ante", but must stop there,
+because if we deleted the DTN with "ant", the digital tree would not store the
+word "anthem".
+
+We can use digital trees to represent sets and maps (instead of is_word, use an
+instance variable for the value associated with a key) and very quickly
+add/lookup/remove words in an N word tree, all in O(1) - or O(M) where the word
+we are processing has M letters.
+
+Finally, we will review the difference between a data type and a data
+structure. Recall that a data type is most like an abstract class in C++. It
+specifies the operations that one can perform, but makes no commitment as to
+how the information is represented or how the operations are accomplished. A
+data structure is most like a concrete class in C++. There can be many data
+structures that implement a data type, each using a different way to encode the
+data and perform the operations.
+
+Once a programmer solves a problem using data types, he/she can use any data
+structures implementing them to actually run the program. All data structures
+should produce the same result, but some will run faster than others, depending
+on the complexity class of their operations.
+
+At the start, this course was all about Data Types (templated classes: Queue,
+Stack, PriorityQueue, Set, Map): we learned to solve problems using compositions
+of these data types, modeling the needed data and operations; then the course
+switched focus and we started studying the various ways to implement them
+(Arrays, Linked Lists, Heaps, Binary Search Trees, AVL trees, Digital Trees,
+and coming soon Hash Tables) where we also characterize these data structures
+by the complexity classes of their operations. Once we solve problems (as in 
+Program #1), we can easily interchange different data structures that implement
+these data types to find one that performs the best: typically we just replace
+information in a typedef: typdef ArraySet<...> SetClass; with typdef
+HashSet<...> SetClass; and use SetClass as the type for variables and
+parameters.
+
+But, note that constructors might be different too: an ArraySet has a
+constructor that specifies an int: how large of an array to allocate initially
+for storing the set. A LinkedSet would not have a constructor specifying an int
+value.

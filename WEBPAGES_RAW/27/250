@@ -1,0 +1,86 @@
+<HTML><HEAD><TITLE>Closest Pair Methods</TITLE>
+<!--#config timefmt="%d %h %Y, %T %Z" -->
+</HEAD><BODY FGCOLOR=#000000 BGCOLOR=#FFFFFF>
+<H1><A HREF="../">Closest Pair Data Structures</A>:
+Methods</H1>
+
+We have designed, analyzed, and implemented several different closest
+pair data structures.  See the <A HREF="../Papers/">papers</A>
+or <A HREF="../Source/">source code</A> for more detail.
+We analyze the times in terms of two parameters:
+<I>n</I>, the number of objects in the set, and
+Q, the time per operation to perform insertions,
+deletions, and nearest neighbor queries in a dynamic set of objects.
+Our implementations use trivial nearest neighbor searching
+(just examine the distances to each objects), for which Q=O(<I>n</I>).
+
+<P>Previously known were:
+
+<UL>
+<P><LI><B>Brute force</B>. This simply maintains a list of objects,
+and finds closest pairs by examining all pairs of objects.
+Insertions and deletions are easy, and space is linear, but queries take
+time O(<I>n</I>Q) each.
+
+<P><LI><B>Neighbor heuristic</B>. We store the nearest neighbor to each object.
+Each insertion takes linear time, but deletions require recomputing neighbors
+for any object having the deleted object as its neighbor, and may take
+as much as O(<I>n</I>Q) time.
+Space is linear.  In many <A HREF="../Applications/">applications</A>,
+deleted objects are unlikely to have high degree, and the empirically
+observed time per operation is linear or close to linear.
+
+<P><LI><B>Priority queue</B> (not implemented).
+We store a priority queue data structure (such as a binary heap)
+containing all the entries in the distance matrix.
+Space is quadratic, but worst case time per update is
+O(<I>n</I>&nbsp;log&nbsp;<I>n</I>).
+</UL>
+
+New closest pair data structures:
+
+<UL>
+<P><LI><B>Quadtree</B>.  We group the entries of the adjacency matrix
+into 2x2 squares, compute the maximum in each square, interpret these
+maxima as the distances for a smaller set of <I>n</I>/2 objects,
+and continue recursively.  Space is quadratic, but the worst-case time
+per operation is linear (optimal unless one assumes some further knowledge
+about the distance function).  This would be the likely method of choice
+for relatively few objects with very expensive distance computations.
+
+<P><LI><B>Conga line</B>. We partition the objects into
+O(log&nbsp;<I>n</I>) subsets and maintain a graph in each subset,
+such that the closest pair is guaranteed to correspond to an edge in the
+graph.  Each insertion creates a new subset for the new object;
+each deletion may move an object from each existing subset to a new subset.
+In each case, if necessary some pair of subsets is merged
+to maintain the desired number of subsets.
+Amortized time per insertion is O(Q&nbsp;log&nbsp;<I>n</I>);
+amortized time per deletion is O(Q&nbsp;log<sup>2</sup>&nbsp;<I>n</I>).
+Space is linear.
+
+<P><LI><B>MultiConga</B>.  This is a simplification of the conga line
+data structure in which we allow the number of subsets to grow
+arbitrarily, and never merge pairs of subsets.
+The time per insertion is O(Q); amortized time per deletion is
+O(Q&nbsp;sqrt&nbsp;<I>n</I>). In practice this is faster than conga lines
+by a factor of three or more, usually roughly comparible to the neighbor
+heuristic, and fast even for problems that cause the neighbor heuristic
+to blow up.
+
+<P><LI><B>FastPair</B>.  We further simplify conga lines by
+making separate singleton subsets for the objects moved to new subsets
+by a deletion.  This can alternately be viewed as a modification to the
+neighbor heuristic, in which the initial construction of all nearest
+neighbors is replaced by a conga line computation, and in which each insertion
+does not update previously computed neighbors.
+Its time both theoretically and in practice is qualitatively similar
+to the neighbor heuristic, but it typically runs 30% or so faster.
+</UL>
+
+<P><HR>
+<A HREF="/~eppstein/">David Eppstein,
+<A HREF="/">Information & Computer Science</A>,
+<A HREF="http://www.uci.edu/">UC Irvine</A>,
+<!--#flastmod file="index.html" -->.
+</BODY></HTML>

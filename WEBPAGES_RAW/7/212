@@ -1,0 +1,591 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="GENERATOR" CONTENT="Globetrotter 1.1.1">
+<META HTTP-EQUIV="AUTHOR" CONTENT="David G. Kay">
+<META HTTP-EQUIV="UPDATED" CONTENT="Friday, January 20, 2006 10:57 AM">
+<TITLE>Lab Assignment B</TITLE>
+<META HTTP-EQUIV="X-GLOBETROTTERDATA" CONTENT="D2442422">
+<META HTTP-EQUIV=KEYWORDS CONTENT="CS 2, CS2, assignment, Java, OOP">
+<META HTTP-EQUIV="DESCRIPTION" CONTENT="A lab assignment for Informatics 42, a second-quarter course in computer science for Informatics majors in the Bren School of Information and Computer Sciences, UC Irvine.">
+<META HTTP-EQUIV="COPYRIGHT" CONTENT="Copyright &#169; 2005 by David G. Kay.  All rights reserved.">
+<link href="/~kay/courses/i42/code.css" rel="stylesheet" type="text/css" />
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+<P><FONT FACE="Goudy Old Style">Informatics 42 &bull; Winter 2012 &bull; David G. Kay
+  &bull; UC Irvine</FONT></P>
+<P> <FONT FACE="Goudy Old Style" SIZE=6><B>Lab Assignment B: Anteater Bed and Breakfast</B></FONT></P>
+<P><FONT FACE="Goudy Old Style">This assignment is due at the end of lab on
+Monday, February 6. </FONT></P>
+<title></title>
+<p><strong>Assignment summary:</strong> You will write a program to keep track
+  of reservations at a small "bed and breakfast" hotel.</p>
+<p>
+This assignment is divided into six required stages and optional
+seventh stage. Each succeeding stage is built upon what you
+have already written for the previous stage. We expect you to design,
+write, and test this program according to these stages—first get the
+first-stage program working, then modify it to satisfy the second
+stage, and so on.  As always, be sure to keep a copy of each completed
+stage. That way, if you decide you've gotten off on the wrong track
+for a stage, you can start again easily from the end of the previous
+stage, without the painstaking task of removing each addition.
+You should make sure that each stage is entirely correct and working
+perfectly before you go on to the next. As you complete each stage,
+you must demonstrate briefly to your TA or tutor that it works
+correctly before you go on to the following stage. </p>
+
+<p><strong>What to turn in:</strong>
+On Checkmate, a single Python file containing your last-stage code.
+  </p>
+<p><strong>Grading:</strong> Your grade depends on organized development (did you design and debug each stage in sequence), completeness (does your program do everything the specification requires), correctness (does it produce the correct results), quality and clarity of your output, good modularity, good data organization (using data structures appropriately), and good programming style (are your identifier names descriptive, is your organization clea).
+  
+  You will receive appropriate partial credit for each stage you
+  complete correctly. You will receive no credit for work on a later
+  stage if the previous stages are incomplete or incorrect. The whole
+  point of incremental development (i.e., stages) is to keep a
+programmer from biting off more than he or she can chew.</p>
+
+<p><strong>Statement of the problem:</strong> UCI has just started a
+  program in hotel and restaurant management; its dean has established
+  a small "bed and breakfast" hotel as a lab for the program's
+  students. The dean has asked you to write the reservations software
+  for this new inn, which will be called the Anteater BandB.</p>
+
+<p>Your program will keep track of the rooms available for rent (these
+  vary, since sometimes a room is closed for redecoration) and the
+  reservations that guests have made for these rooms.</p>
+
+<p>When the full Anteater BandB system is completed, it may have a
+  graphical user interface, but for now your program will be a batch
+  program; this means that you will read all of your input from an
+  external data file and produce output as described below.</p>
+
+<p>You could easily convert this program to an interactive one with a
+  fancy user interface, where the program presents the user with a
+  menu of commands, accepts the user's selection, prompts the user for
+  whatever additional information the command requires, and then
+  displays the results of that command. We made this assignment a
+  batch program for three reasons: First, it's extra work for you to
+  write the menu- printing and input-prompting commands, some of which
+  you have already done in other assignments. It's easier simply to
+  assume that the data appears in the correct format in the input
+  files. Second, it gives you practice learning how to read data from
+  external text files. Third, testing your program will be much easier
+  when you can create files of test data rather than typing in each
+  test interactively every time.</p>
+
+<p>The input for this program comes from a single file, which
+  consists of an unlimited number of input command lines. We will
+  describe the various commands below; for each stage, you will
+implement (or modify) a few more commands</p>
+<p><strong>Stage I:</strong> For this stage, your program will keep
+  track of the rooms that are available. This stage implements four
+  commands, as described below. On each command line, the first two non-whitespace characters are the command, command letters may be upper or lower case.
+<dl>
+<dt>NB</dt> <dd>(for "add a new bedroom") followed by
+an integer room number (in the range 1–999). Add a new bedroom with
+the specified room number.</dd>
+<dt>LB</dt><dd>(for "list bedrooms").  Print a list of the bedrooms currently available.
+The input file may contain any number of these commands in any order;
+    each LB command prints a list of available bedrooms based on what
+    has been added as of that point. See the sample output below for
+    the format of the printed bedroom list. For this stage, it doesn't
+    matter what order the bedrooms appear in.</dd>
+<dt>PL</dt><dd>(for "print line"), followed by any text. Simply print (or "echo") a line,
+copying the input (not counting the PL and leading whitespace) to the output. You'll find it useful in testing, and it's also a simple way to make the program's reports clearer or fancier.</dd>
+<dt>**</dt><dd>Comment, followed by any text. Like comments in a
+    program, comment lines don't have any effect on the program's
+    behavior; they just serve as annotations in the command
+    file. </dd></dl>
+Below is a sample input file for this stage.
+<pre><code>** This is a sample command file for the Anteater BandB, Stage I
+PL ***********************************************************
+** A well-written program works gracefully with empty lists.
+Lb
+PL ***********************************************************
+** Now let's add a bedroom:
+NB 101
+LB
+** And some more:
+NB 104
+** Extra blanks around the command should be ignored
+nb    102
+    NB 201
+    Nb      203
+ LB
+PL Thank you for using the Anteater BandB Reservation System!
+** That's the end of the sample data for Stage I.
+</code></pre>
+From this input file, your program should produce the following
+output:
+<pre><code>***********************************************************
+Here is a list of available bedrooms (before adding any!)
+Number of bedrooms in service:  0
+------------------------------------
+***********************************************************
+Number of bedrooms in service:  1
+------------------------------------
+101
+Number of bedrooms in service:  5
+------------------------------------
+101
+104
+102
+201
+203
+Thank you for using the Anteater BandB Reservation System!</code></pre>
+<strong>Stage II:</strong> Each stage of this assignment will
+  continue to handle all the commands of the previous stages, of
+  course. For this stage, your program will handle deletions from the
+  list of available bedrooms.
+<dl>
+<dt>DB</dt><dd>(for "delete bedroom"), followed by a bedroom number.
+Delete the specified room from the list.  Print an error message if
+    the specified room isn't on the list.</dt></dl>
+Here is some sample input for this stage:
+<pre><code>** This is a sample command file for the Anteater BandB, Stage II
+** First, add some bedrooms:
+NB 301
+nb 302
+nb 303
+** Now list what we have:
+PL First list of available bedrooms:
+LB
+** Next, delete one:
+DB 302
+** And show the list reflecting the deletion:
+PL List of available bedrooms after deleting one:
+LB
+** Try to delete a bedroom that doesn't exist, and get an error message.
+DB 405
+** Now add some more:
+NB 302
+NB 304
+NB 305
+PL List of available bedrooms:
+LB
+** We delete a bedroom ...
+db   301
+** ... we add another to the list.
+NB 307
+PL Another list, having deleted one and added another:
+LB
+PL Thank you for choosing the Anteater BandB Reservation System!
+** That's the end of the sample data for Stage II.
+</code></pre>
+For the above input, your program should produce the following output:
+<pre><code>First list of available bedrooms:
+Number of bedrooms in service:  3
+------------------------------------
+301
+302
+303
+List of available bedrooms after deleting one:
+Number of bedrooms in service:  2
+------------------------------------
+301
+303
+Sorry, can't delete room 405; it is not in service now
+List of available bedrooms:
+Number of bedrooms in service:  5
+------------------------------------
+304
+305
+301
+302
+303
+Another list, having deleted one and added another:
+Number of bedrooms in service:  5
+------------------------------------
+302
+303
+304
+305
+307
+Thank you for choosing the Anteater BandB Reservation System!
+</code></pre>
+<strong>Stage III:</strong> For this stage, your program will keep
+  track of reservations for specific rooms on specific dates. The
+  first new command for this stage adds a reservation:
+<dl>
+<dt>NR</dt>
+<dd>(followed by a bedroom number, then an arrival date in the form
+  mm/dd/yyyy, then a departure date in the form mm/dd/yyyy, then the
+  guest's name):  Add a new reservation for the specified room on the
+  specified dates.
+</dd></dl>
+Your program will keep track of all the reservations.  An attempt
+  to reserve a room that isn't on the list of available rooms should
+  produce an error message. (Note that "available" means the same
+  thing here that it has in the previous stages: Any room that is "in
+  service," whether reserved by a guest or not, is "available." At
+  this stage your program is not checking for occupied or free
+  rooms.)</p>
+  <p>At this stage, your program does not have to perform any checking that the dates are valid, nor does it have to identify conflicting reservations. Each new reservation prints and saves a unique "confirmation number" so the user can refer to it later (to cancel it, for example); this confirmation number should just be 1 for the first reservation added, 2 for the next, and so on, always increasing.</p>
+<p>To make your coding task easier, import the Python
+  library <code>datetime</code> and use it for date
+  calculations. The <code>split</code> function with a <code>&quot;/&quot;</code> argument will be helpful, too.
+</p>
+<p>
+Also handle these commands:
+<dl><dt>LR</dt><dd>(for "list reservations").  Print all the reservations.</dd>
+<dt>DR</dt><dd>(for "delete a reservation"), followed by the
+    confirmation number of a reservation.  Deletes the specified
+    reservation. If a DR command gives a confirmation number that isn't in the list of
+  reservations, your program should produce an error message.
+</dd>
+</dl>
+Here is some sample input for this stage.
+  [It's a common temptation to use an elaborate test case like this one
+  as the first test of your newly modified program. It's all right to
+  indulge that temptation once, if you must; of course, your test will
+  fail. Newly modified programs always have bugs. At that point,
+  however, you should try a succession of smaller, more circumscribed
+  tests, rather than ramming this same large test through the program
+  over and over again until you finally force it through
+  successfully. It's more productive, more thorough, and better
+  organized in the long run to test each feature separately before
+  going on to complex combinations. By the same token, however,
+  adequate testing involves more than this single combination test
+  case; this one case does not test everything that needs testing for
+  this stage.]
+<pre><code>** This is a sample command file for the Anteater BandB, Stage III
+** First, add some bedrooms:
+NB 301
+nb 302
+nb 303
+** Now make some reservations
+NR 303 10/17/2012 10/19/2012 Conrad Hilton
+NR 303 12/31/2012   1/2/2013 Cesar Ritz
+NR 301 11/3/2012  12/15/2017 Leona Helmsley
+NR 777 1/1/2012     1/2/2012 Ian Schrager
+LR
+** Next, delete one:
+DR 2
+** And show the list reflecting the deletion:
+PL List of reservations after deleting one:
+LR
+** Now try to delete that one again (which should give an error):
+DR 2
+** Now add another two reservations:
+NR 302 1/1/2013  2/15/2013 Howard Johnson
+NR 303 11/25/2012 11/30/2012 Sultan of Brunei
+** And try two more bogus deletions:
+DR 2
+DR 17
+** Finally, list the remaining reservations:
+LR
+PL Thank you for perusing the Anteater BandB Reservation System!
+** That's the end of the sample data for Stage III.
+</code></pre>
+The sample input above should produce results as shown below:
+<pre><code>Reserving room 303 for Conrad Hilton -- Confirmation #1
+    (arriving 10/17/2012, departing 10/19/2012)
+Reserving room 303 for Cesar Ritz -- Confirmation #2
+    (arriving 12/31/2012, departing 1/2/2013)
+Reserving room 301 for Leona Helmsley -- Confirmation #3
+    (arriving 11/3/2012, departing 12/15/2017)
+Sorry; can't reserve room 777; room not in service
+Number of reservations:  3
+No. Rm. Arrive      Depart     Guest
+------------------------------------------------
+  1 303 10/17/2012 10/19/2012 Conrad Hilton
+  2 303 12/31/2012  1/ 2/2013 Cesar Ritz
+  3 301 11/ 3/2012 12/15/2017 Leona Helmsley
+List of reservations after deleting one:
+Number of reservations:  2
+No. Rm. Arrive      Depart     Guest
+------------------------------------------------
+  1 303 10/17/2012 10/19/2012 Conrad Hilton
+  3 301 11/ 3/2012 12/15/2017 Leona Helmsley
+Sorry, can't cancel reservation; no confirmation number 2
+Reserving room 302 for Howard Johnson -- Confirmation #4
+    (arriving 1/1/2013, departing 2/15/2013)
+Reserving room 303 for Sultan of Brunei -- Confirmation #5
+    (arriving 11/25/2012, departing 11/30/2012)
+Sorry, can't cancel reservation; no confirmation number 2
+Sorry, can't cancel reservation; no confirmation number 17
+Number of reservations:  4
+No. Rm. Arrive      Depart     Guest
+------------------------------------------------
+  1 303 10/17/2012 10/19/2012 Conrad Hilton
+  3 301 11/ 3/2012 12/15/2017 Leona Helmsley
+  4 302  1/ 1/2013  2/15/2013 Howard Johnson
+  5 303 11/25/2012 11/30/2012 Sultan of Brunei
+Thank you for perusing the Anteater BandB Reservation System!</code></pre>
+<p><strong>Stage IV:</strong> In this stage, your program will check each command for various inconsistencies and impossible situations.</p>
+<p>First, your program should reject any reservation whose arrival date
+  is later than the departure date, or any reservation where the
+  guest arrives and departs on the same day (we're running a
+  respectable establishment). [Check the documentation for the
+  <code>datetime</code> library for functions that help you with this.]</p>
+<p>Your program must also check each reservation for a given bedroom
+  for conflicts with any existing reservations for that bedroom; you
+  can't rent the same room to two different guests on the same
+  night. (Note, however, that one reservation can have the same
+  arrival date as another reservation's departure date, since the
+  departure date is the date the guest leaves, so the room is
+  vacant that night.)</p>
+<p>Next, your program should print an error message if the user
+  attempts to add a bedroom with the same number as one that is
+  already on the list.</p>
+<p>
+Finally, if the user deletes a bedroom, your program should cancel all
+the reservations for that bedroom (printing an appropriate message for
+each cancellation).</p>
+<p>Here is some sample input for this stage:</p>
+<pre><code>** This is a sample command file for the Anteater BandB, Stage IV
+** First, add some bedrooms:
+NB 101
+nb 102
+nb 103
+** Now make some reservations:
+NR 101 12/17/2012 12/19/2012 Claude Crillon
+NR 102 12/31/2012  1/5/2013 Donald Dorchester
+** Try a few reservations that go backwards in time:
+NR 103 11/3/2012 12/15/1989 Bonnie Bonaventure
+NR 103 12/17/2012 11/18/2012 Osamu Okura
+NR 103 12/31/2012 12/25/2012 Penelope Peninsula
+** And one that comes and goes on the same date:
+NR 103 12/1/2012 12/1/2012 Randolph Raffles
+LR
+** Now try some conflicting reservations
+** One that overlaps exactly:
+nr 101 12/17/2012 12/19/2012 George Cinq
+** One that overlaps a couple of days:
+nr 102 12/25/2012  1/1/2013 Renata Rossiya
+** One that's completely contained:
+nr 102 1/1/2013 1/3/2013 Mark Hopkins
+** And one that doesn't conflict, barely:
+nr 102 12/25/2012 12/31/2012 Belle Air
+LR
+** Now try to add an already-existing bedroom:
+nb 103
+** Finally, delete a bedroom (which cancels all its reservations):
+db 102
+nr 103 12/17/2012 12/19/2012 Alfreda Algonquin
+PL The final list of reservations:
+LR
+PL Thank you for confusing the Anteater BandB Reservation System!
+** That's the end of the sample data for Stage IV.
+</code></pre>
+<p> The sample input above should produce results as shown below:</p>
+<pre><code>
+Reserving room 101 for Claude Crillon -- Confirmation #1
+    (arriving 12/17/2012, departing 12/19/2012)
+Reserving room 102 for Donald Dorchester -- Confirmation #2
+    (arriving 12/31/2012, departing 1/5/2013)
+Sorry, can't reserve room 103 (11/3/2012 to 12/15/1989);
+    can't leave before you arrive.
+Sorry, can't reserve room 103 (12/17/2012 to 11/18/2012);
+    can't leave before you arrive.
+Sorry, can't reserve room 103 (12/31/2012 to 12/25/2012);
+    can't leave before you arrive.
+Sorry, can't reserve room 103 (12/1/2012 to 12/1/2012);
+    can't arrive and leave on the same day.
+Number of reservations:  2
+No. Rm. Arrive     Depart     Guest
+------------------------------------------------
+  1 101 12/17/2012 12/19/2012 Claude Crillon
+  2 102 12/31/2012  1/ 5/2013 Donald Dorchester
+Sorry, can't reserve room 101 (12/17/2012 to 12/19/2012);
+   it's already booked (Conf. #1)
+Sorry, can't reserve room 102 (12/25/2012 to  1/ 1/2013);
+   it's already booked (Conf. #2)
+Sorry, can't reserve room 102 ( 1/ 1/2013 to  1/ 3/2013);
+   it's already booked (Conf. #2)
+Reserving room 102 for Belle Air -- Confirmation #3
+    (arriving 12/25/2012, departing 12/31/2012)
+Number of reservations:  3
+No. Rm. Arrive     Depart     Guest
+------------------------------------------------
+  1 101 12/17/2012 12/19/2012 Claude Crillon
+  2 102 12/31/2012  1/ 5/2013 Donald Dorchester
+  3 102 12/25/2012 12/31/2012 Belle Air
+Sorry, can't add room 103 again; it's already on the list.
+Deleting room 102 forces cancellation of this reservation:
+   Donald Dorchester arriving 12/31/2012 and departing  1/ 5/2013 (Conf. #2)
+Deleting room 102 forces cancellation of this reservation:
+   Belle Air arriving 12/25/2012 and departing 12/31/2012 (Conf. #3)
+Reserving room 103 for Alfreda Algonquin -- Confirmation #4
+    (arriving 12/17/2012, departing 12/19/2012)
+The final list of reservations:
+Number of reservations:  2
+No. Rm. Arrive     Depart     Guest
+------------------------------------------------
+  1 101 12/17/2012 12/19/2012 Claude Crillon
+  4 103 12/17/2012 12/19/2012 Alfreda Algonquin
+Thank you for confusing the Anteater BandB Reservation System!
+</code></pre>
+<p><strong>Stage V:</strong> For this stage, your program
+ will produce various information listings.</p>
+<dl>
+<dt>RB</dt>
+<dd>(for "reservations by bedroom"), followed by a number. Lists all reservations for a given bedroom.</dd>
+<dt>RC</dt>
+<dd>(for "reservations by guest"), followed by a string.  List all reservations for a given guest.</dd>
+<dt>LA</dt><dd>(for "list arrivals"), followed by a date in the same
+    mm/dd/yyyy form as before.  Print a list of all guests arriving
+    on the specified date.</dd>
+<dt>LD</dt><dd>(for "list departures"), followed by a date in the same
+    mm/dd/yy form as before. Print a list of all guests departing on
+    the specified date.</dd>
+<dt>LF</dt><dd>(for "list free bedrooms"), followed by two dates.
+    List all bedrooms that are free each night for a guest arriving on
+    the first date and departing on the second.
+</dd>
+<dt>LO</dt><dd> (for "list occupied bedrooms"), followed by two
+    dates.  List all bedrooms that are occupied for at least one night
+    between the given arrival and departure dates.
+</dd></dl>
+<p>Here is some sample input for this stage:</p>
+<pre><code>** This is a sample command file for the Anteater BandB, Stage V
+** First, add some bedrooms:
+NB 501
+nb 502
+nb 503
+nb 504
+** Now make some reservations
+NR 503 12/10/2012 12/15/2012 I. Joliet
+nr 502  1/10/2013  1/15/2013 I. Joliet
+nr 502 12/10/2012 12/14/2012 K. Leavenworth
+nr 502 12/10/2013 12/14/2013 K. Leavenworth
+nr 504  2/15/2013 12/14/2013 C. S. Quentin
+LR
+** List reservations for a bedroom
+RB 502
+** List reservations for two guests
+RC K. Leavenworth
+RC C. S. Quentin
+** List everyone arriving December 10, 2012
+LA 12/10/2012
+** List everyone (i.e. nobody) arriving December 9
+LA 12/9/2012
+** List everyone departing December 14, 2013
+LD 12/14/2013
+** List the free rooms when the hotel is empty
+LF 12/20/2012 12/25/2012
+** List the free rooms when some are reserved
+LF 12/12/2012 12/20/2012
+** List the free rooms on a single date
+** (Remember that a room isn't occupied on the night of a departure)
+LF 12/14/2012 12/14/2012
+** List occupied rooms on various dates
+LO 12/14/2012 12/14/2012
+LO 12/12/2012 12/20/2012
+LO 12/20/2012 12/25/2012
+PL Thank you for abusing the Anteater BandB Reservation System!
+** That's the end of the sample data for Stage V.
+</code></pre>
+The sample input above should produce results as shown below:
+<pre><code>Reserving room 503 for I. Joliet -- Confirmation #1
+    (arriving 12/10/2012, departing 12/15/2012)
+Reserving room 502 for I. Joliet -- Confirmation #2
+    (arriving 1/10/2013, departing 1/15/2013)
+Reserving room 502 for K. Leavenworth -- Confirmation #3
+    (arriving 12/10/2012, departing 12/14/2012)
+Reserving room 502 for K. Leavenworth -- Confirmation #4
+    (arriving 12/10/2013, departing 12/14/2013)
+Reserving room 504 for C. S. Quentin -- Confirmation #5
+    (arriving 2/15/2013, departing 12/14/2013)
+Number of reservations:  5
+No. Rm. Arrive     Depart     Guest
+------------------------------------------------
+  1 503 12/10/2012 12/15/2012 I. Joliet
+  2 502  1/10/2013  1/15/2013 I. Joliet
+  3 502 12/10/2012 12/14/2012 K. Leavenworth
+  4 502 12/10/2013 12/14/2013 K. Leavenworth
+  5 504  2/15/2013 12/14/2013 C. S. Quentin
+Reservations for room 502:
+    1/10/2013 to  1/15/2013:  I. Joliet
+   12/10/2012 to 12/14/2012:  K. Leavenworth
+   12/10/2013 to 12/14/2013:  K. Leavenworth
+Reservations for K. Leavenworth:
+   12/10/2012 to 12/14/2012:  room 502
+   12/10/2013 to 12/14/2013:  room 502
+Reservations for C. S. Quentin:
+    2/15/2013 to 12/14/2013:  room 504
+Guests arriving on 12/10/2012:
+   K. Leavenworth (room 502)
+   I. Joliet (room 503)
+Guests arriving on 12/9/2012:
+Guests departing on 12/14/2013:
+   C. S. Quentin (room 504)
+   K. Leavenworth (room 502)
+Bedrooms free between 12/20/2012 to 12/25/2012:
+   504
+   501
+   502
+   503
+Bedrooms free between 12/12/2012 to 12/20/2012:
+   504
+   501
+Bedrooms free between 12/14/2012 to 12/14/2012:
+   504
+   501
+   502
+Bedrooms occupied between 12/14/2012 to 12/14/2012:
+   503
+Bedrooms occupied between 12/12/2012 to 12/20/2012:
+   502
+   503
+Bedrooms occupied between 12/20/2012 to 12/25/2012:
+Thank you for abusing the Anteater BandB Reservation System!
+</code></pre>
+<p><strong>Stage VI:</strong> This stage has two parts. First, the LB command should print the room list in order by room number and the LR command should list the reservations in order by arrival date. </p>
+<p>The second part of this stage makes the file handling more
+  realistic. In a real hotel, the room reservation system must save
+  the reservation information at the end of the day, to be used as the
+  following day's starting data. Before exiting, your program should
+  write out the room and reservation information to an external file
+  as a series of NB and NR commands, in the same format as the input
+  command file. You should not automatically write the end-of-day data
+  on top of the original input file; prompt the user for a new file
+  name. Thereafter, when your program starts it will prompt the user
+  for the file containing the previous day's ending data and read in
+  those commands before it asks for the current day's command file and
+  handles the commands there. In addition to the program's output for
+  the four test cases you will turn in, you should also turn in a
+  printed copy of the final end-of-day files for each of those four
+  test cases.</p>
+
+[In fact, there is an inconsistency here, because the NR command doesn't have space for an existing reservation's confirmation number. Thus, any carried-forward reservation will get a new confirmation number, and the number the guest has won't be any good. Optionally, propose a solution to this problem (you don't have to implement it, but it should be something you could implement if you had a few more days).]
+<p><strong>Stage VII (optional): </strong>In this stage, before
+cancelling a reservation you check to see if it can be moved to
+  another room.  First check if there's another room free for the
+entire duration of the reservation, and move it there.  If no single
+room can accommodate the reservation, but if it could be split
+between two rooms, do that.  Only if that's not possible,
+cancel it.</p>
+<p>&nbsp;</p>
+<P><FONT FACE="Goudy Old Style">The following usual warnings, advice, policies,
+  and practices apply to this assignment:</FONT></P>
+<UL>
+  <LI>
+<FONT FACE="Goudy Old Style">Get started early.</FONT></LI>
+<BR>
+<LI>
+<FONT FACE="Goudy Old Style">Read and re-read the specifications.</FONT></LI>
+<BR>
+<LI>
+<FONT FACE="Goudy Old Style">Do this with a partner you haven&#39;t worked
+with yet this quarter (and let the TA know who your partner is).</FONT></LI>
+<BR>
+<LI>
+<FONT FACE="Goudy Old Style">Submit all your Python source code in one </FONT><FONT FACE="Courier New" SIZE=2>.py</FONT><FONT FACE="Goudy Old Style">
+file via Checkmate.  Each pair should submit just one solution.</FONT></LI>
+<BR>
+<LI>
+<FONT FACE="Goudy Old Style">The usual <A HREF="http://www.ics.uci.edu/~kay/courses/i42/hw/assignments_index_files/grading_criteria_for_lab.html">grading criteria</A>
+for lab assignments apply. </FONT></LI>
+<BR>
+<LI>
+<FONT FACE="Goudy Old Style">Fill out a partner evaluation at EEE.</FONT><BR>
+</LI>
+</UL>
+<P>
+<FONT FACE="Helvetica" SIZE=1>Written by David G. Kay, Winter 2005, based on earlier assignments. Modified by David G. Kay for Python, Winter 2012.</FONT></P>
+<BR CLEAR=ALL>
+</BODY>
+</HTML>

@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>2.3 Creating a Molecule from SMILES</title>
+<META NAME="description" CONTENT="2.3 Creating a Molecule from SMILES">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node13.html">
+<LINK REL="previous" HREF="node11.html">
+<LINK REL="up" HREF="node9.html">
+<LINK REL="next" HREF="node13.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node11.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node9.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node13.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node11.html">2.2 Reusing Molecules</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node9.html">2. Manipulating Molecules</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node13.html">2.4 Generating a SMILES</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION005300000000000000000">
+2.3 Creating a Molecule from SMILES</A>
+</H1>
+
+<P>
+A common method of creating a molecule in OEChem is via the SMILES
+representation.  SMILES notation is commonly used in chemical
+information systems, as it provides a convenient string representation
+of a molecule.  An introduction to SMILES syntax is provided later in
+this manual.  For examples, below we'll use the SMILES ``c1ccccc1'' which
+describes the molecule benzene.
+
+<P>
+A molecule can be created from a SMILES string using the function
+<code>OEParseSmiles()</code>.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+
+using namespace OEChem;
+
+int main()
+{
+  OEMol mol;
+
+  OEParseSmiles(mol,"c1ccccc1");
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch3-4.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+The OEParseSmiles function actually returns a boolean result indicating
+whether the input string was a valid SMILES string.  It's good
+programming practice to check the return value and report an error
+message if anything went wrong.  The following example uses C++'s
+iostream library to report the error.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+
+using namespace OEChem;
+using namespace std;
+
+int main()
+{
+  OEMol mol;
+
+  if (OEParseSmiles(mol,"c1ccccc1"))
+  {
+    // Do something with the molecule!
+  }
+  else cerr &lt;&#60; "SMILES string was invalid!" &lt;&#60; endl;
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch3-5.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+The molecule returned by OEParseSmiles preserves the aromaticity present
+in the input SMILES string, so for example, if benzene is expressed as
+``c1ccccc1'' all atoms and bonds are marked as aromatic, but if expressed
+as a Kekul&#233; form, ``C1=CC=CC=C1'' all atoms and bonds are kept aliphatic.
+A common task after creating a molecule from SMILES is to normalize its
+aromaticity with OEAssignAromaticFlags.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+
+using namespace OEChem;
+using namespace std;
+
+int main()
+{
+  OEMol mol;
+
+  if (OEParseSmiles(mol,"c1ccccc1"))
+  {
+    OEAssignAromaticFlags(mol);
+    // Do something with the molecule!
+  }
+  else cerr &lt;&#60; "SMILES string was invalid!" &lt;&#60; endl;
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch3-6.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node11.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node9.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node13.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node11.html">2.2 Reusing Molecules</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node9.html">2. Manipulating Molecules</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node13.html">2.4 Generating a SMILES</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

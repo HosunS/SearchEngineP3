@@ -1,0 +1,56 @@
+// Test of closest pair algorithms
+// David Eppstein, UC Irvine, 19 Apr 1997
+//
+// Many-subset conga line closest pair algorithm
+//
+// Based on empirical results showing that increasing the number of
+// subsets in the Conga line data structure is (usually) an improvement,
+// we here allow arbitrarily many subsets. This allows some simplification
+// since we no longer ever need to merge subsets, and can save some
+// storage that was used in that merge process.
+// 
+// Because of the changed data arrangement, we duplicate code
+// rather than subclassing from CongaLine, so the only other code
+// needed for this to run is BruteForce.cp (used to keep track
+// of the list of active points).
+//
+// Total space: 42n + O(1) bytes.
+// Time per insertion: O(n)
+// Time per deletion: O(n) expected, O(n^2) worst case
+//
+// Time per closest pair: O(n).
+
+#include "BruteForce.h"
+
+// how many subsets can we have? need to leave one for scratch, one for inactive
+#define MaxCongaSubsets 65534L
+
+class MultiConga : public BruteForceCP {
+ 	unsigned long max_points;
+ 	
+ 	typedef struct { point in, out; double d; } CongaEdge;
+ 	CongaEdge * edges;				// list of all edges in graph
+ 	unsigned long how_many_edges;
+
+	void AddEdge(point, point, double); 	// add an edge to the graph
+	void RemoveEdge(unsigned long);			// remove edge w/given index
+	
+	void MoveToSubset(point, unsigned long & subset_size);
+	void FindSubsetEdges(unsigned long subset_size);
+		// When making a new subset, we move points to front of points[]
+		// and count them. we then pass the count to FindSubsetEdges().
+	
+	void CleanAllGraphs();					// too many edges, redo from scratch
+	
+	unsigned long NeighborInList(point pt, point * ptlist, unsigned long listlen,
+		double & d); // return dist & list pos of nearest nbr in list to pt
+
+ public:
+ 	~MultiConga();
+ 	MultiConga(long np, long mp, Distance & d);
+ 	void operator += (point);
+ 	void operator -= (point);
+ 	double operator () (point & a, point & b);
+ 	void UpdatePoint(point);
+ 	void UpdateDistance(point,point);
+};

@@ -1,0 +1,733 @@
+		Linked Lists and Linked List Processing
+
+
+Introduction:
+
+This lecture reviews the basics of linked lists and linked list processing. You
+are expected to understand how to draw linked lists (both full and abbreviated
+pictures), how to update the drawings by hand simulating code that operates on
+linked lists (which is especially useful for debugging linked list code that
+you write), how to process linked lists by iterating over/traversing them (in a
+variety of ways), how add values at the front and rear of a linked list, how to
+search for and remove a value from a linked list, and how to copy a linked list
+efficiently.
+
+Here we use the term "linked list" to refer to what more formally be called a
+"linear linked list". In the next lecture we will examine simple linked list
+variants and their uses: circular lists, header/trailer lists, and doubly-linked
+lists. In that lecture we will also discuss using references and pointers to
+pointers in linked list processing. In a third lecture we will examine how
+linked lists are defined and processed recursively.
+
+
+Linked List Basics:
+
+We will start by looking at a simple templated class named LN, which we use to
+represent List Nodes in a linearly-linked list: each LN<T> object points to
+another LN<T> object from that same class (the one that follows it in the list)
+-or to nothing (meaning this object is at the end of the list), represented by
+nullptr.
+
+This class declares two public instance variables, instead of private ones with
+accessor/setter methods: in this generic class, the setters would allow any
+value to be stored there, so setters aren't of much use (and would increase the
+syntactic complexity of writing code to process LNs). It also declares one
+default and copy constructor and another useful constructor (also both public).
+
+template<class T>
+class LN {
+  public:
+    LN ()                               : next(nullptr){}
+    LN (const LN<T>& ln)                : value(ln.value), next(ln.next){}
+    LN (const T& v, LN<T>* n = nullptr) : value(v), next(n){}
+
+    T      value;
+    LN<T>* next;
+};
+
+Although not universally agreed upon, I think this style (public instance
+variables) is easier to write code for, avoiding the extra syntax of doing
+method calls to examine and set these instance variables. Also, we often 
+declare classes like LN<T> to be nested classes inside another class (as we will
+in the linked-list implementations of data types in Programming Assignment #2),
+and therefore they can be manipulated only by the code in the outer class.
+
+We will examine an Object/Variable picture of a linked list built from this
+class, and a simplified picture that represents all the necessary information,
+but more compactly (if a bit more ambiguously). You should be able think in
+terms of both the full and abbreviated pictures.
+
+Given such pictures, we should be able to understand how such data structures
+are accessed when using combinations of ->value and ->next; e.g., in the linked
+list shown, what is the type and value of x->next->next->value or x->next->next?
+What would happen if these appeared as lvalues (on the left hand side of an =): 
+  x->next->next->value = 10;
+  x->next->next        = nullptr;
+
+Every occurence of "->name" means "(a) follow the pointer before the arrow to
+the object that it refers to and (b) focus on the instance variable/box for
+that "name" (which might store a pointer to follow later). So, x->next both
+stores a value and is a location in which we can store a value. The -> operator
+is called "member access".
+
+The * operator is also used with pointers too, but less often than -> is used.
+Every occurence of "*" means just "follow the pointer before the arrow to the
+object that it refers to", which is just the first part of the -> operator.
+If we use *, we will typically process that whole object, or we then use the
+. (dot) operator to focus on the the instance variable/box for a name. The *
+operator is called indirection/dereference.
+
+In fact, (*x).value has the same meaning as x->value, so we often use the
+simpler x->value form, rather than the (*x).value form. Because . has higher
+precedence over *, we must use these parentheses.
+
+I have found that many students are just "faking" an understanding of how
+linked lists are accessed and updated. They really don't understand all the
+material in the previous paragraph, or how code accesses and mutates linked
+lists. They don't follow my recommendations to practice hand-simulating linked
+list code, so they ultimately have a very hard time writing (and debugging)
+their linked list code.
+
+
+Iterating over Linked Lists:
+
+We will examine the concept of "cursors" and how they unify the processing
+of arrays (where cursors are ints) and linked lists (where cursors are
+pointers, which are actually like ints that point to memory locations): in each
+case the cursor (a small piece of data) tells "where we are focussed" in a
+large data structure. With both we can use a standard "for" loop for traversing
+the entire data structure (focusing on each piece of data in the data structure,
+one after the other). Iterators really keep track of cursors for a data
+structure as they traverse it.
+
+  array       x: for (int       i=0; i<length  ; ++i      ) ...access x[i]
+  linked list x: for (LN<...>*  p=x; p!=nullptr; p=p->next) ...access p->value
+
+We will closely examine what p = p->next means, and more generally what it
+means to copy any pointer value into a pointer variable.
+
+  For the statement "p1 = p2;" the magic words are: "Make the box storing
+  variable p1 refer refer to the same object that the box for the variable p2
+  refers to." Note that if p2 stores nullptr (refers to no object) then nullptr
+  should be stored in p1 too (so that it also refers to no object).
+
+  A statement like p1->next = p2; is interpreted very similarly, but here the
+  box on the left side of the = is an instance variable in the object p1 refers
+  to. So this assignment statement says "Make the box storing p1->next (which is
+  the instance variable "next" in the object variable p1 refers to) refer to
+  the same object that the box for the variable p2 refers to.
+
+Of course, what the assignment "p1 = p2;" really does is copy the integer that
+is the pointer p2 into p1. The integer refers to the memory address of the
+object. But it is better at the beginning to ignore memory addresses and show
+pointers as arrows. Later, C++ references (i.e. &) make these pictures tougher
+to draw and interpret (but we will do both; and both help us understand and
+debug the code we write).
+
+While the semantics of pointer assignments is not really complicated once you
+"get the hang of it", many students don't take the time to "get the hang of it".
+Such a misunderstanding makes it difficult to write and debug code (by hand
+simulation) that uses linked lists. There is little I want you to learn by rote
+this quarter, but learn these words by rote.
+
+Note that after p1 = p2; the test p1 == p2 evaluates to true: both variables
+refer to the same object. So, of course *p1 == *p2 is also true, because the
+state of the object p1 refers to is the same as the state of the object p2
+refers to: because they refer to the same object! And typically == on objects
+(not pointers) computes whether the objects have the same state: their instance
+variables store the same values. So == on pointers is like Python's "is"
+operator and == on dereferenced pointers is like Pythons == operator.
+
+Here are a series of code fragments/functions the process linked lists. All of
+the examples in this lecture use LN<int> for simplicity. Most interesting
+details of linked procesing concerns the use of "next" not "value". Computing
+the length of a linked list (example 3) doesn't concern "value" at all. All of
+these operations traverse the linked list (visiting every LN). Almost all use
+the same for loop: which is similar to doing each of these operations on an
+array, with an integer index rather than a pointer as a cursor.
+
+Assumes we have defined
+
+  LN<int>* l
+    +---+   +-------+   +-------+   +-------+   +-------+   
+    | --+-->| 5 | --+-->| 2 | --+-->| 7 | --+-->| 4 | / |
+    +---+   +-------+   +-------+   +-------+   +-------+   
+
+
+(1) Traverse a linked list, computing the sum of its <int> values.
+
+If you truly understand how/why this code works, at the microscopic level, you
+are 70% of the way to a good understanding of linked lists. See the Picture
+link on the website showing all the changes to p and sum that occur when
+executing this code.
+
+  int sum = 0;
+  for (LN<int>* p = l; p != nullptr; p = p->next)
+    sum += p->value;
+  std::cout << "Sum = " << sum << std::endl;
+
+It computes the value 18 for the list above.
+
+
+(2) Traverse a linked lists inserting each value on an output stream (with
+"->" between values, ending in nullptr); this is shown as overloading
+operator <<.
+
+  template<class T>
+  std::ostream& operator << (std::ostream& outs, LN<T>* l) {
+    for (LN<T>* p = l; p != nullptr; p = p->next)
+      outs << p->value << "->";
+    outs << "nullptr";
+    return outs;
+}
+
+std::cout << l; prints "5->2->7->4->nullptr" for the list above. We might use
+a function like this one for the str method defined for a linked list
+implementation of a data type.
+
+
+(3) Traverse a linked list computing its length: the number of LN<T> objects
+reachable.
+
+template<class T>
+int length (LN<T>* l) {
+  int answer = 0;
+  for (LN<T>* p = l; p != nullptr ; p = p->next)
+    ++answer;
+  return answer;
+}
+
+length(l) returns 4 for the list above. To computes .size() for an array
+implementation of a data type, we must store the "used" in the array; but for
+linked lists we can compute this value (although caching it can be much faster
+for a long linked list and doesn't waste much space).
+
+
+(4) Traverse a linked list computing how often a certain value occurs.
+
+template<class T>
+int count_occurences (LN<T>* l, T to_count) {
+  int answer = 0;
+  for (LN<T>* p = l; p !=nullptr ; p = p->next)
+    if (p->value == to_count)
+      ++answer;
+  return answer;
+}
+
+count_occurrences(l,2) returns 1 for the list above.
+
+
+(5) Traverse a linked list computing whether or not it is in a sorted order
+(recall that empty lists and lists with one value are sorted). Sorted here
+means that the values are in non-decreasing order: subsequent values stay the
+same or get larger. For this function to compile/work correcly, operator> must
+be defined on type T. Algorithmically (after checking for a list of length 0 or
+1), it checks whether any values are "out of order" and if so, returns false;
+if there are no "out of order" values it returns true;
+
+template<class T>
+bool is_sorted (LN<T>* l) {
+  if (l == nullptr || l->next == nullptr) //Shortcircuit || is critical here
+    return true;
+
+  T prev = l->value;
+  for (LN<T>* p = l->next;  p != nullptr;  prev = p->value, p = p->next)
+    if (prev > p->value)
+      return false;
+  return true;
+}
+
+is_sorted(l) returns false for the list above.
+
+Recall that || is a short-circuit boolean operator: if the first condition is
+true, then the value of the entire boolean expression is known to be true, so
+the second condition isn't even tested; if it were tested, it would crash the
+program (see below), because l->next cannot be computed when l stores nullptr
+(the "follow the pointer to the object it points to" part fails, because it
+points to no object). Thus, the order in which the conditions are tested is
+very important to the test working correctly.
+
+Actually, we can simplify the code as
+
+template<class T>
+bool is_sorted (LN<T>* l) {
+  if (l == nullptr)
+    return true;
+
+  T prev = l->value;
+  for (LN<T>* p = l->next;  p != nullptr;  prev = p->value, p = p->next)
+    if (prev > p->value)
+      return false;
+  return true;
+}
+
+Here, if l->next is nullptr, the for loop executes 0 times, returning true
+(whereas the code above never reaches the loop).
+
+We can write this code without the temporary, by using the single pointer p
+to refer to a value (p->value) that is compared with the value following it in
+the the linked list (p->next->value). We should execute this test in the body
+of the loop only if p->next is not nullptr.
+
+template<class T>
+bool is_sorted2 (LN<T>* l) {
+  if (l == nullptr)
+    return true;
+
+  for (LN<T>* p = l; p->next != nullptr; p = p->next)
+    if (p->value > p->next->value)
+      return false;
+  return true;
+}
+
+All these traversals (except the last) are written with simple and similar
+list-processing code. When we write code that processes a linked list, we
+should be able to prove that every time that we write "p->" inside the loop's
+body, then p is not nullptr (i.e., that p really points to some object). The
+typical continuation condition in a for loop that processes a linked list (the
+test: p!=nullptr) guarantees that the body of the loop can contain "p->"
+because the body is executed only if p is not nullptr. Likewise, in the last
+code fragment above, the continuation condition is p->next != nullptr, because
+the body refers to p->next->value.
+
+If we ever execute "p->...." when p stores nullptr, the C++ program does not
+throw an exception: it crashes. On Windows I get a popup window saying that
+...exe has stopped working. To ensure maximum speed, C++ does not check that
+a pointer if nullptr before following it; Python and Java do, and therefore
+throw an exception that can be caught and handled. When a nullptr is followed
+in C++, it causes the program to terminate by crashing. So, C++ runs code more
+quickly, but when the code is incorrect can crash the program with little useful
+information about why.
+
+Recall that C++ has the following "conditional expression" syntax. Actually, the
+() are not required, but they are useful to contain this conditional expression
+when other operators apply to the value of the condition expression.
+
+  (boolean expression ? ValueIfTrue : ValueIfFalse)
+
+Conditional "expressions" are sometimes a shorter and simpler to understand
+version of a conditional "statement": the if statement. Often a question arises
+about which is "faster": I don't know, but they probably run at about the same
+speed. The benefit of a conditional expression derives from whether it
+simplifies the code or not, compared to an "if statement" which is the typical
+alternative. Note that expressions compute values; statements execute,
+typically causing state-changes.
+
+
+Building Lists:
+
+We will now write code to add a value to the front of a list and at the rear of
+a list. In this way we can build any list we want, with the values in any order.
+Inserting a new LN at the front of a linked list moves every node back by one
+in the linked list, without changing any other pointers. Inserting a node at the
+rear of a linked list requires traversing the list, skipping until we point to
+the last LN, and then appending a new LN after it. Of course, we can always
+cache a pointer to the last node in a non-empty list, to access it immediately.
+
+Constrast the code below with adding a new value at the front and rear of an
+array (assuming we need to retain the order of the values). For a list, we can
+add a LN at the front by changing one pointer; for an array we must first move
+every value in the array to the next higher index, opening up index 0 in which
+we put the new value.
+
+The code to add a node storing some_value at the front of LN<int>* x; is just
+
+  x = new LN<int>(some_value, x);
+
+This code works whether x refers to an empty list (stores nullptr) or whether x
+stores a pointer to the first node in a list with any number of values following
+it. Paraphrased, x now refers to a new node storing the value some_value, whose
+next instance variable points to the list that x originally pointed to. Draw
+some examples of lists (empty and not) and hand simulate this code on them to
+ensure you completely understand it. Yes, I really mean this.Serious, I really
+do mean it.
+
+I still mean it. If you haven't done this do it now.
+
+The opposite is true for adding at the rear of a linked list/array data
+structure: for a linked list, we must skip over every node starting from the
+front of the list to find the rear node of the list; for an array we typically
+know the index of the last value and put the new value one beyond the end, so
+we do not have to examine any other values in the array. Of coure, if the
+length of the array is not big enough to include another value at its end, we
+must construct a new array with a larger length and copy all the original array
+values to it.
+
+In fact, for adding a value at the rear of a linked list, we need two cases.
+If the list is empty, we must store the new pointer in x (in this case the
+rear becomes the front too); if the list is not empty, we must store the new
+pointer in the ->next instance variable of the node currently at the rear of
+the list (the node whose ->next stores nullptr). This code is
+
+  if (x == nullptr)
+    x = new LN<int>(some_value); //Default argument for 2nd parameter is nullptr
+  else {
+    LN<int>* p = x;
+    for (; p->next != nullptr; p = p->next)  or	while (p->next!=nullptr)
+      {}					  p = p->next;
+    p->next = new LN<int>(some_value);
+  }
+
+Notice two important things about the code in the else block
+
+  1. We must declare p before/outside the for loop, because we use it
+     after the for loop terminates (outside the loop). Variables declared
+     inside a loop can be accessed only by code in the loop body.
+
+  2. We terminate the for loop when p refers to the LAST NODE in the linked
+     list; the last node is the only one whose ->next is nullptr. In this case
+     we DO NOT stop when p == nullptr (as we did for all the query code); that
+     would mean p has gone too far: we have run off the linked list and have
+     lost the pointer to the last node, which we are trying to change, by
+     making its next refer to a new node. We stop when p refers to the last
+     node in the list, the unique node whose ->next is nullptr.
+
+We could also write the else clause as follows, declaring p inside the loop,
+and updating it in the loop body before breaking out of the loop.
+
+  else
+    for (LN<int>* p = x; /*see body for explicit temination*/; p = p->next)
+      if (p->next == nullptr) {
+        p->next = new LN<int>(some_value);
+        break;
+      }
+
+We could encapsulate these code fragments into functions and then call either
+x = add_front(x,some_value); or  x = add_rear(x,some_value); in both cases it
+is critical to store the returned value in x, because if x is empty (stores
+nullptr) unless we store a value into x it will not change (but we will see how
+to use & references to solve this problem for functions in the next lecture).
+
+template<class T>
+LN<T>* add_front(LN<T>* l, const T& value) { //O(1)
+  return new LN<T>(value,l);
+}
+
+template<class T>
+LN<T>* add_rear(LN<T>* l, const T& value) {  //O(N)
+  if (l == nullptr)
+    return new LN<T>(value); //Default argument for 2nd parameter is nullptr
+
+  for (LN<T>* p = l; /*see body for explicit termination*/; p = p->next)
+    if (p->next == nullptr) {
+      p->next = new LN<T>(value);
+      break;
+    }
+  return l;
+}
+
+or
+
+template<class T>
+LN<T>* add_rear(LN<T>* l, const T& value) {
+  if (l == nullptr)
+    return new LN<T>(value); //Default argument for 2nd parameter is nullptr
+
+  LN<T>* p = l;
+  for (/*See above*/; p->next != nullptr; p = p->next) //  or  while (p->next != nullptr)
+    {}                                                 //         p = p->next;
+  p->next = new LN<T>(value);
+
+  return l;
+}
+
+Here is a simple (but slow) function that puts the code above into a simple
+loop to store all the values in an array into a linked list, presering the
+order, by using add_rear. We could write a simlar function to read the values
+from a file.
+
+template<class T>
+LN<T>* build_linked_list_simple(T values[], int length) {
+  if (length == 0)
+    return nullptr;
+
+  LN<T>* front;
+  for (int i=0; i<length; ++i)
+    front = add_rear(front,values[i]);
+
+  return front;
+}
+
+This process repeated calls add_rear, which requires the code to traverse
+the entire linked list every time a new value is stored at the rear;
+mathematically, if the array stores 1,000 values, when building the linked list
+we will have to scan approximately 500,000 nodes (that number of values squared,
+divided by 2: we skip 0 nodes to add the first value, 1 node to add the second
+value, 2 nodes to add the third, value, ...  and 999 nodes to add the 1000th
+value; so we skip 0 + 1 + 2 + ... + 999 nodes) which is slow: O(N**2). We can
+speed up adding values via caching, discussed next.
+
+Aside: we could iterate through the array BACKWARDS, and add each value at the
+FRONT of the linked list we are building, to get the right order. Doing so
+takes O(N) time. we could not use "going backwards" in our solution of copying
+a linked list (but we can use caching).
+
+We briefly discussed caching when we discussed the size method in the ArraySet
+class. Caching is a classic "space for time" tradeoff: we use extra space to
+store (and update) a precomputed value so that we don't have to recompute it.
+In ArraySet, we stored the instance variable used, so the size method can just
+return this value; it doesn't have to count the number of values stored in the
+array each time we need to compute the size. Whenever we add or remove a value
+from the array, the code incremented/decremented this counter.
+
+Likewise, we often cache the size of a list implementing a data type (rather
+than scanning the list to compute the size). If we need to repeatedly add a
+value at the rear of a linked list, we can also cache a pointer to the last
+node in the linked list, so we can quickly add a new node at the rear (and then
+the new node becomes the new rear). With such a cached value we never have to
+traverse the linked list to find its last node; we've already precomputed it
+each time we need it, and update it when it changes.
+
+Here is a variation of the "build_linked_list_simple" function that accomplish
+the same result but more more efficiently. 
+
+template<class T>
+LN<T>* build_linked_list_fast(T values[], int length) {
+  if (length == 0)
+    return nullptr;
+
+  LN<T>* front      = new LN<T>(values[0]); //length != 0 so at least one value
+  LN<T>* rear_cache = front;
+
+  for (int i=1; i<length; ++i)
+    rear_cache = rear_cache->next = new LN<T>(values[i]);
+
+  return front;
+}
+
+Notice that rear_cache = rear_cache->next = new LN<T>(values[i]); uses a
+chained = to extend the linked list with a new node: the new node is now the
+only one in the linked list whose ->next is nullptr, and rear_cache refers to
+it, and extends the linked list on the next iteration by storing something new
+into its next. We could accomplish these two action by two statements
+
+    rear_cache->next = new LN<T>(values[i]);
+    rear_cache = rear_cache->next;
+
+but they would have to be executed in this order (why?)
+
+In build_linked_list_fast, each loop iteration requires just a constant amount
+of work, O(1), so building an N node linked list is N*O(1) =  O(N).
+
+The build_linked_list_fast function cries out to be hand simulated on a small
+example.
+
+Finally, if we are inside a Queue implementation that stores a linked list
+using the instance variable "front", as well as a cache instance variable
+"rear", we can easily enqueue a value at the rear by using the following code.
+By using "front" and "rear" we have covered both hot-spots in a Queue: the 
+front where values are dequeued and the rear where values are enqueued.
+
+int enqueue (const T& element) {
+  if (front == nullptr)
+    front = rear = new LN<T> (element,nullptr);
+  else
+    rear = rear->next = new LN<T>(element,nullptr);
+
+  ...other code
+}
+
+Linked list processing isn't easy, so you should check the code you write by
+doing small hand simulations of it, in a few different situations. Following
+this advice will improve your ability to hand simulate linked list code quickly
+and improve your ability to debug linked list code. We will spend some time
+simulating the following code. It is not obvious what it does, but we should be
+able to update the picture by executing this code to learn what it does. Doing
+so quickly and accurately proves that we have a good understanding of the
+basics of linked lists.
+
+Assume LN<int>* x and x points to a linked list with 4 or 5 values.
+
+  LN<int>* answer = nullptr;
+  while (x != nullptr) {
+    LN<int>* to_move  = x;
+    x                 = x->next;
+    to_move->next     = answer;
+    answer            = to_move; 
+  }
+    
+  x = answer;
+
+
+More Linked List Processing:
+
+(1) The following function searches an unordered linked list looking for a 
+specified value. We use just the standard for loop to traverse it, and return a
+pointer to the first node found that contains the searched-for value (there may
+be many such nodes with that value). Note that we use nullptr just as we use -1
+when returning array indexes: it means the value was not found.
+
+template<class T>
+LN<T>* find (LN<T>* l, T to_find) {
+  for (LN<T>* p = l; p != nullptr; p = p->next)
+    if (p->value == to_find)
+       return p;
+
+  return nullptr;
+}
+
+For an ordered linked list (assume an ordering of values smallest to largest)
+we can also stop and report a failure as soon as we examine a value strictly
+greater than the one that we are searching to find (or, of course, if we run
+out of nodes to examine). The continuation condition in the resulting for loop
+is more complicated, but it can terminate more quickly (without examining every
+value in the linked list, unlike in the case of an unordered list).
+
+template<class T>
+LN<T>* find (LN<T>* l, T to_find) {
+  for (LN<T>* p = l; p != nullptr && p->value <= to_find; p = p->next)
+    if (p->value == to_find)
+       return p;
+
+  return nullptr;
+}
+
+Notice that the continuation condition is that both (a) p != nullptr, and
+(b) p->value <= to_find. Recall that && is a short-circuit boolean operator:
+if the first condition is false, then the value of the entire boolean
+expression is known to be false, so the second condition isn't even tested; if
+it were tested, it would crash the program, because p->value cannot be computed
+when p stores nullptr. Thus, the order in which the conditions are tested is
+very important to the test working correctly.
+
+
+(2) The following function removes from a linked list the first node storing a 
+specified value. What is most interesting here is that when we remove a node,
+we must change the ->next instance variable in the node BEFORE the one that we 
+are removing: If (see the picture) we remove the node storing the value 7, then
+we must change the ->next in the node storing the value 2, making its ->.next
+refer to the node containing 4 (the ->next in the node storing the value 7)
+Thus, if we now follow the links, we visit nodes storing 5 then 2 then 4.
+
+There are two basic approaches to solving this "node before" problem: the first
+uses look-ahead: a single pointer that checks values "one after" the node it
+currently points to; when it finds the node to remove one ahead, it changes the
+->next in the node to which it points. That code is
+
+template<class T>
+LN<T>* remove_lookahead (LN<T>* l, T to_remove) {
+  if (l == nullptr)
+    return nullptr;
+
+  if(l->value == to_remove) {
+    LN<T>* to_delete = l;
+    l = l->next;
+    delete to_delete;
+  }else{
+    for (LN<T>* p = l; p->next != nullptr; p = p->next)
+      if (p->next->value == to_remove) {
+        LN<T>* to_delete = p->next;
+        p->next = p->next->next;
+        delete to_delete;
+        break;
+      }
+  }
+
+  return l;
+}
+
+As with add_front and add_rear functions, this remove function returns a
+pointer to the head of the list in which the removal occurred. It should be
+called like x = remove_lookahead(x,value);
+
+As with the code for adding at the rear of a list, there is a special case for
+(a) an empty linked list (l == nullpt) and here there is a special case for
+(b) for removing a value that happens to be the first value in a linked list.
+Note that we explicitly delete (recycle the storage for) the LN<T> containing
+the to_remove value.
+
+Try hand simulating this code on an empty list, and a 5 node linked list,
+removing the first, last, and some middle value. Especially interesting is the
+code
+
+  p->next = p->next->next;
+
+which says put into the next field in the node p refers to, whatever is in
+the next field of the node coming after the node that p refers to; this removes
+from the linked list the node after the one p refers to.
+
+The second approach to solving this "node before" problem is to use an extra
+variable: p to traverse through the nodes in the linked list looking for the
+node with the value to remove, and a second variable (prev) that remembers where
+the first one "just was" (sometimes called a ghost pointer). It is the ->next
+field in the node referred to by this prev variable that is changed.
+
+template<class T>
+LN<T>* remove_ghost (LN<T>* l, T to_remove) {
+  if (l == nullptr)
+    return nullptr;
+
+  if(l->value == to_remove) {
+    LN<T>* to_delete = l;
+    l = l->next;
+    delete to_delete;
+  }else{
+    LN<T>* prev = l;
+    for (LN<T>* p = l->next;  p != nullptr;  prev = p, p = p->next)
+      if (p->value == to_remove) {
+        prev->next = p->next;
+        delete p;
+        break;
+      }
+  }
+
+  return l;
+}
+  
+Notice the initialization and update part of the for (...) initializes/updates
+two pointers, not just one (the is_sorted function used this double update
+too; in fact the first version of is_sorted used something like a ghost
+pointer; the second version used a lookahead pointer). The variable prev always
+refers to the node one before the variable p refers to. Note that we delete
+(recycle the storage for) the LN<T> containing the to_remove value.
+
+
+(3) The following function copies an N node linked list in O(N), by caching the
+rear of the list (as we did in build_linked_list_fast). note that we do not
+copy the value stored in the linked list, but create a new link list that
+shares those values.
+
+template<class T>
+LN<T>*  copy (LN<T>* l) {
+  if (l == nullptr)
+    return nullptr;
+
+  LN<T>* front      = new LN<T>(l->value);  //Guaranteed to exist: l != nullptr
+  LN<T>* rear_cache = front;
+
+  for (l = l->next; l != nullptr; l = l->next)
+    rear_cache = rear_cache->next = new LN<T>(l->value);
+
+  return front;
+}
+
+
+(4) The following function determines whether two linked lists store the same
+values in the same order. It requires traversing both linked lists
+simultaneously (stopping when either is exhausted): any unequal values mean the
+linked lists are unequal; and if one is exhausted before the other, they are
+unequal. Said another way, they are equal if they have the same size and all
+the same values in the same order.
+
+template<class T>
+bool equals (LN<T>* l1, LN<T>* l2) {
+  for (; l1 != nullptr && l2 != nullptr; l1 = l1->next, l2 = l2->next)
+    if (l1->value != l2->value)
+      return false;
+
+  return l1 == nullptr && l2 == nullptr;
+}
+
+In the next lecture we will see how & references can simplify writing some of
+the linked list processing code written here. Java does not support & references
+so the code here is as simple as Java linked list processing code gets. In the
+next lecture we will also learn about some special kinds of linked lists (not
+linear linked lists): circular linked lists, header/trailer linked lists, and
+doubly linked lists.
+
+In a third lecture we will examine recursion and see how linked lists are
+defined and processed recursively. Suprisingly, once you get the hang of
+writing recursive functions, they are often easier to write than iterative ones.
+
+Later, when we study sorting, we will see algorithms that work well for sorting
+array and linked list representations of data.

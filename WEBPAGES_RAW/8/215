@@ -1,0 +1,509 @@
+#################################################################
+#################################################################
+#################################################################
+#    Short R Tutorial 
+#
+#    Matt Kayala
+#
+#################################################################
+#################################################################
+#################################################################
+# Uncomment the following and change to set to the directory you want.
+#setwd('~/mksvnsandbox/writing/misc_presentations/R_Tutorial')
+
+#################################################################
+#################################################################
+#    Data Structures
+#################################################################
+#################################################################
+
+
+#################################################################
+#    Vectors
+#################################################################
+
+foo <- c(1:9)
+foo
+length(foo)
+
+foo <- c(foo, 10) ##LISP Like
+foo
+
+##Vector forming
+bar <- rep(1:2, 5)
+bar
+bar <- seq(0,1, 0.1)
+bar
+
+
+#Element-By-Element arithmetic
+bar <- 2
+foo * bar
+exp(foo)
+log(foo)
+sqrt(foo)
+
+##Recycling
+bar <- c(bar, 3)
+foo * bar
+
+##Char Vectors
+hWorld <- c("Hello", "World!")
+paste(hWorld, collapse=", ")
+
+namesVect <- c("Matt!", "Joe!", "Jill!", "John!", "Sue!")
+paste("Hello", namesVect, sep=" ")
+ 
+
+#Indexing
+foo
+
+#By Number
+foo[1:5]
+foo[-(1:5)]
+
+
+#Logical Vectors
+foo %% 2 == 1
+foo[foo %% 2 == 1]
+
+##Ahaah not the same as:
+foo %% 2
+foo[foo %% 2 ]
+
+#Other ways of forming Logical Vectors
+foo[foo>5]
+foo[foo==10]
+#...etc
+
+#Basic Stats
+sum(foo)
+mean(foo)
+sd(foo)
+var(foo)
+prod(foo)
+
+
+#################################################################
+#    Matrices
+#################################################################
+fooMat <- matrix(c(1:100), nrow=10)
+fooMat
+t(fooMat)
+
+##Properties
+dim(fooMat)
+length(fooMat)
+rownames(fooMat)
+colnames(fooMat)
+
+##Setting the row/colnames
+rownames(fooMat) <- paste("My_Row", c(1:10), sep='')
+colnames(fooMat) <- paste("My_Col", c(1:10), sep='')
+fooMat
+
+rownames(fooMat) <- NULL
+colnames(fooMat) <- NULL
+
+##Same Element-By-Element Arithmetic
+bar <- 2
+fooMat * bar
+bar <- c(bar, 3)
+trash <- fooMat * bar
+fooMat - fooMat
+
+##Indexing:
+fooMat
+
+fooMat[,1]
+fooMat[1,]
+fooMat[1:5, 1:5]
+fooMat[5, -c(1, 10)]
+
+##Apply
+#Rows
+apply(fooMat, 1, sum)
+#Columns
+apply(fooMat, 2, sum)
+
+#To All
+apply(fooMat, c(1,2), exp)
+exp(fooMat)
+
+##Help  (Remembering rows/columns, bah)
+?apply
+
+
+##Adding to matrices
+fooMat
+cbind(fooMat, foo)
+rbind(fooMat, foo)  ##Notice the row/col name
+
+#################################################################
+#    Arrays
+#################################################################
+fooArr <- array(c(1:(3*3*3)), dim=c(3,3,3))
+fooArr
+
+fooArr[,,3]
+fooArr[1,1,]
+fooArr[1,,]
+
+
+#################################################################
+#    Factors
+#
+#    basically a vector where the "types" available are kept track
+#    of as well as "levels"
+#################################################################
+
+#Ex. 4-Level factor for pain
+fpain <- factor(c("none", "severe", "medium", "medium", "mild" ))
+fpain
+
+as.vector(fpain)
+as.numeric(fpain)
+levels(fpain)
+
+##To explicitly set the level mapping
+pain <- c(0, 3, 2, 2, 1)
+fpain <- factor(pain, levels=0:3)
+levels(fpain) <- c("none", "mild", "medium", "severe")
+
+#Frequency    
+table(fpain)
+
+##Cross-Tabs
+fweight <- factor(c("lean", "lean", "obese", "lean", "obese"))
+table(fpain, fweight)
+
+
+##Apply over groups        (Ragged Arrays)
+pain <- sample(c(0, 3, 2, 2, 1), 100, replace=T)
+fpain <- factor(pain, levels=0:3)
+levels(fpain) <- c("none", "mild", "medium", "severe")
+table(fpain)
+
+ages <- sample(10:25, 100, replace = T)
+table(fpain, ages)
+tapply(ages, fpain, mean)
+tapply(ages, fpain, var)
+
+#################################################################
+#    Lists
+#################################################################
+
+foo <- c(1:10)
+bar <- c(91:100)
+
+#myList <- list(foo, bar)
+myList <- list(foo=foo, bar=bar)
+
+myList
+myList[[1]]
+myList[[2]]
+
+myList$foo
+
+varName <- 'bar'
+
+myList$varName
+myList[[bar]]  ##This is a strange error.. what does it mean?
+myList[[varName]]
+
+myList$randomNewVar <- c(101:110)
+myList[[3]]
+myList$randomNewVar
+
+names(myList)
+
+#Apply over lists
+lapply(myList, mean)    ##Returns a list
+sapply(myList, mean)    ##Returns a vector
+
+#################################################################
+#    Data Frames
+#################################################################
+foo; bar;
+myDf <- data.frame(foo=foo, bar=bar)
+myDf
+
+myDf$foo
+myDf[[varName]]
+myDf[[1]]
+myDf[1,]
+myDf[, 2]
+
+
+##New names
+myDf <- data.frame(newfoo=foo, newbar=bar)
+myDf
+
+myDf$newfoo
+newfoo
+
+attach(myDf)
+newfoo
+newbar
+detach()
+
+
+attributes(myDf)
+names(myDf)
+attributes(myList)
+names(myList)
+
+##Sort and Order
+myDf <- data.frame(myDf, x = sample(c(1:100), 10))
+myDf
+
+#Trivial
+sort(myDf$x)
+rev(sort(myDf$x))
+
+##Now to sort the DF on this
+order(myDf$x)
+myDf[order(myDf$x), ]
+myDf[rev(order(myDf$x)), ]
+
+
+#################################################################
+#    Everything else - USUALLY some kind of list or data.frame
+#################################################################
+
+
+#################################################################
+#################################################################
+#    Distributions
+#################################################################
+#################################################################
+
+#################################################################
+#    Normal
+#################################################################
+
+#Density
+dnorm(0)
+dnorm(0) == 1/ sqrt(2*pi)
+dnorm(1) == exp(-1/2)/ sqrt(2*pi)
+dnorm(1) == 1/ sqrt(2*pi*exp(1))
+
+##Cumulative distribution
+pnorm(0)
+pnorm(1)
+pnorm(-1)
+
+##Quantile
+qnorm(0.5)
+qnorm(pnorm(1))
+
+##Random number
+rnorm(10)
+rnorm(10, mean=25, sd=1)
+
+hist(rnorm(100))
+
+# A little nicer of histograms
+someData <- rnorm(1000);
+hist(someData, prob=T)
+lines(density(someData));
+rug(jitter(someData)) 
+
+#################################################################
+#    Other
+#################################################################
+
+#log norm
+hist(rlnorm(100))
+
+#Student's t
+hist(rt(100, df=2))
+
+#Binomial
+hist(rbinom(100, 100, 0.7))
+
+#Even uniform
+hist(runif(100))
+
+
+
+#################################################################
+#################################################################
+#    Flow Control
+#################################################################
+#################################################################
+
+#################################################################
+#    Logical 
+#
+#    & | - Element By Element
+#    && || - return a single logical
+#################################################################
+
+foo > 5 & foo < 8
+foo > 5 | foo < 8
+
+foo > 5 && foo < 8
+foo > 5 || foo < 8
+
+any(foo > 5 & foo < 8)
+all(foo > 5 & foo < 8)
+
+#################################################################
+#    Misc Flow
+#
+#    Std if/else/for/while syntax
+#
+#    Enclose multiple lines with {      } 
+#################################################################
+
+if (foo > 5 && foo < 8){
+    print("DOING SOMETHING TRUE")
+    print("SECOND LINE TRUE")
+} else {
+    print("DOING SOMETHING FALSE")
+    print("SECOND LINE FALSE")
+}
+    
+x <- seq(0, 1, 0.05)
+plot(x, x, ylab="y", type="l")
+for (i in 1:8){        ##Notice the VAR "in" VECTOR notation
+    lines(x, x^i)    
+}
+
+#################################################################
+#    Functions
+#    
+#################################################################
+
+myMean <- function(x) {
+    sum(x)/length(x)
+}
+
+myVar <- function(x) {
+    res <- sum((x - myMean(x))^2)/(length(x) - 1)    return(res)
+}
+
+fooMat <- matrix(rnorm(100), nrow=10)
+apply(fooMat, 1, myMean)
+
+##Can also Lambda
+apply(fooMat, 2, function(x){
+                        sqrt(myVar(x))
+                    })
+                    
+apply(fooMat, 2, sd)
+
+
+#################################################################
+#################################################################
+#    Some examples - Data exploration
+#################################################################
+#################################################################
+
+#################################################################
+#    Reading in data - 
+#################################################################
+
+dataFile <- 'ImmunoData.csv'
+
+myData <- read.table(dataFile, header=T, sep=',')
+
+?read.csv
+
+
+dim(myData)
+class(myData)
+colnames(myData)
+myData[1:10, 1:10]
+#head(myData)
+#tail(myData)
+
+#################################################################
+# Now rearrange this a little
+#################################################################
+seraNames <- colnames(myData)[-1]
+spotNames <- myData[-1, 1];
+
+rawData <- myData[-1, -1]
+
+rawData[is.na(rawData)] <- 0;
+
+colnames(rawData) <- seraNames;
+rownames(rawData) <- spotNames;
+rawData[1:10,1:10]
+
+#  Now, lets make a factor with the diagnosis
+# colnames are in format Diag_SeraId, can use gsub to extract this
+diagFactor <- factor(gsub('_.*$', '', seraNames))
+table(diagFactor);
+
+#################################################################
+# Some exploratory analysis
+#################################################################
+dim(rawData);
+
+library(lattice);
+# First lets flatten the data 
+flatRaw <- stack(data.frame(t(rawData)))
+flatDiag <- rep(diagFactor, nrow(rawData));
+
+# Plot histograms of each of the plots
+histogram(~flatRaw$values | flatRaw$ind, groups=flatDiag, auto.key=TRUE);
+densityplot(~flatRaw$values | flatRaw$ind, groups=flatDiag, auto.key=TRUE);
+
+#Looks non-normal.., common microarry transform -> asinh
+asinhData <- asinh(rawData)
+flatAsinh <- stack(data.frame(t(asinhData)))
+histogram(~flatAsinh$values | flatAsinh$ind, groups=flatDiag, auto.key=TRUE);
+densityplot(~flatAsinh$values | flatAsinh$ind, groups=flatDiag, auto.key=TRUE);
+
+
+# PCA - from MASS library
+
+library(MASS);
+thePCs <- princomp(t(asinhData), cor=T)
+class(thePCs)
+names(thePCs)
+summary(thePCs)
+biplot(thePCs, pc.biplot=T, cex=0.7, expand=0.8)
+
+
+# Looks busy, lets only do PCA and the positive vs rejected
+subsetNames <- c('Def.Pos', 'Rej')
+subAsinh <- asinhData[, diagFactor %in% subsetNames];
+
+thePCs <- princomp(t(subAsinh), cor=T)
+summary(thePCs)
+biplot(thePCs, pc.biplot=T, cex=0.7, expand=0.8)
+
+
+#################################################################
+# Machine Learning
+#
+#   Interest of time, no CV, but easy to extend
+#################################################################
+library(nnet);
+
+posData <- asinhData[, diagFactor == 'Def.Pos']
+negData <- asinhData[, diagFactor == 'Rej'];
+
+toUseData <- data.frame(posData, negData);
+labels <- rep(c(1,0), c(ncol(posData), ncol(negData)));
+
+trainedNet <- nnet(t(toUseData), labels, size=3, decay=.001)
+
+predictedVals <- predict(trainedNet, t(toUseData));
+
+# Now an ROC plot
+library(ROCR)
+
+rocPredObj <- prediction(predictedVals, labels)
+
+rocPerf <- performance(rocPredObj, 'tpr', 'fpr');
+
+plot(rocPerf, asp=1, colorize=T)
+
+
+
+

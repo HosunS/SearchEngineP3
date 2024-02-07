@@ -1,0 +1,171 @@
+Minutes 3/23/99
+
+Attending: Jim Davis, Jim Whitehead, Geoff Clemm, Chuck Fay, Judy Slein
+
+ACTION ITEMS
+
+Geoff: Write up arguments pro and con for making the default semantics of COPY be to 
+affect the target.  Send to the WebDAV mailing list by the end of this week.
+
+Geoff: Write up his position on the semantics of LOCK and send it to the mailing list by 
+the end of this week.
+
+Jim Davis: Write up a discussion of references to collections and distribute to the 
+WebDAV mailing list.
+
+SEMANTICS OF COPY
+
+Geoff:  If we make the default semantics be to copy the reference, this causes problems 
+for relative URIs in the DAV:reftarget property of references.  If COPY results in broken 
+references at the destination, that�s not acceptable.  Let the default be to copy the target to 
+avoid this problem.
+ 
+Jim D agrees with Geoff.
+
+Judy: Couldn�t you have the server fix up the value of reftarget?
+
+Geoff: No, the server can�t tell whether client wanted reference fixed up or not.  Adding a 
+header to control this wouldn�t help down-level clients.
+
+If there is a relative URL within a hierarchy, if you copy the hierarchy, the relative URL
+will still work.  You don�t want to do any fix-up in this case.
+
+Action Item for Geoff: Write the arguments for and against making the default semantics 
+be to copy the target.  Send this message to the WebDAV mailing list by the end of this 
+week.  We�ll allow a week for mailing list discussion, then make a decision. The 
+arguments for copying the reference: Size issue, when copying collections.  Simpler / 
+least work for server.  New resource is same type as original.  The arguments for copying 
+the target: Meaning of COPY to down-level client (independence).  Relative URIs in 
+reftarget.
+ 
+Judy: Whatever we choose, let it be the same for direct and redirect. (I count passing 
+through to the target and responding with 302 as the same - they are different 
+mechanisms for copying the target.)  General agreement.
+ 
+Geoff�s proposal is return 302 on redirect, copy target for direct.  Jim W: depth infinity 
+copy might have lots of 302s, and that seems unacceptable to him.
+
+Geoff could live with either, Jim D also, Judy also.
+
+Chuck: If we decide to copy the target, say explicitly in the spec that the result will be a 
+resource of the same type as the target, not a reference.
+
+LOCK SEMANTICS
+
+Geoff�s conversation with Yaron: Yaron wants to lock both reference and target, Geoff 
+can�t live with that.
+
+Microsoft clients count on the behavior Yaron is advocating.
+
+Versioning will introduce references everywhere, and locking the references will result in 
+locking whole trees.  Geoff considers this not acceptable.
+
+Judy: There were some subtle and interesting suggestions at IETF that looked as if they 
+would allow you to lock both the target and (in a sense) the reference, without having the 
+consequence that they would lock whole trees.
+  
+Geoff: These proposals introduce multiple kinds of locks.  It would be difficult for the 
+server to track all these locks.
+
+Judy: What we care about is really just preventing anyone from DELETE or MOVE any 
+reference involved in accessing the target.  So apply something like an existence lock to 
+any reference on the path to the target, and a write lock to the target.  Why would this be 
+so hard? There wouldn�t be many references on any one path to the target.  All the 
+references are included in the same lock token, and they all get unlocked in the same 
+operation.
+  
+Alternatively, you could accomplish the desired without actually creating additional 
+locks, but just requiring the server to prevent anyone from deleting or moving a reference 
+when its target is locked.
+
+Geoff: Whether to have these sorts of constraints on server behavior is related to the 
+conflict between two world views in versioning - whether things are by default mutable 
+or by default immutable.
+
+Action Item for Geoff: Write up his position and send it to the mailing list by the end of 
+this week.  We�ll allow a week�s discussion on the list, then make a decision.
+
+DIRECT REFERENCES TO COLLECTIONS
+
+If you have reference A to collection P/, and P/ has member q, what is the meaning of 
+A/q?  Jim W: A is a pointer, you do c-style pointer arithmetic.  There�s only one 
+reference, the one identified by A.
+ 
+Jim W: Suppose you have URL /a/q, where /a is a reference but /a/q is not.  What 
+happens if you submit a request with No-Passthrough to /a/q?
+ 
+Geoff and Judy: No-Passthrough is only relevant to resource identified by the entire 
+URL.  If it�s a reference, ok.  Otherwise, the header gets ignored. Jim W could live with 
+this.
+
+What if you do a PROPFIND with Depth=1, of A which points to P/?  What are the 
+values of the hrefs in the response? A/q? P/q? Jim W: Use whatever path the client used.  
+Geoff thinks it�s server-dependent.  Can the values of the hrefs be relative URIs?  What 
+does 2518 require?  How far does A act like a collection?  Geoff is ok with A/q in hrefs.  
+Is it more work for the server, generating the names?  Probably not.  In CM, you do these 
+sorts of naming mappings all the time.
+
+If you navigate from reference /A through collection /P/ to q, does q know what 
+collection it belongs to?  What collection will the response show q belonging to?
+  
+Action Item for Jim D: Write a discussion of references to collections.  Send to the 
+WebDAV mailing list.
+
+Chuck: One thing that may be confusing people is that they may be thinking about a 
+particular implementation.  Some implementations might force you to create the 
+references to collection members whenever you create a reference to a collection.  You 
+might use a flat namespace with all URIs that can be used to access any resource in a 
+table.  Then you are simulating a hierarchical namespace using a flat namespace.
+ 
+Geoff: Some people seem to think that as soon as you are in reference space, you must 
+stay in reference space.  But that�s not true.
+
+When we create a reference to a collection, we are implicitly creating a bunch of new 
+URLs that aren�t references.  But when we create a reference, we create a new resource 
+that points to another resource. Even though every URL maps to resource, a URL is not a 
+reference.  We need to explain the difference between a URL�s relation to a resource and 
+a reference�s relation to a resource.
+
+REDIRECT REFERENCES TO COLLECTIONS
+
+The spec currently says (Section 4.16) that if a request-URI contains embedded parts that 
+identify redirect references to collections, you get a 302 response for each of these 
+embedded parts in turn. It�s a straightforward calculation to create the value of Location 
+for each of these responses.
+
+Jim W: No, you should just fail with 404.  If the redirect points off-server, server doesn�t 
+know whether the target is a collection. There�s no validation of what�s on the other end 
+of a reference when it is created.  You�re not doing the client a service by responding 
+with anything other than a 404 when you don�t know whether the URL points to anything 
+useful.
+
+Nobody else likes this.  It would mean you can�t get there from here, and would make 
+redirect references to collections useless.
+  
+Jim D: If you get a 404, you start doing PROPFINDs on pieces of the URL till you find 
+one that yields a 302?
+
+Chuck: Think about what HTTP 1.1 requires for 302s.  Clients are supposed to continue 
+using the same URL, and it should continue to work.  If a downlevel client gets path a/q 
+somehow where a/ is a redirect reference, it should be able to use that URL and continue 
+using it.
+  
+Jim D: Why restrict common and meaningful case in order to prevent confusion in 
+pathological cases?
+
+Suppose A is redirect to ftp://...
+  
+Geoff: Let�s make a best faith effort to help client get to target.  Assume the client knows 
+what he�s doing.  If eventually the attempt fails, you did your best.
+
+If /z/ is collection, you can get 404s from things under /z/.  Here, respond with a 302 first, 
+then the other server eventually returns 404.  Jim W wants to think about this.  How does 
+this put constraints on the URL namespace?
+
+REF-TYPE AND REF-TARGET
+
+Decision: Don�t include these headers (or the reftype and reftarget properties) in 
+successful responses except for GET and HEAD responses.  Include them in just those 
+error responses that are currently called out in the spec (Ref-Type and Ref-Target with 
+404 for dangling references, Ref-Type with 302 responses).  Jim Whitehead will think 
+about additional error responses that may require them when he reviews the spec.

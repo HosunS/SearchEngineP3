@@ -1,0 +1,95 @@
+UNAME = $(shell uname)
+ 
+ifeq ($(UNAME),Linux)
+  CC = cc -DLinux -Wall -O5
+endif
+ 
+ifeq ($(UNAME),AIX)
+  CC = xlc_r -q64 -qtune=pwr4 -qarch=pwr4 -qcpluscmt -O5
+  MPCC = mpcc_r -DMPI -q64 -qtune=pwr4 -qarch=pwr4 -qcpluscmt -O5
+  OMPCC = mpcc_r -DMPI -q64 -qtune=pwr4 -qarch=pwr4 -qcpluscmt -qsmp=omp -O5
+endif
+
+ifeq ($(UNAME),AIX)
+all: docword2dw dw2zwp dwz2dp chkdpwpz mapdpwpz topicmpi loglikeP topicomp bin2sparse sparse2bin bin2mat mat2bin topicmpiNOopm topicmpiYESomp
+else
+all: docword2dw dw2zwp dwz2dp chkdpwpz mapdpwpz topicmpi loglikeP topicomp bin2sparse sparse2bin bin2mat mat2bin
+endif
+
+loglikeP: loglikeP.o topiclib.o
+	$(CC) -o loglikeP loglikeP.o topiclib.o -lm
+
+topicmpi:
+	$(MPCC) -c topicmpi.c
+	$(MPCC) -c topiclib.c
+	$(MPCC) -o topicmpi topicmpi.o topiclib.o -lm
+ 
+topicmpiNOomp:
+	$(MPCC) -c topicmpiNOomp.c
+	$(MPCC) -c topiclib.c
+	$(MPCC) -o topicmpiNOomp topicmpiNOomp.o topiclib.o -lm
+ 
+topicmpifast1:
+	$(MPCC) -c topicmpifast1.c
+	$(MPCC) -c topiclib.c
+	$(MPCC) -o topicmpifast1 topicmpifast1.o topiclib.o -lm
+ 
+topicmpifast2:
+	$(MPCC) -c topicmpifast2.c
+	$(MPCC) -c topiclib.c
+	$(MPCC) -o topicmpifast2 topicmpifast2.o topiclib.o -lm
+ 
+topicmpiYESomp:
+	$(OMPCC) -c topicmpiYESomp.c
+	$(OMPCC) -c topiclib.c
+	$(OMPCC) -o topicmpiYESomp topicmpiYESomp.o topiclib.o -lm
+ 
+topicwiki2:
+	$(OMPCC) -c topicwiki2.c
+	$(OMPCC) -c topiclib.c
+	$(OMPCC) -o topicwiki2 topicwiki2.o topiclib.o -lm
+ 
+topicwiki3:
+	$(OMPCC) -c topicwiki3.c
+	$(OMPCC) -c topiclib.c
+	$(OMPCC) -o topicwiki3 topicwiki3.o topiclib.o -lm
+ 
+topicomp: topicomp.o topiclib.o
+	$(CC) -o topicomp topicomp.o topiclib.o -lm
+ 
+topic2ab: topic2ab.o topiclib.o
+	$(CC) -o topic2ab topic2ab.o topiclib.o -lm
+ 
+docword2dw: docword2dw.o topiclib.o
+	$(CC) -o docword2dw docword2dw.o topiclib.o -lm
+ 
+docword2dw_wiki: docword2dw_wiki.o topiclib.o
+	$(CC) -o docword2dw_wiki docword2dw_wiki.o topiclib.o -lm
+ 
+dw2zwp: dw2zwp.o topiclib.o
+	$(CC) -o dw2zwp dw2zwp.o topiclib.o -lm
+ 
+dwz2dp: dwz2dp.o topiclib.o
+	$(CC) -o dwz2dp dwz2dp.o topiclib.o -lm
+ 
+chkdpwpz: chkdpwpz.o topiclib.o
+	$(CC) -o chkdpwpz chkdpwpz.o topiclib.o -lm
+ 
+mapdpwpz: mapdpwpz.o topiclib.o
+	$(CC) -o mapdpwpz mapdpwpz.o topiclib.o -lm
+ 
+preproc: preproc.o topiclib.o
+	$(CC) -o preproc preproc.o topiclib.o -lm
+ 
+preprocdp: preprocdp.o topiclib.o
+	$(CC) -o preprocdp preprocdp.o topiclib.o -lm
+ 
+topicparallelpreproc: topicparallelpreproc.o topiclib.o
+	$(CC) -o topicparallelpreproc topicparallelpreproc.o topiclib.o -lm
+
+topicparallelpreprocprempi: topicparallelpreprocprempi.o topiclib.o
+	$(CC) -o topicparallelpreprocprempi topicparallelpreprocprempi.o topiclib.o -lm
+
+clean:
+	rm -rf *.o
+

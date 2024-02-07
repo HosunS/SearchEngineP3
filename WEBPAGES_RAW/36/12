@@ -1,0 +1,293 @@
+<!-- $Id: index.html 4112 2008-11-10 22:48:38Z rares $ -->
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>FLAMINGO Package (Approximate String Matching) Release 4.1</title>
+<link rel="stylesheet" type="text/css" href="/white.css">
+</head>
+<body class="page_padding">
+
+<table width="100%"><tr>
+<td>
+<a href="http://flamingo.ics.uci.edu/"><img src="/images/flamingo_middle.jpg"></a>
+<td align="center">
+<h1>FLAMINGO Package<br>(Approximate String Matching)</h1>
+<h2>Release 4.1 (February 22, 2012)</h2>
+<h3>Department of Computer Science, UC Irvine</h3>
+</table>
+
+<h2>Contributors</h2>
+<ul>
+<li><a href="http://www.ics.uci.edu/~salsubai/">Sattam Alsubaiee</a> (Ph.D. Student)
+<li><a href="http://www.ics.uci.edu/~abehm">Alexander Behm</a> (Ph.D. Student)
+<li><a href="http://www.ics.uci.edu/~shengyuj">Shengyue Ji</a> (Ph.D. Student)
+<li>Liang Jin</a>, graduated from UC Irvine in 2005.
+<li><a href="http://www.ics.uci.edu/~chenli">Chen Li</a> (Faculty)
+<li><a href="http://www.jiahenglu.net/">Jiaheng Lu</a>, postdoc, 2006-2008.  Now a faculty at Renmin University, China.
+<li>Yiming Lu, graduated from UC Irvine in 2008.
+<li><a href="http://www.ics.uci.edu/~rares">Rares Vernica</a> (Ph.D. Student)
+</ul>
+
+<a href="/index.html"> &#xab; Back to Flamingo Main Page</a>
+
+<h3>Getting Started</h3>
+Please refer to the <a href="docs/GettingStartedDoc.html">Flamingo Getting Started Guide</a>.
+
+<h3>Introduction</h3>
+
+<p>This release (in C++) includes the source code of several
+algorithms for approximate string matching developed at UC Irvine. It
+includes algorithms for approximate selection queries, location-based approximate keyword search, 
+selectivity
+estimation for approximate selection queries, approximate queries on
+mixed types, and others.  Although an implementation for approximate
+joins is included, the focus of this release is on approximate
+selection queries.
+
+<p>Here is a brief explanation of the terms used above:
+
+<ul>  
+<li><b>Approximate String Search</b>: Given a collection of strings and a single string,
+how to find those strings in the collection that are "similar to" the
+given string? 
+<br>
+This functionality is implemented by the modules
+<a href="docs/CommonDoc.html">Common</a>, 
+<a href="docs/FilterTreeDoc.html">FilterTree</a>,
+<a href="docs/ListMergerDoc.html">Listmerger</a>, 
+<a href="docs/StringMapDoc.html">StringMap</a>,
+and
+<a href="docs/PartEnumDoc.html">PartEnum</a>.  
+We recommend getting started with
+the FilterTree module for this purpose.
+
+<li><b>Selectivity Estimation for Approximate String Search</b>: Given
+a collection of strings and a single string, how can we estimate the
+number of strings that are "similar to" the given string?  This
+functionality is implemented in the SEPIA module.
+
+<li><b>Approximate String Join</b>: Given two collections of strings (possibly the same
+collection), how to find those pairs of strings that are "similar to"
+each other?
+
+<li><b>Location-Based Approximate Keyword Search</b>: Given a collection of spatial objects with 
+descriptive keywords, find those objects within a given spatial region 
+that have a given set of keywords. 
+In addition, the keywords don't need to match exactly, but approximately.
+<br>
+This functionality is implemented by the module:
+<a href="docs/LbakTreeDoc.html">LBAK-Tree</a>
+</ul>  
+
+<p>There are various string similarity functions, such as 
+<a href="http://en.wikipedia.org/wiki/Levenshtein_distance">Levenshtein Distance (aka the Edit Distance)</a>,
+
+<a href="http://en.wikipedia.org/wiki/Jaccard_Similarity_Coefficient">Jaccard Similarity</a>,
+<a href="http://en.wikipedia.org/wiki/Cosine_similarity">Cosine Similarity</a>, and 
+<a href="http://en.wikipedia.org/wiki/Dice%27s_coefficient">Dice
+Similarity</a>.  The following is a description of the modules
+corresponding to the source directory structure:
+
+<ul>
+<li><b><a href="docs/CommonDoc.html">Common</a></b>: This module contains classes for supporting 
+the following similarity functions / distance measures: 
+Levenshtein Distance (aka Edit Distance), Jaccard Similarity, Cosine Similarity, Dice Similarity. It also
+provides functionality for decomposing strings into grams.
+
+<li><b><a href="docs/FilterTreeDoc.html">FilterTree</a></b>: This module provides functionality for approximate string search
+using an inverted-list index. Furthermore, 
+query performance can be improved by adding filters, i.e. partitioning the string collection into 
+disjoint subsets according to some property (e.g. the length of the strings). 
+The use of filters is facilitated by a hierarchical structure (the FilterTree), 
+in which each level in the tree corresponds to one filter. 
+We have implemented the length and charsum filter. This package contains three flavors of indexes: 
+in-memory indexes compressed & uncompressed and a disk-based index.
+
+<li><b><a href="docs/ListMergerDoc.html">ListMerger</a></b>: Answering approximate string queries based on an inverted-list index 
+requires finding elements that occur at least T times on the inverted lists belonging 
+to the grams in the query string (T depends on the similarity metric and the similarity threshold). 
+This problem is commonly referred to as the T-occurrence problem.
+This module implements several algorithms for solving the T-occurrence problem
+as described in "Efficient Merging and Filtering Algorithms for Approximate String Searches",
+Chen Li, Jiaheng Lu and Yiming Lu, ICDE 2008.
+In addition, we have implemented efficient algorithms for disk-based indexes.
+
+<li><b><a href="docs/MatTreeDoc.html">MAT-Tree</a></b>: MAT-tree is an indexing structure to support
+queries on data with an approximate string predicate and a numeric
+predicate.  A typical query is: "Find employee records whose name is
+similar to Speilberg and whose age is close to 45."  The indexing
+structure is proposed in the following paper: "Indexing Mixed Types
+for Approximate Retrieval," Liang Jin, Nick Koudas, Chen Li, Anthony
+K.H. Tung, VLDB 2005, Trondheim, Norway.
+
+<li><b><a href="docs/SepiaDoc.html">SEPIA</a></b>: This technique solves the problem of estimating the
+selectivity of an approximate string predicate.  It can answer
+questions such as: "From a collection of strings, how many of them
+have an edit distance within 3 to a given string?".  Such information
+can be used in optimizing queries of approximate string matching.  The
+technique was published in the paper: "Selectivity Estimation for Fuzzy
+String Predicates in Large Data Sets," Liang Jin and Chen Li, VLDB
+2005, Trondheim, Norway.
+
+<li><b><a href="docs/StringMapDoc.html">StringMap</a></b>: This algorithm maps strings from the
+edit-distance metric space to a high-dimensional Euclidean space, and
+uses a multi-dimensional indexing structure to answer approximate
+queries.  The algorithm is published in the paper: "Efficient Record
+Linkage in Large Data Sets," by Liang Jin, Chen Li, and Sharad
+Mehrotra, in 8th International Conference on Database Systems for
+Advanced Applications (DASFAA) 2003, Kyoto, Japan.
+
+<li><b><a href="docs/PartEnumDoc.html">PartEnum</a></b>: This algorithm is published in the paper:
+"Efficient Exact Set-Similarity Joins," Arvind Arasu, Venkatesh Ganti,
+Raghav Kaushik, VLDB 2006.  We implemented the algorithm to
+support approximate string matching queries, excluding approximate joins.
+
+<li><b><a href="docs/TopkDoc.html">TopK</a></b>: This package contains algorithms for efficient Top-K approximate string search.
+
+<li><b><a href="docs/LbakTreeDoc.html">LBAK-Tree</a></b>: This module implements 
+location-based approximate keyword search as described in 
+"Supporting Location-Based Approximate Keyword Search", by Sattam Alsubaiee, Alexander Behm and Chen Li.
+It enhances an R*-Tree with inverted indexes for approximate selection queries. It implements various 
+algorithms for choosing R*-Tree nodes to place inverted indexes in.
+The FilterTree module is used to provide the inverted indexes for approximate selection queries.
+</ul>
+
+In addition, we have provided some commonly used functions in the
+<a href="src/util">util</a> directory.
+
+<p>
+
+<h3>Changes in Version 4.1 (compared to Version <a href="http://flamingo.ics.uci.edu/releases/4.0">4.0</a>)</h3>
+
+<ul>
+<li>Added support for Damerau-Levenshtein distance (edit distance also allowing swapping of two adjacent characters).
+<li>Compilation/warning fixes for OSX submitted by Jim Apple from On Time Systems. Thanks a lot, Jim!<br>
+<li>Fixed 64-bit issues in LBAK-Tree.<br>
+</ul>
+
+<p>
+
+<h3>Bibtex</h3>
+<pre>
+@misc{misc/flamingo4.1-2010,
+      author = {Alexander Behm and Rares Vernica and Sattam Alsubaiee and Shengyue Ji and Jiaheng Lu and Liang Jin and Yiming Lu and Chen Li},
+      year = {2010},
+      title = {{UCI} {Flamingo} {Package} 4.1},
+      url = {http://flamingo.ics.uci.edu/releases/4.1/},
+      institution = {University of California, Irvine, School of Information and Computer Sciences}
+} 
+</pre>
+
+<table width="50%">
+<tr><th><img src="/icons/blank.gif" alt="[ICO]"></th><th>Name</th><th width="100%"></th></tr>
+<tr><th colspan="3"><hr></th></tr>
+<tr><td valign="top"><img src="/icons/back.gif" alt="[DIR]"></td><td nowrap><a href="/releases/">Parent Directory</a></td></tr>
+<tr><td valign="top"><img src="/icons/folder.gif" alt="[DIR]"></td><td><a href="docs/">docs/</a></td></tr>
+<tr><td valign="top"><img src="/icons/folder.gif" alt="[DIR]"></td><td><a href="src/">src/</a></td></tr>
+<tr><td valign="top"><img src="/icons/compressed.gif" alt="[DIR]"></td><td nowrap><a href="flamingo-4.1.tgz">flamingo-4.1.tgz</a></td><td align="right">2.8M</td></tr>
+<tr><td valign="top"><img src="/icons/text.gif" alt="[DIR]"></td><td><a href="README.txt">README.txt</a></td></tr>
+<tr><th colspan="3"><hr></th></tr>
+</table>
+
+<p class="small"><b>Acknowledgements</b>: This release is partially
+supported by the
+NSF <a href="http://www.nsf.gov/home/crssprgm/career/">CAREER</a>
+Award
+No. <a
+href="http://www.nsf.gov/awardsearch/showAward.do?AwardNumber=0238586">IIS-0238586</a>,
+the NSF
+award <a
+href="http://www.nsf.gov/awardsearch/showAward.do?AwardNumber=0742960">No. IIS-0742960</a>,
+the NSF-funded <a href="http://www.itr-rescue.org/">RESCUE</a>
+project, a Google Research Award, a gift fund from Microsoft, a fund
+from <a href="http://www.calit2.net/">CalIt2</a>, the
+NSF <a href="http://www.nsf.gov/pubs/2008/nsf08560/nsf08560.htm">CluE
+Project</a> and the <a href="http://asterix.ics.uci.edu/">ASTERIX
+Project</a> funded by the NSF.
+<br>
+Many thanks to Minh Doan, and Kensuke Ohta for their
+valuable testing and feedback on the code and documentation.
+
+<p class="small"> <b>License Agreement</b>:
+Permission to use, copy, modify, and distribute the implementations of
+MAT-Tree, SEPIA, StringMap, FilterTree, and LBAK-Tree is permitted under the
+terms of the BSD license. Permission to use, copy, modify, and
+distribute the implementations of the compression techniques
+DiscardLists and CombineLists is permitted under the terms of the
+following Academic BSD License. The implementation of the PartEnum
+algorithm invented by Microsoft researchers is limited to non
+commercial use, which would be covered under the royalty free covenant
+that Microsoft made public.
+<br><br>
+Academic BSD License:
+<br>
+The (compression techniques) DiscardLists and CombineLists are the
+proprietary property of The Regents of the University of California
+(“The Regents.”)
+<br>
+Copyright © 2009 The Regents of the University of California,
+Irvine. All Rights Reserved.
+<br>
+Redistribution and use in source and binary forms, with or without
+modification, are permitted by nonprofit, research institutions for
+research use only, provided that the following conditions are met:
+
+<ul class="small">
+
+<li>Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.</li>
+
+<li>Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.</li> 
+
+<li>Neither the name of The Regents nor the names of
+    its contributors may be used to endorse or promote products
+    derived from this software without specific prior written
+    permission.</li>
+
+</ul>
+
+<p class="small">
+The end-user understands that the program was developed for research
+purposes and is advised not to rely exclusively on the program for any
+reason.
+<br><br>
+THE SOFTWARE PROVIDED IS ON AN "AS IS" BASIS, AND THE REGENTS AND
+CONTRIBUTORS HAVE NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT,
+UPDATES, ENHANCEMENTS, OR MODIFICATIONS. THE REGENTS AND CONTRIBUTORS
+SPECIFICALLY DISCLAIM ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING BUT
+NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+REGENTS OR CONTRIBUTORS BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
+SPECIAL, INCIDENTAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES, INCLUDING BUT
+NOT LIMITED TO PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES, LOSE OF
+USE, DATA OR PROFITS, OR BUSINESS INTERRUPTION, HOWEVER CAUSED AND
+UNDER ANY THEORY OF LIABILITY WHETHER IN CONTRACT, STRICT LIABILITY OR
+TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+<br><br>
+If you do not agree to these terms, do not download or use the
+software.  This license may be modified only in a writing signed by
+authorized signatory of both parties.
+
+<hr>
+
+<p class="small">For any questions regarding this release, please send email to
+flamingo AT ics.uci.edu
+
+<p><a href="http://www.ics.uci.edu"><img src="/images/ics.jpg"></a>
+
+<!-- Google Analytics -->
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-1396418-5";
+urchinTracker();
+</script>
+
+</body>
+</html>

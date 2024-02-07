@@ -1,0 +1,93 @@
+# Program1-2.py
+#
+# This is version 2 of a program to find candidate genes on the given
+# strand of DNA sequences.  Unlike version 1, this program reads the
+# DNA sequences from an AlexDNA file with the name specified by the
+# user.
+#
+# As with version 1, this program is broken into separate functions.
+# I've added one new function that, given a filename, reads all of the
+# DNA sequences in the file and returns a list of them.
+
+
+# The readDnaSequences function takes a filename as a parameter and
+# returns a list of all the DNA sequences stored in the file with that
+# filename.  It is assumed that the filename refers to a file that's in
+# AlexDNA format.  (In a professional-grade program, you'd often want
+# to check the format of the input, so that the program can still behave
+# reasonably even if the format is incorrect; that's more complicated
+# than we'll need to get, so we'll assume that the format is correct.)
+#
+# Note that I'm doing something new here, which was just introduced in
+# lecture; I'm creating an empty list (denoted by "[]"), then adding
+# things to end of it using its append() function.
+
+def readDnaSequences(filename):
+    dnaFile = open(filename)
+
+    # Create an empty list of DNA sequences.  We'll add DNA sequences
+    # to the list as we find them.
+    dnaSequences = []
+
+    for line in dnaFile:
+
+        # This removes the last character of the line, which is
+        # necessary because Python, when it reads a line from a
+        # file, leaves a "newline" character on the end of the line.
+        # This newline character is not part of a DNA sequence, so
+        # it's best for us to eliminate it now so it doesn't cause
+        # us any problems later.
+
+        line = line[0 : len(line)-1]
+
+        if line != "" and line[0] != "#":
+
+            # The line is a DNA sequence!  Add it to the list of
+            # DNA sequences.
+            dnaSequences.append(line)
+
+    # When we're done, we return the list as the output of the function.
+    return dnaSequences
+
+
+# The printCandidateGenes function takes a DNA sequence as a parameter
+# (i.e., as its input), finds any candidate genes using the rules we've
+# used previously, then prints information about it.  For each, it prints
+# the start position of the candidate gene, as well as its length (measured
+# in codons.  It also takes a sequence number as a parameter, allowing it
+# to print the sequence number along with its output.
+
+def printCandidateGenes(dnaSequence, sequenceNumber):
+    for i in range(0, len(dnaSequence)-2):
+        if dnaSequence[i : i+3] == 'ATG':
+            for j in range(i+3, len(dnaSequence)-2, 3):
+                if dnaSequence[j : j+3] == 'TAA' or dnaSequence[j : j+3] == 'TAG' or dnaSequence[j : j+3] == 'TGA':
+                    if j+3-i >= 60:
+                        print "-----"
+                        print "Candidate gene found in sequence number", sequenceNumber
+                        print "     Start position    :", (i+1)
+                        print "     Length (in codons):", (j+3-i)/3
+                    break
+
+
+# The program is a little different than it is in version 1; here, I
+# ask the user for the name of an AlexDNA file, then read the DNA
+# sequences out of the file, and finally print the candidate genes in
+# each of the sequences.
+#
+# While reading the sequence, sequence numbers are tracked, so that
+# the first sequence is considered to be "sequence number 1," the
+# second "sequence number 2," and so on.  This information is passed
+# to the printCandidateGenes function so that, if it finds candidate
+# genes, the output can contain the sequence number.
+
+filename = raw_input("Enter the name of an AlexDNA file: ")
+
+dnaSequences = readDnaSequences(filename)
+
+sequenceNumber = 1
+
+for dnaSequence in dnaSequences:
+    printCandidateGenes(dnaSequence, sequenceNumber)
+    sequenceNumber = sequenceNumber + 1
+

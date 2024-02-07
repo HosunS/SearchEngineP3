@@ -1,0 +1,129 @@
+<HTML><HEAD>
+<TITLE>Geometry in Action</TITLE>
+<META name="Owner" value="eppstein">
+<META name="Reply-To" value="eppstein@ics.uci.edu">
+</HEAD><BODY BGCOLOR="#FFFFFF" FGCOLOR="#000000">
+<!--#config timefmt="%d %h %Y, %T %Z" -->
+<H1>
+<A HREF="http://www.ics.uci.edu/~eppstein/geom.html"><IMG src="gina.gif" ALIGN=center WIDTH="493" HEIGHT="52" ALT="Geometry in Action" BORDER=0></A>
+</H1>
+<HR><PRE>
+<B>Newsgroups:</B>     comp.graphics,sci.math
+<B>From:</B>           <A HREF="mailto:pjt@newton.cs.jhu.edu">pjt@newton.cs.jhu.edu</A> (Paul Tanenbaum)
+<B>Subject:</B>        Delaunay Interpolation
+<B>Organization:</B>   Johns Hopkins Computer Science Department, Baltimore, MD
+<B>Date:</B>           Tue, 18 Aug 1992 17:41:21 GMT
+</PRE><HR><PRE>
+     Suppose I have a bunch of sample points from the boundary of a closed
+volume in $R^3$.  Suppose in particular that I have been given the Delaunay
+triangulation of these boundary points.  I'd like to interpolate a $C^3$
+surface through these vertices.  The related surface-interpolation algorithms
+I've found seem not to be applicable:  they either assume that the
+triangulation is regular (usually of degree six) or that the surface is
+monotonic with respect to some plane.
+     Does there exist an algorithm to solve this problem?  References to
+the literature would be greatly appreciated.
+     Thanks,
+     +++paul
+</PRE><HR><PRE>
+<B>Newsgroups:</B>     comp.graphics,sci.math
+<B>From:</B>           <A HREF="mailto:watson@maths.uwa.oz.au">watson@maths.uwa.oz.au</A> (David Watson)
+<B>Subject:</B>        Re: Delaunay Interpolation
+<B>Organization:</B>   University of Western Australia
+<B>Date:</B>           Wed, 19 Aug 1992 00:28:55 GMT
+</PRE><HR><PRE>
+<A HREF="mailto:pjt@newton.cs.jhu.edu">pjt@newton.cs.jhu.edu</A> (Paul Tanenbaum) writes:
+
+&gt;     Suppose I have a bunch of sample points from the boundary of a closed
+&gt;volume in $R^3$.  Suppose in particular that I have been given the Delaunay
+&gt;triangulation of these boundary points.  I'd like to interpolate a $C^3$
+&gt;surface through these vertices.  The related surface-interpolation algorithms
+&gt;I've found seem not to be applicable:  they either assume that the
+&gt;triangulation is regular (usually of degree six) or that the surface is
+&gt;monotonic with respect to some plane.
+&gt;     Does there exist an algorithm to solve this problem?  References to
+&gt;the literature would be greatly appreciated.
+
+There are many ways to interpolate from a Delaunay tesselation.  The quickest
+is with barycentric coordinates but is only $C^0$.  If you require higher
+smoothness then it is a question of data set size - for 100 data or so just
+fit a radial basis spline.  If you must deal with subsets, splines will
+give discontinuities at subset boundaries.  Sibson's natural neighbour
+interpolation -
+Sibson, R., 1981, A brief description of natural neighbour interpolation, _in_ 
+Barnett, V., ed., Interpreting multivariate data: John Wiley, p.21--36.
+Alfield, P., 1989, Scattered data interpolation in three or more 
+variables, _in_ Mathematical methods in computer aided geometric 
+design, Lyche, T., and Schumaker, L.L., ed., Academic Press, San Diego,
+p. 12-13.
+Watson, D.F., and Philip, G.M., 1987, Neighborhood-based interpolation: Geobyte, 2(2),
+p. 12--16.
+will provide continuous slopes everywhere but at the data points themselves.
+Incorporating estimated gradients will give total continuity.
+
+For a summary of interpolation techniques that can be extended to higher
+dimensions, see
+	ftp marlin.nosc.mil /pub/contour.file
+for an ASCII, TeX, or PostScript, file.
+
+Email questions are welcome.
+--
+Dave Watson                          Internet: <A HREF="mailto:watson@maths.uwa.edu.au">watson@maths.uwa.edu.au</A>
+Department of Mathematics            
+The University of Western Australia               Tel: (61 9) 380 3359
+Nedlands, WA 6009  Australia.                     FAX: (61 9) 380 1028
+</PRE><HR><PRE>
+<B>Newsgroups:</B>     comp.graphics.algorithms
+<B>From:</B>           <A HREF="mailto:ensab@gdr.bath.ac.uk">ensab@gdr.bath.ac.uk</A> (A Bowyer)
+<B>Subject:</B>        Re: Contours - How to draw ?
+<B>Organization:</B>   School of Mechanical Engineering, University of Bath, UK
+<B>Date:</B>           Tue, 31 Aug 1993 19:10:12 GMT
+</PRE><HR><PRE>
+In the referenced article, <A HREF="mailto:ma@informatik.uni-kiel.dbp.de">ma@informatik.uni-kiel.dbp.de</A> (Martin Ameskamp) writes:
+&gt;In &lt;25pfi0$aqs@aggedor.rmit.OZ.AU&gt; <A HREF="mailto:s914373@minyos.xx.rmit.OZ.AU">s914373@minyos.xx.rmit.OZ.AU</A> (Simon Bullen) writes:
+&gt;
+&gt;&gt;<A HREF="mailto:ajb@oasis.icl.co.uk">ajb@oasis.icl.co.uk</A> (Adam Buckley) writes:
+&gt;&gt;	A nice general way to make contour maps from a set of _ANY_ points
+&gt;&gt;(ie you don't need a regular grid) is to calculate the Delaunay triangulation
+&gt;&gt;from your set of points, and then doing the contour map is pretty easy.
+&gt;
+&gt;&gt;	The Delaunay triangulation will turn your set of points into a 
+&gt;&gt;surface composed entirely of triangles; then you merely need to solve the
+&gt;&gt;contour map problem for each triangle in the graph, which is fairly straight
+&gt;&gt;forward. You could then pass it through a bezier curve routine to smooth out
+&gt;&gt;the straight lines, if you liked.
+&gt;
+&gt;Right, triangulation is almost always a good idea. I'm not so sure about
+&gt;the Bezier bit, though. After all, you expect certain things from contours,
+&gt;e.g. you wouldn't really like them to intersect, and I don't see how you could
+&gt;guarantee that by applying Bezier routines to a given set of (correct)
+&gt;piecewise linear contours.
+&gt;
+&gt;Martin
+&gt;--
+&gt;Martin Ameskamp, Inst. f. Informatik I (Computing Dept.)
+&gt;Kiel University, Olshausenstr. 40, 24118 Kiel, Germany
+&gt;Fax: ++49 431 8804054, Voice: ++49 431 8804474, 
+&gt;email: <A HREF="mailto:ma@informatik.uni-kiel.d400.de">ma@informatik.uni-kiel.d400.de</A>
+
+The trouble with countouring methods based on Delaunay triangulations is
+that they can `click' (i.e. produce contours with spurious kinks) on
+near-degenerate data.  It's better to use natural-neighbour interpolation
+(invented by Robin Sibson) on the Voronoi dual of the Delaunay triangulation.
+Start with
+
+Sibson, R, and Thompson, G.D. `A seamed Quadratic Element for Contouring' and
+follow the reference tree.
+
+			Adrian Bowyer
+</PRE>
+<HR><P>
+Part of
+<A HREF="http://www.ics.uci.edu/~eppstein/geom.html">Geometry in Action</A>,
+a collection of applications of computational geometry.<BR>
+<A HREF="http://www.ics.uci.edu/~eppstein/">David Eppstein</A>,
+<A HREF="http://www.ics.uci.edu/~theory/">Theory Group</A>,
+<A HREF="http://www.ics.uci.edu/">ICS</A>,
+<A HREF="http://www.uci.edu/">UC Irvine</A>.<P>
+<SMALL>Last update: <!--#flastmod file="dt-interpolate.html" -->.</SMALL>
+</BODY></HTML>

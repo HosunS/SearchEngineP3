@@ -1,0 +1,487 @@
+/*
+ * Created on Feb 19, 2005
+ * 
+ */
+/**
+ * @author Arthur Asuncion
+ * 
+ * This class provides sound capabilities to the program
+ */
+import java.io.*;
+import javax.sound.sampled.*;
+import java.math.*;
+
+public class Sound {
+	
+	// These are all the fields used by the Sound class:
+	
+	WaveletEffects we1;
+	WaveletEffects we2;
+	
+	Wavelet wavelet;
+	Haar h;
+	Daubechies d;
+	
+	float[] xIndices;
+	float[] xIndicesHalf;
+	
+	File fileIn;	
+	File fileCrossSynthesis;
+	
+	int frame = 0;
+	
+	AudioInputStream audioInputStream;
+	AudioInputStream audioInputStreamMic;
+	AudioFormat format;
+	
+	SourceDataLine line;
+	TargetDataLine lineMic;
+	
+	byte[] audioBytes;
+	byte[] audioBytesCS;
+	
+	float[] crossSynthBuffer;
+	
+	SignalView sv;
+	
+	int numBytes;
+	
+	/** The constructor for the sound file
+	 * 
+	 * @param f Requires a 16-bit wave sound file (could be either mono or interleaved stereo)
+	 */
+	public Sound(String f){
+		String fileName = f;
+
+		we1 = new WaveletEffects(0);
+		we2 = new WaveletEffects(2500);
+		h = new Haar();
+		d = new Daubechies();
+		
+		int totalFramesRead = 0;
+		
+		fileIn = new File(fileName);
+
+		try {
+
+			// The input stream of the primary file
+			audioInputStream = AudioSystem.getAudioInputStream(fileIn);
+			int bytesPerFrame = audioInputStream.getFormat().getFrameSize();
+			
+
+			// The format of the primary file
+			format = audioInputStream.getFormat();
+			
+			// The Speaker line
+			line = null;
+			
+			// The mic line
+			lineMic = null;
+			
+			// Obtain and open the line.
+			try {
+
+				// Open the mic line
+				DataLine.Info dataLineInfo = new DataLine.Info(TargetDataLine.class, format);
+				lineMic = (TargetDataLine)AudioSystem.getLine(dataLineInfo);
+				
+				lineMic.open();
+				lineMic.start();
+
+				// Open the speaker line
+				line =  AudioSystem.getSourceDataLine(format);
+				line.open();
+						
+
+			} catch (LineUnavailableException ex) {
+				// Handle the error.
+			}
+			
+			// Gets an AudioInputStream for the mic
+			audioInputStreamMic = new AudioInputStream(lineMic);
+			int bytesPerFrameMic = audioInputStreamMic.getFormat().getFrameSize();
+			
+			System.out.println("Number of channels:" + audioInputStream.getFormat().getChannels());		
+			System.out.println("Bytes Per Frame:" + bytesPerFrame);
+			
+			
+			// Set an arbitrary buffer size.
+			numBytes = 1024 * 8 * bytesPerFrame;
+			
+			crossSynthBuffer = new float[numBytes];
+			
+			// Makes x-Coordinate arrays, needed for display
+			xIndices = new float[numBytes / 2];
+			xIndicesHalf = new float[numBytes / 4];
+			for (int i = 0; i < numBytes / 2; i++){
+				xIndices[i] = i;
+			}
+			
+			for (int i = 0; i < numBytes / 4; i++){
+				
+				xIndicesHalf[i] = i;
+			}
+
+			audioBytes = new byte[numBytes];
+			audioBytesCS = new byte[numBytes];	
+		}
+		catch (Exception e) {}
+		
+	}
+	
+	/** This method starts the sound
+	 * 
+	 * @param sv The signal view
+	 */
+	void start(SignalView sv) {
+	
+		this.sv = sv;
+		
+		sv.setStartState();
+		
+		try {
+			
+			audioInputStream = AudioSystem.getAudioInputStream(fileIn);
+
+			// Initializes the speaker line
+			line.close();
+			line.open();
+			line.start();
+			
+			
+			AudioInputStream currentStream;
+			AudioInputStream crossSynthStream;
+			
+			
+			if (sv.sourceMic()) 
+				currentStream = audioInputStreamMic;
+			else 
+				currentStream = audioInputStream;
+			
+			// This crossSynthStream can be read from a file also, but this 
+			// functionality is not provided in this release
+			crossSynthStream = audioInputStreamMic;
+
+			try {
+				int numBytesRead = 0;
+				int numFramesRead = 0;
+
+				// Try to read numBytes bytes from the file.
+				while ((numBytesRead = currentStream.read(audioBytes)) != -1) {
+					
+					// Checks if the source has changed
+					if (sv.sourceMic()) 
+						currentStream = audioInputStreamMic;
+					else 
+						currentStream = audioInputStream;
+	
+					// Checks which wavelet to use
+					if (sv.isHaar()) wavelet = h;
+					else wavelet = d;
+					
+					// Checks if the sound has been stopped
+					if (sv.isStopped()) {
+						sv.setStopState();
+						break;
+					}
+					
+					// Checks if the sound has been paused, and does a non-busy wait if so.
+					while (sv.isPaused()) {
+						sv.setPauseState();
+						Thread.sleep(1000);
+					}
+					
+					
+					
+					if (sv.crossSynthesize()) {
+						// Grabs the audioBytesCS to crossSynthesize
+						audioInputStreamMic.read(audioBytesCS);
+
+					}
+					
+					// This call will process the sound
+					process(audioBytes, audioBytesCS, numBytes, currentStream.getFormat().getChannels());
+					
+					// This call will write the sound out to the speaker line
+					line.write(audioBytes, 0, numBytes);
+					
+					frame++;
+				}
+				
+			} catch (Exception ex) {
+				System.out.println(ex);
+			}
+			
+			line.close();
+			
+		} catch (Exception e) {
+			sv.setMsg("Sorry, the file you tried to play was not a 16-bit WAV");
+		}
+	}
+	
+	
+
+	
+	/** Processes the sound coming from Java
+	 *  
+	 * @param in The byte[] that holds the samples
+	 * @param cs The byte[] that potentially holds the cross-synthesis samples
+	 * @param size The size of the byte array
+	 * @param channels The number of channels (mono or stereo)
+	 */
+	void process(byte[] in, byte[] cs, int size, int channels)
+	{
+		// These variables will be used later in the method
+		byte[] b = new byte[size];
+		int sample;
+		
+		// Converts the byte[] to a float[]
+		float[] f = byteToFloatArray(in, size);
+		
+		float[] fCS = null;
+		
+		if (sv.crossSynthesize()) {
+			fCS = byteToFloatArray(cs, size);
+		}
+		
+		
+		if (channels == 1) // if Mono
+		{
+			// Performs the forward wavelet transform to decompose signal into coefficients
+			wavelet.decompose(f, f.length);
+			
+			if (sv.crossSynthesize()) {
+				wavelet.decompose(fCS, fCS.length);
+			}
+		
+			// Sends the coefficients into an effects chain
+			sendThroughEffectsChain(f, fCS, f.length, we1);
+			
+			// Displays the coefficients
+			if (frame % 2 == 0 && sv.showView())
+				sv.displaySignal2(xIndices, f, (short) (size/2));
+		
+			if (sv.showView())
+				sv.displaySignal3(f, (short) (size/2));
+			
+			// Performs the inverse wavelet transform
+			wavelet.reconstruct(f, f.length);
+		
+			// Displays the reconstructed signal
+			if (frame % 2 == 0 && sv.showView())
+				sv.displaySignal1(xIndices, f, (short) (size/2));
+		
+		}
+		
+		else if (channels == 2) // if Stereo
+		{
+			// Converts the interleaved stereo into two mono files
+			Doubleton lr = stereoToMono(f, f.length);
+			float[] left = (float[])lr.getFirst();
+			float[] right = (float[])lr.getSecond();
+			
+			float[] leftCS = null;
+			float[] rightCS = null;
+			
+			if (sv.crossSynthesize()) {
+				Doubleton lrCS = stereoToMono(fCS, fCS.length);
+				leftCS = (float[])lrCS.getFirst();
+				rightCS = (float[])lrCS.getSecond();
+				wavelet.decompose(leftCS, leftCS.length);
+				wavelet.decompose(rightCS, rightCS.length);
+			}
+			
+			// Handles the left channel
+			wavelet.decompose(left, left.length);
+			sendThroughEffectsChain(left, leftCS, left.length, we1);
+			if (sv.showView())
+				sv.displaySignal3(left, (short) left.length);
+			wavelet.reconstruct(left, left.length);
+			
+			// Handles the right channel
+			wavelet.decompose(right, right.length);
+			sendThroughEffectsChain(right, rightCS, right.length, we2);
+			if (frame % 2 == 0 && sv.showView())
+				sv.displaySignal2(xIndicesHalf, right, (short) right.length);
+			wavelet.reconstruct(right, right.length);
+			
+			// Shows the reconstructed left channel
+			if (frame % 2 == 0 && sv.showView())
+				sv.displaySignal1(xIndicesHalf, left, (short) left.length);
+			
+			// Returns the two mono channels back to interleaved stereo format
+			f = monoToStereo(left, right, left.length);
+		}
+		
+		// Returns the float[] back to a byte[], since a byte[] is what Java handles
+		b = floatToByteArray(f, size/2);
+		
+		for (int i = 0; i < b.length; i++)
+		{
+			in[i] = b[i];
+		}
+	}
+	
+	/** This method sends the coefficients into an effects chain
+	 * 
+	 * @param f the coefficients as a float[]
+	 * @param fCS the potential coefficients of the cross-synthesis sound as a float[]
+	 * @param size the size of the coefficient array
+	 * @param we the WaveletEffects instance to use
+	 */
+	void sendThroughEffectsChain(float[] f, float[] fCS, int size, WaveletEffects we) {
+		
+		if (sv.simulateCompression()) {
+			we.simulateCompression(f, size);
+		}
+		if (sv.denoise()) {
+			we.denoise(f, size);
+		}
+		if (sv.threshold()) {
+			we.threshold(f, size);
+		}
+		if (sv.modulate()){
+			we.modulate(f, size);
+		}
+		if (sv.crossSynthesize()) {
+			we.crossSynthesize(f, fCS, size);
+		}
+		
+		if (sv.filter()){
+			we.filter(f, size, sv.returnFilterCoefficients());
+		}
+		
+		if (sv.removeClicks()){
+			we.removeEdgeClicks(f, size);
+		}
+	}
+
+	
+	
+	
+	/** This class turns an interleaved stereo file into two mono files
+	 * 
+	 * @param in interleaved stereo float array
+	 * @param size the size of the array
+	 * @return a Doubleton which contains two float arrays for left & right channels
+	 */
+	static Doubleton stereoToMono(float[] in, int size)
+	{
+		float[] left = new float[size / 2];
+		float[] right = new float[size / 2];
+		
+		for (int i = 0; i < size; i = i + 2)
+		{
+			
+			left[i / 2] = in[i];
+			right[i / 2] = in[i + 1];
+		}
+		
+		return new Doubleton(left, right);
+		
+	}
+	
+	
+	/** This performs the exact opposite of stereoToMono.  It turns two mono files
+	 * into an interleaved stereo file.
+	 * 
+	 * @param left float array
+	 * @param right float array
+	 * @param size size of each array
+	 * @return an interleaved stereo file
+	 */
+	static float[] monoToStereo(float[] left, float[] right, int size)
+	{
+		
+		float[] stereo = new float[size * 2];
+		
+		for (int i = 0; i < size*2; i = i + 2)
+		{
+			stereo[i] = left[i / 2];
+			stereo[i + 1] = right[i / 2];
+			
+		}
+		
+		return stereo;
+			
+		
+	}
+	
+
+	/** This function turns a byte array into a float array.  
+	 * @param in the byte array
+	 * @param size size of array
+	 * @return the float array
+	 */
+	static float[] byteToFloatArray(byte[] in, int size)
+	{
+		
+		float[] f = new float[size / 2];
+		byte[] sampleByteArray = new byte[2];
+		int sample;
+		
+		for (int i = 0; i < size - 1; i = i + 2)
+		{
+			sampleByteArray[0] = in[i + 1];
+			sampleByteArray[1] = in[i];
+			
+			sample = (new BigInteger(sampleByteArray)).intValue();
+
+			f[i/2] = (int) sample;
+
+		}
+		
+		return f;
+		
+	}
+	
+	/** This function turns a float array into a byte array so that Java can recognize it.
+	 *  This was one of the most complicated methods as it required bit twiddling
+	 * @param in the float array
+	 * @param size size of array
+	 * @return the byte array
+	 */
+	static byte[] floatToByteArray(float[] in, int size)
+	{
+		byte[] b = new byte[size * 2];
+		byte[] sampleByteArray = new byte[2];
+		byte[] tempSampleArray;
+		int sample;
+		
+		for (int i = 0; i < size; i++)
+		{
+			
+			tempSampleArray = (new BigInteger(new Integer((int) in[i]).toString())).toByteArray();
+			
+			if (tempSampleArray.length == 1) // that means that temp is only 1 byte
+			{
+				if (tempSampleArray[0] < 0)
+				{
+					sampleByteArray[0] = (byte) (0xFF);
+					sampleByteArray[1] = tempSampleArray[0]; // this just extends the minus sign for 2's complement
+								// -1 = 0xFF
+					
+				}
+				
+				else if (tempSampleArray[0] >= 0)
+				{
+					
+					sampleByteArray[0] = 0;
+					sampleByteArray[1] = tempSampleArray[0];
+				
+				}
+				
+			}
+			
+			else sampleByteArray = tempSampleArray;
+			
+			b[2 * i] = sampleByteArray[1];
+			b[2 * i + 1] = sampleByteArray[0];
+			
+		}
+		
+		return b;
+	}
+	
+	
+}

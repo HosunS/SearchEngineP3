@@ -1,0 +1,134 @@
+<!-- received="Wed May 29 15:30:00 1996 PDT" -->
+<!-- sent="Wed, 29 May 1996 18:30:10 -0400" -->
+<!-- name="Daniel W. Connolly" -->
+<!-- email="connolly@beach.w3.org" -->
+<!-- subject="Re: Version identifier in URL" -->
+<!-- id="ade2526e1102100499ca@[128.195.21.209]" -->
+<!-- inreplyto="Version identifier in URL" -->
+<title>Archive of Working Group on Versioning and Configuration Management of World Wide Web Content: Re: Version identifier in URL</title>
+<h1>Re: Version identifier in URL</h1>
+<b>Daniel W. Connolly</b> (<a href="mailto:connolly@beach.w3.org"><i>connolly@beach.w3.org</i></a>)<br>
+<i>Wed, 29 May 1996 18:30:10 -0400</i>
+<p>
+<ul>
+<li> <b>Messages sorted by:</b> <a href="index.html#14">[ date ]</a><a href="thread.html#14">[ thread ]</a><a href="subject.html#14">[ subject ]</a><a href="author.html#14">[ author ]</a>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0015.html">Daniel W. Connolly: "Re: Version identifier in URL"</a>
+<li> <b>Previous message:</b> <a href="0013.html">Larry Masinter: "Re: Versions and configurations"</a>
+<li> <b>Maybe in reply to:</b> <a href="0002.html">Jim Whitehead: "Version identifier in URL"</a>
+<!-- nextthread="start" -->
+<li> <b>Next in thread:</b> <a href="0015.html">Daniel W. Connolly: "Re: Version identifier in URL"</a>
+<!-- reply="end" -->
+</ul>
+<hr>
+<!-- body="start" -->
+<pre>
+In message &lt;2.2.32.19960529070838.00710f78@pop-server.austin.sar.slb.com&gt;, "Rob
+ert C. Pettengill" writes:
+&gt;
+&gt;It isn't clear to me that it is necessary to standardize the syntax of
+&gt;version identifiers across all servers.
+
+Not necessary, and terribly ill-advised.
+
+&gt;The proposal in <a href="http://www.w3.org/pub/WWW/MarkUp/Resource/Specification">http://www.w3.org/pub/WWW/MarkUp/Resource/Specification</a>
+&gt;seems to be pretty heavy weight.
+
+Fair criticism. Shorthand syntaxes can be developed.
+
+&gt;  I can't simply have a URL to a specific
+&gt;document in the "version space", I need to define a resource and then
+&gt;provide a URL to that resource which seems more than a little awkward.
+
+No? I think you can.
+
+The point is: you can't tell the relationship between address A1
+and address A2 just by looking at their syntax: you need explicit
+information that says one is a version of the other. The Resource
+element is one such syntax.
+
+&gt;Why not allow link attributes to be specified in the anchor, e.g.
+&gt;&lt;A HREF="mumble/foo" VERSION="x"&gt;?
+
+That might be a reasonable short-hand, as long as we're clear on
+how it expands into a full &lt;resource&gt; description; i.e. if
+the above markup is found in a document at A1, then we have:
+
+        link(A1, mumble/foo, version-specific)
+and
+        meta(mumble/foo, version, x)
+
+i.e.
+        &lt;resource href="mumble/foo"&gt;
+                &lt;meta name=version content=x&gt;
+                &lt;link rev=version-specific href="A1"&gt;
+        &lt;/resource&gt;
+
+
+&gt;It might be worthwhile discussing the requirements for versioned links
+&gt;before discussing the syntax.  Some questions that occur to me are:
+&gt;
+&gt;Is the versioning model constrained to be single threaded?  (i.e. unique
+&gt;answers to the queries below)
+&gt;
+&gt;Fetch the version previous to URL(x).
+&gt;Fetch the version subsequent to URL(x).
+
+These are a matter of finding the address p and s such that:
+        link(x, p, preceeds)
+        link(s, x, preceeds)
+
+Then GET p and s. A convention for finding those addresses might
+be handy. But the convention can't be just a syntactic manipulation.
+
+&gt;Fetch the version of URL(x) current at time t.
+
+That's trickier. It's a matter of finding c such that:
+
+        meta(c, last-modified, t1)
+        link(c, r1, preceeds)
+        meta(r1, last-modified, t2)
+        link(c, r2, preceeds)
+                ...
+        link(c, rn, preceeds)
+        link(rn, x, preceeds)
+
+
+such that t1 &lt;= t &lt;= t2.
+
+&gt;Fetch the version of URL(x) current as of the creation time of URL(y)
+&gt;Fetch the most recent version of URL(y)
+
+One way to this sort of thing in general is:
+        * Each response regarding a versioned resource has a
+        link to its full version history in an HTTP header:
+
+                Link: rel=revision-history href=/foo/bar/history
+
+        * To find a certain revision of x, Client does GET (or HEAD)
+        for x, and follows revision-history link
+
+        * content of target revision-history gives links to each
+        revision, along with information about last-modified dates.
+
+        * client searches revision history to satisfy query
+
+Another approach is to move some of the processing to the server.
+Then it's a question of what queries to support, and how to
+express them. URL forms syntax? Hmmm...
+
+
+Dan
+</pre>
+<!-- body="end" -->
+<hr>
+<p>
+<ul>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0015.html">Daniel W. Connolly: "Re: Version identifier in URL"</a>
+<li> <b>Previous message:</b> <a href="0013.html">Larry Masinter: "Re: Versions and configurations"</a>
+<li> <b>Maybe in reply to:</b> <a href="0002.html">Jim Whitehead: "Version identifier in URL"</a>
+<!-- nextthread="start" -->
+<li> <b>Next in thread:</b> <a href="0015.html">Daniel W. Connolly: "Re: Version identifier in URL"</a>
+<!-- reply="end" -->
+</ul>

@@ -1,0 +1,51 @@
+/*
+ $Id: kwdsstorage.h 5795 2010-10-23 01:18:03Z abehm $
+ 
+ Copyright (C) 2010 by The Regents of the University of California
+ 
+ Redistribution of this file is permitted under
+ the terms of the BSD license.
+ 
+ Date: 08/19/2010
+ Author: Sattam Alsubaiee <salsubai (at) ics.uci.edu>
+*/
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <cstdlib>
+#include <tr1/unordered_map>
+
+using namespace std;
+using namespace tr1;
+
+struct IndexNode
+{
+	unsigned position;
+	size_t size;
+	unsigned id;
+	unsigned numKeywords;
+};
+
+class KeywordsFile
+{
+private:
+	char *buffer;
+	fstream keywordsFile;
+	string keywordsFileName;
+	unordered_map<unsigned, IndexNode> indexMap;
+	
+	void readIndex(string indexFileName, bool newFile);
+    void writeIndex(); 
+public:
+	KeywordsFile(string fileName);
+	~KeywordsFile();
+	unordered_map <unsigned, IndexNode>::iterator begin();
+	unordered_map <unsigned, IndexNode>::iterator end();
+	IndexNode getIndexNode(unsigned id);
+	bool open(bool newFile = false);
+	string read(unsigned id);
+	bool write(string text, unsigned id, unsigned numKeywords);
+	void close();
+	unsigned getRecordCount();
+};

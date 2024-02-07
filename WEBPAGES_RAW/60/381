@@ -1,0 +1,95 @@
+This week: non-binary search structures that make use of internal
+structure of searched objects (strings and integers)
+
+
+How to represent and look up sets of words?
+
+- binary search tree
+	O(log n) steps for search, each involving string compare
+
+- hashtable
+	pretty good for many applications
+	constant number of string compares
+
+- trie
+	non-binary tree
+		node = prefix of a dictionary word
+			children = prefixes with one more character
+
+		example:
+			apple
+			berry
+			banana
+
+		add $ at end of each string so word<=>leaf
+			
+	size = linear in total length of all words
+
+- compressed trie (Patricia trie):
+	nodes = leaves and branching nodes of trie
+	edges correspond to multiple characters of input
+
+- suffix tree (suffix trie):
+	trie where words = suffixes of a single input word
+	size can be quadratic! (aaabbb$)
+
+- compressed suffix tree
+	represent edge substring by indices into original string
+	size = linear (n leaves => at most 2n-1 edges)
+
+	another example: bananas
+
+
+Algorithms using suffix trees
+	list all occurrences of pattern p in t:
+	(e.g. word or phrase search in large texts)
+		follow path for p
+		list all leaves descending from path endpoint
+			(e.g. 1d range reporting)
+
+	frequency of pattern in t:
+		number of leaves descending from path
+
+	longest common substring of two strings X,Y:
+		find suffix tree for X#Y$
+		find lowest node having both X- and Y-leaf descendant
+
+	given starting positions x,y, find min i s.t. str[x+i]!=str[y+i]:
+		least common ancestor of leaves for positions x,y
+
+
+Representation of suffix tree node
+	information on parent link + pointers to children
+	for small alphabet size, table letter->child
+	for large alphabet size, hashtable or sorted list
+
+
+Construction of suffix trees
+	known (Weiner, 1973) O(ns) for small alphabet size
+	for large alphabet size (e.g. integers 0..k-1, k<n), still linear time
+		[Farach, FOCS 1997]
+
+	idea:
+		(1) form shorter string by grouping characters into
+			pairs of characters
+			ba, na, na, $
+		(2) mark pairs with their position in string,
+		    radix-sort pairs (bucket sort by 2nd char then 1st):
+		    and renumber them to form equivalent word with
+		    smaller alphabet (numbers 0...k-1, k<new n)
+			0,1,1,2
+		(3) recursively construct suffix tree on smaller input
+		(4) expand back out to give tree of even suffixes
+			(split pairs of children w/same first char)
+		(5) scan tree to list even suffixes in sorted order
+		(6) prepend previous characters to get list of odd suff's
+		(7) bucket sort odd suffixes by 1st char => completely sorted
+		(8) use LCA in even tree to find length(common prefix)
+			between adjacent pairs of odd suffixes
+		(9) built tree of odd suffixes by scanning L-R
+			using LCA info to know how far up to go
+			from previous leaf
+		(10) merge even and odd trees
+			(messy, details omitted, linear time)
+
+	total time: T(n)=O(n) (all steps but 3) + T(n/2) (step 3) = O(n)

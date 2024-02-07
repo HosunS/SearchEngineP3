@@ -1,0 +1,285 @@
+			Dictionary Review: Building/Iterating
+
+Now that we have had two lectures on dictionaries, I would like this one to
+review the fundamentals of dictionaries, concentrating on the most frequently
+used operators/iteration on dictionaries.
+
+------------------------------------------------------------------------------
+
+3 Important operations (and one less important one)
+
+1) The "in" operator determines whether a k is associated with some values in a
+dictionary. We can write it as k in d, and can also be written x in d.keys().
+
+The in operator is often important when building dictionaries, to determine
+whether a key is already in the dictionary, associated with some value: often
+we perform one operation to update the values associated with a key in a
+dictionary, but perform another operation to create a new key/value association
+in a dictionary. The in operator helps us determine which operation to do (see
+Building Dictionaries below).
+
+2) Indexing a dictionary with a key retrieves the value associated with a key.
+Often we either examine this value or update/mutate it (when building a
+dictionary). We write d[k] to perform this retrieval. Note that if k is not
+a key in the dictionary, then indexing d[k] raises an exception. Of course, we
+can always check whether k is in a d by using the "in" operator. 
+
+3) There are three ways to iterate through a dictionary. By far the two most
+common iteration idioms are iterating through the keys and iterating through
+the items (key value pairs, appearing in a 2-tuple). The first form is written
+for k in d, and can also be written for k in d.keys(); the second form is
+typically written for k,v in d.items().
+
+We can also iterate over all the values associated with keys in a dictionary,
+without refering to keys at all, although this is uncommon: it is written
+for v in d.values().
+
+Note that if nothing is stored in a dictionary, all these loops execute 0
+iterations (never execute the code in their bodies).
+
+4) Less frequently used is the del operator, which deletes a key from a
+dictionary. It is written del d[k], which raises an exception if the key is
+not in the dictionary; a variant is d.pop(k) which not only removes the key from
+the dictionary, but returns its associate value.
+
+------------------------------------------------------------------------------
+
+Building Dictionaries
+
+For building dictionaries, there are two cases we must code
+
+  (1) The key is not already in the dictionary (initialize an associated value)
+  (2) The key is already in the dictionary     (update its associated value)
+
+Typically a dictionary is built by iterating through a string, range, lines is
+a file, list, or even another dictionary.
+
+Let's look at two specific common tasks: on the left, counting how often a key
+occurs; on the right, adding a value to a list associated with a key. We will
+assume that we want to initiallize/update the dictionary for the name "key"
+(and in the list problem, add "value" to the list associated with "key").
+
+(a) Here is an example of these two case for a standard dictionary, using only
+the simplest dictionary operations. Assume we originally define/initialize d as
+either d = {} or d = dict(): both are empty dictionaries
+
+if key not in d:		if key not in d:
+    d[key] = 1			    d[key] = [value]
+else:	   			else:
+    d[key] += 1			    d[key].add(value)
+
+(b) Here is an example which simplifies the if/else to just an if statement
+followed by a second statement. The if statement initializes the dictionary for
+that key (if it is not there) and then the second statements updates the value
+associated with the key. In both cases, the access d[key] in the second
+statement will never raise an exception, because by the time it is executed
+key is guaranteed to be in the dictionary: if it was not originally in the
+dictionary, the if statement will put it there.
+
+if key not in d:		if key not in d:
+    d[key] = 0			    d[key] = []
+d[key] += 1			d[key].add(value)
+
+
+(c) These forms also leads to the study/use of setdefault, to simplify this
+code into a single line.
+
+d.setdefault(key,0) += 1        d.setdefault(key,[]).add(value)
+
+Recall the setdefault acts as follows, which does the if/test itself, so we
+don't have to write it in our code above. It always returns a reference to
+the value associated with key (even it this function itself creates the
+association).
+
+def setdefault(key,default=None)
+    if key not in adict:
+        adict[key] = default
+    return adict[key]
+
+(d) In the next lecture we will learn about a more advanced kind of dictionary
+called defaultdict (which we must import from the collections module). With
+this data structure we define the dictionary as follows.
+
+d = defaultdict(int)		d = defaultdict(list)
+
+If a defaultdict accesses a key that is not in the dictionary, unlike for dict
+it does NOT raise an exception. Instead, in the first case it will put an int()
+associated with that key (int() is 0; just something you need to know); in the
+second case it will put a list() associated with that key (list() is the same
+as the literal []: it just constructs an empty list). By using a default dict,
+we need only the following
+
+d[key] += 1			d[key].add(value)
+
+In both cases, by using a default dict we do not have to call setdefault
+explicitly: setdefault's actions are automatically done by the default dict
+
+On the left, if key exists it will be incremented; if it doesn't exist, it will
+be automatically associated with the value 0 and then incremented.
+
+On the right, if key exists it will have value appended to its list; if it
+doesn't exist, it will be automatically associated with an empty list, and then
+will have value appended to its list.
+
+(e) If we wanted not duplicate value in the list, the best code would be
+
+       	  	     	        if key not in d:
+				    d[key] = []
+				if value not in d[key]
+       	  			    d[key].add(value)
+
+If we don't want duplicates, instead of using a list associated with a key we
+should use a set (which is covered in the next lecture).
+
+------------------------------------------------------------------------------
+
+Iterating Through Dictionaries (where order is unimportant)
+
+Once we build a dictionary, we often examine it by iterating over its keys,
+and items (and less likely values). Thus, there are 3 standard ways to iterate
+over dictionaries. Here are three simple code fragments to print every
+key/value in the dictionary.
+
+(1) Iterate over keys: use the dictionary to get the value associated with each
+key. Often when iterating over just keys, the name k is used; if you know
+something more explicit about the keys (say they are all words) we can write
+for word in d:
+
+for k in d:  # or more explicitly for k in d.keys()
+    print(k,'->',d[k])
+    
+(2) Iterate over items (a 2-tuple): print the key (index 0) and its associate
+value (index 1); often when iterating over items, the name kv is used; if you
+know something more explicit about the keys (say the keys are words and the
+values are counts) we can write for word_count in d:
+
+for kv in d.items():
+    print(kv[0],'->',kv[1])
+
+
+(3) Iterate over items, but "unpacking" the 2-tuple into two names
+
+for k,v in d.items():
+    print(k,'->',v)
+    
+If we wanted to print just the values (not the keys at all) we could use any of
+the three previous forms and just not print k (or kv[0]) but better is the
+following form
+
+for v in d.values():
+    print(v)
+
+Typically we iterate over keys; if we aren't concerned with their values at all,
+we use the first form of iteration. But, if we iterate are going to find the
+value associated with each key, it is most convenient to use the third form of
+iteration.
+
+------------------------------------------------------------------------------
+
+Iterating through Dictionaries in Special Orders
+
+Generally, list/tuples are ordered (index 0, 1, ...), but not dictionaries. If
+we want to iterate through a dictionary in a special order, we typically create
+a list of the dictionary's keys (or a 2-tuple of its keys and their associated
+values), sort that list, and then iterate over the list. For example, for a
+dictionary d:
+
+keys = list(d)         # or keys = list(d.keys): put all the keys in a list
+keys.sort()	       # sort the list (defaulting the key/reverse parameters)
+for k in keys:	       # iterate in sorted order, getting each key
+    print(k,'->',d[k])
+
+Likewise we could write
+
+If we call sort and specify reverse=True then it sorts in the opposite order
+(high to low not low to high).
+
+If we supply a function to the "key" parameter of the sort method, Python sorts
+not by the standard ordering of keys but by the standard ordering of calling the
+"key" function on each key. If keys are strings, we could call
+keys.sort(key=lambda x : x.upper()) in which case 'rich' and 'Rich' compare the
+same. Or, we could call keys.sort(key=lambda x : x[-1])) so that the strings
+are sorted, but by their last letter only.
+
+But what if we want an even more complicated order, based on items (both keys
+and values)? We can use a similar technique, storing items (keys and values) as
+2-tuples in a list, sorting that list (in even more interesting ways), and then
+iterating over the list of keys and their values.
+
+items = list(d.items())# put all the items, 2-tuples, in a list
+items.sort()	       # sort the list (defaulting the key/reverse parameters)
+for k,v in items:      # iterate in sorted order, getting each items
+    print(k,'->',v)
+
+Note that when sorting 2-tuples, the values are sorted based on index 0; if two
+tuples have the same value for index 0, they are sorted according to index 1.
+So ('a', 10) appears before ('z', 1) but after ('a', 2).
+
+So, let's ignore dictionaries (which cause confusion because dictionaries
+have keys and there is a key parameter in sorting) and focus just on lists:
+even if we want to sort items in a dictionary, once we put the items in a list,
+we are just sorting lists.
+
+So, if we have a dictionary d with keys that are strings and values that are
+integers, we might specify l = list(d.items()). Now we have list
+l = [('b',3), ('a', 2), ('c',1)]. Here are some sorting examples.
+
+l.sort() changes l to be [('a', 2), ('b', 3), ('c',1)]
+
+because sorting tuples first orders them by index 0, then by index 1 (for all
+tuples with the same index 0)
+
+l.sort(key=lambda x : x[1]) changes l to be [('c',1), ('a', 2), ('b', 3)]
+
+because the key function used on teach tuple in the list selects the second
+value in the tuple to sort on.
+
+l.sort(key=lambda x : x[1], reverse=True)
+
+  changes l to be [('b', 3), ('a', 2), ('c',1)]
+
+because it uses the same key function as before (using the second tuple value),
+but reverse=True reverses the order.
+
+In fact, if we has a list of dates, where index 0 is the month, index 1 is the
+day, and index 2 is the year (5, 19, 2014) represents the May 19, 2014, then
+we could sort a list of dates as follows.
+
+l.sort(key=lambda x : (x[2],x[0],x[1])) which would sort the list where each
+tuple is compared to another according to its year (first), month (second), and
+day (third). So (5, 19, 2014) would appear before (5, 20, 2014) because the
+tuples specifed by the lambdas (2014, 5, 19) < (2014, 5, 20). The general way
+to compare tuples is according to index 0; but if index 0 is the same, according
+to index 1; but if index 1 is the same, according to index 2; etc.
+
+Finally, Python allows us to simplify this process by using a function named
+"sorted". Unlike "sort", which is a method that mutates a list, "sorted" is a
+function that produces a list from anything it can iterate over. It has the
+same key and reverse parameters as "sort".
+
+So, we can call "sorted" in a for loop. So instead of writing
+
+kv = list(d.items())
+kv.sort(key=lambda x : x[1], reverse=True)
+for k,v in kv:
+    print(k,'->',v)
+
+we can write the more compact
+
+for k,v in sorted(d.items(), key=lambda x : x[1], reverse=True):
+    print(k,'->',v)
+
+For the dictionary d = {'a':2, 'b':3, 'c':1}, both of which would print 
+
+b -> 3
+a -> 2
+c -> 1
+
+In fact, we can write the sorted function as
+
+def sorted(iterable,key=None,reverse=False):
+   alist = list(iterable)
+   alist.sort(key=Key,reverse=reverse)
+
+Recall that sort has parameters key and reverse; we match those with the
+arguments passed to key and reverse in the sorted method.

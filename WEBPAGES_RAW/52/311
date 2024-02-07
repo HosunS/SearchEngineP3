@@ -1,0 +1,319 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML> <HEAD>
+<TITLE>ACM Computing Surveys: SDCR Working Group on Storage I/O, 
+Cormen/Goodrich</TITLE>
+</HEAD>
+
+<BODY bgcolor="#ffffff">
+
+<P>
+<small>
+
+<em><a href="http://www.acm.org/">ACM</a> <a
+href="http://www.cs.jhu.edu/~goodrich/pubs/io.html">Computing
+Surveys</a></em> <b>28A</b>(4), December 1996,
+http://www.cs.jhu.edu/~goodrich/pubs/io.html.  Copyright &#169;
+1996 by the Association for Computing Machinery, Inc.  See the <a
+href="#permissions-statement">permissions statement</a> below.
+
+</small>
+</P>
+
+
+<BR>
+
+<center>
+<h1><a href="http://www.medg.lcs.mit.edu/sdcr/">
+        Strategic Directions in Computing Research</a></h1>
+<p>
+<h1><a href="http://www.cs.duke.edu/~jsv/SDCR96-IO/SDCR96-IO.html ">Working
+        Group on Storage I/O Issues in Large-Scale Computing</a></h1>
+<p>
+<h1>Position statement</h1>
+</center>
+
+<BR>
+
+<P>
+<strong><a href="http://www.cs.dartmouth.edu/~thc">Thomas H. Cormen</a></strong>
+<BR>
+<address>
+<a href="http://www.dartmouth.edu/">Dartmouth College</a>,
+<a href="http://www.cs.dartmouth.edu/">Department of Computer Science</a><BR>
+6211 Sudikoff Laboratory, Hanover, NH 03755-3510, USA<BR>
+<a href="mailto:thc@cs.dartmouth.edu">thc@cs.dartmouth.edu</a>, 
+<a
+href="http://www.cs.dartmouth.edu/~thc"
+>http://www.cs.dartmouth.edu/~thc</a><BR>
+</address>
+
+<BR>
+<strong><a href="http://www.cs.jhu.edu/goodrich/home.html">Michael T. Goodrich</a></strong>
+<BR>
+<address>
+<a href="http://www.jhu.edu/">The Johns Hopkins University</a>,
+<a href="http://www.cs.jhu.edu/">Department of Computer Science</a><BR>
+Whiting School of Engineering, Baltimore, MD 21218<BR>
+<a href="http://www.ics.uci.edu/~goodrich/">http://www.ics.uci.edu/~goodrich/</a><BR>
+</address>
+
+
+<BR>
+<BR>
+
+<blockquote>
+<HR>
+
+<strong>Abstract:</strong>
+
+We present the challenge of synthesizing a coherent model that
+combines the best aspects of the Parallel Disk Model and Bulk
+Synchronous Parallel models to develop and analyze algorithms that use
+parallel I/O, computation, and communication.
+
+<small>
+
+<P>
+
+Categories and Subject Descriptors: 
+B.3.2 <b>[Memory Structures]</b>: Design Styles - <i>Mass storage
+(e.g., magnetic, optical), Primary memory</i>;
+B.4.4 <b>[Input/Output and Data Communications]</b>:
+Performance Analysis and Design Aids -
+<i>Formal models, Worst-case analysis</i>;
+D.1.3 <b>[Programming Techniques]</b>: Concurrent Programming - <i>
+Parallel programming</i>;
+D.4.2 <b>[Operating Systems]</b>: Storage Management - <i>Secondary
+	      Storage</i>; 
+D.4.4 <b>[Operating Systems]</b>: Communications Management -
+	  <i>Input/Output; Message sending; Network communication</i>;  
+E.2 <b>[Data Storage Representations]</b>: <i>Contiguous
+	      representations</i>; 
+E.5 <b>[Files]</b>: <i>Sorting/searching</i>;
+F.1.2 <b>[Computation by Abstract Devices]</b>: Modes of Computation -
+<i>Parallelism and concurrency</i>;
+F.2.2 <b>[Analysis of Algorithms and Problem Complexity]</b>:
+Nonnumerical Algorithms and Problems - <i>Sorting and searching</i>; 
+
+<P>
+
+General Terms: Algorithms, Design, Languages, Performance, Theory.
+
+<P>
+
+Additional Key Words and Phrases: I/O, external memory, secondary
+memory, communication, disk drive, parallel disks, sorting, Parallel
+Disk Model, Bulk Synchronous Parallel Model.
+
+</small>
+
+<HR>
+</blockquote>
+
+<BR>
+
+<h2>A Bridging Model for Parallel Computation, Communication, and I/O</h2>
+
+<P>
+The past decade has seen the introduction of new and useful models for
+analyzing the computational and communication complexities of parallel
+algorithms, as well as useful models to measure I/O complexity.  Yet
+no useful model measures all of computational, communication, and I/O
+complexity simultaneously.
+
+<P>
+Usefulness of a model implies two characteristics.  First, the model
+should be realistic in the sense that its prediction for any algorithm
+should correspond to observed behavior of real systems.  Second, the
+model should be simple enough to use and understand that one can
+design, analyze, and implement algorithms without having had extensive
+experience with the model.
+
+<P>
+We maintain that the Bulk Synchronous Parallel, or BSP, model <a
+href="#Valiant90">[Valiant 1990]</a> and LogP <a
+href="#CullerKaPaSaScSaSuEi93">[Culler et al. 1993]</a> models are
+useful for computational and communication complexities of parallel
+algorithms.  The Parallel Disk Model, or PDM, <a
+href="#VitterSh94a">[Vitter Shriver 1994]</a> is useful for I/O
+complexity.  The BSP and LogP models, however, ignore I/O, and the PDM
+does not account for computation or communication.  Because we think
+of I/O as so much slower than computation or communication, the PDM
+apparently captures the most salient factor in the wall-clock time for
+algorithms that use parallel I/O.
+
+<P>
+What is apparent may not be the case, however.
+
+<P>
+<a href="#CormenHi96">Early experiences</a> with algorithms
+implemented in the PDM indicate that although wall-clock time for a
+given algorithm follows the prediction of the model, the algorithms
+themselves are not I/O bound.  Even with synchronous (i.e., blocking)
+I/O, the time spent waiting for I/O is typically less than 50% of the
+total wall-clock time.  This behavior suggests that each parallel disk
+access gives rise to a given amount of computation and communication
+for a particular algorithm.
+
+<P>
+A sorting algorithm, for example, might repeatedly process
+"memoryloads" of data by performing a large parallel read, an
+in-memory sort across all processors, and a large parallel write.  The
+time to perform the in-memory sorts might exceed the combined times of
+the parallel reads and writes, although it is roughly the same among
+the memoryloads.  Typical algorithms developed for the PDM are similar
+to this hypothetical sorting algorithm in that they make repeated
+passes over the data and each pass repeatedly reads in a large amount
+of data, processes it, and writes out a large amount of data.
+Processing time (including communication) tends to be about the same
+each time for a given algorithm.  Of course it varies from algorithm
+to algorithm.
+
+<P>
+If these early observations continue to hold as we gain more
+experience in implementing algorithms for the PDM, we will draw the
+conclusion that the PDM's predictive power is helpful (for analyzing
+I/O time) but limited (by omitting computation and communication).
+
+<P>
+Note, however, a striking similarity between the BSP model and typical
+PDM algorithms: bulk processing.  In the BSP model, for example,
+communcation in a network of processors is considered to be the prime
+computational bottleneck; hence, a computation is organized as a
+sequence of rounds, where each round consists of each processor
+performing computations on its internal memory, followed by the
+sending and receiving of a limited number of messages.  Rounds and
+communication in BSP algorithms are like memoryload processing and
+I/O, respectively, in PDM algorithms.
+
+<P>
+The challenge, therefore, is to synthesize a coherent model that
+combines the best aspects of the PDM and BSP models to develop and
+analyze algorithms that use parallel I/O, computation, and
+communication.  Along with such a model, we need programming
+primitives to enable algorithm implementation under the model.  These
+primitives must be portable and have performance matching the model's
+requirements.
+
+<P>
+We view developing such a model as a challenge because we believe that
+it will be difficult to simultaneously satisfy the two requirements
+that it be realistic yet easy to use.  Our concern is that a realistic
+model may have so many parameters as to make it unusable.  The PDM,
+without considering processing, has four parameters: problem size,
+memory size, disk block size, and disk count.  The BSP model also has
+four parameters: problem size, processor count, latency of the
+network, and the "gap" time between consecutive messages in pipelined
+computations.  Thus, some natural questions to ask include the
+following:
+<UL>
+<LI>Can all these parameters be merged in some synthesis?  
+
+<LI>Is there a block size notion in BSP that might be consistent with
+the PDM'S block size?
+
+<LI>What is the right set of at most four or five important parameters?
+</UL>
+
+<P>
+In summary, we think that it would be valuable to propose a bridging
+parallel computational model that incorporates computation,
+communication and I/O in an accurate and easy to use manner.  We hope
+that discussions at the workshop will lead to such a model.
+
+<h2>References</h2>
+
+<dl>
+  <dt><a name="AlpernCaFeSe94"><b>
+      [Alpern et al. 1994]</b></a></dt>
+  <dd>Alpern, B., Carter, L., Feig, E., and Selker, T., 1994.
+      The Uniform Memory Hierarchy Model of Computation,
+      <em>Algorithmica</em>, 12:2/3, August and September 1994,
+      pages 72-109.
+
+  <p>
+  <dt><a name="CormenGo96"><b>
+      [Cormen Goodrich 1996]</b></a></dt> 
+  <dd>Cormen, T. H., and Goodrich, M. T., 1996.
+      <a href="http://www.cs.jhu.edu/~goodrich/pubs/io.html">
+       Position Statement</a>, 
+       Strategic Directions in Computing Research:   
+       Working Group on Storage I/O Issues in Large-Scale Computing,
+      <em><a
+      href="http://www.acm.org/surveys/">Computing Surveys</a></em>,
+      <b>28A</b>(4), December 1996,
+      <a href = "http://www.cs.jhu.edu/~goodrich/pubs/io.html">
+       http://www.cs.jhu.edu/~goodrich/pubs/io.html</a>.
+
+  <p>
+  <dt><a name="CormenHi96"><b>
+      [Cormen Hirschl 1996]</b></a></dt>
+  <dd>Cormen, T. H., and Hirschl, M., 1996.
+      Early Experiences in Evaluating the Parallel Disk Model with the
+      ViC* Implementation, <em>Parallel Computing</em>, to appear.  Also
+      available as Dartmouth College Computer Science Technical Report
+      TR96-293 at <a href="ftp://ftp.cs.dartmouth.edu/TR/TR96-293.ps.Z">
+      ftp://ftp.cs.dartmouth.edu/TR/TR96-293.ps.Z</a>
+
+  <p>
+  <dt><a name="CullerKaPaSaScSaSuEi93"><b>
+      [Culler et al. 1993]</b></a></dt>
+  <dd>Culler, D., Karp, R., Patterson, D., Sahay, A., Schauser, K. E.,
+      Santos, E., Subramonian, R., and von Eicken, T. 1993.
+      LogP: Towards a Realistic Model of Parallel Computation,
+      <em>Proceedings of the Fourth ACM SIGPLAN Symposium on Principles
+      and Practice of Parallel Programming</em>, May 1993, pages 1-12.
+
+  <p>
+  <dt><a name="Valiant90"><b>
+      [Valiant 1990]</b></a></dt> 
+  <dd>Valiant, L. G., 1990.
+      A Bridging Model for Parallel Computation,
+      <em>Communications of the ACM</em>, 
+      33:8, August 1990, pages 103-111.
+
+  <p>
+  <dt><a name="VitterSh94a"><b>
+      [Vitter Shriver 1994a]</b></a></dt>
+  <dd>Vitter, J. S., and Shriver, E. A. M., 1994.
+      Algorithms for Parallel Memory I: Two-level Memories,
+      <em>Algorithmica</em>,
+      12:2/3, August and September 1994, pages 110-147.
+
+  <p>
+  <dt><a name="VitterSh94b"><b>
+      [Vitter Shriver 1994b]</b></a></dt>
+  <dd>Vitter, J. S., and Shriver, E. A. M., 1994.
+      Algorithms for Parallel Memory II: Hierarchical Multilevel Memories,
+      <em>Algorithmica</em>,
+      12:2/3, August and September 1994, pages 148-169.
+
+</dl>
+
+
+<P>
+<hr>
+
+<P><a name="permissions-statement"><small>Permission to make digital
+or hard copies of part or all of this work for personal or classroom
+use is granted without fee provided that copies are not made or
+distributed for profit or commercial advantage and that copies bear
+this notice and the full citation on the first page.  Copyrights for
+components of this work owned by others than ACM must be honored.
+Abstracting with credit is permitted.  To copy otherwise, to
+republish, to post on servers, or to redistribute to lists, requires
+prior specific permission and/or a fee.  Request permissions from
+Publications Dept, ACM Inc., fax +1 (212) 869-0481, or
+<TT>permissions@acm.org</TT>.</small></P>
+
+
+<P>
+<hr>
+<!-- hhmts start -->
+Last modified: Mon Oct 21 19:18:04 EDT
+<!-- hhmts end -->
+<address><a href="http://www.ics.uci.edu/~goodrich/">Michael T.  Goodrich</a>
+</address>
+
+</BODY> </HTML>
+

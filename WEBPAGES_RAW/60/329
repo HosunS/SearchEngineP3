@@ -1,0 +1,85 @@
+// Persistence of Vision Ray Tracer Scene Description File
+// File: box-in-box.pov
+// Vers: 3
+// Desc: The largest cube that can be inscribed within another cube
+//       so that all the outer cube's faces are touched. (3D QTVR version)
+// Date: 19 Mar 1997
+// Auth: David Eppstein, UC Irvine Dept. Inf. & Comp. Sci.
+
+// ==== Standard POV-Ray Includes ====
+#include "colors.inc"	// Standard Color definitions
+#include "textures.inc"	// Standard Texture definitions
+
+// camera angle and object spin
+//   ()   * /   + -   !
+#declare increment = 6	// six deg/step looks smoother than qtvr-std 10
+#declare firstrow = 66	// start reasonably high
+#declare columns = 120/increment	// by sym we only need render 1/3 around
+#declare spin = increment*mod(clock,columns)*y
+#declare loft = (firstrow - increment*int(clock/columns))*x
+
+
+
+// Set a color of the background (sky)
+background { color <1,1,1> }
+
+// create a regular point light source
+light_source
+{
+  0*x // light's position (translated below)
+  color <2,2,2>
+  translate <-20, 10, -10>	// near x axis is safe from bad reflections?
+}
+
+// another light, fill, high up
+light_source
+{
+  0*x // light's position (translated below)
+  color <0.5,0.5,0.5>
+  translate <20, 40, -10>
+}
+
+
+camera
+{
+  location <0,0,-7>
+  right x
+  up y
+  look_at <0,0,0>
+  angle 30
+  rotate loft
+}//   ()   * /   + -   !
+
+#declare zrot = 180*atan2(sqrt(2),1)/pi
+
+
+// outer box
+// rotations carefully chosen to make main axis=y
+// (if only they were vector direction=axis, magnitude=rotation amount!)
+
+box
+{
+  <-1, -1, -1>  // one corner position <X1 Y1 Z1>
+  < 1,  1,  1>  // other corner position <X2 Y2 Z2>
+  rotate <0,45,zrot>
+  texture {
+	Glass
+	finish {
+		refraction 0	// turn bendiness off, its too confoozing
+		roughness 0.05 	// but make it possible to see the thing
+		specular 0.3	// turn down specular reflection
+	}
+  }
+  rotate spin
+}
+
+// inner box
+box
+{
+  <-.6, -.6, -.6>  // one corner position <X1 Y1 Z1>
+  < .6,  .6,  .6>  // other corner position <X2 Y2 Z2>
+  rotate <0,45,zrot>
+  rotate 60*y
+  rotate spin
+  texture { Sapphire_Agate }
+}

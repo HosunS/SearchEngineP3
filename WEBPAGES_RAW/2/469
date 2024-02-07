@@ -1,0 +1,276 @@
+<HTML>
+<HEAD>
+<TITLE>ICS 180, February 4, 1999</TITLE>
+<META name="Owner" value="eppstein">
+<META name="Reply-To" value="eppstein@ics.uci.edu">
+</HEAD><BODY>
+<IMG SRC="icslogo2.gif" WIDTH=472 HEIGHT=72 ALT=""><P>
+<A HREF="index.html">
+<H1>ICS 180, Winter 1999:<BR>
+Strategy and board game programming</H1></A>
+
+<H2>Lecture notes for February 4, 1999<BR>
+Which nodes to search?  Full-width vs. selective search</H2>
+
+Alpha-beta tells us how to search, but we still need to know when to
+expand a node (search its children) and when to just stop and call the
+evaluation function.
+
+
+<H3>The Horizon Effect</H3>
+
+The pseudo-code I've shown you so far searches every move out to a given 
+fixed depth (this depth is also known as the <I>horizon</I>.  Although this 
+can be quite effective at seeing tactical threats that could be carried out 
+within the horizon,
+it (obviously) can't detect threats that would take effect past the 
+horizon; for instance a depth-8 search (that is, a search four moves deep) 
+would likely not have much or any information about a forced checkmate in 
+five moves.  What it don't know, it can't defend against, and it would 
+simply ignore those long-term threats.  But this sort of fixed-depth 
+search can behave even worse when the position contains medium-depth 
+threats in which some bad outcome is forced to occur, but where some lines 
+have that outcome within the search horizon and some don't.  In that case, 
+the program can play horrible pointless moves in an attempt to delay the 
+bad outcome long enough that it can't be seen.  This phenomenon is known 
+as the <I>horizon effect</I>.
+
+<P>Here's an example.  In the following position, black's bishop is trapped 
+by the white pawns.  No matter what black does, the bishop will be taken 
+in a few moves; for instance the white rook could maneuver h2-h1-a1-a2 and 
+capture the bishop.  That sequence is 8 plys deep, and suppose that the 
+black program is searching to a depth of 8 plys.  Probably the best move 
+for black in the actual position is to trade off the bishop and pawns,
+e.g. bishop x pawn, pawn x bishop.
+In the remaining endgame, black's three connected passed pawns may be 
+enough to win or draw against the rook.
+But, a program searching 8 plys will likely instead move the black pawn 
+forwards, checking the white king.  White must respond (e.g. by taking the 
+pawn with his king), but that forced response delays the loss of the bishop 
+long enough that the program can't see it anymore, and thinks the bishop 
+is safe.  In fact, in this position, a fixed-depth program can continue 
+throwing away its pawns, delaying the bishop capture a few more moves but 
+probably causing the eventual loss of the game.
+
+<P><CENTER><IMG SRC="990204.gif" WIDTH=292 HEIGHT=292 ALT="horizon effect 
+example"></CENTER>
+
+One way to counter the horizon effect is to add knowledge to your program: 
+if it knows from the evaluation that the bishop is trapped, its search 
+won't try to delay the capture by throwing away pawns.
+Another is to make the search faster and deeper: the more levels your 
+program searches, the less likely you are to run across a situation like 
+this where it is possible to delay the loss of the bishop past the horizon.
+But the most effective general solution is to make the search depth more 
+flexible, so that the program searches deeper in the lines where a pawn is 
+being given away and less deep in other lines where it doesn't need the 
+depth.
+
+<H3>Brute Force and Selectivity</H3>
+
+<P>Shannon's original paper on computer chess listed two possible 
+strategies for adjusting the search depth of a game program.
+
+<P>The most obvious is what the pseudo-code I've shown you so far does:
+a full-width, brute force search to a fixed depth.  Just pass in a
+"depth" parameter
+to your program, decrement it by one for each level of search, and stop
+when it hits zero.  This has the advantage of seeing even wierd-looking
+lines of play, as long as they remain within the search horizon.
+But the high branching factor means that it doesn't search any line very 
+deeply (bachelor's degree: knows nothing about everything).
+And even worse, it falls prey to the horizon effect.
+Suppose, in chess, we have a program searching seven levels deep,
+
+<P>The other method suggested by Shannon was selective pruning:
+again search to some fixed depth, but to keep the branching factor down
+only search some of the children of each node (avoiding the "obviously
+bad" moves).  So, it can search much more deeply, but there are lines it
+completely doesn't see	(ph.d.: knows everything about nothing).
+Shannon thought this was a good idea because it's closer to how humans think.
+Turing used a variant of this idea, only searching capturing moves.
+More typically one might evaluate the children and only expand the
+<I>k</I> best of them where <I>k</I> is some parameter less than the
+true branching factor.
+	
+<P>Unfortunately, "obviously bad" moves are often not bad at all,
+but are brilliant sacrifices that win the game.  If you don't find one you
+should have made, you'll have to work harder and find some other way to win.
+Worse, if you don't see that your opponent is about to spring some such
+move sequence on you, you'll fall into the trap and lose.
+
+<P>Nowadays, neither of these ideas is used in its pure form.
+Instead, we use a synthesis of both: selective extension.
+We search all lines to some fixed depth, but then extend
+extend some lines deeper than that horizon.
+Sometimes we'll also do some pruning (beyond the safe pruning done by
+alpha-beta), but this is usually extremely conservative because it's too
+hard to pick out only the good moves;
+but we can sometimes pick out and ignore really bad moves.
+For games other than chess, with higher branching factors,
+it may be necessary to use more aggressive pruning techniques.
+
+<H3>When to extend?</H3>
+
+What is the point of extending?
+To get better (more accurate) evaluations.
+So, should extend
+<OL>
+<LI>when the current evaluation is likely to be inaccurate, or
+<LI>when the current line of play is a particularly important part of
+the overall game tree search
+</OL>
+(or some combination of both).
+
+<H3>Quiescence Search</H3>
+
+<LI>In chess or other games in which there are both capturing and 
+non-capturing moves (checkers, go, fanorona), if there are captures to be made,
+the evaluation will change greatly with each capture.
+
+<P><I>Quiescence search</I> is the idea of, after reaching the main
+search horizon, running a Turing-like search in which we only expand
+capturing moves (or sometimes, capturing and checking) moves.  For games
+other than chess, the main idea would be to only include moves which
+make large changes to the evaluation.  Such a search must also include
+"pass" moves in which we decide to stop capturing.
+So, each call to the evaluation function in the main alpha-beta search 
+would be replaced by the following, a slimmed down version of alpha-beta 
+that only searches capturing moves, and that allows the search to stop if 
+the current evaluation is already good enough for a fail high:
+
+<PRE>
+    // quiescence search
+    // call this from the main alphabeta search in place of eval()
+
+    quiesce(int alpha, int beta) {
+        int score = eval();
+        if (score >= beta) return score;
+        for (each capturing move m) {
+            make move m;
+            score = -quiesce(-beta,-alpha);
+            unmake move m;
+            if (score >= alpha) {
+                alpha = score;
+                if (score >= beta) break;
+            }
+        }
+        return score;
+    }
+</PRE>
+Some people also include checks to the king inside the quiescence search, 
+but you have to be careful: because there is no depth parameter, 
+quiescence can search a huge number of nodes.  Captures are naturally 
+limited (you can only perform 16 captures before you've run out of pieces 
+to capture) but checks can go on forever and cause an infinite recursion.
+
+<H3>Selective extensions</H3>
+
+If the position has been active in the recent past, this may be evidence 
+that further tactics are coming up, or that some of the previous moves 
+were delaying tactics that prevent us from seeing deeply enough to get a 
+good evaluation.
+So one often increases the search depth if the search passes through
+an "interesting" move such as a capture or a check.  In the alpha-beta pseudocode,
+this would be accomplished by replacing the depth-1 parameter to the
+recursive call to the search routine by the value
+depth-1+extension.  You have to be careful not to do this too often,
+though, or you could end up with a hugely expanded (even possibly
+infinite!) search tree.
+
+<P>One trick helps make sure this extension idea terminate:
+only extend by a fraction of a level.  Specifically, make the "depth"
+counter record some multiple of the number of levels you really want to
+search, say depth=levels*24.  Then, in recursive calls to alpha-beta
+search, pass a value of depth-24+extension.  If the extension is always
+strictly less than 24, the method is guaranteed to terminate, and you
+can choose which situations result in larger or smaller extensions.
+
+<P>It may also be useful to include within the evaluation function 
+knowledge about how difficult a position is to evaluate, and extend the 
+search on positions that are too difficult.  My program does this: the 
+program passes the current depth to the evaluation function.  If the 
+position is complicated, and the depth is close to zero, the evaluation 
+returns a special value telling the search to continue.  But if the depth 
+reaches a large negative number, the evaluation function always succeeds, 
+so that the search will eventually terminate.
+
+<H3>How to combine accuracy with importance?</H3>
+
+So far, we've just looked at trying to find the points at which the
+evaluation may be inaccurate.  But maybe we don't care if it's
+inaccurate for unimportant parts of the tree, but we really do care for
+nodes on the principal variation.  How do we take importance into
+account when performing selective extensions?
+
+<OL>
+<LI>Don't, let alpha-beta sort out importance and just extend based on 
+accuracy.
+
+<P><LI>Extend lines that are part of (or near) 
+the principal variation (e.g. singular extensions -- used in Deep Blue 
+and/or its predecessors -- if there is one move much better than others in 
+a position, extend the search on that move).
+
+<P><LI>Moving away from alpha-beta...
+conspiracy number search -- what is the minimum number of positions the 
+value of which would have to change to force program to make a different 
+move? Search those positions deeper.
+</OL>
+
+<H3>Null-move search</H3>
+
+This idea fits in with the general theme of the lecture, adjusting search 
+depth in appropriate circumstances, however it works in a different 
+direction.  Instead of extending the search in hard positions, we reduce 
+the search in easy positions.
+
+<P>The idea is based on a piece of knowledge about chess: it's very rare 
+(except in the endgame) for it to be a disadvantage to move.  Normally, if 
+it's your turn to move, there is something you can do to make your position 
+better.  Positions in which all possible moves make the position worse are 
+called "zugzwang" (German for move-compulsion), and normally only happen 
+in endgames.  In some other games, such as Go-Moku, zugzwang doesn't 
+happen at all.  So, if you changed the rules of chess to allow a "pass" 
+move, passing would usually be a mistake and the game wouldn't change much.
+
+<P>So, suppose you have a search node that you expect to fail high
+(i.e., alphabeta will return a score of at least beta).
+The idea of null-move search is to search the "pass" move <I>first</I>, 
+even though it's usually <I>not</I> the best move.  If the pass move fails 
+high, then the true best move is also likely to fail high, and you can 
+return beta right away rather than searching it.
+To make this even faster, the depth at which the passing move is searched 
+should be shallower than usual.
+
+<P>You should be careful: this heuristic changes the result of the search,
+and may cause you to miss some important lines of play.  You shouldn't use 
+null moves twice in a row (because then your search will degenerate to 
+just returning the evaluation), and you should be careful to only use it 
+in situations that are unlikely to be zugzwang.  In chess, that means only 
+positions with many pieces left.
+
+<PRE>
+    // alpha-beta search with null-move heuristic
+    alphabeta(int depth, int alpha, int beta) {
+        if (won game or depth <= 0) return score;
+        make passing move;
+        if (last move wasn't null && position is unlikely to be zugzwang &&
+            -alphabeta(depth-3, -beta, -beta+1) >= beta)
+          return beta;
+        for (each possible move m) {
+            make move m;
+            alpha = max(alpha, -alphabeta(depth-1, -beta, -alpha);
+            unmake move m;
+            if (alpha >= beta) break;
+        }
+        return alpha;
+    }
+</PRE>
+
+<P><HR>
+<A HREF="/~eppstein/">David Eppstein,
+<A HREF="/">Dept. Information & Computer Science</A>,
+<A HREF="http://www.uci.edu/">UC Irvine</A>,
+Monday, 01-Feb-1999 16:58:05 PST.
+</BODY></HTML>

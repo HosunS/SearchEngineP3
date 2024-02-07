@@ -1,0 +1,1011 @@
+				Recursion
+
+
+In this lecture we will discuss the concept of recursion and examine recursive
+functions that operate on integers, strings, and linked lists, learning common
+idioms for each.  When we cover linked lists, we will first examine functions
+operating on linked lists that do NOT change their structure, and then examine
+functions whose purpose is to CHANGE the structure of the linked list (add or
+remove values). We will study how to hand simulate such functions and the more
+important three rules for proving them correct.
+
+The concept of recursively defined (sometimes called inductively defined) data
+types and recursion is fundamental in many areas of computer science, and this
+concept should be discussed from many angles in many of your ICS classes; you
+should become comfortable with seeing and applying recursion. In addition, some
+programming languages (Lisp is the foremost example) use recursion (and also 
+decision-if) as their primary control structures: any iterative code can be
+written recursively. Even languages that are not primarily recursive all
+support recursion (and have since the late 1950s), because sometimes using
+recursion is the best way to write code to solve a problem. 
+
+C++ (and Java/Python) are not primarily recursive languages. Each has strong
+features for iterating through data (Python has the most powerful tools for such
+iteration, including generators; Java/C++ have slightly more restricted for-each
+loops). But, it is important that we learn how to write recursive code in C++
+too. Later in the quarter we will recursively define tree data structures, which
+generalize linear linked lists) and learn how to manipulate them both
+iteratively and recursively.
+
+Side-Note: Douglas Hofstadter's Pulitzer-prize winning book, "Godel, Escher,
+Bach" is an investigation of cognition, and commonly uses recursion and
+self-reference to illustrate the concepts it is discussing. This book is still
+very popular reading among computer scientists; you can buy used copies cheap.
+
+------------------------------------------------------------------------------
+
+Recursion vs Iteration
+
+Recursion is a programming technique in which a call to a function results in
+another call to that same function. In direct recursion, a call to a function
+appears in the function's body; in indirect/mutual recursion, the pattern is
+some function calls some other function ... which ultimately calls the first
+function. In ths simplest case, think of f calling g and g calling f: f and g
+are mutually recursive, with f calling f indirectly via calling g, and g
+calling g indirectly via calling f.
+
+For some data structures and problems, it is simpler to write recursive code
+than its iterative equivalent. In modern programming languages, recursive
+functions may run a bit slower (maybe 15%) than equivalent iterative functions,
+but this is not always the case (and sometimes there is no natural/simple
+iterative solution to a problem); in a typical application, this  time
+differences is insignificant (most of the time it takes a program to run will
+be taken up elsewhere anyway). Sometimes a programmer will write a simple
+recursive solution, and rewrite it iteratively (not always possible) if the
+time it is taking is significant, and the iterative solution can really run
+faster.
+
+We will begin by studying the form of general recursive functions; then apply
+this form to functions operating on int values, and then apply this form to
+functions operating on strings and linked lists. In all these cases, we will
+discuss how values of these types are recursively defined and discuss the
+"sizes" of the problem solved.
+
+We will start by looking at the general form of all recursive functions and try
+to gain an intuitive understanding of recursion and constrast it to iteration.
+Recursion is actually a more powerful control structure than iteration, and
+recursion applied to non-linear linked structures (like trees and graphs) is a
+very powerful programming technique.
+
+Imagine that you have to solve the problem of raising $100 for charity. Assume
+anyone you approach would be willing to contribute the smallest amount of money,
+a penny.
+
+Iterative Approach:
+  Visit 10,000 people and ask for a penny from each
+
+Recursive Approach:
+  If you are asked to contribute a penny, contribute it to whoever asked
+  Otherwise,
+    Visit 10 people: ask each to raise 1/10 the amount you were asked to raise
+    Combine the money they raise into bag
+    Give it to the person who asked you
+
+In the iterative version each subproblem is the same; raising a penny. In the
+recursive solution, subproblems get smaller and smaller until they reach the
+size of collecting a penny (they cannot get any smaller: this problem has the
+smallest size). All the recursive subproblems are similar (raising money), but
+they differ in the amount of money they must raise.
+
+
+------------------------------------------------------------------------------
+
+General form or all recursive functions
+
+The general form of a directly recursive function is
+
+Solve(Problem) {
+  if (Problem is minimal/not decomposable into a smaller problem: a base case)
+    solve Problem directly; i.e., without recursion
+  else {
+    (1) Decompose Problem into one or more SIMILAR,
+        STRICTLY SMALLER subproblems: SP1, SP2, ... , SPN
+
+    (2) Recursively call Solve (this function) on each smaller subproblem
+        (since they are similar): Solve(SP1), Solve(SP2),..., Solve(SPN)
+
+    (3) Combine the returned solutions to these smaller subproblems into a
+        solution that solves the original, larger Problem (tye one this
+        function call must solve)
+
+    (4) Return the solution to the original Problem
+  }
+} 
+
+
+------------------------------------------------------------------------------
+
+Simple Recursion in C++
+
+We will start by examining a recursive definition for the factorial function
+(e.g., 5! reads as "five factorial": ! is a postfix operator in mathematics)
+and then a recursive function that implements it.  The definition is directly
+recursive, because we define a larger factorial in terms of a smaller
+factorial. Note that the domain of the factorial function is the non-negative
+integers (also called the natural numbers), of which 0 is the smallest value.
+
+   0! = 1
+   N! = N*(N-1)!  for all N>0, 
+
+By this definition (and just substitution of equals for equals) we see that
+
+  5! = 5*4! = 5*4*3! = 5*4*3*2! = 5*4*3*2*1! = 5*4*3*2*1*0! = 5*4*3*2*1*1 = 120
+
+By the recursive definition, eventually all uses of the ! operator disappear
+(when we reach the base case, which is solved without recursion), and we are
+left with an expression that has all multiplication operators. The first
+definition below is a transliteration of the general code above.
+
+int factorial (int n) {
+  if (n == 0)				//Non-decomposable
+    return 1;
+  else {
+    int sp1        = n-1;	     //(1)Decompose Problem into one subproblem
+    int solved_sp1 = factorial(sp1); //(2)Solve subproblem
+    int solved_n   = n * solved_sp1; //(3)Solve Problem
+    return solved_n;                 //(4)Return Solution
+  }
+}
+
+We can simplify this code in C++ as follows.
+
+int factorial (int n) {
+  if (n==0)
+    return 1;
+  else 
+    return n*factorial(n-1);
+}
+
+This looks clean and closely mirrors the recursive mathematical description of 
+factorial. In fact, because of the simplicity of this particular recursive
+function, we can write an even simpler solution using a conditional expression;
+but I prefer the solution above, because it is more representative of other
+recursive solutions (to more complicated problems).
+
+int factorial (int n)
+{return (n==0 ? 1 : n*factorial(n-1));}
+
+Contrast this code with the iterative code that implements this same function
+(below). Note that the iterative code requires several state change operators
+while the recursive code does not. State change operators make it hard for us
+to think about the meaning of code (and makes it tough to prove that the code
+is correct too), and makes it hard for multi-core processors to coordinate in
+solving a problem. "Functional programming languages" are more amenable to be
+automatically parallelizable (can run more quickly on multi-core computers).
+You'll see more about this in later classes at UCI (e.g., in Concepts of
+Programming Languages).
+
+int factorial (int n) {
+  int answer = 1;
+  for (int i=1; i<=n; i++)
+    answer *= i;
+  return answer;
+}
+
+We can mimic factorial's recursive definition for a function that raises a
+number to an integer power. Note that the domain of n for this power function
+requires n to be a the non-negative integer.
+
+  A**0 = 1           (yes, this is even true when A=0)
+  A**N = A * A**N-1  for all N>0
+
+We can likewise translate this definition into a simple recursive C++ function.
+
+int power(int a, int n) {
+  if (n == 0)
+    return 1;
+  else
+    return a * power(a,n-1);
+
+By this definition (and just substitution of equals for equals) we see that
+calling power(a,n) requires n multiplications.
+
+   power(a,3) = a*power(a,2) = a*a*power(a,1) = a*a*a*power(a,0) = a*a*a*1
+
+
+Of course we could write this code iteratively as follows, which also requires
+n multiplications
+
+int power(int a, int n) {
+  int answer = 1;
+  for (int i=1; i<=n; ++i)
+     answer *= a;
+  return answer;
+}
+
+But there is a another way to compute power(a,n) recursively, shown below. This
+longer function requires between Log2 n and 2*Log2 n multiplications. Here Log2
+means the log function using a base of 2. Note Log2 1000 is about 10, and
+Log2 1,000,000 is about 20, Log2 1,000,000,000 is about 30): so, to compute
+power(a,1000) using the function below requires between 10 and 20
+multiplications (not the 1,000 multiplcations required by the original
+definitions -both recursive and iterative- of power).
+
+int power(int a, int n) {
+  if (n == 0)
+    return 1;
+  else if (n%2 == 1)        //is n odd
+    return a * power(a,n-1);  //yes, use standard defintion: n-1 is now even
+  else {
+    int temp = power(a,n/2);  //no (so n/2 is an integer with no truncation)
+    return temp*temp;
+  }
+
+Here we store temp once and then use its value, which is fine for recursive
+code (generally we can assign a variable a value, but we should never change
+the value stored in a variable). We could get rid of the local name temp by
+defining the simple function
+
+int square(int n)
+{return n*n;}
+
+and then calling it in the else clause, with the single line of code:
+
+   return square( power(a,n/2) )
+
+For one example
+  power(a,16) computes power(a,8) and returns its result with 1 more
+  multiplication; power(a,8) computes power(a,4) and returns its result with
+  1 more multiplication; power(a,4) computes power(a,2) and returns its
+  result with 1 more multiplication; power(a,2) computes power(a,1) and returns
+  its result with 1 more multiplication; power(a,1) computes a*power(a,0),
+  which requires 1 multiplication: computing power(a,0) requires 0
+  multiplications (it just retuns the value 1).
+
+  In all, power(a,16) requires just 5 multiplications, not 16. Note that this
+  function is NOT guaranteed to always use the minimum number of
+  multiplications. Here, power(a,15) uses 6  multiplications, but computing
+  x3 = x*x*x then x3*(square(square(x3))) requires only 5: see the topic
+  named "addition-chain exponentiation" if you are interested in what is
+  known about the minimimal number of multiplications for exponentiation.
+
+  Raising large integers (thousand of digits) to large power (ditto) is doable
+  only with a function like this one.
+
+We will prove that this function computes the correct answer later in this
+lecture. Truth be told, we can write this function iteratively, but it looks
+much more complicated and is much more complicated to analyze its behavior and
+prove it correct.
+
+------------------------------------------------------------------------------
+
+Hand Simulation
+
+Next, we will learn how to hand-simulate a recursive functions using a "tower of
+call frames" in which each resident in an apartment represents the call frame
+for a function: a call frame stores the parameters, local variables, and body
+of that function. In executing a call frame (in this case to compute factorial)
+an apartment resident is called by the resident above and calls the resident
+underneath, when a recursive call is needed (calling back the resident above
+when their answer is computed).
+
+While it is useful to be able to hand-simulate a recursive call, to better
+understand recursion, hand-smulation is not a good way to understand or debug
+recursive functions (the 3 proof rules discussed below are a better way). I
+will do this hand simulation in class, using the following form for computing
+factorial(5).
+
+       Factorial Towers
+       +---------------------------+
+       |   n int    return value   |
+       | +------+  +------------+  |
+       | |      |  |            |  |
+       | +------+  +------------+  |
+-------+---------------------------+--------
+       |   n int    return value   |
+       | +------+  +------------+  |
+       | |      |  |            |  |
+       | +------+  +------------+  |
+       +---------------------------+
+       |   n int    return value   |
+       | +------+  +------------+  |
+       | |      |  |            |  |
+       | +------+  +------------+  |
+       +---------------------------+
+       |   n int    return value   |
+       | +------+  +------------+  |
+       | |      |  |            |  |
+       | +------+  +------------+  |
+       +---------------------------+
+       |   n int    return value   |
+       | +------+  +------------+  |
+       | |      |  |            |  |
+       | +------+  +------------+  |
+       +---------------------------+
+       |   n int    return value   |
+       | +------+  +------------+  |
+       | |      |  |            |  |
+       | +------+  +------------+  |
+       +---------------------------+
+     
+                 ....
+
+------------------------------------------------------------------------------
+
+The 3 Proof Rules for Recursive Functions
+
+Now, we will learn how to verify that recursive functions are correct by three
+proof rules. Even more important than using these three rule to prove that an
+existing function is correct (to better understand it), we will use these
+same three proof rules to guide us when we synthesize a new recursive function.
+
+Note that in direct recursion, we say that the function "recurs", not that it
+"recurses". Recurses describes what happens when you bang your toe into a door
+the second time. Programmers who use the word recurse are not well educated.
+
+The three proof rules should be simple to apply in most cases. These rules
+mirror rules for proofs by induction in mathematics. Here we refer back to the
+Solve function: the general form of a recursive function.
+
+1) Prove that Solve computes (without recursion) the correct answer to any
+   minimal (base case) problem. Base cases are simple, so this should be easy.
+
+2) Prove that the argument to any recursive call of Solve, e.g. SP1..SPN in the
+   general code above, is strictly smaller (closer to the minimal/base case)
+   than the Problem from which the subproblems are created.
+
+   The notion of strictly smaller should be easy to understand for the 
+   recursive argument, so this should be easy. There are "standard" ways to
+   recur: ints get smaller by 1 or smaller by 1 digit (i.e., x/10 has one fewer
+   digit; Strings recur on a substring (fewer characters); linked lists recur on
+   x->next, which is a(nother) pointer to a linked list that is smaller by one
+   node (closer to the empty list, which is the typical base case for linked
+   lists); trees recur on  t->left and t->right (smaller subtrees of a root). 
+
+3) ASSUMING ALL RECURSIVE CALLS CORRECTLY SOLVE THEIR SMALLER SUBPROBLEMS -each
+   Solve(SPI)- prove that the code correctly combines these subproblem
+   solutions to solve the original Problem (the parameter of the general
+   function). This part should be easy, because we get to ASSUME something very
+   important and powerful: all subproblems are correctly solved.
+
+For example, for factorial we might state the proof as follows.
+
+1) The smallest argument for which factorial is defined is 0. This function
+   immediately recognizes this base case and returns 1, which is the correct
+   value, because the rules state 0! = 1.
+
+2) For any non-negative argument n != 0, the recursive call is on the argument
+   n-1 which is always smaller, closer to the base case of 0, than n.
+
+3) Assuming factorial(n-1) computes (n-1)! correctly, this function returns
+   n*factorial(n-1), so it returns n*(n-1)!. By the definition we know N! =
+   N*(N-1)! so the code correctly uses the solved subproblem (for n-1) to
+   produce a solution to the original problem (for n).
+
+Notice that the focus of such a proof is on ONE call of the function: the parts
+concern only the base case and the recursive case: and for the recursive case,
+we don't worry about more recursive calls, because we get to assume that any
+recursive calls (on smaller problems, closer to the base case) compute the
+correct answer without having to think about what happens deeper during the
+recursion.
+
+For a second example, here is a proof that fast-power function is correct (the
+code is duplicated from above):
+
+int power(int a, int n) {
+  if (n == 0)
+    return 1;
+  else if (n%2 == 1)        //is n odd
+    return a * power(a,n-1);  //yes, use standard defintion: n-1 is now even
+  else {
+    int temp = power(a,n/2);  //no (so n/2 is an integer with no truncation)
+    return temp*temp;
+  }
+
+1) The smallest power argument for which power is defined is 0. This
+   function immediately recognizes this base case and returns 1, which is the
+   correct value, because the rules state a**0! = 1.
+
+2) For any non-negative ODD argument n != 0, the recursive call on the argument
+   n-1 is always closer to the base case than n; for any non-negative EVEN
+   argument n != 0 (so examples are 2, 4, ...), the recursive call on the
+   argument n/2 is always closer to the base case than n: for large n, n/2 is
+   much closer to the base case than n-1, which is what gives this method its
+   speed.
+
+3) Assuming power(a,n-1) computes a**(n-1) correctly and power(a,n/2) computes
+   a**(n/2) correctly. If n is odd, this function returns a*power(a,n-1) which
+   is a*a**(n-1) which simplifies to a**n. So the code correctly uses the solved
+   subproblem (for n-1) to produce a solution to the original problem (for n).
+   Also, if n is even, this function returns power(a,n/2)**2 which is
+   (a**(n/2))**2, where n/2 is an integer, which simplifies to a**n. So the
+   code correctly uses the solved subproblem (for n/2) to produce a solution to
+   the original problem (for n). For example, with the even number 10:
+   (a**(10/2))**2 = (a**5)**2 =  a**10.
+
+Again, the focus of the proof is on one call of the function: the parts concern
+only the base case and the recursive case (now two cases, depending on whether
+n is odd or even): and for the recursive cases, we don't worry about more
+recursive calls, because we get to assume that any recursive calls (on smaller
+problems, closer to the base cases) compute the correct answer  without having
+to think about what happens during the recursion. In this function there are
+two ways to get closer to the base case, depending on whether n is odd or even.
+
+
+The Three Proof Rules are Necessary:
+
+What happens if we write factorial incorrectly? Will the proof rules fail. Yes,
+for any flawed definition, one will fail. Here are three examples (one failure
+for each proof rule).
+
+int factorial (int n) {
+  if (n == 0)
+    return 0;				//0! is not 0;
+  else
+    return n*factorial(n-1);
+}
+
+This factorial function violates the first proof rule. It returns 0 for the
+base case; since everything is multiplied by the base case, ultimately this
+function always multiplies by 0 and returns 0. Bar bet: you name the year and
+the baseball team, and I will tell you the product of all the final scores
+(last inning) for all the games they played that year. How do I do it and why
+don't I make this kind of bet on basketball teams?
+
+int factorial (int n) {
+  if (n == 0)
+    return 1;
+  else
+    return factorial(n+1)/(n+1);	//n+1 not closer to 0
+}
+
+This factorial function violates the second proof rule. It recurs on n+1, which
+is farther away from -not closer to- the base case. Although mathematically
+(n+1)!/(n+1) = (n+1)*n!/(n+1) = n! this function will continue calling
+factorial with ever-larger arguments: a runaway (or infinite) recursion.
+Actually, each recursive call takes up a bit of space (to store its argument
+-see the hand simulation, which requires binding an argument for each recursive
+call), so eventually memory will be exhausted and C++ will terminate with an
+error.
+
+int factorial (int n) {
+  if (n == 0)
+    return 1;
+  else
+    return n + factorial(n-1);		//n+(n-1)! is not n!
+}
+
+This factorial function violates the third proof rule. Even if we assume that
+factorial(n-1) computes the correct answer, this function returns n added to
+(not multiplied by) that value, so it does not return the correct answer. In
+fact, it returns one more than the sum of all the integer from 1 to n (because
+for 0 it returns 1) not the product of these numbers.
+
+In summary, each of these functions violates a proof rule and therefore doesn't
+always return the correct value. The first function always returns the wrong
+value; the second function never returns a value; the third function returns
+the correct value, but only for the the base case.
+
+
+The Three Proof Rules are Sufficient:
+
+We can actually prove that these proof rules are correct! Here is the proof.
+This is not simple to understand, but it is short, so I will write the proof
+here and let you think about it (and reread it a dozen times if you need to).
+
+Assume that we have correctly proven that these three proof rules are correct
+for some recursive function f. And assume that we assert that the function is
+not correct. We will show that these two assertions lead to a contradiction: if
+f is not correct, then there must be some problem that it does not correctly
+solve. And, if there is at least one problem that f does not correctly solve,
+there must be a SMALLEST problem that it does not correctly solve: call this
+smallest unsolvable problem p.
+
+Because of proof rule (1) we know that p cannot be the base case, because we
+have proven f solves base cases correctly. So, f solves p by recursion. To do
+so it first recursively solves a problem smaller than p: we know by proof rule
+(2) that it always recurs on a smaller problem; and we know f correctly solves
+this smaller problem correctly, because p, by definition, is the smallest
+problem that f solves incorrectly. But we also know by proof (3) that if f
+recurs and correctly solves a smaller problem (as it does for p), it will
+correctly solve the original/bigger problem, p. Therefore, it is impossible to
+find a smallest problem that f incorrectly solves; so, f must solve all
+problems correctly.
+
+Well, that is how the proof goes.
+
+------------------------------------------------------------------------------
+
+Mathematics Recursively
+
+We can construct all the standard mathematical and relational operators on
+natural numbers (integers >= 0) given just three functions and if/recursion. We
+can recursively define the natural numbers as:
+
+   0 is the smallest natural number
+   for any natural number n, s(n) (the successor of n: n+1) is a natural number
+
+Now we define three simple functions z(ero), p(redecessor), aand s(uccessor).
+
+bool z(int n)		// z(n) returns whether or not n is 0
+{return n == 0;}
+
+int s(int n)		// s(n) returns the successor to n (n+1)
+{return n+1;}
+
+int p(int n) {		// p(n) returns the predecessor of n, if one exists
+  if (!z(n))		// if n == 0, it has no predecessor
+    return n-1;
+  else
+    throw Exception("p: cannot compute predecessor of 0");
+}
+
+Note we should be able to prove/argue/understand the following equivalences:
+
+z(s(n)) is always false: the successor of any number is never 0
+p(s(n)) is always n: predecessor is the inverse function of successor
+s(p(n)) is n, but only if n != 0 (otherwise p(n) throws an exception)
+           successor is the inverse function of predecessor, so long as
+           the predecessor exists (p(0) does not exist).
+
+Given these functions, we can define functions for all arithmetic (+ - * / **)
+and relational ( == <... and all the other relational) operators. For example
+
+int sum(int a, int b) {
+  if( z(a) )			# a == 0
+    return b;			# return b: 0 + b = b
+  else      			# a != 0
+    return sum( p(a), s(b) );	# return (a-1)+(b+1) = a+b = sum(a,b)
+}
+
+Proof of correctness
+
+1) The smallest first argument for which addition is defined is 0. This function
+   immediately recognizes this base case and returns b, which is the correct
+   answer: 0+b = b.
+
+2) For any non-negative argument a != 0, the recursive call is on the argument
+   p(a) which is always closer to the base case than a.
+
+3) Assuming sum(p(a),s(b)) computes (a-1)+(b+1) correctly, this function returns
+   that answer, so it returns (a-1)+(b+1) = a+b = sum(a,b).
+
+Another way to define this function is as follows (notice that the s function
+here is applied to the recursive call, not to one of its arguments as is the
+code above)
+
+int sum(int a, int b) {
+  if( z(a))			# a == 0
+    return b;			# return b: 0 + b = b
+  else      			# a != 0, so can call p(a)
+    return s (sum( p(a), b);	# return (a-1)+(b) + 1 = a+b = sum(a,b)
+}
+
+We can also use the 3 proof rules to prove this function correctly computes the
+sum of any two non-negative integers.
+
+We can similarly define the mult function, multiplying by repeated addition.
+Assuming sum is correct...
+
+int mult(int a, int b) {
+  if ( z(a) )			# a = 0
+    return 0;			# return 0: 0*b = 0
+  else      			# a != 0, so can call p(a)
+    return sum(b, mult(p(a),b)) # return b+((a-1)*b) = b+a*b-b = a*b = mult(a,b)
+
+Switching from arithmetic to relational operators....
+
+bool equal(int a,int b) {
+  if (z(a) || z(b))		# a = 0 or b = 0 (either == 0)
+    return z(a) && z(b);	# return true (if both == 0) false (if one != 0)
+  else      			# a != 0 and b != 0, so can call p(a) and p(b)
+    return equal(p(a),p(b));	# return a-1 == b-1 which is the same as a == b
+
+bool less_than(int a,int b) {
+  if (z(a))	   		# a = 0
+    return !z(b);		# return true (if b != 0): 0 < anything but 0
+  else if z(b) 			# a != 0 and b == 0
+    return false;               # return false; nothing < 0
+  else      			# a != 0 and b != 0, so can call p(a) and p(b)
+    return less_than(p(a),p(b));# return a-1 < b-1 which is the same as a < b
+
+We also might find it useful to do a hand simulation of these functions, with
+the two parameters a and b stored in each "apartment" and passed as arguments.
+ 
+The right way to illustrate all this mathematics is to write a class Natural,
+with these functions, and then overload/define operator+ etc. for all the 
+operators. I just didn't have the time to do that now.
+
+------------------------------------------------------------------------------
+
+Synthesizing a recursive string function
+
+We can define strings recursively:
+  "" is the smallest string
+  a character concatenated to the front of a string is a string;
+    so "a" is really 'a' concatenated on the front of the empty string "",
+    and "ba" is 'b' concatenated on the front of the string (see above) "a",...
+    all strings can be constructed as catenations of characters to smaller
+    strings (except the empty string).
+
+Let's use these proof rules to write a reciple for synthesizing (and therefore
+proving correct as we are writing them) a few recursive functions that process
+strings. Here is our approach:
+
+(1) Find the base (non-decomposable) case(s)
+    Write the code that detects the base case and returns the correct answer
+      for it, without using recursion
+
+(2) Assume that we can decompose all non base-case problems and then solve
+      these smaller subproblems via recursion
+    Choose (requires some ingenuity) the decomposition; it should be "natural"
+
+(3) Write code that combines these solved subproblems (often there is just one)
+      to solve the problem specified by the parameter
+
+We can use these rules to synthesize a function that reverses a string. We start
+with
+
+std::string reverse(std::string s)
+
+(1) Please take time to think about the base case: the smallest string. Most
+students will think that a single-character string is the smallest, when in
+fact a zero-character string (the empty string) is smallest. It has been my
+experience that more students screw-up on the base case than the recursive case.
+Once we know the smallest string is the empty string, we need to detect it and
+return the correct result without recursion: the reverse of an empty string is
+an empty string. If we chose a 1-character string as the base case, then the
+function would not work correctly for an empty string.
+
+std::string reverse(std::string s) {
+  if (s == "")
+    return "";
+  else{
+    Recur to solve a smaller problem
+    Use the solution of the smaller problem to solve the original problem
+  }
+}
+
+We can guess the form of the recursion as reverse(s.substr(1)) note that
+s.substr(1) computes a string with all characters but the one at index 0: all
+the characters after the first. We are guaranteed to be calling substr on only
+non-empty strings (those whose answer is not computed by the base case), so
+s.substr(1) will always be a smaller string. We get to assume that the
+recursive call correctly returns the reverse of the string that contains all
+characters but the first.
+
+std::string reverse(std::string s) {
+  if (s == "")
+    return "";
+  else
+    Use the solution of reverse(s.substr(1)) to solve the original problem
+}
+
+Now, think about an example. if we called reverse("abcd") we get to assume that
+the recursive call works: so reverse(s.substr(1)) is computing reverse("bcd")
+which we get to assume returns "dcb"). How do we use the solution of this
+subproblem to solve the original problem, which must return "dcba"? We need to
+concatenate 'a' (the first character, at s[0]) to the end of the reverse of all
+the other characters: "dcb" + 'a', which evaluates to "dbca", the reverse of
+all the characters in the parameter string. Generally we write this function as
+
+std::string reverse(std::string s) {
+  if (s == "")
+    return "";
+  else
+    return reverse(s.substr(1)) + s[0];
+}
+
+We have now written this function by ensuring the three proof rules are
+satisfied, so we dont' have to prove them; note that 
+
+(1) the reverse of the smallest string (empty) is computed/returned correctly
+
+(2) the recursive call is on a string argument smaller than s
+    (all the characters from index 1 to the end, skipping the character at
+    index 0, and therefore a string with one fewer characters)
+
+(3) ASSUMING THE RECURSIVE CALL WORKS CORRECTLY FOR THE SMALLER STRING, then
+    by concatenating the first character on the end of the solution to the
+    smaller problem, we have correctly reversed the entire string (solving the
+    problem for the parameter).
+
+In fact, we can use a conditional expression to rewrite this simple code as a
+single line as well.
+
+std::string reverse(std::string s)
+{return (s == "" ? "" : reverse(s.substr(1)) + s[0]);}
+
+It is not always possible to directly/simply guess the form of recursion, but
+the standard ways should be tried first.
+
+------------------------------------------------------------------------------
+
+Recursion on Linked Lists (Queries/Accessors)
+
+Linked lists have a natural, recursive definition:
+
+  1) An empty list (the smallest linked list) is nullptr 
+
+  2) Any non-empty list is a pointer to an object (from class LN) whose next
+     instance variable points to some smaller linked list (one fewer LN objects)
+     either empty or not
+
+Using this defintion as a guide, we can often write linked-list processing code
+recursively. This definition suggests an idiom for writing recursive functions,
+treating an empty list as the base case. We start our discussion with a
+function that recursively computes the length of any linked list (the number of
+LN objects it contains), using the standard recursive form and the empty base
+case:
+
+template<class T>
+int length (LN<T>* l) {
+  if (l == nullptr)
+    return 0;
+  else
+    return 1 + length(l->next);
+}
+
+This function has an iterative version that is just as simple, although it does
+involve straightforward state changes to the local variables count and p. But
+the check == nullptr, adding one to a value, moving the cursor to the next LN
+appear in some form in each function.
+
+template<class T>
+int length (LN<T>* l) {
+  int count = 0;
+  for (LN<T>* p = l; p != nullptr; p=p->next)
+      ++count;
+   return count;
+}
+
+A previous note shows some simple variants of functions that iteratively process
+all the values in a list: to sum up all the values and to display all the values
+of a list on std::cout (separated by spaces). Here are there recursive versions.
+
+template<class T>
+int sum(LN<T>* l) {
+  if (l == nullptr)
+    return 0;
+  else
+    return l->value + sum(l->next);
+}
+
+template<class T>
+void display(LN<T>* l)
+  if (l == nullptr)
+     ;                   //Display an empty list as nothing, not nullptr
+  else{
+    std::cout << l->value << " ";
+    display(l->next);
+  }
+}
+
+What is interesting about this function is that a small change to the code
+(reversing the order of std::cout << and the recursive call in the recursive
+case) leads to a big change in what the function does: it displays all the
+values from the linked list, but in the REVERSE order.
+
+This is a task that we cannot do easily iteratively. The best we can do
+iteratively is reverse the list, then display it, then reverse it again (to get
+back to the original list). Another option is to push all the values in a stack
+and then empty the stack, printing the values last to first. Contrast this with
+a hand-simulation of this code, which uses the call-frame stack to get the job
+done in a similar way, but with no explicit stack or stack operations.
+
+Here is the recursive code and a proof that it display all list values in the
+reverse order.
+
+template<class T>
+void display(LN<T>* l)
+  if (l == nullptr)
+     ;					//Do nothing, explicitly
+  else{
+    display(l->next);			//These lines 
+    std::cout << l->value << " ";	//are reversed
+  }
+}
+
+1) The smallest argument for which display is defined is an empty list. This
+   function immediately recognizes this base case and returns, which correctly
+   prints all the values in an empty list (there are none) in the reverse order.
+
+2) For any non-nullptr argument l, the recursive call is on the argument
+   l->next which is always closer to the base case than l: itis a list with
+   one fewer LN objects..
+
+3) Assuming display(l->next) correctly prints the values in a linked list in
+   the reverse order, display(l) prints those values followed by the first
+   value on the list (i.e., the first value is printed last), which means it
+   prints all values in the linked  list l in reverse order.
+
+The following code searches for a value in a linked list and returns a pointer
+to the first LN storing its values, if there is one (or returns nullptr
+otherwise).
+
+template<class T>
+LN<T>* find (LN<T>* l, T to_find) {
+  if (l == nullptr)
+    return nulltpr;
+  else if (l->value == to_find)
+    return l;
+  else
+    return find(l->next, to_find);
+}
+
+We can simplify this code a bit as follows combining the nullptr and found
+cases (using short circuite evaluation to ensure l->value is legal):
+
+template<class T>
+LN<T>* find (LN<T>* l, T to_find) {
+  if (l == nullptr || l->value == to_find)
+    return l;
+  else
+    return find(l->next, to_find);
+}
+
+Here is a simple and elegant recursive function that makes a copy of a linked 
+ist.
+
+template<class T>
+LN<T>*  copy (LN<T>* l) {
+  if (l == nullptr)
+    return nullptr;
+  else
+    return new LN<T>(l->value, copy(l->next));
+}
+
+1) The smallest argument for which copy is defined is an empty list. This
+   function immediately recognizes this base case and returns nullptr, which
+   correctly returns a copy of all the values in an empty list.
+
+2) For any non-nullptr argument l, the recursive call is on the argument
+   l->next which is always closer to the base case than l: it is a list with
+   one fewer LN objects..
+
+3) Assuming copy(l->next) correctly returns a pointer to a copy of all the LN
+   objects in l after the first, new LN<T>(l->value, copy(l->next)); uses this
+   result to return a pointer to a copy of the first LN object on the linked
+   list l, whose next instance variable points to a copy of all LN objects
+   after the first: so this function returns a copy of all LN objects in l.
+
+Contrast this with the iterative function that we used previously for copying.
+The best/fastest iterative code for this function is not so simple (or easy to
+understand), although getting used to reading recursive functions does take a
+bit of time. Note that the complexity of both functions is O(N): N iterations
+vs. N recursive calls. There are more variables and complex state changes in
+the iterative code.
+
+Next we will look at a function that recurs on two linked lists: it determines
+whether the two linked lists are "equal" (have the same number of nodes, each
+storing the same values, in the same order). Note that this version DOESN'T
+compute the length of either list first: it recurs down both lists so long as
+each contains another value to check for equality. There are four cases (3 of
+which are base cases, allowing an immediate answer to be returned):
+
+                        Linked list l2
+                  nullptr      non-nullptr
+                 +----------+------------+
+    nullptr      |  equal   |  not equal |
+Linked list l1   +----------+------------+
+    non-nullptr  | not equal| check/recur|
+                 +----------+------------+
+
+So, if either linked list is nullptr (or both are nullptr), we can compute the
+answer immediately: the lists are equal only if both are nullptr; if one is
+nullptr and one isn't nullptr, then the lists cannot be equal (they have a
+different number of nodes). This handles 3 of the 4 possibilties in the
+recursive code.
+
+Otherwise (if both linked lists have at least one node) we check the first
+values in these nodes for equality (since  both lists are NOT nullptr, both
+have first values), and if they are equal, we must also check for equality for
+the rest of the nodes in the linked lists; if they are not equal, the linked
+lists are not equal and we don't need to do any further computation.
+
+There are many ways to code the check the nullptr-ness of one list. For example,
+we can very explicitly write
+
+    if (l1 == nullptr &&  l2 == nullptr)
+      return true;
+    if (l1 == nullptr && l2 != nullptr)
+      return false;
+    if (l1 != nullptr && l2 == nullptr)
+      return false;
+
+which tests each of these three cases separately. It is equivalent (try all 3
+cases) to the shorter (but less obvious)
+
+    //Returns a value if either l1 or l2 is nullptr
+    if (l1 == nullptr)
+      return l2 == nullptr;
+    if (l2 == nullptr)
+      return false; //if got here because l1 != nullptr, but l2 == nullptr
+
+Here is how I wrote this function (with one if for the 3 base cases)
+
+template<class T>
+bool equals (LN<T>* l1, LN<T>* l2) {
+  if (l1 == nullptr || l2 == nullptr)        //if either is nullptr, return true
+    return l1 == nullptr && l2 == nullptr;   // if and only if both are 
+  else
+    return l1->value == l2->value  &&  equals(l1->next,l2->next);
+}
+
+Notice because of the short-circuit property of of &&, if at any time
+l1.value == l2.value returns false, there will be no more recursion,
+because &&, when its first argument is false, doesn't evaluate its second
+argument -doesn't perform the recursive call (because whether it is true or
+false, the result of false && anything is false).
+
+
+------------------------------------------------------------------------------
+
+Recursion on Linked Lists (Commands/Mutators)
+
+Now we will show and briefly discuss recursive add_rear/remove, first without
+reference parameters, then with reference parameters (which simplify the code,
+as it did with iterative implementations of these functions). The first of these
+functions are called like x = add_rear(x,some_value); or
+x = remove(x,some_value); each returns a reference to a linked list that can
+have been altered.
+
+template<class T>
+LN<T>* add_rear(LN<T>* l, T value) {
+  if (l == nullptr)
+    return new LN<T>(value);
+  else {
+    l->next = add_rear(l->next,value);
+    return l;
+  }
+}
+
+template<class T>
+LN<T>* remove (LN<T>* l, T to_remove) {
+  if (l == nullptr)
+    return nullptr;                       //not present
+  else if(l->value == to_remove) {
+    LN<T>* rest_of_list = l->next;
+    delete l;
+    return rest_of_list;
+  }else{
+    l->next = remove(l->next,to_remove);
+    return l;
+  }
+}
+
+Note the code
+
+  l->next = remove(l->next,to_remove);
+  return l;
+
+keeps the first node in the returned linked list (by returning l, the pointer
+to it) but first ensures that the nodes in the linked list after it (by
+storing into l.next) do not store the first occurrence of to_remove (i.e., that
+node, if present, is removed). I admit this is a bit subtle, but it appears in
+the SAME form in add_rear.
+
+Finally, we can simplify these functions using reference parameters with
+recursive calls.  These functions are called like add_rear(x,some_value); or
+remove(x,some_value).
+
+template<class T>
+void add_rear(LN<T>*& l, T value) {
+  if (l == nullptr)
+    l = new LN<T>(value);
+  else
+    add_rear(l->next,value);
+}
+
+Here each recursive call to add_rear has its parameter l referenced to the
+pointer to the first node in the list or to some next instance variable;
+eventually (the last call for a non-empty list) it is referenced to the next in
+the last LN<T> in linked list (storing nullptr) and udpated to store a pointer
+to a new LN<T>.
+
+template<class T>
+void remove (LN<T>*& l, T to_remove) {
+  if (l == nullptr)
+    return;                          //not present
+  else if(l->value != to_remove)     //not here
+    remove(l->next,to_remove);
+  else{				     
+    LN<T>* to_delete = l;	     //remove one
+    l = l->next;
+    delete to_delete;	             //must come after l = l->next
+  }
+}
+
+The picture appearing with this lecture shows a hand simulation of how the code
+above removes the first occurrence of to_remove from a linked list.
+

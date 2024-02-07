@@ -1,0 +1,731 @@
+				if Statements
+
+
+Statements in Python are like complete imperative sentences in English: each
+commands Python to perform some action. Just as we said that Python evaluates
+expressions, we say that Python executes statements. We already have studied
+the Python assignment_statement and import_statement: both bind names to objects
+(and even introduce names into the name space of their module, if they is not
+already there). A function_call and method_call are also statements: typically
+the kinds of functions that we call as statements are commands that have an
+effect but return None as a value: the canonical example is the print function.
+
+We will classify many statements as control structures: such statements control
+(conditionally/by repetition) the execution of other statements. They may even
+control other control structures: statements can contain statements just as
+expressions can contain other expressions.
+
+The lecture covers how Python makes decisions: it uses boolean expressions to
+decide whether to execute certain blocks of other statements. We will learn
+about blocks and explore their use when discussing if statements, and then use
+blocks in many other kinds of statements (including in the definitions of
+functions). Blocks are all about indentation, so you will build knowledge about
+blocks on your knowlege of the indent/dedent tokens. Python is unique among
+the "popular" programming languages in its use of indentation to indicate
+blocks.
+
+In later lectures we will begin learning about about Python's for loop iterator
+(definite iteration), while loops (indefinite iteration, including discussion
+of the break_statement), and try/except statement (which allows us to handle
+raised exceptions that we have started to learn about). When we get this far,
+we will learn how to use Python's while and try/except statements to write the
+equivalent of the for loop iterator, which will help us understand all these
+language features better.
+
+We can summarize our upcomming study with the following EBNF rule, showing the
+alternatives for Python statements that we will learn.
+
+  statement <= assignment_statement |
+               import_statement     |
+	       function_call	    |
+	       method_call	    |
+	       if_statement         |
+	       for_statement	    |
+	       while_statement	    |
+	       break_statement	    |
+	       try_except_statement
+
+We have already discussed the form and meaning of the assignment_statement,
+import_statement, function_call, and method_call. We will soon explore the
+form and meaning of the following control structures in detail.
+
+ block     : execute a sequence of statements in order
+ if        : decide whether/which block to execute
+ for loop  : repeatedly execute a block (with values chosen from an iterable)
+ while loop: repeatedly execute a block until a boolean condition is False
+ break     : terminate execution of any loop (for or while)
+ try/except: execute a block; if an exception is raised, handle it by executing
+             an alternative block
+
+Finally, we will begin discussing two analysis tools: hand simulation via trace
+tables, and statement/block boxing (which is the statement equivalent of oval
+diagrams for expressions). 
+
+------------------------------------------------------------------------------
+
+Blocks
+
+block <= statement
+        {statement
+        }
+
+A block is a sequence of one or more statements (any of the ones chosen from
+the EBNF rule above, once we learn each of them). What this EBNF rule cannot
+show, but we will describe, is that all these statements must have the same
+indentation: an indent token marks the start of a new block, and a dedent token
+marks the end of the current block.
+
+Semantically we execute a block by executing, in sequence, each of its
+statements. So the order in which statements appear in a block is exactly the
+order tha Python will execute them. The order of statements in a block is
+sometimes mandated by their interdependencies: one statement might have to
+finish before another one can start.
+
+So, we can now tell a bit more of the truth about modules/scripts: each
+module/script is a block of statements. Recall the droptime module (shown here
+without comments for brevity):
+
+------------------------------
+import prompt
+import math
+
+height  = prompt.for_float('Enter height of drop (in meters)')
+gravity = prompt.for_float('Enter gravitational acceleration (in meters/sec/sec)')
+
+time = math.sqrt(2.*height/gravity)
+
+print('Drop time =',time,'secs')
+------------------------------
+
+First, remember that all the names from the builtins module are imported
+(relevant here is the print function). The first two statements in this block
+import the prompt and math names, binding them to these library modules (which
+contain the functions for_float and sqrt, respectivey). The second two
+statements assign the names height and gravity to float value objects entered by
+the user. The fifth statement assigns to the name time the float value object
+computed by the expression math.sqrt(2.*height/gravity). The final statement
+is a function call that prints the computed value (Python does nothing with the
+value it returns: None). As stated above, Python executes these statements in
+this order; of course, if we had put the print before the calculation of time,
+Python would have raised an exception because time would not exist as a name
+whose value object could be printed. So order is important.
+
+------------------------------------------------------------------------------
+
+Hand Simulation:
+
+As programmers, we must be able to analyze our programs to verify that they are
+correct, or detect where bugs occur (the hard part) and fix them (an easier
+part). The most important way to analyze code is to be able to hand simulate it.
+The "input" to a hand simulation: 
+
+  (1) Names and the value objects they are bound to initially
+      (the initial state)
+  (2) A block  (a sequence of statements)
+  (3) Values that the user enters to prompts on the console (if needed)
+
+The "output" to a hand simulation:
+  (1) Names and the value objects they are bound to finally, and the contents
+      of the console (called the final state)
+
+During a hand simulation we construct a trace table of state-changes for each
+statement executed in the block of code; these include changes to the binding of
+names and changes to the state of the console (what input/output the program
+performs).
+
+Note we could use the current mechanism we know for hand simulating names in
+modules (labeled names, boxes, arrow, labeled ovals), but it would be too
+cumbersome and show too much detail. It is important that we know exactly what
+is going on, and can produce such diagrams, but we can abbreviate this
+information in our trace tables, which allows us to focus on the most important
+aspects of executing statements.
+
+Here is a simple example (no input/output) of such a trace table. Assume that
+intitially x refers to the object 5 and y refers to the object 8, and the block
+to execute is
+
+x = y
+y = x
+
+If beginning students are asked to predict what the code does, the most common
+response is that it swaps the values in x and y (it certainly looks like it
+does). Let's see what really happens using a trace table (note that a table
+cell shows the value bound to a name after Python executes the statement on 
+its line).
+
+Statement      |  x  |  y  |  Console
+---------------+-----+-----+------------
+Initial States |  5  |  8  |
+x = y          |  8  |     |	 	 
+y = x          |     |  8  |
+
+On any given line, we find the current binding of a name on that line (it
+just changed) or the first one we find by looking upward from there in its
+column.
+
+So, we see that the values initially bound to the names are not swapped, but
+that y's initial value ends up being bound to both x and y. In some sense, the
+simplest thing to do with two names is to exchange their values; yet the
+intuitive way to write code for this task is incorrect. Don't gloss over this
+observation, because it is very important. The kind of reasoning a programmer
+does about state changes in code over time is very different from the kind of
+reasoning a mathematician does about equations.
+
+One correct way to swap the values stored in two names is shown below, along
+with a hand simulation illustrating its correctness (using the same initial
+state).
+
+Statement      |  x  |  y  | x_init |  Console
+---------------+-----+-----+--------+-----------
+Initial States |  5  |  8  |        |
+x_init = x     |     |     |   5    |
+x = y          |  8  |     |        |
+y = x_init     |  8  |  5  |        |
+
+Note how x_init is shown as not existing as a name initially. But x_init plays a
+crucial part in the computation, while Python is executing the statements in
+the block that it is declared in.
+
+***Aside, we can accomplish this task in Python much more simply by writing
+   x,y = y,x but we need to learn about tuples to understand this code,
+   and generalize the assignment_statement EBNF rule to allow any number
+   of names on the left hand side. We will get there soon.
+
+As a final example, let's examine the trace table for a block that does I/O
+too. Here there are no names in the initial state: the block to execute is
+as follows (we assume the prompt module is imported and are concerned only with
+the names below
+
+x = prompt.for_float('Enter x')
+y = x**3
+print(x,'**3 =',y)
+
+
+Finally, when prompted, the user will enter a 5.1 on the console.
+Statement                       |      x      |      y      |  Console
+--------------------------------+-------------+-------------+------------
+Initial States                  |             |             | 
+x = prompt.for_float('Enter x') |     5.1     |             |  Enter x: 5.1
+y = x**3                        |             |   132.651   |
+print(x,'**3 =',y)              |             |             |  5.1 **3 = 132.651
+
+Here the Console column shows what is on each line (on the first line, the
+prompt and the value that the user enters; on the second line the answer). These
+trace tables are certainly a lot of work for such a simple example; but if you
+can easily write such trace tables, you can use them to debug code that has
+subtle errors.
+
+------------------------------------------------------------------------------
+
+The if_statement
+
+The if statement allows us to tell Python under what conidition to execute a
+statement, or how to select which of many statements to execute: it uses
+boolean expression(s) to make the decision. There are three different forms of
+the if statement that have names: if, if/else, and cascaded if (using elif and
+possible else). Note that if, elif, and else are all keywords in Python (as with
+import, we cannot use them as names that bind to values): we will now learn
+their meaning. Notice also the placement of the ':' delimiter, which is
+critical in if statements. A ':' is always followed by an indented block of one
+or more statements.
+
+We will show all forms of the if statement in one complicated EBNF rule (which
+form depends on the number of repetitions -0 or more- and the option -included
+or discarded).
+
+Note that the two-dimensional form of control structures is important, as it was
+for block. The blocksmust be indented at least 1 more space than the if, elif,
+and else keywords, but the standard identing in Python is 4 extra spaces.
+
+if_statement <= if expression:
+                    block
+               {elif expression:
+                    block
+               }[else:
+                    block]
+
+As a syntax constraint, expression must result in a boolean value.
+
+------------------------------
+
+Let's first look at what we call an if statement, which according to the EBNF
+use 0 repetitions and discards the option. So, it looks simply like
+
+if expression:
+    block
+
+Two if statement examples are
+
+if x < 0:
+    x = -x
+
+if my_number == roulette_number:
+    my_wins  += 1
+    my_purse += stakes
+
+Semantically, Python executes an if statement as follows
+
+  (1) Evaluate the expression (True or False)
+  (2) If it is True, execute the block after the :
+  (3) If it is False, skip the block after the :
+
+So, if the expression evaluates to True in the second example, Python executes
+the block; it executes the block by sequentially executing the two statements
+that comprise the block. If the expression evaluates to False in the second
+example, Python skips the block (executing neither of its statements). So, an
+if/else in Python is must like a option in EBNF.
+
+How does Python know where the end of the block is? The next line after the
+end of a block will have a dedent token before it.
+
+------------------------------
+
+Now lets look at the slightly more complicated if/else statement, which
+according to the EBNF use 0 repetitions but includes the option. So, it looks
+like
+
+if expression:
+    block-1		# just a block, numbered 1 for ease of reference
+else:
+    block-2		# just a block, numbered 2 for ease of reference
+
+Two example if/else statements are
+
+if x%2 == 0:     # is x is even?
+    x = x//2
+else:
+    x = 3*x+1
+
+if x > y:
+    min = y
+    max = x
+else:
+    min = x
+    max = y
+
+Notice the : delimiter after both the expression after if and after the else
+keyword. Anywhere you see a : delimiter, a block follows, and Eclipse will
+automatically indent the next line after one ending in a colon (and it will
+indent each other line at the same level of indentation as the previous one).
+Notice that the else must be dedented from the block, telling Python the block
+is done.
+
+Semantically, Python executes an if/else statement as follows
+
+  (1) Evaluate the expression (True or False)
+  (2) If it is True, execute block-1, then skip block-2
+  (3) If it is False, skip block-1, then execute block-2
+
+So in if/else statements, Python always executes one of the two blocks of
+statements that it controls. This is a bit different from the plain if
+statement, which decides whether or not to execute the one block that it
+controls.
+
+How does Python know where the end of the block-1 is? The else: line has a
+dedent token; how does Python know where the end of the block-2 is? The next
+line will have a dedent token.
+
+Here is another example of using an if/else. Suppose we bind the name cookies
+to the number of cookies we want to ask for: it could be 0, 1, 2, .... Here is
+an if/else to ask for that number of cookies gramatically
+
+if cookies == 1:
+    print('May I have 1 cookie?')
+else:
+    print('May I have',cookies,'cookies?')
+
+If we defined number as the following function (we are getting a bit ahead of
+ourselves here because we have not studied how to write functions).
+
+def number_match(number : int, singular : str, plural : str) -> str:
+    if number == 1:
+        return singular
+    else:
+        return plural
+
+We could simplify the code above (the if/decision is now in the function) to
+
+print('May I have',cookies,number_match(cookies, 'cookie','cookies')+'?')
+
+------------------------------
+
+Now lets look at the most complicated cascaded if statement, which according to
+the EBNF use more than 0 repetitions and may include the option. A cascaded if
+(or cascaded if/else) decides which one (if any) of many  blocks to execute.
+So, it looks like
+
+if expression-1:
+    block-1
+elif expression-2:
+    block-2
+elif expression-3:
+    block-3
+elif ...
+    ...
+elif expression-N:
+    block-N
+
+without the final else:   or  (with the final else:)
+
+if expression-1:
+    block-1
+elif expression-2:
+    block-2
+elif expression-3:
+    block-3
+elif ...
+    ...
+elif expression-N:
+    block-N
+else:
+    block-N+1
+  
+A cascaded if is built from many matching expressions and blocks. An example
+cascaded if statement is
+
+if test_percent >= 90:
+    grade = 'A'
+elif test_percent >= 80:
+    grade = 'B'
+elif test_percent >= 70:
+    grade = 'C'
+elif test_percent >= 60:
+    grade = 'D'
+else:
+    grade = 'F'
+
+Semantically, Python executes a cascaded if statement as follows
+
+  (1) Evaluate expression-1.
+  (2) If it is True, execute the block-1 and the cascaded if is finished
+      (don't check any more expressions or execute any more blocks in it)
+  (3) If it is False, evaluate the expression-2.
+  (4) If it is True, execute the block-2 and the cascaded if is finished
+      (don't check any more expressions or execute any more blocks in it)
+  Continue following rules of this form until some expression evaluates to True
+  and its block is executed, or expression-N is evaluated
+  (5) If expression-N evalutes to True, execute block-N and the cascaded if is
+      finished
+  (6) If expression-N evaluates to False and is not followed by else: then
+      the cascaded if is finished without executing any block; if it is False
+      and is followed by an else:, execute block-N+1 and then the cascaded if is
+      finished
+
+So in the cascaded if, exactly one block -the one after after the first 
+expression to evaluate to True- is executed; if no expressions evaluates to
+True, either no blocks are executed (no else:) or the block following the else:
+is executed.
+
+------------------------------------------------------------------------------
+
+Trace tables for if statements
+
+We can extend our use of trace tables to hand simulations of if statements. We
+include a special Explanation column to indicate the result of evaluating the
+boolean expression, and which block Python executes next. Let's write two trace
+tables for hand simulating the first if statement shown above. 
+
+In all these trace tables, we omit Console because no prompting or printing
+occurs in these blocks, but technically these should be in the trace tables.
+
+Statement	|  x  |  Explanation
+----------------+-----+-------------
+Initial State   | -5  |
+if x < 0:	|     |  True: execute next block
+x = -x          |  5  |  1st/only block statement; block/if finished
+
+
+Statement	|  x  |  Explanation
+----------------+-----+-------------
+Initial State   |  5  |
+if x < 0:	|     |  False: skip the block
+x = -x          | -5  |  if finished
+
+
+Next, let's write two trace tables for hand simulating the second if/else
+statement shown above.
+
+Statement     |  x  |  y  | min | max |  Explanation
+--------------+-----+-----+-----+-----+---------------
+Initial State |  5  |  3  |     |     |
+if x > y:     |     |     |     |     | True: execute next block
+min = y       |     |     |  3  |     | 1st block statement
+max = x       |     |     |     |  5  | 2nd block statement; block/if finished
+
+
+Statement     |  x  |  y  | min | max |  Explanation
+--------------+-----+-----+-----+-----+---------------
+Initial State |  3  |  5  |     |     |
+if x > y:     |     |     |     |     | False: execute block after else:
+min = x       |     |     |  3  |     | 1st block statement
+max = y       |     |     |     |  5  | 2nd block statement; block/if finished
+
+
+What is the trace table for this example if the values stored in x and y are
+equal? Does it produce the correct result? Can you change the relational
+operators to >= and still always get the same result? Can there be two
+different ways of getting the same result? 
+
+Finally, let's write a trace table for hand simulating the cascaded if
+statement shown above.
+                           test
+Statement               | _percent | grade |  Explanation
+------------------------+----------+-------+--------------
+Initial State           |    73    |       |
+if test_percent >= 90   |          |       | False: check next elif expression
+elif test_percent >= 80 |          |       | False: check next elif expression
+elif test_percent >= 70	|          |       | True: execute next block
+grade = 'C'             |          |  'C'  | only statement in block; block/if
+                                           |  finished
+
+------------------------------------------------------------------------------
+
+A clock example
+
+Let's take a quick look at an interesting task that combines all the statements
+that we have studied. Assume that we have declared the following names for a
+"military" style clock: e.g., 00:00 represents midnight, 9:03 represents 9:03am,
+14:23 represents 2:23 pm, and 23:59 represents 11:59pm.
+
+Assume that we have defined the names minute and hour to store values that
+are appropriate: 0-59 for minute and 0-23 for hour. Finally, assume that the
+following code is called once a minute by the operating system; when you study
+Python threads in ICS-32 you will learn how to arrange for such an action to
+occur repeatedly: such is very useful for animation.
+
+if minute != 59:
+    minute += 1
+else:
+    print((hour+1)*'Beep ') # simulate a sound by just printing something
+    minute = 0
+    if hour != 23:
+        hour += 1
+    else:
+        hour = 0
+
+Each time the code is called, it advances the clock by one minute (and hour, if
+it is the last minute in the current hour) ensuring that minute and hour store
+only legal values; on the hour, the code beeps that many times (once at 1 am,
+twice at 2am, ... 12 times at noon, 13 times at 1pm, ..., and 24 times at
+midnight). Let's write two trace tables for hand simulating this code in two
+different initial situations: first at 10:15 (10:15am).
+
+
+Statement          | hour | minute | Explanation
+-------------------+------+--------+------------------
+Initial State	   |  10  |   15   |	 	 
+if minute != 59:   |      |        | True: execute next block
+minute += 1        |      |   16   | block finished; if/else finished
+
+Here, the minute is incremented by 1, and nothing else happens.
+
+Now lets write a trace table for the initial situation 22:59 (10:59pm).
+
+Statement          | hour | minute | Explanation
+-------------------+------+--------+------------------
+Initial State      |  22  |   59   |	 	 
+if minute != 59:   |      |        | False: execute block after else: in if/else
+print(...)         |      |        | 1st statement in block:print beep 23 times	
+minute = 0         |      |    0   | 2nd statement in block
+if hour != 23:     |      |        | True: execute next block
+hour += 1          |  23  |        | block finished; inner if/else finished, and
+                                   |   outer if/else finished
+
+Here, much more happens: the clock beeps 23 times (for 11:00pm) and the minute
+is reset to 0, while the hour advances to 23. 
+
+------------------------------------------------------------------------------
+
+Pragmatics
+
+When writing decisions, we should first try to determine the correct form we
+need: if, if/else, or cascaded if. If we are unsure about which one is correct,
+try the simplest forms first. If one doesn't work, the knowledge we gain will
+help us with subsequent decisions. Of course we must indent the blocks correctly
+otherwise Python will not execute the code (it will raise a SyntaxError 
+exception.
+
+The key to understanding an if statement is understanding its boolean
+expression(s). Ensure that for some bindings of its names, every test can
+evaluate to True, and for other bindings False (otherwise -if the expression is
+always True or always False, the expression is probably wrong). For example,
+what is wrong with the following code?
+
+Study it carefully and hand simulate it for a few different values of x.
+
+if x > 2 || x < 5:
+    x += 1
+
+Is this test really the right one? probably not: no int value bound to x makes
+the test False; try to find one. If this test were the one we really wanted, we
+could simplify this code by removing the whole if statement, simplifying it to
+just x += 1, which always performs this action (since the test would always be
+True).
+
+------------------------------------------------------------------------------
+
+Boxing blocks and if_statements
+
+Boxing statements illustrate which statements are controlled by which others.
+This process is similar to drawing oval diagrams to analyze expressions. In a
+statement boxing diagram, everything that is a statement or a block is placed
+in its own box. See the link to today's lecture to see a boxing diagram of the
+clock code above. It shows quite a lot of detailed information about these
+statements.
+
+------------------------------------------------------------------------------
+
+Functions:
+
+Here is a simple function that computes the minimum of the arguments passed to
+its parameters. Again, we will learn all the details bout functions soon, but
+this minimum function illustrates how an if statement can be used in a function.
+Notice that the function header ends with a : and what follows (similar to what
+we know about what follows : in if statements) is a block; each block in the if
+is just a single returns statement (which we will learn about when we study
+functions, but basically it says the function is finished and the expression
+coming fater return is the value of the function).
+
+def minimum(i,j):
+    if i < j:
+        return i
+    else:
+        return j
+
+print( minimum(3,5) )
+
+would print 3.
+
+Likewise we could define the function get_grade using a cascaded if statement.
+Copy and past this code into a script and run it.
+
+def compute_grade(test_percent):
+    if test_percent >= 90:
+        return 'A'
+    elif test_percent >= 80:
+        return 'B'
+    elif test_percent >= 70:
+        return 'C'
+    elif test_percent >= 60:
+        return 'D'
+    else:
+        return 'F'
+
+import prompt
+score = prompt.for_int('Enter student score')
+print('Student grade =', compute_grade(score))
+
+------------------------------------------------------------------------------
+
+Problems
+
+(1) Assume that we define grade to bind to  a single letter string corresponding
+to a UCI grade: 'A', 'B', 'C', 'D', or 'F'. Write an if statement that computes
+the number of quality points for that grade and stores it in the name qp: an A
+is worth 4, a B is worth 3, a C is worth 2, a D is worth 1, and an R is worth 0.
+
+(2) Assume that we define hours bound to an int. Write an if statement that
+computes the pay (in cents) due a worker according the following formulas:
+625*hours if the hours worked is less than or equal to 40; 625*Hours + 
+725*(hours-40) if the hours worked is greather than 40. Store the result in the
+name cents_pay. Try a few examples under, at, and over 40 hours to verify your
+if statement is correct.
+
+(3) Assume that we defined two names x and y and bind them to int valuse. Write
+a trace table for the hand simulation of the following Python statements: one
+where x binds to 3 and y binds to 5; and another where x binds to 5 and y binds
+to 3. State whether the results are the same or different in each case.
+
+if x < y:              if x < y:
+    is_it = True           is_it = True
+else:                  is_it = False
+    is_it = False;
+
+Which statement (left or right) is equivalent to the assignment statement
+
+is_it = (x < y)
+
+(4) Assume that the names student_answer and correct_answer are bound to strings
+and wrong_count is bound to anb int value. Explain what is wrong with the
+following if/else statement (there is a syntax error).
+
+if student_answer == correct_answer:
+else:
+    wrong_count += 1
+
+Explain how to fix this problem in a simple way.
+
+(5) Modify the cascaded if for computing grades, so that grade stores '?' if
+test_percent is outside the range 0 to 100 inclusive.
+
+(6) Write a trace table for the clock code, if the clock starts at 11:59pm (one
+minute before midnight).
+
+(7) Assume that we define the name s to refer to a float value. Write a
+cascaded if statement that binds to signum the value -1, if s is less than
+0., 0. if x is equal to 0., and 1. if s is greater than 0.
+
+(8) Assume that we define the names min, x, and max and bind them to float
+values. Write a cascaded if statement that stores into x the value min if x
+is less than min; max if x is greater than max; nothing new otherwise (leave its
+value untouched).
+
+(9) Assume that we defined the names  x, y, and z and bound them to ints. Write
+an if statement that stores into min the minimum of the values stored in x, y,
+and z. Try to do this with the smallest amount of code.
+
+(10) Re-examine the cascade if that computes a course grade. Show neither of the
+following scripts is equivalent to it (find values for test_percent that lead
+to differt results stord in grade)? The left side shows a cascaded if; the
+rights side shows a block of if and an final if/else. The look OK but are not.
+
+if test_percent >= 60:          if test_percent < 60:
+    grade = 'D';                    grade = 'F';
+elif test_percent >= 70:        if test_percent < 70:
+    grade = 'C';                    grade = 'D';
+elif test_percent >= 80:        if test_percent < 80:
+    grade = 'B';                    grade = 'C';
+elif test_percent >= 90:        if test_percent < 90:
+    grade = 'A';                    grade = 'B';
+else:                           else:
+    grade = 'F';                    grade = 'A';
+
+What simple changes would correct each?
+
+(11) Suppose that we modify the clock code to print the beeps at the bottom of
+its block, and also change its argument to just hour. Will this code always
+work as before? If not, for what hour and minute combination(s) will it fail?
+
+if minute != 59:
+    minute += 1
+else:
+    minute = 0
+    if hour != 23:
+        hour += 1
+    else:
+        hour = 0
+    print(hour*'Beep ') # simulate a sound by just printing something
+
+Note that to be correct, the code must be correct for every hour and minute.
+There are 24x60 = 1,440 different possiblities; which ones are crucial to check?
+Suppose that we modify the clock code as follows. Will this code always work as
+before? If not, for what hour and minute will it fail?
+
+minute += 1
+if minute == 60:
+    minute = 0
+    hour += 1
+    print(hour*'Beep ') # simulate a sound by just printing something
+    if hour == 24:
+        hour = 0
+
+Note that to be correct, the code must be correct for every hour and minute.
+There are 24x60 = 1,440 different possiblities; which ones are crucial to check?
+
+(12) Box the code at the bottom of problem (11)
+
+(13) Assume that we define hour binding an int between 0 and 23 inclusive.
+Write an if statement(s) to display on the console the hour in a standard
+format: e.g., when hour stores 3 display 3am; when hour stores 15 display 3pm.
+When hour stores 0 display 12midnight and when hour stores 12 display 12noon.
+Try to do this with the simplest possible code

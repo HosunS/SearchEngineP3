@@ -1,0 +1,223 @@
+		Dijkstra's All Shortest Path Algorithm
+
+
+The most complicated graph algorithm that we will examine in detail in ICS-46
+is Dijkstra's All Shortest (least costly) Paths Algorithm. Given a starting node
+and a graph, it computes the shortest paths (in a directed graph with weighted
+edges; the edge weights must be all non-negative) to all the nodes that can be
+reached in the graph from the starting node. The length of a path (and the
+measure of "shortness") is based on the sum-of-the-weights of all the edges on
+the path.
+
+Actually, I will call it an Extended version of Dijkstra's algorithm, because
+we will store enough information not only to compute the cost of the shortest
+paths, but to reconstruct these paths as well: what nodes/edges lie between the
+starting and ending nodes, and what order they must be followed. The standard
+Dijkstra algorithm computes just the cost of all the shortest paths, but omits
+information for reconstructing the paths.
+
+This algorithm generalizes the reachability algorithm that we wrote in
+Programming Assignment #1, by finding not just all nodes reachable from a start
+node, but the minimum cost path to reach each node; in Programming Assignment
+#1, our map stored no edge weights.
+
+GPS systems use a variant of this algorithm to search from where you are to
+where you want to go. But it is more specialized/efficient, because it knows
+where you want to go at the time the algorithm starts: with Dijkstra's
+algorithm, the destination(s) are supplied at the end, after the algorithm 
+does all its work.
+
+This algorithm uses many data types to get its job done: a Graph, two Maps,
+a Priority Queue, a Queue, and Stack. I will describe the algorithm in detail
+below, and then we will hand simulate it on a moderate-sized graph in class.
+You will implement this algorithm as part of Programming Assignment #5.
+
+Most data in the algorithm is stored as objects from a class named Info, which
+contains (1) the cost of the minimum path to reach that node (initialzed to
++infinity and updated in the algorithm until the minimum cost is found), and
+(2) the name of the node BEFORE it on the shortest path (initialized to "?" and
+updated in the algorithm).
+
+Objects in the Info class are ultimately stored in three collections: as the
+values in two Maps (the key is the node name), and in a Priority Queue.
+
+The basic algorithm is
+
+1) Prompt the user for a file name and load and print its graph, whose edges
+     are labeled by non-negative integer values.
+
+2) Prompt the user to enter a start node.
+
+3) Call the extended_dijkstra function with this information, returning a map
+     of the minimum costs to reach each node and the information needed to
+     construct its path.
+
+   In the extended_dijkstra function:
+
+   3a) Declare the answer_map to be empty and the info_map to contain each node
+         in the graph as a key in the map, with its associated value a newly
+         constructed/initialized object of Info for that node. 
+ 
+       Update the start node in the info_map by setting its total_cost to 0
+          (since we start at that node, the cost to reach it is 0).
+
+   Note the info_map contains nodes whose minimum distance from the start node
+   IS NOT YET KNOWN; the answer_map contains nodes whose minimum distance IS
+   KNOWN.
+
+   3b) Declare the info_pq, and load it with the current contents of the
+          info_map: here the smallest cost has the highest priority.
+
+   3c) Loop so long as the info_map is not empty...
+
+       3c1) Remove the Info from info_pq with the smallest associated cost
+              -initally the start node.
+            If its cost is infinity, then no more nodes in info_map are
+              reachable, so terminate.
+            If its node is already in answer_map, skip it and remove another.
+    
+       3c2) Call "min_node" the node from this Info and "min_cost" its cost. We
+              are now guaranteed to know the least costly path from the start
+              node to min_node.
+
+       3c3) Remove this key->value from the info_map and put it into the
+              answer_map.
+
+       3c4) For every node d that is a destination from the min_node and not
+              already in the answer_map, get d's Info using info_map and see if
+              the cost is infinite or greater than the cost of the path from
+              the start node to min_node, plus the cost of the edge from
+              min_node to d.
+            If it is infinte, or the sum is smaller,
+              (1) In info_map, update the cost in Info to this smaller number,
+                    and update the predecessor of d to be min,
+              (2) add the updated Info to the info_pq
+
+        3c5) Continue around the loop 
+
+  3d) When the loop finishes, the Info values in answer_map are filled with
+        the mminimum cost to reach each node and the node preceding it on the
+        minimum path. Return this information.
+
+4) Repeatedly prompt the user for a stop node and show the minimum cost and
+     minimum cost path to reach that node, by calling the recover_path, which
+     returns a Queue of the nodes on the shortest path between the start node
+     and stop node.
+
+   By repeatedly following the predecessors in the map (a Stack is useful here),
+     we can reconstruct a queue containing the entire minimimum cost path, from
+     the  start node to any reachable node.
+
+Although I won't show the hand simulation here, I will do one in class and you
+should be able to hand simulate this algorithm, from memory. The steps listed
+above are very detailed when applied to actual C++ data types, but when I
+peforming the algorithm on the whiteboard it will be more intuitive and
+reasonably fast.
+
+Again, I called this algorithm an Extended version of Dijkstra's algorithm,
+because we will store enough information not only to compute the cost of the
+shortest paths, but to reconstruct them as well: what nodes/edges lie between
+the starting and ending nodes. The standard Dijstra algorithm computes just the
+cost of all the shortest paths, without storing information to reconstruct the
+paths.
+
+------------------------------------------------------------------------------
+
+Simplistic Analysis: Dense and Sparse Graphs
+
+One interesting aspect of this algorithm is Info for the same node can appear
+multiple times in info_pq. Each time a node is found to be reachable on a path,
+it will be enqueued onto info_pq. That is why step 3c1 will ignore a node if
+it already is in the answer_map. Note that even if every node appears N times
+in info_pq (N^2 nodes), each enqueue and dequeue operations is stil O(Log N)
+because O(Log N^2) = O(2 Log N) = O(Log N).
+
+-----
+
+Assume that we have a dense graph: each of its N nodes has O(N) edges. The
+loop specified in step 3c loops once for each node*, so it iterates O(N)
+times. Each time it loops it executes: part 3c1 takes O(Log N), part 3c3 takes
+O(1), and part 3c4 takes O(N)xO(Log N) -because in a dense graph each node can
+have O(N) outgoing edges to process and enqueue; so the entire algorithm is
+O(N) x ( O(Log N) + O(1) + O(N)xO(Log N) ) or O(N^2 Log N).
+
+Assume that we have a sparse graph: each of its N nodes has O(1) edges. The
+loop specified in step 3c loops once for each node*, so it iterates O(N)
+times. Each time it loops it executes: part 3c1 takes O(Log N), part 3c3 takes
+O(1), and part 3c4 takes O(1)xO(Log N) -because in a sparse graph each node has
+some constant number of outgoing edges to process and enqueue; so the entire
+algorithm is O(N) x ( O(Log N) + O(1) + O(1)xO(Log N) ) or O(N Log N).
+
+So we can unify both cases by writing the bound as O( (M+N)Log N )
+
+*Actually, this is a simplification, because each node can appear in info_pq
+multiple times: once for each node it can be reached from: in a dense graph
+each node can be reached from O(N) other nodes; in a sparse graph O(1). In
+practice, the outer loop executes more than N times and the priority queue can
+still contain many values when the loop terminates.
+
+-----
+
+An improved algorithm keeps each node in the priority queue ONLY ONCE, and
+decreases its priority rather than enqueues it multiple times. So, the outer
+loop truly executes only N times. Finding and decreasing the priority of a node
+is an O(N) operation in a binary-heap based priority queue, but we could use an
+auxiliary map to keep track of (and update) the positions in the binary heap.
+Then, this algorithm would truly be O( (M+N)Log N ) which matches what we wrote
+above. Using a different kind of heap (Fibonnacci not binary) we can reduce the
+running time to O(M + N Log N), or O(N^2) for dense graphs and O(N Log N) for
+sparse graphs.
+
+------------------------------------------------------------------------------
+
+Proof of Correctness of Dijkstra's Algorithm: By Induction and Contradiction
+
+Prove: The final answer_map contains all the correct answers (shortest paths).
+
+Proof by induction on the size of the answer_map.
+
+1) size 1: The answer_map contains just the starting node (call it s), with cost
+0. That is the correct answer.
+
+2) Assume that the answer_map, when its size is between 1 and k inclusive, has
+all the correct answers. Prove that the next value put in the answer map,
+increasing its size by 1, is correct.
+
+Let v be the next node added to answer_map. Call the node it came from u (where
+u is some node in the answer_map, and there is an edge from u->v). We prove that
+the path from s->u extended by the edge from u->v is the shortest path from s to
+v.
+
+Proof by Contradiction:
+
+Assume that there is a shorter path from s->v through a node y that is not yet
+in the answer_map; let x be the last node on this path that is in the
+answer_map. Then there is a path from s->x and from x->y and from y->v. We have
+the following picture (with s, x, and u in the answer_map and y and v not in the
+answer_map)
+
+in answer_map
+ +---------+
+ |         |
+ |    x ---+---y
+ |    /    |   |
+ |  ...    |   |
+ |  /      |   |
+ | s       |   |
+ |  \      |   |
+ |  ...    |   |
+ |    \    |   |
+ |    u ---+-- v
+ |         |
+ +---------+
+
+Now, because v was chosen to be the next node in answer_map, the distance from
+s->v must be less than the distance from s->y (otherwise y would have been
+chosen). Because the edges leading from y to v (there must be at least one) must
+have a non-negative value, it means that any path s->y->v  must be as long or
+longer than the path from s->u->v
+  length(s->u->v) <= length(s->x->y) <= length(s->x->y) + len(y->v)
+
+So, there can be no such node y tht leads to a SHORTER path from s to v. So our
+assumption is wrong, and the shortest path from s->v is correctly added to
+answer_map.

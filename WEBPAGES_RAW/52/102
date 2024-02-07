@@ -1,0 +1,75 @@
+CS 261, Spring 2013, Homework 6, Due Thursday, May 23
+
+1. (a) Find four strings whose compressed trie forms a complete binary
+tree with four leaves.
+
+    aardvark aableskiver zoology zoonosis
+
+    (Or any four strings where two pairs have nonempty common prefixes
+    and the other four pairs do not.)
+
+(b) Is it possible for the suffix tree of a string to form a complete
+binary tree with four leaves? If yes, provide an example; if no, explain
+why not.
+
+    If you use the form of suffix tree described in class, the answer is
+    no, because the empty string makes a leaf of the root, which doesn't
+    exist in that binary tree.
+
+    If you use a variation of the suffix tree that skips the empty
+    suffix (which is the one in the Wikipedia article) then the string
+    "papa" works: the root has two edges labeled "a" and "pa", each of
+    which has two children.
+
+
+2. Let n be any integer, and let string s (including its string
+termination symbol $) have n symbols in it: exactly n-1 copies of the
+symbol "a" followed by the $. For instance, for n=5 the string s would
+be aaaa$. How many leaves does the suffix tree of s have, as a function
+of n? How many non-leaf nodes does it have?
+
+    n leaves, for the version of suffix trees that include the empty
+    string. n-1 leaves, for the Wikipedia version.
+
+    Exactly one fewer non-leaf nodes than leaf nodes, in either case.
+
+
+3. Suppose you are given a string s, over a given alphabet, and have
+constructed the suffix tree for s. Describe a linear-time algorithm for
+using the suffix tree to construct a string of minimum length over the
+same alphabet that is not a contiguous substring of s.
+
+E.g., if the alphabet is {A,T,C,G} and s is AATACAGTTCTGCCGGA, then s
+contains all 16 different length-two strings, but it is missing some
+length-three strings, such as AAA, and your algorithm should output one
+of the missing strings.
+
+    (By linear time I meant linear in the length of s.)
+
+    For each node x_i of the tree, compute two numbers: the length L_i
+    of the string formed by concatenating the labels on the path from
+    the root to x_i, and C_i, the number of children of x_i.
+
+    We can compute L_i as L_j (where x_j is the parent of x_i) plus the
+    length of the string labeling the edge from x_j to x_i; doing this
+    for all nodes in the suffix tree takes linear time.
+
+    Several students asked whether we can compute C_i in constant time.
+    The answer is that it depends on how the list of children of each
+    node is represented. It's ok to assume that it can be computed in
+    constant time, but even if it can't, it's easy to compute C_i for
+    all nodes by setting a counter to zero at each node and then, for
+    each node, incrementing its parent's counter. This algorithm again
+    takes linear time.
+
+    Let S be the set of nodes for which C_i is less than the alphabet
+    size, and let x_i be a node in S that has the smallest value of L_i
+    among nodes in S. (If there are ties, pick one arbitrarily.) Let q
+    be the string of length L_i formed by concatenating edge labels on
+    the path from the root to x_i. Search sequentially through the
+    characters of the alphabet for a character r that is not used to
+    label a child of x_i. (This search takes time proportional to the
+    number of children, at most, which is again linear in s).
+
+    The output of the algorithm is the string formed by adding r to the
+    end of string q.

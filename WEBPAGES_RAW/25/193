@@ -1,0 +1,766 @@
+       Computing Complexity Classes of Code, Applications, Big-Omega/Theta
+
+
+In this lecture we will learn how to compute the complexity class of all the
+code in a function (and therefore the complexity class of the function)
+statically (without RUNNING the function) by using simple rules for composition.
+We will see how apply these rules in various functions and combinations of
+functions in classes using the lens of analysis of algorithms, and compare
+fundamentally differerent algorithms for solving the same problem. Next, we
+will compare some time and space metrics for array vs. linked list
+implementations of simple data types (e.g., queue).
+
+Finally, we will discuss Big-Omega/Big-Theta notations and discuss lower bounds
+on the complexity classes of problems (not functions). We will revisit this
+topic later in the quarter to prove a non-trivial (and interesting) lower bound
+on sorting.
+
+------------------------------------------------------------------------------
+
+Composing Complexity Classes: Sequential and Nested Statements
+
+In this section we will learn how to combine complexity class information about
+simple operations into complexity information about complex operations
+(composed from simple operations). The goal is to be able to analyze all the
+statements in a functon/method and determine the complexity class of executing
+that function/method.
+
+----------
+
+Law of Addition for big-O notation
+
+ O(f(n)) + O(g(n)) is O( f(n) + g(n) ) is O( max(f(n),g(n)) )
+
+That is, we when adding complexity classes, we bring the two complexity classes
+inside the O(...). Ultimately, O( f(n) + g(n) ) results in the BIGGER of the two
+complexity class (because we drop lower added terms). So,
+
+O(N) + O(Log N)  =  O(N + Log N)  =  O(max(N,Log N) = O(N)
+
+because N is the faster growing function; also
+
+O(N) + O(N)  =  O(2N)  =  O(N)
+
+because we also drop constants using big-O notation.
+
+This rule helps us understand how to compute the complexity of doing some 
+SEQUENCE of operations: executing some statements that are O(f(n)) followed by
+executing some statements that are O(g(n)). Executing all the statements
+SEQUENTAILLY, the first followed by the second, is O(f(n)) + O(g(n)) which is
+O( f(n) + g(n) ) which is O(max(f(n),g(n))).
+
+For example, if some function call f(...) is O(N) and another function call
+g(...) is O(N Log N), then doing the sequence
+
+   f(...);
+   g(...);
+
+is O(N) + O(N Log N) = O(N + N Log N) = O(N Log N).  Of course,
+doing the sequence
+
+  f(...);
+  f(...);
+
+is O(N) + O(N) which is O(N + N) which is O(2N) which is O(N).
+
+In an if statement, we execute a sequence: always the test code, followed by
+the code in the block that the test indicates to execute. Note that for an if
+statment like
+
+  if (test)    	 assume complexity of test is O(T)
+     block 1     assume complexity of block 1 is O(B1)
+  else
+     block 2     assume complexity of block 2 is O(B2)
+
+The complexity class for the if is O(T) + max(O(B1),O(B2)). The test is always
+evaluated first; next, one of the two blocks is always executed. In the worst
+case, the if will execute the block with the largest complexity. As an example,
+given
+
+  if (test)    	 complexity is O(N)
+     block 1     complexity is O(N^2)
+  else
+     block 2     complexity is O(N)
+
+The complexity class for the if is O(N) + max (O(N^2),O(N))) = O(N) + O(N^2) =
+O(N + N^2) = O(N^2). This is because in the worst case, the test will be true
+and therefore block 1 will execute. Note that the test is always executed so
+
+  if (test)    	 complexity is O(N)
+     block 1     complexity is O(N)
+  else
+     block 2     complexity is O(1)
+
+has a complexity class of O(N) + max(O(N),O(1)) = O(N) + O(N)= O(2N) = O(N).
+
+
+----------
+
+Law of Multiplcation for big-O notation
+
+ O(f(n)) * O(g(n)) is O( f(n) * g(n) )
+
+If we repeat O(N) times an O(f(N)) process, the resulting complexity is
+O(N)*O(f(N)) = O( N*f(N) ). An example of this is, if some function call f(...)
+is O(N^2), then executing that call N times (in the following loop)
+
+  for (int i=0; i<N; ++i)
+    f(...);
+
+the complexity is O(N)*O(N^2) = O(N*N^2) = O(N^3)
+
+This rule helps us understand how to compute the complexity of doing some 
+statement INSIDE THE BODY controlled by a looping statement that is repeating
+it. We multiply the complexity class of the number of repetitions by the
+complexity class of the statement being repeated.
+
+Compound statements can be analyzed by composing the complexity classes of
+their constituent statements. For sequential statements the complexity classes
+are added; for statements repeated inside a loop the complexity class of the
+loop and statements are multiplied.
+
+Let's use the tools discussed above to analyze (determine their complexity
+classes) three different functions that each have the same arguments and each
+compute the same function: whether or not an array contains only unique values
+(no duplicates). We will assume in all three examples that the length of the
+array is N.
+
+1) Algorithm 1: An array is unique if each value in the array does not occur in
+any later indexes.
+
+bool is_unique (int [] a, int N) {
+    for (int i=0; i<N; ++i)		O(N)
+      for (int j=i+1; j<N; ++j)		O(N) - min 0/max N-1/average N/2 = O(N)
+        if (a[j] == a[i])		O(1)
+          return false;			O(1) - never executed in worst case
+                                               so won't appear in formula below
+    return true;			O(1)
+}
+
+The formula for the complexity class for executing the entire function is
+O(N)*O(N)*O(1) + O(1) = O(N^2+1) = O(N^2). So we know from the previous
+lecture that if we double the size of the array, this function takes 4 times as
+long to execute. Note that in the worst case, there "return false" is not
+executed, so its O(1) term does not appear in the formula for the complexity
+class of the function.
+
+2) Algorithm 2: An array is unique if when we sort its values, no adjacent
+values are equal: if there were any duplicate values, sorting the array would
+put these duplicate values next to each other. Here we copy the array so as to
+not change the order of the parameter's array: we can prove that copying the
+array does increase the running time of the function, but it does not affect
+its complexity class.
+
+bool is_unique2 (int a[], int N) {
+  int copy[N];			       O(1) - allocation of array
+  for (int i=0; i<N; ++i)	       O(N)
+    copy[i] = a[i];  		       O(1)
+
+  qsort(copy,N,sizeof(int),	       O(N Log N) - for C++'s qsort
+      [](const void* a, const void* b){return (*(int*)a - *(int*)b);});
+
+  for (int i=0; i<N-1; ++i)   	       O(N) - really N-1, but that is O(N)
+      if (copy[i] == copy[i+1])	       O(1)
+          return false;		       O(1) - never executed in worst case
+                                              so won't appear in formula below
+  return true;	 		       O(1)
+}
+
+The formula for the complexity class for executing the entire function is
+O(1) + O(N)*O(1) + O(N Log N) + O(N)*O(1) + O(1) =
+O(1 + N + N Log N + N + 1)                       =
+O(N Log N + 2N + 2)                              = O(N Log N)
+
+So the complexity class for this algorithm/function is lower than the first
+algorithm/function. The complexity class for sorting is dominant: it does most
+of the work. If we double the size of a, this function takes a bit more than
+twice the amount of time. In N Log N: N doubles and Log N gets a tiny bit
+bigger (i.e., Log 2N = 1 + Log N; e.g., Log 2000 = 1 + Log 1000 = 11, so
+compared to 1000 Log 1000, 2000 Log 2000 got 2.2 times bigger, or 10% bigger
+than just doubling).
+
+Looked at another way if T(N) = c*(N Log N), then T(2N) = c*(2N Log 2N). Since
+Log 2N is 1 + Log N, T(2N) = c*2N Log N + c*2N. So
+
+
+  T(2N)     c*2N Log N + c*2N     c*2N Log N       c*2N              2
+-------- = ------------------- = ------------ + ----------- = 2 + -------
+  T(N)         c N Log N           c N Log N     c N Log N         Log N
+
+So, doubling N doubles the time + a bit more (a bit that gets smaller as
+N->infinity, but gets smaller slowly because Log N grows so slowly).
+
+3) Algorithm 3: An array is unique if when we insert its values into a set, its
+size is the same as the size of the array: if duplicate values were inserted
+into the set, its size would be smaller than the size of the array by exactly
+the number of duplicates in the array. We will examine various implementations
+of Sets during the quarter, and learn that by using hashing, most Set
+operations (including insertion) are O(1). Therefore
+
+bool is_unique3 (int a[], int N) {
+  ics::HashSet<int> s;		       O(1)
+
+  for (int i=0; i<N; ++i)	       O(N)
+    s.insert(a[i]);  		       O(1) - for sets implemented by Hashing
+
+  return s.size() == N;	       	       O(1)
+}
+
+The formula for the complexity class for executing the entire function is
+O(1) + O(N)*O(1) + O(1) = O(1 + N + 1) = O(N + 2) = O(N). So the complexity
+class for this algortihm/function is lower than the first and second
+algorithms/functions. If we double the size of the array, this function takes
+just twice the amount of time.
+
+We can speed-up this function (but only for arrays that actually have
+duplicates) by using the return value of the insert function to immediately
+compute false (if insert ever returns 0, meaning the inserted value was already
+in the Set). In arrays with duplicates, the insertion loop in the code below
+doesn't run to completion. But the function below will run more slowly on
+arrays with no duplicates, because it does a bit of extra work inside each for
+loop (checking == 0), and for non-duplicate arrays the loop runs until the end.
+
+bool is_unique3a (int a[], int N) {
+  ics::HashSet<int> s;
+
+  for (int i=0; i<N; ++i) {
+    if (s.insert(a[i]) == 0)
+      return false;
+
+  return true;
+}
+
+So, in the worst case, this function has the same complexity class as
+is_unique3; it is likely a bit faster for non-unique arrays (return false
+sooner) but a bit slower for unique arrays (because of the extra "if" testing
+during each iteration). So adding the extra testing can decrease and increase
+the running time, depending on the actual data.
+
+------------------------------------------------------------------------------
+
+Using a Priority Queue (implementable 3 ways):
+
+We will now look at the solution of a few problems (combining operations on a
+priority queue: pq) and how the complexity class of the result is affected by
+three different classes/implementations of priority queues.
+
+In a priority queue, we can enqueue/dequeue values to the data structure. A
+correctly working priority queue always dequeues the maximum value remaining in
+the priority queue. Think of a line/queue outside of a Hollywood nightclub,
+such that whenever space opens up inside, the most famous person in line gets
+to go in, no matter how long less famous people have been standing in line.
+
+For the problems we examine below, all we need to know is the complexity class
+of the "enqueue" and "dequeue" operations.
+
+                    enqueue        dequeue
+	         +-------------+-------------+
+Implementation 1 |    O(1)     |    O(N)     |  unordered array/linked list
+	         +-------------+-------------+ 
+Implementation 2 |    O(N)     |    O(1)     |  ordered array/linked list
+	         +-------------+-------------+
+Implementation 3 |  O(Log N)   |  O(Log N)   |  binary heap (to be studied)
+	         +-------------+-------------+
+
+Implementation 1 works by keeping an unordered array or linked list of values:
+it enqueues a new value into the pq by appending it at the rear of an array or
+the front of a linked list: O(1); it dequeues the highest priority value by
+scanning through the array or linked list to find the highest, which is O(N)
+(because we must look at every value), and then removing that value (O(N) in
+the worst case for arrays, because we must copy every value in the data
+structure after it, and it might be first; O(1) for linked lists).
+
+Implementation 2 works by keeping an ordered (by priority) array or linked list
+of values: it enqueues the new value into the pq by scanning the array or linked
+list for the right spot to put it (O(N) in the worst case), and putting
+it there, which is O(N) for arrays because other values must be copied and O(1)
+for linked lists. Arrays store their highest priority at the rear, linked lists
+at the front; it dequeues the highest priority value from the rear or front,
+which is O(1).
+
+Implementation 3, which is discussed later in ICS-46, uses a binary heap tree
+(not a binary search tree) to implement both operations with "middle" complexity
+O(Log N): which is greater than O(1) but less than O(N). Which complexity class
+do you think O(Log N) is closer to?
+
+Problem 1: Suppose that we wanted to use the priority queue to sort N values:
+we enqueue N values and then dequeue N values (first the highest, next the
+second highest, ...). Here is the complexity of these combined operations for
+each implementation.
+
+Implementation 1: N*O(1)     + N*O(N)     = O(N   + N^2)    = O(N^2)
+Implementation 2: N*O(N)     + N*O(1)     = O(N^2 + N)      = O(N^2)
+Implementation 3: N*O(Log N) + N*O(Log N) = O(NLogN + NLogN = O(NLogN)
+
+Here, Implementation 3 has the lowest complexity class for all the combined
+operations. Implementations 1 and 2 each do one operation quickly but the other
+slowly; since the slowest operation determines the complexity class, both are
+equally slow. The complexity class O(Log N) is between O(1) and O(N);
+surprisingly, it is actually "closer" to O(1) than O(N), even though it does
+grow -because it grows so slowly; yes, O(1) doesn't grow at all, but in the
+Universe of 10^90 particles of matter (so N is always < 10^90)  Log 10^90 =
+Log (10^3)^30 = 300.
+
+Problem 2: Suppose we wanted to use the priority queue to find the 10 biggest
+(of N) values: we would enqueue N values and then dequeue 10 values. Here is
+the complexity of these combined operations for each implementation..
+
+Implementation 1: N*O(1)     + 10*O(N)     = O(N   + 10N)       = O(11N) = O(N)
+Implementation 2: N*O(N)     + 10*O(1)     = O(N^2 + 1)         = O(N^2)
+Implementation 3: N*O(Log N) + 10*O(Log N) = O(NLogN) + O(LogN) = O(NLogN)
+
+Here, Implementation 1 has the lowest complexity class for the combined
+operations. That makes sense, as the operation done many times (enqueue) is
+very simple (enqueue to the end of an array/the front of a linked list) and the
+operation done a constant number of times (10, independent of N) is the
+expensive operation (dequeue). It even beats the complexity of Implementation 3.
+So, as N gets bigger, implementation 1 will eventually become faster than the
+other two.
+
+So, sometimes there is NOT a "best all the time" implementation. We need to know
+what problem we are solving (the complexity classes of all the operations in
+various implementations and the number of times that we must do these
+operations) to choose the most efficient implementation for solving the problem.
+
+------------------------------------------------------------------------------
+
+Analyzing Array Doubling (vs Linked List Allocation):
+
+Assume that we are using an array to store a simple ordered collection (e.g., a
+queue; and assume we just enqueue values, not dequeue any). Assume we start
+by allocating (using "new") a 1 element array.
+
+1) When we enqueue the 1st value, we just store it in index 0 of the array; that
+array is now filled.
+
+2) When we enqueue the 2nd value, we must reallocate (again using "new") a 2
+element array, and then copy all the values from the old 1 element array into
+it, and then we can store the 2nd value into index 1; that array is now filled.
+
+3) When we enqueue the 3rd value, we must reallocate (again using "new") a 4
+element array, and then copy all the values from the old 2 element array into
+it, and then we can store the 3rd value into index 2; there is 1 more available
+index in the array (index 3).
+
+4) When we enqueue the 4th value, we just store it at index 3.
+
+5) When we enqueue the 5th value, we must reallocate (again using "new") an 8
+element array, and then copy all the values from the old 4 element array into
+it, and then we can store the 5th value into index 4; there are 3 more
+available indexes in the array (indexes 5-7).
+
+6-8) When we enqueue the 6th, 7th, and 8th values, we just store them into
+indexes 5, 6, 7.
+
+9) When we enqueue the 9th value, we must reallocate (again using "new") a 16
+element array, and then copy all the values from the old 8 element array into
+it, and then we can store the 9th value into index 8; there are 7 more
+available indexes in the array (indexes 9-15).
+
+10-16) When we enqueue the 10th, 11th, ... 16th values, we just store them at
+indexes 9, ... 15.
+
+17) When we enqueue the 17th value, we must reallocate (again using "new") a 32
+element array, and then copy all the values from the old 16 element array into
+it, and then store the 17h value into index 16; there are 15 more available
+indexes in the array (index 17-31).
+
+We can make a table illustrating the total number of times "new" is called and
+the total amount of copying needed to enqueue the Nth value into a queue
+represented by an array. Notice that for every value 1 beyond a perfect power
+of 2, we must call another "new" and copy some more values.
+
+ enqueue| times "new" | total copied
+        |   called    |  values
+--------+-------------+--------------------------
+   1    |     1       |    0   
+   2    |     2       |    1 (= 0 +  1 more copy) 
+  3-  4 |     3       |    3 (= 1 +  2 more copies)
+  5-  8 |     4       |    7 (= 3 +  4 more copies)
+  9- 16 |     5       |   15 (= 7 +  8 more copies)
+ 17- 32 |     6       |   31 (=15 + 16 more copies)
+ 33- 64 |     7       |   63 (=31 + 32 more copies)
+ 65-128 |     8       |  127 (=63 + 64 more copies)
+ ...
+
+So, when we enqueue values to an array, to store between 2^(M-1)+1 and 2^M
+values takes at most M+1 calls to "new" and 2^M - 1 copied values. Another way
+to think of this is to store N values requires about Log2 N calls to "new" and
+copies N values.
+
+Another way to think about this is that to get to an array with 1,025 values we
+have to double at 512 and do 512 copies; to get to an array with 512 values we
+have to double at 256 and do 256 copies; to get to an array with 256 values we
+have to double at 128 and do 128 copies; ...
+
+So how many copies in total do we do?
+
+   512 + 256 + 128 + 64 + 32 + 16 + 8 + 2 + 1
+
+Note that the series is in the form  s = a + ar + ar^2 + ar^3 + ... ar^n
+ (plug in n=9, a=2^n, r=1/2)
+
+  multiplying by r:  rs =     ar + ar^2 + ar^3 + ... ar^n + ar^(n+1)
+
+  subtracting    s - rs = a - ar^(n+1)   (all the other terms cancel each other)
+
+  factoring      s(1-r) = a(1 - r^(n+1))
+
+  divide by 1-r  s      = a(1 - r^(n+1))/(1-r)
+
+plug in a=512,r=1/2: s  = 512(1 - 1/2^(n+1))/ 1/2
+
+For large n, 1/2^(n+1) is very close to 0 (when n = 9, 1/2^10 is < .001),
+so let's assume it is 0.
+
+  s ~ 512(1-0) / 1/2 = 512 * 2 = 1,024
+
+so to get to 1,025 values added to an array by doubling its size, we have to do
+about 1,024 copies, so again the number of copies is linear in the number of
+values added to the array. Doing N adds is O(N).
+
+Contrast this to using a linked list (with a rear cache) for this collection.
+To store N values requires calling "new" N times (allocating a new LN for each
+value) and performing 0 copies.
+
+The "new" and copy operations are best thought to be O(1). So the complexity
+class for using an array is
+
+  (Log2 N)*news + N*copies = 
+  (Log2 N)*O(1) + N*O(1) = O(Log2 N  +  N) = O(N)
+
+and the complexity class for using a linked list is
+
+  N*O(1) = O(N)
+
+So both implementations are O(N). Which is actually faster? Based on complexity
+classes, we do not know. But if you measure the times needed for both, we will
+typically find that array implementation is faster. Here is some insight into
+why.
+
+Although calling "new" and copying values are both O(1), the constants are
+different. Let's assume an overly simplistic model that calling "new" requires
+20 instructions and copying requires 10 instructions. This means that
+
+  # instructions needed to add N values into an array      = 10N + 20 Log2 N
+  # instructions needed to add N values into a linked list = 20N
+
+Note that the dominant term in both is N: arrays have a smaller constant but
+have a second -lower order- term. Now let's look at these formulas for
+a few different values of N (but spanning a huge range, from 4 to 1,000,000).
+
+For N = 4 (Log2 4 = 2):
+# array instructions (#ai) = 40 + 40 = 80;
+# linked list instructions (#lli) = 80.
+So, #ai/#lli = 80/80 = 1; so they run at about the same speed.
+
+For N = 8 (Log2 8 = 3):
+#ai = 80 + 60 = 140;
+#lli = 160.
+#ai/#lli = 140/160 = .875; so the array uses 87.5% of the time of a linked list
+
+For N = 64 (Log2 32 = 5):
+#ai = 320 + 100 = 420;
+#lli = 640.
+#ai/#lli = 420/640 ~ .66; so the array uses 66% of the time of a linked list
+
+For N = 1,000:
+#ai = 10,000 + 200 = 10,200;
+#lli = 20,000
+#ai/#lli = .51; so the array uses 51% of the time of a linked list (about 1/2)
+
+For N = 1,000,000:
+#ai = 10,000,000 + 400 = 10,000,400;
+#lli = 20,000,000.
+#ai/#lli = .50002; so the array uses about 50% of the time of a linked list
+
+So, as N -> infniity, the logarithmic term is dominated by the linear term in
+#ai, so #ai/#lli -> .5 (the ratio of the cost of a new divided by the cost of
+a copy); so for large N, filling an array takes about 50% of the time of filling
+a linked list: it is about twice a fast.
+
+If the coefficient for allocation is four times the coefficient for copying,
+using an array becomes four times as fast. So if we actually time both methods
+for a large N, we can compute the ratio of the instructions needed to do a new
+divided by the # of instructions to do a copy.
+
+Now let's look a bit at analyzing the space for these data structures. First,
+let's assume we are storing a queue of int, so storing each value requires 1
+word of memory. Also, let's assume that a pointer (used in the linked list)
+requires 1 word of memory too.
+
+  1) For the array implementation, if we are storing N values we need between
+  N+2 and 2(N-1)+2=2N memory locations: e.g., if we need to store 1,024 values
+  we would need 1,026 memory locations (1,024 int values in a filled array + 1
+  each to store the array's length and the number of array values used); but if
+  we need to store 1,025 values we would need 2050: 2,048 int values in a
+  filled array (because of doubling) + 1 each to store the array's length and
+  the number of array values used).
+
+  2) For the linked implementation, if we are storing N values at exactly 2N
+  memory locations (one each for the int value and the .next field pointer).
+  So storing 1,024 values requires 2,048 memory locations.
+
+So, for storing ints, arrays always need <= the storage space used by a linked
+list, even if 1/2 the array contain no values (because every linked list node
+contains a value and a pointer)!
+
+One word of caution. At the time a new array is allocated, we are using
+N values (the old array) + 2N values (the new array) of data. We can get rid 
+of the old array as soon as we copy its values into the new array. So, actually
+in the worst case we might need about 3N memory locations -temporarily- to
+store N values, right when doubling the array.
+
+Also, if the queue stored data bigger than integers, this analysis is flipped.
+If each value in the data structure were an object containing 10 memory
+locations, then storing 1,024 in a filled array would required 10,240 + 2 memory
+locations and storing 1,025 of these values in an array that was just doubled
+to size 2,048 would require 20,480 + 2 memory locations. A linked list would
+need 11,264 memory locations to store these values (10,240 for the data
+and 1,024 for the pointers). So, unless an array is close to filled, a linked
+list would occupy less memory.
+
+One way to return to the original "storing int" analysis is to use pointers to
+objects for all the data. Since pointers and ints both take up the same amount
+of space, the original analysis holds. In such a case (assuming each pointer to
+data pointed to an object occupying 10 words of storage), 80% of the storage
+would be occupied up by the data itself and only 20% by the array/linked list
+that stores this pointers.
+
+------------------------------------------------------------------------------
+
+Big-O:
+
+Recall the formal definition of big-O notation, which bounds a function from
+above. A function f(n) is O(g(n)) -often written "in the complexity class of
+O(g(n))" if there are  values c and n0 such that  f(n) <= c g(n) for all n>n0.
+
+Typically the "f" function we are interested in measures the effort (often the
+amount of time) it takes for some algorithm a (coded in some language as
+a method m) to run, which we write either Ta(N) or Tm(N). Note that Ta(N) is
+O(N), then Ta(N) is also O(N^2), O(N^3), etc. because these functions are even
+bigger bounds: if f(n) <= c1 n then f(n) <= c2 n^2, etc. Typically, though, we
+are looking for the smallest complexity class that bounds some algorithm or
+method.
+
+
+Big-Omega:
+
+Big-Omega notation bounds a function from below instead of from above.
+The definition starts similarly to big-O notation: A function f(n) is
+Omega(g(n)) if there are values c and n0 such that f(n) >= c g(n) for all
+n>n0.
+
+Notice the <= in big-O notation has been replaced with a >= in big-Omega
+notation.  Although big-O notation is mostly used to analyze "algorithms",
+big-Omega notation is mostly used to analyze "problems". With big-O notation
+we analyze one SPECIFIC algorithm/method to determine an upper bound on its
+performance. In big-Omega notation we analyze all possible algorithms/methods
+to determine a lower bound on performance. This second task is much harder.
+
+Now let's return to using big-Omega notation for finding the lower bound of
+problems. It is trivial to prove that any algorithm that solves the "find the
+maximum of an unordred array problem" is Omega(N) because it has to look at
+least at every value in the array: if it missed looking at some value in the
+array, that value might be the biggest, and the algorithm would return the
+wrong value.
+
+Interesting lower bounds on problems are much harder to prove than upper bounds
+on algorithms. The lower bound on a problem is much more general: it says,
+"for ANY ALGORITHM that solves this problem, it will take AT LEAST g(n)
+operations". Whereas, for upper bounds we are analyzing something much
+more concrete: one actual agorithm; we say, "for this particular algorithm,
+it will take AT MOST g(n) operations."
+
+Often the only lower bound that we can get on a problem is trivial -like that
+we must examine every value in an array. Later in the quarter we will examine
+an interesting/beautiful lower bound for sorting via comparisons: such a
+problem is Omega(N Log N). We also will examine sorting algorithms that are
+O(N Log N). This means that within comparison based sorting, we have optimally
+solved the problem according to its complexity class: any algorithm to solve
+this problem requires work proportional to N Log N and we have an algorithm that
+solves this problem in work proportional to N Log N. So, a new algorithm might
+have a better/smaller constant (which is very important, once we have resolved
+in which complexity class is the problem), but a better algorithm cannot have a
+lower complexity class: the lower bound forces its complexity class to at least
+be O(N Log N).
+
+One interesting example of a LACK of an obvious lower and upper bounds concerns
+matrix multiplication. When we multiply two NxN matrices we get another NxN
+matrix. Since the input matrices have N^2 values and the result has N^2 values,
+we know trivially that this problem is Omega(N^2): it must at least look at
+2N^2 inputs and produce N^2 outputs. But, the standard algorithm to multiply
+matrices is O(N^3): each of the N^2 entries in the resulting matrix is computed
+by an inner-product requiring N multiplications and additions (one matrix's
+row values times the other matrix's column value), which itself is O(N).
+
+So there is a gap between the complexity class of the problem (the lower bound
+for the problem is Omega(N^2)) and the complexity class of the solution (the
+upper bound for the standard matrix multiplication algorithm is O(N^3)). Either
+we should be able to improve the lower bound by raising it: by proving more
+work is always needed; or we should be able to improve the upper bound by 
+lowering it: finding a better algorithm and proving that it needs to do less
+work than the standard one.
+
+In the 60s, a Computer Scientist named Strassen devised an algorithm to solve
+this problem in O(N ^ Log 7): N raised to the power of Log (base 2) of 7, which
+is ~N^2.8 (recall Log (base 2) of 8 = 3 so Log (base 2) of 7 will be a bit less
+than 3), somewhat better than N^3 but still higher than N^2.
+
+In the 90s two Computer Scientists, Coopersmith and Winograd, devised an
+algorithm whose complexity is O(N^2.376). Interestingly enough -and not often
+the case- the constant on this algorithm is so huge, the n0 for which is starts
+being faster than Strassen is bigger than matrices easily storable on today's
+computers (more than billions of values). In 2002, a computer scientist named
+Raz proved a new lower bound of Omega(N^2 LogN), which is the product of
+N^2 and LogN, and is bigger than Omega(N^2).
+
+So, at this point we know the actualy complexity of the problem, call it c(n)
+is somewhere between N^2 Log N and N^2.376. Note that N^.376 is  close to the
+cube root of N, so N^2.376 = N^.376 * N^2 is close to cube_root(N)*N^2. So the
+actual term before N^2 is going to lie somewhere between LogN and cube_root(N).
+
+For more information, check http://en.wikipedia.org/wiki/Strassen_algorithm
+
+In summary, better algorithms decrease the big-O complexity class, better lower
+bound proofs increase the big-Omega minimal complexity. If the big-O and
+big-Omega bounds are the same functions, then we have discovered an optimal
+algorithm to solve the problem. Well, best to say "optimal within a constant",
+as other algorithms in the same (optimal) complexity class might exhibit a
+smaller constant and be faster.
+
+-----
+
+Sometimes we do want to prove just that some function f(n) is Omega(g(n)).
+For example, we want to prove that f(n) = 5n^2 + 3nlogn + 2n + 5 is Omega(n^2).
+So, we need to prove that c n^2 <= 5n^2 + 3nlogn + 2n + 5 for all n>n0. We can
+easily ignore all positive lower order terms. That is,
+
+  f(n) >= f(n) - 3nlogn -2n - 5 (for all n>1) =  5n^2
+  f(n) >= 5n^2 >= 4n^2 (choosing c = 4, for all n > 0)
+
+following the inequalities (and reversing how it is shown),
+4n^2 <= <= 5n^2 <= f(n) (for all n>0). That is,
+4n^2 <= 5n^2 <= 5n^2 + 3nlogn + 2n + 5
+because for all problem sizes (which are positive) 3logn, 2n, and 5 are >=0
+
+so f(n) is Omega(n^2).
+
+By a similar subtraction we can can ignore all positive lower-order  terms.
+
+Likewise, we can see that for f(n) = 2n - 100log n, f(n) is O(n) because we
+can choose c to be 1, so we need to know when
+
+  2n - 100log n >= n 
+  n - 100log n >= 0   (subtract 1n from each side)
+  n >= 100log n       (add 100log n to each side)
+
+It is not easy to solve this inequality, but log 1024 is 10, and 100log 1024
+is 1000, so n >= 100log n for n = 1024, and n grows faster than log n, so for
+bigger n, n is even bigger than 100log n.
+ 
+Before using big-Omega to analyze the lower bounds  for algorithms we will
+analyze two simple functions to compute their big_Omega lower bounds.
+
+If f(n) = 3n^2 - 2n - 10, then we can choose c = 2 and solve for n such that
+   3n^2 - 2n - 10 > 2n^2
+    n^2 - 2n - 10 > 0		subtract n^2 from each side
+    n^2 - 2n > 10		add 10 to each side
+    n(n-2) > 10			factor
+
+Notice that n(n-2) increases whenever n increases, and for n = 5, n(n-2) is
+15, which is > 10. So for all n >= 5,  f(n) > 2n^2 (with constant c). 
+
+In summary, for any simply expressed polynomial function:
+   f(x) = c1 x^n + c2 x^n-1 + .... + c
+
+it is both O(x^n) and Omega(x^n).
+
+We will return to this kind of analysis later in the notes, when we analyze
+upper and lower bounds for the n! function, which is not a simple polynomial.
+
+Finally if f(n) = n, then
+f is O(N), O(N^2), O(2^N), etc. all are upper bounds on the growth of f
+f is Omega(N), Omega(Log N), Omega(1) etc. all are lower bounds on the growth
+of F
+
+-----
+
+
+
+Big-Theta:
+
+This brings us to our final notation. Big-Theta notation is a combination of
+big-O and big-Omega, which bounds a function from below and above. A function
+f(n) is Theta(g(n)) if there are values c1, c2, and n0 such that
+   c1 g(n) <= f(n) <= c2 g(n) for all n>n0.
+
+We use Theta notation for two purposes. First, we use it to show that the O
+notation is "tight" not only is some function O(g(n)) but we cannot really find
+a smaller complexity class because it is Omega(g(n)) too.
+
+For example, we proved f(n) = 5n^2 + 3nlogn + 2n + 5 is O(n^2) (for c2=15 and
+n0=1) and we proved above that f(n) is Omega(n^2) (for c1 = 4 and n0=1) so
+we have our c1, c2, and n0 (n0 is generally the bigger of the two, but here
+both are 0). So talking about f(n) in terms of the n^2 complexity class makes
+sense for an upper (O) and lower (Omega) bound. So, if we say a function f(n) is
+Theta(g(n)) it means c1 g(n) <= f(n) <= c2 g(n) for all n>n0.
+
+We also use Theta notation to mean that we have found an optimal (within a
+constant) algorithm for a problem: if our algorithm is O(g(n))and the problem
+is Omega(g(n)) then our solution's complexity class, g(n), is as good as we can
+get. We will see that as a problem, sorting with comparisons is Omega(N Log N)
+and we will see various sorting algorithms (mergesort and heapsort) that are
+O(N Log N) so sorting is Theta(N Log N).
+
+Finally, to make matters a bit worse (but more truthful), there is a sorting
+algorithm called quicksort that is O(N^2) in the worst case, but O(N Log N)
+for almost all inputs. In fact, the constant for a method implementing this
+algorithm is typically smaller (by a factor of 2-3) than the constant for
+mergesort and heapsort, two other sorting algorithms that guarantee to run in
+O(N Log N).
+
+So, even though quicksort's worst complexity class is higher than other fast
+sorting algorithms, its average performance is in the same complexity class as
+other fast sorting algorithms, and its constant is actually lower. So, choosing
+the best algorithm is a bit more complicated than just finding one in the
+lowest complexity class. Note that on a few problems, quicksort can take much
+longer than mergesort or heapsort, but those problems are very infrequent.
+
+
+As a final example illustrating big-O and big-Omega (applied directly to a
+function), let's find simple (but not very precise) upper and lower bounds for
+the function n!  Recall n! = 1 x 2 x ... x n. To get a simple upper bound we
+can replace each multiplicand by n. 
+
+  n! = 1 x 2 x 3 ... x n  <  n x n x n ... x n  =  n^n
+
+So n! is O(n^n).
+
+To get a lower bound, bound we can replace the first half of the multiplicands
+by 2, and the second half by n/2. (OK, so 2 isn't smaller than 1, but so long
+as n>8, the product of the first 1/2 of the terms is bigger than 2^(n/2) because
+4 is 2^2)
+
+                             (first half)        (second half)
+  n! = 1 x 2 x 3 ... x n  >  2 x .... x 2   x   n/2 x ... x n/2 =
+
+     2^(n/2) x (n/2)^(n/2) = n^(n/2) = (n^n)^(1/2) = sqrt(n^n)
+
+So n! is Omega(sqrt(n^n))
+
+These are very different functions, so we cannot use Theta here, but we know
+
+  sqrt(n^n) <= n! <= n^n
+
+So n! grows at least at the rate sqrt(n^n) but less than the rate n^n.
+
+Stirlings formula for approximating n!, which is very accurate for large n, has
+
+  n! ~ sqrt(2*pi*n)*(n/e)^n.
+
+Notice that the grown rate of this function, after removing constant multipliers
+is sqrt(n)*n^n*(1/e)^n. By Stirling's approxiation, 10! ~ 3,598,718 which is
+very close to the correct answer (3,628,800): its absolute error is 30,082 but
+its relative error is 30,082/3,628,800 = .83%. As n gets bigger the Stirling's
+approximation gets closer to n!.

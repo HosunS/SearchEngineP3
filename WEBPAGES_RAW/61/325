@@ -1,0 +1,372 @@
+				Dictionaries
+
+Here are the bare bones. I will demonstrate dictionaries in class. The next
+lecture will include many scripts and functions that we can write to process
+dictionaries. As with lists, the reality of understanding dictionaries is
+understanding the basic operations that we can perform on them. There are fewer
+operations that we can perform on dictionaries than lists, but their meanings
+are a bit more subtle.
+
+Dictionaries are like generalized lists: lists associate indexes with values,
+with the indexes ranging from 0 to len(...)-1; dictionaries (the dict type)
+associate arbitrary keys (not just integers) with values. Often the keys are
+strings and often values are ints, strings, or lists/tuples. The three major
+categories of operations on dictionaries are 
+
+(1) setting the value associated with a key
+
+(2) examining the value associated with a key (and sometimes mutating it)
+
+(3) iterating through a dictionary (there are three ways: by keys, by values,
+    and by items: items are 2-tuples consisting of a key and its value);
+    dictionaries are not ordered with indexes (like strings/lists/tuples) so
+    there is NO STANDARD ORDER that they are iteratated over, but we will learn
+    about the sorted function, which we canuse to iterate through dictionaries
+    in a special order.
+
+So, like lists, dictionaries are mutable data structures. Sometimes dictionaries
+are called maps, because they embody how to map a key to its associated value.
+
+Dictionaries have literals: any number of key:values pairs (0 or more, with the
+key and its associated value separated by a colon), with different key:value
+pairs separated by commas, all in braces: the empty dictionary is written {}.
+Note that a key/value pair, stored as a tuple, is called an "item" (see the
+ iteration over .items() in a dictionary). Here are example of dictionary
+literals.
+
+a = {'a':1, 'b':2, 'c':3} is a dictionary of str:int associations
+
+b = {1:'a', 2:'b', 3:'c'} is a dictionary of int:str associations
+
+c = {'penny':1, 'nickel':5, 'dime':10, 'quarter':25}
+     like a, but useful information
+
+d = {'bob':['ICS-31','MATH-2A','ICS-6B'], 'mary':['ICS-31','BIO-9','ICS-6D']}
+    is a dictionary of str:list[str]
+
+e = {'even': {0:'even',1:'odd'}, 'odd': {0:'odd',1:'even'}}
+    is a dictionary whose values are sub-dictionaries (just as we can have
+    lists whose values are sub-lists. We describe this annotation as
+    {str:{str:str}}.
+
+f = {'a':'str', 2:'int', (0,0):'tuple'}
+    is a dictionary whose keys are different types; we cannot use lists as KEYS
+    in dictionaries, but we can use tuples. The difference is mutability: all
+    keys must be immutable (recall strings and ints are immutable, so we can
+    use them as keys); more on this later.
+
+Dictionary operations:
+
+(1) len: we can compute the length of a dictionary (# of key:value pairs at
+    the top-level) len(a) is 3; len(b) is 3; len(c) is 4, len(d) is 2; len(e)
+    is 2.
+
+(2) Indexing: we can refer to each value in a dictionary by its key: we index
+    a dictionary by a key, computing its value: a['a'] is 1; b[3] is 'c';
+    c['quarter'] is 25; d['bob'] is ['ICS-31','MATH-2A','ICS-6B'] and note that
+    d['bob'][0] is 'ICS-31'; e['even'][1] is 'odd'; f[(0,0)] is 'tuple'
+
+    Note the asymmetry: given a key we can easily find its value, but given a
+    value we cannot easily find its key: in fact, although keys are unique,
+    there may be muliple values with different keys: {'alex':24, 'jessie':24}.
+
+    Note that c['peso'] raises an exception: KeyError: 'peso'; because there is
+    no value in the dictionary c associated with 'peso'. Another way to say
+    this is there is no key 'peso' in this dictionary.
+
+(3) No Slicing
+
+(4) Checking containment: the in/not in operators
+    These operators work on the KEYS in a dictionary
+    'a' in a is True; 'a' in b is False, but 3 in b is True; 'peso' in c is
+    False; 'bob' in d is True; 0 in d['even'] is True; 'int' in f is False
+
+    Sometimes we will see code like the following: it checks whether a key (x)
+    is in a dictionary (d) before using the key as in index, to ensure no
+    exception is not raised.
+
+    if x in d:
+        print(d[x])
+
+
+(5) No Catenation
+
+(6) No Multiplication
+
+(7) Iterability: there are three ways to iterate through a dictionary: by its
+      keys, by its values, and by its items (tuples of key:value pairs). Each
+      produces len(...) values, but their order is not fixed.
+
+    for k in d:/for k in d.keys(): produce all top-level keys in d
+    for v in d.values()          : produce all top-level values in d
+    for kv in d.items()          : produce all top-level (key,value) pairs in d
+
+    We can write
+      for k in sorted(...) if the keys/values/items can be compared for order
+        (they are produced in the order specified: as with the the sort method,
+        we can optionally supply key/reverse arguments to control the order).
+    Note that we cannot sort a dictionary, but we can iterate over the keys
+      in a sorted order; this is an important distinction, and is unlike lists.
+
+    for k in c:
+        print(k,end=';')
+    prints: penny;dime;nickel;quarter;
+
+    for k in sorted(c):
+        print(k,end=';')
+    prints: dime;nickel;penny;quarter;
+
+      This is similar to
+        keys = list(c)                # created list by iterating over d's keys
+        keys.sort()    	     	      # sort the list (lists are sortable)
+        for k in keys:		      # iterate through sorted keys list
+            print(k,end=';')
+
+    for k in sorted(c.keys()):	      # a common idiom: keys and values
+        print(k,c[k],sep=':',end=';')
+    prints: dime:10;nickel:5;penny:1;quarter:25;
+
+    for kv in sorted(c.items()):
+        print(kv,end=';')
+    prints: ('dime', 10);('nickel', 5);('penny', 1);('quarter', 25);
+
+    for kv in sorted(c.items()):
+        print(kv[0],kv[1],sep=':',end=';')
+    # note how each tuple in kv can have its indexes 0 and 1 accessed
+    prints: 'dime':10;'nickel:'5;'penny':1;'quarter':25;
+
+    for k,v in sorted(c.items()):     # a common idiom: keys and values
+        print(k,v,sep=':',end=';')
+    # note how each tuple produced is unpacked into the names k and v
+    prints: 'dime':10;'nickel:'5;'penny':1;'quarter':25;
+
+    for v in sorted(c.values()):      # this form isn't common but can be used
+        print(v,end=';')
+    prints: 1;5;10;25;
+    
+In fact, we can write the sorted function as
+
+def sorted(iterable,key=None,reverse=None):
+    alist = list(iterable)
+    alist.sort(key=key, reverse=reverse)
+    return alist
+
+which creates a list with every value produced by iterating over the iterable 
+parameter. Then it sorts that list using the key/reverse parameters. Finally
+it returns that list. So when writing
+
+    for i in sorted(...):
+
+i takes on every value (one after another) that is in the list returned by
+calling the sorted function: a list whose values are sorted.
+
+
+      
+Dictionary (mutation) operations
+
+(a) Assignment
+
+   Suppose x = {'a':1, 'b':2, 'c':3}
+   x['a'] is 1
+   x['a'] = 'z'
+   now x is {'a':'z', 'b':2, 'c':3}; the value associated with key 'a' has been
+      changed to 'z'
+   x['b'] = ['b1','b2']
+   now x is {'a':'z', 'b':['b1','b2'], 'c':3}; the value in key 'b' has been
+      changed to ['b1','b2']
+
+   If we assign to a key not already in the dictionary, Python just adds it
+     (very different from lists, which require a call to append).
+
+   x['d'] = 'new'
+   now x is {'a':'z', 'b':['b1','b2'], 'c':3, 'd':'new'}; key 'd' is added to
+     the dictionary, with an associated value of 'new'. len(x) goes from 3 to 4.
+
+   So, looking up a non-existant key raises KeyError, but assigning a
+     non-existant key is fine. This process if like like bind names in general:
+     to look up the value of name, the name must be bound to some value; but to
+     set/rebind a value to a name the name can exist (change its value)or not
+     exist (create the name and set its value)
+
+(b) del form: del adict[key]
+    del x['b']
+    now x is {'a':'z', 'c':3, 'd':'new'}
+
+    if we try to delete a key not in adict, Python raises KeyError; we can
+    always write
+      if key in adict:
+          del adict[key]
+    to ensure this exception is not raised.
+
+(c) The get function is convenient to explain here, but it does not mutate the
+      dictionary
+    adict.get(key,default)
+    Same as adict[key] except if key is not in adict, it returns the value of
+      default (and if default is not specified, returns None); but unlike []
+      indexing, it never raises KeyError
+    Similar to the following function definition (we'll learn the truth soon)
+
+    def get(key,default=None)
+       if key in adict:
+           return adict[key]
+       else:
+           return default
+       
+(d) adict.setdefault(key,default)
+    Same as adict.get(key,default) except if key is not in adict, it first
+    adds the key:default pair to the dict and then returns the value of
+    adict[key], which is now guaranteed to exist.
+    Similar to the following function definition (we'll learn the truth soon)
+
+    def setdefault(key,default=None)
+       if key not in adict:
+          adict[key] = default
+       return adict[key] # which is default
+   
+    So setdefault is like get, but if the key is not found, it not only returns
+    default, but first mutates the dictionary, puting the key:value pair in it.
+          
+(e) adict.pop(key) or adict.pop(key,default)
+    First form: removes the key (and its associted value) from the dict and
+       returns the value associated with the key: it raises a KeyError if key
+       is not in adict.
+    Second form: the same, but returns default if key is not in adict, not
+      raising an exception
+
+    adict.popitem()
+    Removes a random key from the dictionary and returns the key:value as a
+     tuple: raises KeyError if the dictionary is empty: len(adict) == 0
+
+(f) adict.clear()
+    Deletes all key:value pairs from the adict; equivalent to adict = {}
+
+(g) keys(), values(), items() are technically called views of the dictionary.
+    Besides iterating over these views, we can check if values are in/not in
+      them
+
+(h) d = dict(...)
+    Recall that we can write list(...) and tuple(...) to construct a list/tuple
+    that contains all the values specified by ...
+
+    For dict, there are two forms of ...
+
+    (1) anything we can iterate over, that produces a sequence of 2-list/-tuple
+    which is treated as a key/value. For example, we write a list of 2-tuples:
+    d = dict([('a',1),('b',2),('c',3)]) is the same as d = {'a':1, 'b':2, 'c':3}
+
+    (2) a list of parameters of the form p=v, where p (as a string) becomes
+    a key and v becomes its associated value. This only works for keys that are
+    string, but this is very common.
+    d = dict(a=1,b=2,c=3) is the same as d = {'a':1, 'b':2, 'c':3}
+
+(i) adict.update(...)
+    Update adict with the information in ..., with three forms of ....
+    (0) another dict
+    (1) see (h) above
+    (2) see (h) above
+
+    so, if adict is {'a':100, 'b':200, 'c':300} the following
+       adict.update([('a',1),('x',2),('c',3)])     # note the 'x'
+       adict.update({'a':1, 'x':2, 'c':3})         # note the 'x'
+       adict.update(a=1,x=2,c=3)   		   # note the 'x'
+    all are like executing
+       adict['a'] = 1
+       adict['x'] = 2
+       adict['c'] = 3
+    which result in adict being {'a':1, 'b':200, 'c':3, 'x':2}
+
+    Students use update too much. Try to use [] and mutation instead. For
+      example, if classes is a dictionary whose keys are UCInetIDs and whose
+      associated values are the courses that student is taking, writing
+      classes['pattis'].append('ICS-31') would mutate the list associated
+      with UCInetID 'pattis' to also include 'ICS-31'.
+    
+
+------------------------------------------------------------------------------
+
+Comprehensions
+
+As with lists/tuples, we can build dictionaries via comprehensions as
+
+d = {dict-comprehension}
+
+The form of a dict-comprehension is as follows (bool-expression-i is a boolean
+expression that can refer to i). Note that the [] mean EBNF option.
+
+  key-expression-i:value-expresion-i for i in iterable [if bool-expression-i]
+
+So, to create a dictionary of keys that are strings and values that are their
+lengths, we could write
+
+d = {s : len(s) for s in 'Four score and seven years ago'.split(' ')}
+
+Here d is {'Four':4, 'score':5, 'and':3, 'seven':5, 'years':5, 'ago':3}
+
+If we wanted only the words longer than 3 characters, we could include the
+option and write:
+
+{s : len(s) for s in 'Four score and seven years ago'.split(' ') if len(s)>3}
+
+Generally, we can translate a dictonary comprehension as follows.
+
+  comprehension = {}
+  for i in iterable:
+      if bool_expression-i:
+          comprehension[key-expression-i] = value-expression-i
+
+As with list, comprehensions are good for creating new dictionaries, but not
+for mutating existing dictionaries
+
+------------------------------------------------------------------------------
+
+Putting it all Together: Some Real Dictionary Code (The Power of Dictionaries)
+
+Suppose that we have a list of words and we want a count of how often each word
+appears. Here is a function that takes such a list as an argument and returns
+a dictionary of how often each word occurs.
+
+def count_words(alist):
+    answer = {}			# create empty dictionary
+    for w in alist:		# iterate over all words in alist
+        if w in answer:		# check if that word is a key
+            answer[w] += 1	#   udpate count for existing key
+        else:
+            answer[w] = 1	#   create count for non-existing key
+    return answer
+
+We can simplify this function by using setdefault (review its meaning). It is
+so useful just because this update-idiom is so frequent. In fact, we will learn
+about defaultdict that even makes this idiom easier to express.
+
+def count_words(alist):
+    answer = {}
+    for w in alist:
+        answer[w] = answer.get(w,0) + 1
+    return answer
+
+In both cases, calling
+
+count_words('how much wood could a woodchuck chuck if a woodchuck could chuck wood'.split(' '))
+
+returns
+
+{'could': 2, 'much': 1, 'chuck': 2, 'if': 1, 'a': 2, 'how': 1, 'wood': 2, 'woodchuck': 2}
+
+Notice that the order of the key:value pairs is indeterminate. If we wrote
+answer = count_words(...)
+for k in sorted(answer):
+    print(k,'->',answer[k])
+
+the printed result would be 
+
+a -> 2
+chuck -> 2
+could -> 2
+how -> 1
+if -> 1
+much -> 1
+wood -> 2
+woodchuck -> 2
+
+If you understand all aspects of count_words, you have a good starting 
+understanding of dictionaries.

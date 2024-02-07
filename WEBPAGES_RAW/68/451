@@ -1,0 +1,108 @@
+//This is a tester for your program. We use input and output files. However, the input and
+//output parts are already taken care of within this class and you do not need to do anything
+//on these at all.
+
+//The input file is called "input.in". You can create it by yourself or use the one given.
+//Each line of the input file corresponds to a set of input, i.e. a triple of targetSavings,
+//numberOfMonths and interestRate, which should be of int, int and double types respectively,
+//separated by space.
+
+//The output file is called "output.out" and will be created if it doesn't exit. If it does
+//exist, the content of the file will be flushed everytime you run the program (i.e. the file
+// will be emptied first and new outputs will be written in this same file)
+
+//The only place where you need to modify this class is the error-handling code that
+//inteprets lines in the input file as (int,int,double) input triple.  The error handling
+//here is the same as you would do for taking the (int,int,double) input from the console.
+
+//You should modify the input file in order to test your program, and open the output file
+//after you run your program to see the result your code provides.
+
+
+
+import java.util.Scanner;
+import java.io.*;
+
+public class SavingsCalculatorTester
+{
+	private Scanner read;
+	private PrintStream write;
+
+	//constructor
+	public SavingsCalculatorTester()
+	{
+		//catch the exceptions
+		try
+		{
+			read = new Scanner(new FileReader("input.in"));
+		}
+		catch(FileNotFoundException e)
+		{
+			System.out.println("Input file not found!");
+			System.exit(1);
+		}
+
+		try
+		{
+			write = new PrintStream( new FileOutputStream("output.out"));
+		}
+
+		catch(FileNotFoundException e)
+		{
+			System.out.println("Output file not found! Creating a new file...");
+		}
+	}
+
+	//main method where the program begins.
+
+	public static void main(String args[])
+	{
+		SavingsCalculatorTester tester = new SavingsCalculatorTester();
+		tester.test();
+	}
+
+	//test your SavingsCalulator using the input file and write the result into the output
+	//file
+	public void test()
+	{
+		Input input = new Input();
+		int output;
+
+		Boolean hasMore= getInput(input);
+		while (hasMore)
+		{
+			SavingsCalculator calculator = new SavingsCalculator();
+
+			output = calculator.calculateMonthlyPayment
+			(input.targetSavings, input.numberOfMonths, input.interestRate);
+
+			write.println((double)output/100);
+
+			hasMore = getInput(input);
+		}
+
+	}
+
+	//get input from the file.
+	private Boolean getInput(Input input)
+	{
+		if( read.hasNext())
+		{
+
+		    //The code below reads a line from the input file and assumes
+		    //that it provides a correctly formatted (int,int,double) triple.
+		    //You should re-write this code so that it robustly handles all
+		    //mistakes in the inputs, as we explain in the "Interface, Robust Code, 
+		    //Exception Handling" section of the lab
+   
+			input.targetSavings = read.nextInt();
+			input.numberOfMonths = read.nextInt();
+			input.interestRate = read. nextDouble();
+
+			return true;
+		}
+		return false;
+	}
+
+
+}

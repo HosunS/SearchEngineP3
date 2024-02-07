@@ -1,0 +1,109 @@
+/* 
+$Id$
+
+Copyright (C) 2007 by The Regents of the University of California
+
+Redistribution of this file is permitted under
+the terms of the *GNU* Public License (*GPL*) 	
+
+Date: 04/08/2007
+Author: Yiming Lu <yimingl@ics.uci.edu>
+*/
+
+#ifndef _filtertree_h_
+#define _filtertree_h_
+
+#include <vector>
+#include <string>
+#include "buckethead.h"
+#include "../util/appsearch.h"
+using namespace std;
+
+enum EDFunction {standardFunction, swapFunction};
+
+class FilterTree: public AppSearch
+{	
+public:
+  /*Parameter Description:
+   *q: q-value in gram based approach
+   *data: The pointer to the dictionaries
+   *f: edit distance function to be used
+   *indexFile: the name of the file to which the index is serialized   
+   */
+   //This constructor is called when a new index needs to be built.
+   FilterTree(unsigned q,
+              const vector<string> *data,
+              EDFunction f = standardFunction);
+   //This constructor is called when the search needs some old index from a file
+   FilterTree(const vector<string> *data, 
+  			  const string &indexFile = "index_file");
+   //This function builds the index			 			   
+   void build();
+   //This functon returns the record ids whose ED is above the threshold. 
+   void search(const string &query, 
+  			   const unsigned editdist,
+  			   vector<unsigned> &results);
+   //Save the index into a file with the name, indexFile			   
+   void saveIndex(const string &indexFile = "index_file") const;
+   //It reports the analysis result, such as running time, memory requirement.			    
+   void reportAnalyses();
+   ~FilterTree();  
+  
+private:  
+   void loadIndex(const string &indexFile);
+   const char leftSign; //The prefix to create grams
+   const char rightSign; //The suffix to create grams
+   unsigned q;
+   EDFunction function;
+   vector<string> *stringTable;
+   Buckets *headBuckets;
+   CountTable **countTables;   
+   const vector<string> *data;  
+   
+   /*for the purpose of analysing the performance*/
+   double 	totalTime;
+   unsigned	candidateNo; // # of false positives for long queries
+   unsigned  shortCandidateNo;  // # of false positives for short queries
+   unsigned	patternNo;
+   unsigned	resultNo;
+   unsigned  queryNo;
+   unsigned  shortQueryNo;
+   
+   void buildBuckets();
+   
+  /*This function do the approximate string search using length,
+   *position, and count filters.
+   *Parameter Description:
+   *targetWord: query
+   *patternId: The id of the query
+   *positions: The position information for each gram in the query
+   *edThreshold: The editdistance threshold
+   *lengthBuckets: The matched information, such as position, length
+   *for each gram in the query  
+   *results: The vector to store the query results.   
+   */
+   void mergeSort(const string & targetWord,
+                  unsigned patternId,
+                  const vector<unsigned> *positions,
+                  unsigned edThreshold,
+                  const vector<LengthBucket *> *lengthBuckets,
+                  vector<unsigned>& results);
+                 
+  /*This function is to deal with short queries, 
+   *whose length is no more than edThreshold * Q - Q + 1.
+   *The semantic meaning of the parameters are the same as the ones in mergeSort
+   */
+   void processShortStrings(const string & targetWord,
+                            unsigned patternId,
+                            const vector<unsigned> *positions,
+                            unsigned edThreshold,
+                            const vector<LengthBucket *> *lengthBuckets,
+                            vector<unsigned>& results);
+  
+   void getApproximateMatch(const string & targetWord,
+                            unsigned patternId,
+                            unsigned edThreshold,
+                            vector<unsigned>& results);
+};
+
+#endif /*FILTERTREE_H_*/

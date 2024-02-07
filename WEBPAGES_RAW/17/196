@@ -1,0 +1,234 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="GENERATOR" CONTENT="Globetrotter 1.1.1">
+<META HTTP-EQUIV="AUTHOR" CONTENT="David G. Kay">
+<META HTTP-EQUIV="UPDATED" CONTENT="Monday, December 6, 2004 6:57 AM">
+<TITLE>;; color-list-&gt;image-vector: (listof color) number number -&gt; vector-of-lines</TITLE>
+<META HTTP-EQUIV="X-GLOBETROTTERXDATA" CONTENT="D06B02B3">
+<META HTTP-EQUIV=KEYWORDS CONTENT="Scheme, two-dimensional arrays, images">
+<META HTTP-EQUIV="DESCRIPTION" CONTENT="Narrative example of creating two-dimensional arrays (vectors of vectors) in Scheme, using a rectangular array of pixels as the problem domain.">
+<META HTTP-EQUIV="COPYRIGHT" CONTENT="Copyright &#169; 2004 by David G. Kay.  All rights reserved.">
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+<A NAME="_top"></A>
+<A NAME="list-image conversions"></A>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; color-list-&gt;image-vector: (listof
+color) number number -&gt; vector-of-lines</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; Return a vector of vectors with the numbers
+of rows and columns specified,</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; containing the colors in the input list.</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>(define color-list-&gt;image-vector</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160; (lambda (L rows cols)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160; (local ((define image
+   ; First, set up the structure of the vector</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160; (build-vector </FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160; rows </FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160; (lambda (r) (build-vector cols (lambda (c) 'anything-for-now)))))</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160; (define cl-&gt;iv-aux</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160; (lambda (L last-row last-col curr-row curr-col)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160; (cond        ; Use the list to guide the process</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160; ((empty? L) image)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160; (else (begin</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (image-set!
+image curr-row curr-col (first L))</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (if (= curr-col
+last-col)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+(cl-&gt;iv-aux (rest L) last-row last-col</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (add1 curr-row) 0)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+(cl-&gt;iv-aux (rest L) last-row last-col</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160; curr-row (add1 curr-col)))))))))</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160; (cl-&gt;iv-aux
+L (sub1 rows) (sub1 cols) 0 0))))</FONT></P>
+<BR>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; image-vector-&gt;color-list: vector-of-lines
+-&gt; (listof color)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; Return a list containing all the elements
+in the image vector</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; (in row-major order, i.e., everything
+in the first row, then</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; everything in the second, and so on).
+ The approach we take here</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; is to work backwards, from the lower
+right corner, so we can just</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; cons each successive item onto the list
+we have so far.</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>(define image-vector-&gt;color-list</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160; (lambda (image)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160; (local ((define last-row
+(sub1 (vector-length image)))</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160; (define last-col (sub1 (vector-length (vector-ref image 0))))</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160; (define iv-&gt;cl-aux</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160; (lambda (image curr-row curr-col list-so-far)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160; (local ((define list-with-next-pixel </FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (cons (image-ref
+image curr-row curr-col)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160; list-so-far)))</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160; (cond</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160; ((and (= curr-row 0) (= curr-col
+0)) &#160; ; We&#39;ve added last pixel</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160; list-with-next-pixel) &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160; ; so return final list.</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160; ((= curr-col 0) &#160;  &#160; 
+&#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160; ;
+We reached start of</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (iv-&gt;cl-aux image &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160; ; a row,
+so go up one</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160; (sub1 curr-row) last-col row &#160;  &#160; ; row
+the next</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160; list-with-next-pixel)) &#160;  &#160;  &#160;  &#160;
+ &#160; ; time around.</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160; (else &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160; ; We stay on this row,</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (iv-&gt;cl-aux image &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160; ; moving
+one pixel to</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160; curr-row (sub1 curr-col) &#160;  &#160;  &#160;
+ &#160; ; the left next</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160; list-with-next-pixel))))))) &#160;  &#160; ; time
+around.</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160; (iv-&gt;cl-aux
+image last-row last-col empty))))</FONT></P>
+<BR>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; show: image-vector -&gt; side effect
+(display)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; Display the image in the vector using
+tools from image.ss teachpack.</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; color-list-&gt;image takes its arguments
+in (columns, rows) order </FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>;; (i.e., x, then y), which is opposite
+from our (rows, columns) order.</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>(define show</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160; (lambda (image)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160; (color-list-&gt;image
+(image-vector-&gt;color-list image)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (vector-length (vector-ref
+image 0))</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160; (vector-length image)</FONT></P>
+<P>
+<FONT FACE="Courier New" SIZE=2>&#160;&#160;  &#160;  &#160;  &#160;  &#160;
+ &#160;  &#160;  &#160;  &#160;  &#160;  &#160; 0 0)))</FONT></P>
+<BR CLEAR=ALL>
+<P>
+</P>
+<HR>
+<P>
+<address>
+<FONT FACE="Palatino"><A HREF="http://www.ics.uci.edu/~kay/">David G. Kay</A>,
+</FONT><FONT FACE="Goudy Old Style">406B Computer Science
+<BR>
+</FONT><FONT FACE="Palatino"><A HREF="http://www.uci.edu/">University of California, Irvine</A>
+<BR>
+</FONT><FONT FACE="Goudy Old Style">Irvine, CA  92697-3425</FONT><FONT FACE="Palatino">
+ --  </FONT><FONT FACE="Goudy Old Style">(949) 824-5072</FONT><FONT FACE="Palatino">
+ --  Fax </FONT><FONT FACE="Goudy Old Style">(949) 824-4056</FONT><FONT FACE="Palatino">
+ --  Email  <a href=mailto:kay@uci.edu>
+</FONT><FONT FACE="Courier"><TT><A HREF="mailto:kay@uci.edu">kay@uci.edu</A></a>
+<BR>
+</address>
+</TT></FONT></P>
+<P>
+<FONT FACE="Palatino" SIZE=1>Monday, December 6, 2004 -- 6:57 AM</FONT></P>
+</BODY>
+</HTML>

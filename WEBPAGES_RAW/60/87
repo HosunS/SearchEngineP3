@@ -1,0 +1,155 @@
+
+ import java.applet.*;
+ import java.awt.*;
+
+ public class SW extends Applet
+
+ {
+   TextField input1,input2,output1;    
+   Label in1,in2,output; 
+   NextButton nb;
+   TextArea ta;
+   int[][] sim;
+     int gap = -1;
+     int match = 1;
+     int mismatch = -1;
+     int len1, len2;
+     String s1, s2;
+
+   public void init()  // acts as a constructor for Applet
+   {
+     resize(600,400);
+     setLayout(new BorderLayout());
+     in1 = new Label("String one:");
+     in2 = new Label("String two:");
+     input1 = new TextField(20);
+     input2 = new TextField(20);
+     output = new Label("Similarity is ");
+     output1 = new TextField(5);
+     nb = new NextButton("Do Comparison",this);
+     ta = new TextArea(25,25);
+     Panel panel1 = new Panel();
+     Panel panel2 = new Panel(); 
+     panel1.add(in1);
+     panel1.add(input1);
+     panel1.add(in2);
+     panel1.add(input2);
+     panel2.add(nb);
+     panel2.add(output);
+     panel2.add(output1);
+     add("North",panel1);
+     add("South",panel2);
+     add("Center",ta);
+    }
+
+
+  public void putAnswer()
+  { 
+       s1 = input1.getText();
+       s2 = input2.getText();
+    output1.setText(doSimMatch(s1,s2));
+    results(sim,s1,s2,ta);
+   }
+
+    void results(int[][] a,String s1,String s2, TextArea ta)
+	{  
+         String alignment = backtrace(s1,s2,a);
+            ta.setText("");
+            int len1 = s1.length();
+            int len2 = s2.length();
+            ta.appendText("\t");
+            for (int i = 0; i<len2; i++)
+        	ta.appendText("\t"+ s2.charAt(i));
+            ta.appendText( "\n");
+        for (int i = 0; i<len1+1; i++)
+	 {
+	    ta.appendText( (i == 0) ? "\t" : s1.charAt(i-1)+ "\t");
+	    for (int j = 0; j<len2+1; j++)
+		ta.appendText( a[i][j]+"\t");
+	    ta.appendText("\n");
+            ta.append(alignment+"\n");
+	  }
+	}
+           
+
+   String doSimMatch(String s1,String s2)
+   {
+     len1 = s1.length();
+     len2 = s2.length();   
+     this.s1 = s1;
+     this.s2 = s2;
+     sim = new int[len1+1][len2+1];
+     int i,j;   
+     for ( i=0;  i<=len1; i++)
+          sim[i][0] = i*gap;
+     for ( j=0; j<=len2; j++)
+          sim[0][j] = j*gap;
+      for (i = 1; i<=len1; i++)
+         for (j = 1; j<=len2; j++)
+         if (s1.charAt(i-1) == s2.charAt(j-1))
+            sim[i][j] = maximum(sim[i-1][j]+gap,sim[i-1][j-1]+match,
+                        sim[i][j-1]+gap);
+         else
+           sim[i][j] = maximum(sim[i-1][j]+gap,sim[i-1][j-1]+mismatch,
+                       sim[i][j-1]+gap);
+     return(" "+sim[len1][len2]);
+   }
+
+  static int maximum(int i, int j, int k)
+   {
+    return Math.max(i,Math.max(j,k));
+    }
+ }
+
+class NextButton extends Button
+{   SW sw;
+    NextButton(String s,SW sw)
+         {
+           super(s);
+	   this.sw = sw;
+           }
+ public  boolean action(Event e, Object o)
+  {
+     sw.putAnswer();
+     return true;
+  }
+
+String  backtrace(String s1, String s2, int[][] sim)
+      {   
+	  int i = len1+1;
+          int j = len2+2;
+        int score = sim[i][j];
+        String  align1 = "";
+        String align2 = "";
+        while (score >0)
+          {
+             int charMatchScore =
+            (s1.charAt(i-1) == s2.charAt(j-1) )? match : mismatch;
+             if (score == sim[i-1][j-1]+charMatchScore)
+               {
+                   i--;
+                   j--;
+                   align1 = s1.charAt(i)+ align1;
+                   align2 = s2.charAt(j)+ align2;
+               }
+             else if (score == sim[i-1][j]+gap)
+               {
+                 i--;
+                 align1 = s1.charAt(i)+ align1;
+                 align2 = "_"+align2;
+               }
+             else
+               {
+                 j--;
+                 align1 = "_"+ align1;
+                 align2 = s2.charAt(j)+align2;
+               }
+             score = sim[i][j];  
+          }
+        return align1 + "\n"+ align2;
+      }
+
+
+}
+ 
+

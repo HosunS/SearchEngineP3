@@ -1,0 +1,196 @@
+<html>
+<head>
+    <title>Ucigame - Gallery - MegaBounce</title>
+<link href="../stylesheet.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+
+<center><h2>Ucigame - Gallery - MegaBounce</h2></center>
+
+<h4>
+<a href="../index.html">Home</a> |
+<a href="../getting-started.html">Getting Started</a> |
+<a href="../reference.html">Reference</a> |
+<a href="../java.html">Introduction to Java</a> |
+<a href="../gallery.html">Gallery</a>
+</h4>
+
+<p>
+<table>
+<tr>
+<td width="300" valign="top">
+<applet
+   code="MegaBounce.class"
+   codebase="."
+   archive="../ucigame.jar"
+   width="250"
+   height="250"
+   border="0"
+>
+Your browser cannot show Java applets.
+</applet>
+</td>
+<td width=600 valign="top" halign="center">
+MegaBounce shows how actual framerate (displayed in the
+browser's status bar) varies depending on the number
+of balls and whether pixel perfect collision detection
+is used.  Note that since each ball is checked against
+every other ball for a possible collision, the number
+of ball to ball comparisons is the number of balls
+squared, divided by two.
+<br> <br>
+Use the up and down arrow keys, or the mouse wheel,
+to control the number of balls, and use the space bar
+to toggle pixel perfect collision detection.
+<br> <br>
+The goal framerate is higher than most monitors'
+refresh rate, which means that some invocations of
+draw() will not get to the screen.  The value sent to
+<tt>framerate()</tt> also controls the typematic or
+auto-repeat frequency.  At the high level of 100, even
+the quickest press of the up arrow key would result
+in multiple additional balls; therefore, typematic is
+turned off for MegaBounce.
+<br> <br>
+Class Ball extends Sprite.  It's an inner class, so that
+the code can use the <tt>canvas</tt> object and the
+<tt>random</tt> method, which are part of the Ucigame class.
+
+</td>
+</tr>
+<tr>
+<td colspan=2>
+<br>
+<b>MegaBounce.java</b>
+<br>
+<pre>
+import ucigame.*;
+
+public class MegaBounce extends Ucigame
+{
+    final int MAX_BALLS = 150;
+    final int GOAL_FRAMERATE = 100;
+
+    boolean usePixelPerfect = true;
+    int numBallsDisplayed = 25;
+
+    Ball[] balls = new Ball[MAX_BALLS];
+    Sprite display;
+
+
+    public void setup()
+    {
+        window.size(250, 250);
+        window.title("MegaBounce");
+        framerate(GOAL_FRAMERATE);
+        window.showFPS();
+        keyboard.typematicOff();
+
+        canvas.background(200, 200, 200);
+
+        randomSeed(100);
+        Image ballImage = getImage("images/bouncing-ball.png", 0, 0, 0);
+        for (int i=0; i&lt;MAX_BALLS; i++)
+            balls[i] = new Ball(ballImage);
+
+        display = makeSprite(getImage("images/border.png", 255, 0, 0));
+        display.position(canvas.width()/2 - display.width()/2,
+                         canvas.height() - display.height() - 5);
+
+        String myFont;
+        if (isAvailableFont("Georgia"))
+            myFont = "Georgia";
+        else
+            myFont = arrayOfAvailableFonts()[0];    // just choose first one
+        println("MegaBounce using font " + myFont);
+
+        canvas.font(myFont, PLAIN, 40, 0, 150, 50);
+    }
+
+    public void draw()
+    {
+        canvas.clear();
+
+        canvas.putText("FPS: " + actualFPS(), 60, 80);
+
+        for (int i=0; i&lt;numBallsDisplayed; i++)
+            balls[i].move();
+
+        for (int i=0; i&lt;numBallsDisplayed; i++)
+        {
+            balls[i].bounceIfCollidesWith(TOPEDGE, BOTTOMEDGE, LEFTEDGE, RIGHTEDGE);
+            for (int j=i+1; j&lt;numBallsDisplayed; j++)
+            {
+                if (usePixelPerfect)
+                    balls[i].bounceIfCollidesWith(balls[j], PIXELPERFECT);
+                else
+                    balls[i].bounceIfCollidesWith(balls[j]);
+            }
+        }
+
+        for (int i=0; i&lt;numBallsDisplayed; i++)
+            balls[i].draw();
+
+        display.draw();
+        display.font("Arial", BOLD, 11, 255, 100, 100);
+        display.putText("Num Balls: " + numBallsDisplayed, 33, 48);
+        display.font("Arial", BOLD, 11, 0, 0, 128);
+        if (usePixelPerfect)
+            display.putText("Pixel Perf: On", 33, 68);
+        else
+            display.putText("Pixel Perf: Off", 33, 68);
+    }
+
+    public void onKeyPress()
+    {
+        if (keyboard.isDown(keyboard.UP) && numBallsDisplayed &lt; MAX_BALLS)
+            numBallsDisplayed = numBallsDisplayed + 1;
+        if (keyboard.isDown(keyboard.DOWN) && numBallsDisplayed &gt; 1)
+            numBallsDisplayed = numBallsDisplayed - 1;
+        if (keyboard.isDown(keyboard.SPACE))
+            usePixelPerfect = !usePixelPerfect;
+    }
+
+    public void onMouseWheelMoved()
+    {
+        numBallsDisplayed = numBallsDisplayed - mouse.wheelClicks();
+        if (numBallsDisplayed &lt; 1)
+            numBallsDisplayed = 1;
+        if (numBallsDisplayed &gt; MAX_BALLS)
+            numBallsDisplayed = MAX_BALLS;
+    }
+
+    class Ball extends Sprite
+    {
+        double rotationIncrement;
+        double rotationAmount;
+        int thisBallsNumber;
+
+        Ball(Image image)
+        {
+            super(image);
+            position(random(0, canvas.width() - width()),
+                    random(0, canvas.height() - height()));
+            motion(random(-5, 5), random(-5, 5));
+            rotationAmount = 0;
+            rotationIncrement = random(-15, 15);
+        }
+
+        public void draw()
+        {
+            rotationAmount = rotationAmount + rotationIncrement;
+            rotate(rotationAmount);
+            super.draw();
+        }
+    }
+}
+</pre>
+</td>
+</tr>
+</table>
+
+<br>
+<br>
+
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>SEAL - Titanium</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta http-equiv="Reply-to" content="malek at uci dot edu">
+<meta http-equiv="Owner" content="Sam Malek">
+<meta name="Author" content="Sam Malek">
+<meta name="Generator" content="Emacs">
+<link rev="MADE" href="mailto:malek at uci dot edu">
+<link href="../../seal.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+<div class="wrapper">
+    
+<!-- *************** Beginning of content ****************** -->
+
+<h2>Titanium: Efficient Analysis of Evolving Alloy Specifications</h2>
+
+<p>
+The Alloy specification language, and the corresponding Alloy Analyzer, have received much attention in the last two decades with applications in many areas of software engineering. Increasingly, formal analyses enabled by Alloy are desired for use in an on-line mode, where the specifications are automatically kept in sync with the running, possibly changing, software system. However, given Alloy Analyzer's reliance on computationally expensive SAT solvers, an important challenge is the time it takes for such analyses to execute at runtime. The fact that in an on-line mode, the analyses are often repeated on slightly revised versions of a given specification, presents us with an opportunity to tackle this challenge.
+
+<br><br>Titanium is an extension of Alloy for formal analysis of evolving specifications. By leveraging the results from previous analyses, Titanium narrows the state space of the revised specification, thereby greatly reducing the required computational effort.    
+</p>
+
+<h3>Approach Overview</h3>
+<p>
+    The following diagram shows a simplified, schematic view of the Titanium approach, where the dimensions represent relational variables&mdash;in this case three hypothetical relational variables R1, R2, and R3&mdash;dots, model instances, and the two lines, the upper and lower bounds that scope the state space in the analysis of original specification.    
+</p>
+
+<img style="margin:10" ALT="[Titanium picture]" height="400" src=./Titanium_approach.png><br>
+
+<p>
+The Titanium's efficiency gain is due to a new method of determining the analysis bounds. When the satisfying model instances are found, we are able to tighten the bounds without losing any of the satisfying instances. Based on this observation, when a specification changes, Titanium is able to set tighter bounds for the parts that remain unaffected. Dashed lines, in the diagram, represent bounds adjusted by Titanium  for the shared relational variables in the revised specification. Of course, changed relations and those newly added would maintain the user-defined bounds for the analysis.
+
+<br><br>Titanium first analyzes the structure of a revised specification, and identifies a set of candidate relational variables that are shared with the originating specification. It then uses the instances produced for the original specification to calculate tighter bounds for shared relational variables in the revised specification. By tightening the bounds, Titanium reduces the search space, enabling the SAT solver to find the model instances at a fraction of time needed for the original bounds.
+
+<br><br>The paper presents a formal description of the approach, including its semantic basis in terms of models specified in relational logic, and demonstrates how it can be realized atop an existing relational logic model finder, without compromising soundness and completeness.    
+</p>
+
+<h3>Tool</h3>
+
+<p>
+Titanium tool is publicly <a href="./Titanium.zip">available</a>.
+
+<br><br>To execute,  type java &ndash;Xmx8096m &ndash;jar Titanium.jar Titanium
+<br>&ndash;f &ndash;originfile &lt;?&gt; Original Alloy Specification
+<br>&ndash;u &ndash;updatedfile &lt;?&gt; Updated Alloy Specification
+<br>[ &ndash;o &ndash;output &lt;?&gt; Output file
+<br>&ndash;s &ndash;symmetry &lt;?&gt; A symmetry&ndash;breaking predicate size parameter ]
+<br>For example, java &ndash;Xmx8096m &ndash;jar Titanium.jar Titanium &ndash;f "model.als" &ndash;u "updated.als" &ndash;o "output.txt"
+
+<br><br>Experimental results can be downloaded from <a href="./experimental-results.zip">here</a>.
+</p>
+
+<h3>Publications</h3>
+
+More details about Titanium can be found in our publication:
+
+<ul class="paperlist">
+    <li><b>Titanium: Efficient Analysis of Evolving Alloy Specifications</b><br> 
+    Hamid Bagheri and Sam Malek<br>
+    <i>24th ACM SIGSOFT International Symposium on the Foundations of Software Engineering (FSE 2016), Seattle, WA, November 2016. (27% acceptance rate)</i>
+    <br>[<a href="./FSE2016Titanium.pdf">PDF</a>]
+    </li> 
+</ul>
+
+<!-- ***************** End of content ****************** -->
+<br><br>
+<div style="float:left">
+            <a href="http://www.ics.uci.edu/~seal/"><img ALT="[seal's logo]" height="200" src=../../seal.png></a>
+</div>
+<div style="float:right">
+            <a href="http://www.ics.uci.edu"><img ALT="[uci's logo]" style="padding-top: 40px" height="100" src=../../uci.jpg></a>
+</div>
+</div>
+</body>

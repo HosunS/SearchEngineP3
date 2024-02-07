@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>5.1 OEChem Iterators</title>
+<META NAME="description" CONTENT="5.1 OEChem Iterators">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node44.html">
+<LINK REL="previous" HREF="node42.html">
+<LINK REL="up" HREF="node42.html">
+<LINK REL="next" HREF="node44.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node42.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node42.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node44.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node42.html">5. Traversing the Atoms,</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node42.html">5. Traversing the Atoms,</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node44.html">5.2 Looping over the</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION008100000000000000000">
+5.1 OEChem Iterators</A>
+</H1>
+
+<P>
+The standard way of processing each item or member of a set or
+collection in OEChem is by the use of an iterator.  The use of
+iterators is a common abstraction (or design pattern) in object
+oriented programming, that hides the way the collection/container is
+implemented from the user.  Hence a set of atoms could be implemented
+internally as a array, a linked list, a hash table or any similar data
+structure, but its behavior to the programmer is independent of the
+actual implementation.  An iterator can be thought of as a current
+position indicator.
+
+<P>
+OEChem iterators make use of C++'s template mechanism.  The use of
+templates allows the functionality of an iterator to be specified
+(implemented) independently of the type of the collection being
+iterated over.  An iterator over a type <code>T</code>, has the type
+<code>OEIter&lt;T&gt;</code>.  Hence, an iterator over the atoms of a molecule
+(represented by OEAtomBase) has type <code>OEIter&lt;OEAtomBase&gt;</code> and an
+iterator over the bonds of a molecule has type <code>OEIter&lt;OEBondBase&gt;</code>.
+
+<P>
+The three most common operations of an OEIter are assignment, testing
+and increment.  These three iterator methods allow OEChem iterators to
+resemble conventional <code>for</code> loops in high level programming languages.
+Assignment specifies which collection/container the iterator is
+intended to loop over, testing determines whether the iterator has
+seen all of the items, and increment advances the iterator to the next
+position.
+
+<P>
+One possible source of confusion is that most functions and methods
+that return an iterator, actually return a result of type
+<code>OEIterBase&lt;T&gt;</code> rather than <code>OEIter&lt;T&gt;</code>. The template class
+<code>OEIterBase&lt;T&gt;</code> is an internal abstraction used by OEChem, and should
+be treated as an opaque type by the user.  Suffice to say that values
+of type <code>OEIterBase&lt;T&gt;</code> can be assigned to variables of type
+<code>OEIter&lt;T&gt;</code> as created by the user.
+
+<P>
+A second minor point is that OEChem iterators only support the prefix
+<code>++</code> operator, and not the suffix <code>++</code> operator.  This means that to
+use the advance the iterator, users must write <code>++i</code> and not
+<code>i++</code>.  This is actually a performance issue, since in C and C++
+the operator <code>i++</code> must make a copy of its argument.  This is to
+support the syntax <code>j = i++</code> where <var>j</var> is assigned the value
+of <var>i</var> before the increment.  This copying may potentially be
+expensive, and must be performed even if the value is not assigned.
+For primitive types such as integers, most C/C++ compilers can
+determine the value is not used and optimize <code>i++</code> to <code>++i</code>.
+Alas for C++ classes, most compilers are unable to perform this
+optimization and as such <code>i++</code> and <code>++i</code> could do totally
+different things, hence <code>++i</code> is the preferred idiom.  Even if
+OEChem changed the semantics of <code>i++</code> to perform the same thing
+as <code>++i</code> and return the value after the increment, the <code>i++</code>
+form is marginally less efficient (requiring an ``invisible'' integer
+argument to be passed to the operator).  Hence OpenEye's policy is to
+only implement the ``correct'' behavior and hope that users of OEChem
+will adopt <code>++i</code> even for integer loops as good coding style.
+
+<P>
+Finally, the template OEIter is defined in the OESystem namespace
+rather than the OEChem namespace.  This is because iterators (like
+random number generators) are not chemistry specific, and the use of
+two namespaces makes this explicit.  It does however mean an extra
+<code>using namespace OESystem;</code> in our examples.
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node42.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node42.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node44.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node42.html">5. Traversing the Atoms,</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node42.html">5. Traversing the Atoms,</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node44.html">5.2 Looping over the</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

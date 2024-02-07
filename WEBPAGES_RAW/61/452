@@ -1,0 +1,856 @@
+<!--
+Google IO 2012/2013 HTML5 Slide Template
+
+Authors: Eric Bidelman <ebidel@gmail.com>
+         Luke Mahé <lukem@google.com>
+
+URL: https://code.google.com/p/io-2012-slides
+-->
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">-->
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+  <!--This one seems to work all the time, but really small on ipad-->
+  <!--<meta name="viewport" content="initial-scale=0.4">-->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" media="all" href="theme/css/default.css">
+  <link rel="stylesheet" media="only screen and (max-device-width: 480px)" href="theme/css/phone.css">
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->
+  <script data-main="js/slides" src="js/require-1.0.8.min.js"></script>
+</head>
+<body style="opacity: 0">
+
+<slides class="layout-widescreen">
+
+<!--   <slide class="nobackground">
+    <article class="flexbox vcenter">
+      <span><img src="images/spider_circle_green_tiny.png"></span>
+    </article>
+  </slide> -->
+
+  <slide class="title-slide segue nobackground">
+    <aside class="gdbar"><img src="images/spider_circle_green_tiny.png"></aside>
+    <!-- The content of this hgroup is replaced programmatically through the slide_config.json. -->
+    <hgroup class="auto-fadein">
+      <h1 data-config-title><!-- populated from slide_config.json --></h1>
+      <h2 data-config-subtitle><!-- populated from slide_config.json --></h2>
+      <p data-config-presenter><!-- populated from slide_config.json --></p>
+    </hgroup>
+  </slide>
+
+
+  <slide>
+    <hgroup>
+      <h2>Overview</h2>
+    </hgroup>
+    <article>
+      <ul class="build">
+        <li>Review: Testing Terminology</li>
+        <li>Testing Units
+          <ul>
+            <li>Test Driven Development</li>
+            <li>JUnit Walk Through (if technology permits)</li>
+          </ul>
+        </li>
+        <li>Testing Behaviors
+          <ul>
+            <li>Behavior Driven Development</li>
+            <li>Mocking (if technology+time permits)</li>
+          </ul>
+        </li>       
+      </ul>
+    </article>
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>Review: Testing Terminology</h2>
+    </hgroup>
+    <article>
+      <ul class="build">
+        <li>Mistake vs. Fault (Bug) vs. Error vs. Failure</li>
+        <li>Blackbox Testing vs. Whitebox Testing</li>
+        <li>More Testing Jargon
+          <ul>
+            <li>Test Case</li>
+            <li>Test Suite</li>
+            <li>Test Oracle</li>
+            <li>Test Plan</li>
+          </ul>
+        </li>
+      </ul>
+    </article>
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>Mistake, Fault, Error, Failure</h2>
+      <h3>Review: Testing Terminology</h3>
+    </hgroup>
+    <article>
+      <ul class="build">
+        <li><b>Mistake</b>: A human action that produces an incorrect result.</li>
+        <li><b>Fault (a.k.a Bug)</b>: An anomaly in the source code of a program that *may* lead to an error.</li>
+        <li><b>Error</b>: The runtime effect of executing a fault, which causes a deviation from correct behavior and *may* result in a failure</li>
+        <li><b>Failure</b>: The externally visible manifestation of an error.</li>
+      </ul>
+    </article>
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>Mistake, Fault, Error, Failure</h2>
+      <h3>Review: Testing Terminology</h3>
+    </hgroup>
+    <article class="flexbox vcenter">
+      <img src="images/testing-terminology.png" alt="Testing Jargon" title="Mistake, Fault, Error, Failure">
+      <footer class="source">source: Prof. James Jones, Software Testing INF215</footer>
+      <p><b>As it turns out:</b> Any fault has many possible fixes. The fix can actually determine what “the fault” was!</p>
+    </article>
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>Blackbox Testing</h2>
+    </hgroup>
+
+    <article class="flexbox vleft auto-fadein">
+      <q>Testing that ignores the internal mechanism of a system or component and focuses solely on the outputs generated in response to selected inputs and execution conditions.</q>
+      <div class="author">IEEE</div>
+    </article>
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>Blackbox Testing</h2>
+    </hgroup>
+    <article class="flexbox vcenter">
+      <p>
+        Testing that ignores the internal mechanism of a system or component and focuses solely on the outputs generated in response to selected inputs and execution conditions.
+        <br>
+        - IEEE
+      </p>
+      <img src="images/blackbox.png" alt="blackbox testing" />
+    </article>
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>Whitebox Testing</h2>
+    </hgroup>
+
+    <article class="flexbox vleft auto-fadein">
+      <q>Testing that takes into account the internal mechanism of a system or component.</q>
+      <div class="author">IEEE</div>
+    </article>
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>Whitebox Testing</h2>
+    </hgroup>
+    <article class="flexbox vcenter">
+      <p>
+        Testing that takes into account the internal mechanism of a system or component.
+        <br>
+        - IEEE
+      </p>
+      <img src="images/whitebox.png" alt="whitebox testing" />
+    </article>
+  </slide>
+
+
+  <slide>
+    <hgroup>
+      <h2>Test [Case, Suite, Oracle, Plan]</h2>
+      <h3>More Testing Jargon</h3>
+    </hgroup>
+    <article>
+      <ul class="build">
+        <li> <b>Test Case</b>: A group of input values that cause a program to take some defined action, with an expected output.
+        <li> <b>Test Suite</b>: A collection of test cases
+        <li> <b>Test Oracle</b>*: A mechanism for determining whether the actual behavior of a test case execution matches the expected behavior.
+        <li> <b>Test Plan</b>: A document describing the scope, approach, resources, and schedule of intended testing activity
+      </ul>
+    </article>
+
+    <article class="smaller">
+      <ul class="build">
+        <li>*<b>Test Oracles</b>: What will test the mechanism, itself?</li>
+      </ul>
+    </article>
+  </slide>
+
+  <slide hidden>
+    Hidden slides are left out of the presentation.
+  </slide>
+
+  <slide class="segue dark nobackground">
+    <aside class="gdbar"><img src="images/spider_circle_green_tiny.png"></aside>
+    <hgroup class="auto-fadein">
+      <h2>Testing Units</h2>
+      <h3>Test Driven Development</h3>
+    </hgroup>
+  </slide>
+
+
+  <slide>
+    <hgroup>
+      <h2>TDD: Test Driven Development</h2>
+    </hgroup>
+    <article>
+      <ul class="build">
+        <li>Write tests first, then implement the code for the test.</li>
+        <li>Agile technique; grew out of extreme programming.</li>
+        <li>Method:
+          <ul class="build">
+            <li>Write (initially failing) Test</li>
+            <li>Implement (or re-factor) Functionality for Test</li>
+            <li>Test Functionality by running Test (typically using automated testing frameworks)</li>
+            <li>Iterate</li>
+          </ul>
+        </li>
+        <li>We will see later: BDD adopts this method/idea!</li>
+      </ul>
+    </article>
+    
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>TDD: Example</h2>
+    </hgroup>
+    <article class="smaller">
+      <p>Code Example Bit Repository: <a href="https://bitbucket.org/vpalepu/191b">bitbucket.org/vpalepu/191b</a></p>
+      <p>Write Test:</p>
+      <pre class="prettyprint" data-lang="java">
+@Test
+public void test1() {
+  assertEquals("one", NumbersToEnglish.translateToEnglish(1));
+}
+      </pre> 
+    </article>
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>TDD: Example</h2>
+    </hgroup>
+    <article class="smaller">
+      <p>Write Test:</p>
+      <pre class="prettyprint" data-lang="java">
+@Test
+public void test1() {
+  assertEquals("one", NumbersToEnglish.translateToEnglish(1));
+}
+      </pre>
+
+      <p>Write Code:</p>
+      <pre class="prettyprint" data-lang="java">
+public class NumbersToEnglish {
+  public static String translateToEnglish(int number) {
+    return null;
+  }
+}
+      </pre>
+
+      <p>Run Test:</p>
+      <ul>
+        <li class="red">test1: Failed</li>
+      </ul>
+    </article>
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>TDD: Example (contd.)</h2>
+    </hgroup>
+    <article class="smaller">
+      <p>Write Test:</p>
+      <pre class="prettyprint" data-lang="java">
+@Test
+public void test1() {
+  assertEquals("one", NumbersToEnglish.translateToEnglish(1));
+}
+      </pre>
+
+      <p>Refactor Code:</p>
+      <pre class="prettyprint" data-lang="java">
+public class NumbersToEnglish {
+  public static String translateToEnglish(int number) {
+    return "one";
+  }
+}
+      </pre>
+
+      <p>Run Test:</p>
+      <ul>
+        <li class="green">test1: Passed</li>
+      </ul>
+    </article>
+  </slide>  
+
+  <slide>
+    <hgroup>
+      <h2>TDD: Example (contd.)</h2>
+    </hgroup>
+    <article class="smaller">
+      <p>Write Next Test:</p>
+      <pre class="prettyprint" data-lang="java">
+@Test
+public void test2() {
+  assertEquals("two", NumbersToEnglish.translateToEnglish(2));
+}
+      </pre>
+
+      <p>Existing Code:</p>
+      <pre class="prettyprint" data-lang="java">
+public class NumbersToEnglish {
+  public static String translateToEnglish(int number) {
+    return "one";
+  }
+}
+      </pre>
+
+      <p>Run Tests:</p>
+      <ul>
+        <li class="green">test1: Passed</li>
+        <li class="red">test2: Failed</li>
+      </ul>
+    </article>
+  </slide>   
+
+  <slide>
+    <hgroup>
+      <h2>TDD: Example (contd.)</h2>
+    </hgroup>
+    <article class="smaller">
+      <p>Write Next Test:</p>
+      <pre class="prettyprint" data-lang="java">
+@Test
+public void test2() {
+  assertEquals("two", NumbersToEnglish.translateToEnglish(2));
+}
+      </pre>
+
+      <p>Refactor Existing Code:</p>
+      <pre class="prettyprint" data-lang="java">
+public class NumbersToEnglish {
+  public static String translateToEnglish(int number) {
+    if(number == 2) return "two";
+    return "one";
+  }
+}
+      </pre>
+
+      <p>Run Tests:</p>
+      <ul>
+        <li class="green">test1: Passed</li>
+        <li class="green">test2: Passed</li>
+      </ul>     
+    </article>
+  </slide>  
+
+  <slide>
+    <hgroup>
+      <h2>TDD: Example (contd.)</h2>
+    </hgroup>
+    <article class="smaller">
+      <p>Write Next Tests:</p>
+      <pre class="prettyprint" data-lang="java">
+@Test
+public void test1() {
+  Assert.assertEquals("one", NumbersToEnglish.translateToEnglish(1));
+}
+
+@Test
+public void test2() {
+  Assert.assertEquals("two", NumbersToEnglish.translateToEnglish(2));
+}
+
+@Test
+public void test8() {
+  Assert.assertEquals("eight", NumbersToEnglish.translateToEnglish(8));
+}
+
+@Test
+public void test10() {
+  Assert.assertEquals("ten", NumbersToEnglish.translateToEnglish(10));
+}
+
+@Test
+public void test19() {
+  Assert.assertEquals("nineteen", NumbersToEnglish.translateToEnglish(19));
+}
+      </pre>
+    </article>
+  </slide>  
+
+  <slide>
+    <hgroup>
+      <h2>TDD: Example (contd.)</h2>
+    </hgroup>
+    <article class="smaller">
+      <p>Write Even More Tests:</p>
+      <pre class="prettyprint" data-lang="java">
+@Test
+public void test12() {
+  Assert.assertEquals("twelve", NumbersToEnglish.translateToEnglish(12));
+}
+
+@Test
+public void test28() {
+  Assert.assertEquals("twenty eight", NumbersToEnglish.translateToEnglish(28));
+}
+
+@Test
+public void test20() {
+  Assert.assertEquals("twenty", NumbersToEnglish.translateToEnglish(20));
+}
+
+@Test
+public void testMinus20() {
+  Assert.assertEquals("minus twenty", NumbersToEnglish.translateToEnglish(-20));
+}
+
+@Test
+public void test0() {
+  Assert.assertEquals("zero", NumbersToEnglish.translateToEnglish(0));
+}
+      </pre>
+    </article>
+  </slide> 
+
+  <slide>
+    <hgroup>
+      <h2>TDD: Example (contd.)</h2>
+    </hgroup>
+    <article class="smaller">
+      <p>Code as we last Saw it:</p>
+      <pre class="prettyprint" data-lang="java">
+public class NumbersToEnglish {
+  public static String translateToEnglish(int number) {
+    <b>if(number == 2) return "two";
+    return "one";</b>
+  }
+}
+      </pre>
+
+      <p>After many iterations:</p>
+      <pre class="prettyprint" data-lang="java">
+public class NumbersToEnglish {
+  public static String translateToEnglish(int number) {
+    String result = "";
+
+    <b>if(number == 0) return "zero";
+    if(number < 0) {
+      result = "minus "
+      number = number * -1;
+    }
+    return result + translate1to29ToEnglish(number)</b>;
+  }
+}
+      </pre>   
+    </article>
+  </slide>  
+
+    <slide>
+    <hgroup>
+      <h2>TDD: Example (contd.)</h2>
+    </hgroup>
+    <article class="smaller">
+      <p>translate1to29ToEnglish(int number)</p>
+      <pre class="prettyprint" data-lang="java">
+private static String translate1to29ToEnglish(int number) {
+    if(number <= 19) {
+      return <b>translate1to19ToEnglish(number)</b>;
+    }
+    String translation = "twenty";    
+    int units_digit = number % 10;
+    
+    if(units_digit != 0) {
+      translation = translation + " " + <b>translate1to19ToEnglish(units_digit)</b>;
+    }
+    
+    return translation;
+  }
+      </pre>
+    </article>
+  </slide> 
+
+  <slide>
+    <hgroup>
+      <h2>TDD: Example (contd.)</h2>
+    </hgroup>
+    <article class="smaller">
+      <p>translate1to19ToEnglish(int number)</p>
+      <pre class="prettyprint" data-lang="java">
+private static String translate1to19ToEnglish(int number) {
+    switch(number) {
+      <b>case 1: return "one";
+      case 2: return "two";
+      case 3: return "three";
+      case 4: return "four";
+      case 5: return "five";
+      case 6: return "six";
+      case 7: return "seven";
+      case 8: return "eight";
+      case 9: return "nine";
+      case 10: return "ten";
+      case 11: return "eleven";
+      case 12: return "twelve";
+      case 13: return "thirteen";
+      case 14: return "fourteen";
+      case 15: return "fifteen";
+      case 16: return "sixteen";
+      case 17: return "seventeen";
+      case 18: return "eighteen";
+      default: return "nineteen";</b>
+    }
+  }
+      </pre>   
+    </article>
+  </slide> 
+
+  <slide>
+    <hgroup>
+      <h2>Junit</h2>
+      <h3>Screenshots</h3>
+    </hgroup>
+    <p><a href="http://junit.org">junit.org</a></p>
+  </slide>
+
+  <slide class="fill nobackground" style="background-image: url(images/junit-passed.png)">
+    <hgroup>
+      <!-- <h2 class="white">Full Image (with Optional Header)</h2> -->
+    </hgroup>
+  </slide>
+
+<slide class="fill nobackground" style="background-image: url(images/junit-failed.png)">
+    <hgroup>
+      <!-- <h2 class="white">Full Image (with Optional Header)</h2> -->
+    </hgroup>
+  </slide>
+
+  <slide class="segue dark nobackground">
+    <aside class="gdbar"><img src="images/spider_circle_green_tiny.png"></aside>
+    <hgroup class="auto-fadein">
+      <h2>Testing Behaviors</h2>
+      <h3>Behavior Driven Development (and Mocking)</h3>
+    </hgroup>
+  </slide>
+
+  <slide>
+    <hgroup> 
+      <h2>Testing Behaviors</h2>
+      <h3>How do you do it?</h3>
+    </hgroup>
+    <article>
+      <ul class="build">
+        <li>Think in terms of Behaviors.
+          <ul>
+            <li>Not in terms of Tests.</li>
+          </ul>
+        </li>
+        <li>Verify those Behaviors.</li>
+      </ul>
+    </article>
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>“Introducing BDD” by Dan North</h2>
+<!--       <h3>Thinking (in terms) of Behaviors</h3> -->
+    </hgroup>
+
+    <article>
+      <ul class="build">
+        <li>Test method names should be sentences.
+          <ul class="build">
+            <li>A simple <b>sentence template</b> keeps test methods focused.</li>
+            <li>An expressive test name is helpful when a test fails.</li>
+          </ul>
+        </li>
+        <li><b>Behavior</b> is a more useful word than <b>test</b>.
+          <ul class="build">
+            <li>Emphasize behavior over testing.</li>
+            <li>Method:
+              <ul class="build">
+                <li><strike>Write (initially failing) Test</strike> <br>
+                  Determine (or define) the next most important behavior.</li>
+                <li>Implement Functionality for <strike>Test</strike> Behavior</li>
+                <li>Test Functionality against Behavior (typically using automated testing frameworks)</li>
+                <li>Iterate</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li><b>Behaviors => Stories, Features, Goals, Scenarios</b></li>
+      </ul>
+    </article>
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>It's all about Templates</h2>
+    </hgroup>
+    <article>
+      <p>"A simple <b>sentence template</b> keeps test methods focused." - Dan North</p>
+
+      <p>Behaviors - Typical Form</p>
+
+      <ul class="build">
+        <li><b>User Story:</b> [Title]
+          <ul>
+            <li><b>As a</b> [user],</li>
+            <li><b>I want</b> [feature],</li>
+            <li><b>so that</b> [goal].</li>
+          </ul>
+        </li>
+
+        <li><b>Scenario:</b> [Title]
+          <ul>
+            <li><b>Given</b> [some initial context]</li>
+            <li><b>When</b> [an event occurs],</li>
+            <li><b>Then</b> [ensure some outcomes].</li>
+          </ul>
+        </li>
+      </ul>
+    </article>
+
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>Example Behavior</h2>
+    </hgroup>
+
+    <article>
+      <ul class="build">
+        <li><b>User Story:</b> Student wants to adhere to English Grammar while using mathematical numerals in English passages.
+          <ul class="build">
+            <li><b>As a</b> student,</li>
+            <li><b>I want</b> to translate mathematical numerals into words in English,</li>
+            <li><b>so that</b> my English passages are grammatically correct when using numbers.</li>
+          </ul>
+        </li>
+
+        <li><b>Scenario:</b> Mathematical Numeral (or Number) is 1
+          <ul class="build">
+            <li><b>Given</b> the number "1" denoted by a sequence of digits,</li>
+            <li><b>When</b> the student requests for an English translation,</li>
+            <li><b>Then</b> ensure the translation "one" for the number "1" is generated.</li>
+          </ul>
+        </li>
+
+        <li>Immediate focus on: 
+          <ul>
+            <li>User (student);</li>
+            <li>Context: Feature (English Translation), Goal (correct English Grammar).</li>
+          </ul>
+          
+        </li>
+      </ul>
+    </article>
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>Example Behavior (contd.)</h2>
+    </hgroup>
+  <article class="smaller">
+      <ul class="build">
+        <li><b>Scenario:</b> Mathematical Numeral (or Number) is 1
+          <ul>
+            <li><b>Given</b> the number "1" denoted by a sequence of digits</li>
+            <li><b>When</b> the student requests for an English translation</li>
+            <li><b>Then</b> ensure the translation "one" for the number "1" is generated.</li>
+          </ul>
+        </li>
+
+
+        <li>Test Case from <b>TDD</b>
+                <pre class="prettyprint" data-lang="java">
+@Test public void <b>test1</b>() {
+  <b>assertEquals("one", NumbersToEnglish.translateToEnglish(1));</b>
+}
+      </pre>
+        </li>
+        <li>Test Case from <b>BDD</b>
+<pre class="prettyprint" data-lang="java">
+@Test public void <b>shouldReturnOneFor1</b>() { // <b>expressive test name</b>
+  int <b>given = 1;</b>
+  // <b>when</b>
+  String translation  = NumbersToEnglish.<b>translateToEnglish(given)</b>
+  // <b>then</b>
+  <b>assertEquals("one", translation);</b>
+}
+      </pre>
+        </li>
+
+      </ul>
+    </article>
+  </slide>
+
+
+
+
+  <slide>
+    <hgroup>
+      <h2>Mocking: Testing Interactions within Code</h2>
+
+    </hgroup>
+    <article>
+      <p><a href="http://www.ics.uci.edu/~vpalepu/2014/06/03/Notes-Testing-Software-Behavior.html">Notes on Testing/Verifying Behavior</a></p>
+      <ul class="build">
+        <li>So are we really verifying behaviors with BDD?
+          <ul class="build">
+            <li>Yes, if Behaviors => Stories, Features, Goals, Scenarios</li>
+            <li>No, if Behaviors => Interactions between code components
+              <ul class="build">
+                <li>Did <code>translateToEnglish</code>, correctly interact with <code>translate1to29ToEnglish</code>?</li>
+                <li>Did <code>translate1to29ToEnglish</code>, correctly interact with <code>translate1to19ToEnglish</code>?</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </article>
+  </slide>  
+
+  <slide>
+    <hgroup>
+      <h2>Testing State vs Testing Interactions</h2>
+
+    </hgroup>
+    <article>
+      <ul class="build">
+        <li><strike>Behaviors => Stories, Features, Goals, Scenarios</strike></li>
+        <li><b>Behaviors => Interactions between code components</b></li>
+        <li>Testing is mostly value based testing.
+          <ul>
+            <li>Compare: Expected value vs. Actual Computed Value</li>
+            <li>This is true even with BDD, when, Behaviors => Stories, Features, Goals, Scenarios.</li>
+          </ul>
+        </li>
+        <li>Issue: You can arrive at the right value/state with the wrong steps or interactions</li>
+        <li>Solution: Make sure you follow the right steps or the right interactions in the code.</li>
+        <li>Enter: Mocks and Mocking</li>
+      </ul>
+    </article>
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>Mocks</h2>
+      <h3>Testing Interactions</h3>
+    </hgroup>
+    <article>
+      <ul class="build">
+        <li>Mocks are Objects with Expectations: a specification of method calls they are expected to receive.</li>
+        <li>Keep track of all the method calls; 
+          <ul>
+            <li>check them against a specification;</li>
+            <li>flag errors if the specifications and reality do not match up.</li>
+          </ul>
+      </ul>
+    </article>
+
+  </slide>
+
+
+
+  <slide>
+    <hgroup>
+      <h2>Mocks: Code Example</h2>
+      <h3>Testing Interactions</h3>
+    </hgroup>
+    <article>
+    <pre class="prettyprint" data-lang="java">
+@Test 
+public void shouldInvokeTranslateToWordsOnceAndNeverInvokeTranslate1to19() {
+  //given
+  NumbersToEnglish translator = spy(translator());
+  <b>int number = 20;</b>
+  //when
+  translator.translateToWords(number);
+  //then
+<b>  verify(translator).translateToWords(anyInt());
+  verify(translator, atLeastOnce()).translate1To29(anyInt());
+  verify(translator, never()).translate1To19(anyInt());</b>
+}
+
+    </pre>
+    </article>
+  </slide>
+
+  <slide class="segue dark nobackground">
+    <aside class="gdbar"><img src="images/spider_circle_green_tiny.png"></aside>
+    <hgroup class="auto-fadein">
+      <h2>Review</h2>
+    </hgroup>
+  </slide>
+
+  <slide>
+    <hgroup>
+      <h2>Review</h2>
+    </hgroup>
+    <article>
+      <ul>
+        <li>What is TDD? General process behind TDD?</li>
+        <li>Idea: Tests drive development.</li>
+        <li>Junit: What does it look like?</li>
+        <li>What is BDD? General process behind BDD?</li>
+        <li>Idea: Behaviors over Tests</li>
+        <li>Behaviors as Stories, Features, Goals, Scenarios</li>
+        <li>Testing Value/State vs. Method Calls/Interactions</li>
+        <li>Behaviors as Method Calls/Interactions</li>
+        <li>Mocking ("Yes, I have heard about it.")</li>
+      </ul>
+    </article>
+
+  </slide>
+
+  <slide class="thank-you-slide segue nobackground">
+    <aside class="gdbar right"><img src="images/spider_circle_green_tiny.png"></aside>
+    <article class="flexbox vleft auto-fadein">
+      <h2>Happy Testing!</h2>
+      <!-- <p>Failure is good.</p> -->
+    </article>
+    <p class="auto-fadein" data-config-contact>
+      <!-- populated from slide_config.json -->
+    </p>
+  </slide>
+
+<!--   <slide class="nobackground">
+    <article class="flexbox vcenter">
+      <span><img src="images/spider_circle_green_tiny.png"></span>
+    </article>
+  </slide> -->
+
+  <slide class="backdrop"></slide>
+
+</slides>
+
+<script>
+// var _gaq = _gaq || [];
+// _gaq.push(['_setAccount', 'UA-XXXXXXXX-1']);
+// _gaq.push(['_trackPageview']);
+
+// (function() {
+//   var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+//   ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+//   var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+// })();
+</script>
+
+<!--[if IE]>
+  <script src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js"></script>
+  <script>CFInstall.check({mode: 'overlay'});</script>
+<![endif]-->
+</body>
+</html>

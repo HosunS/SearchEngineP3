@@ -1,0 +1,314 @@
+<HTML><HEAD>
+<TITLE>Computational Statistics: Hierarchical Clustering</TITLE>
+</HEAD><BODY BGCOLOR="#FFFFFF" TEXT="#000000">
+<!--#config timefmt="%d %h %Y, %T %Z" -->
+
+<A HREF="/~theory/">
+<IMG src="/~theory/logo/shortTheory.gif"
+WIDTH=521 HEIGHT=82 BORDER=0 ALT="ICS Theory Group"></A>
+
+
+<H1><A HREF="/~eppstein/280/">ICS 280, Spring 1999:<BR>
+Computational Statistics</A></H1>
+
+<H2>Hierarchical Clustering</H2>
+
+<I>Hierarchical clustering</I> refers to the formation of a recursive
+clustering of the data points:
+a partition into two clusters, each of which is itself hierarchically
+clustered.
+
+<P>One way to draw this is some kind of system of nested subsets,
+maximal in the sense that one can't identify any additional subsets
+without violating the nesting:
+
+<PRE><B>
+                     __________________________
+                    |   _________              |
+                    |  |  ______  |    _____   |
+                    |  | |      | |   |     |  |
+                    |  | | x  y | |   |  u  |  |
+                    |  | |______| |   |     |  |
+                    |  |          |   |  v  |  |
+                    |  |    z     |   |_____|  |
+                    |  |__________|            |
+                    |__________________________|
+</B></PRE>
+
+<P>Alternatively, one can draw a "dendrogram", that is,
+a binary tree with a distinguished root, that has all the data items at
+its leaves:
+
+<PRE><B>
+                            /\
+                           /  \
+                          /    \                 ________
+                         /      \               |        |
+                        /\       \     or     __|__      |
+                       /  \       \          |     |    _|_
+                      /\   \      /\        _|_    |   |   |
+                     /  \   \    /  \      |   |   |   |   |
+                    x    y   z  u    v     x   y   z   u   v
+</B></PRE>
+
+<P>Conventionally, all the leaves are shown at the same level of the drawing.
+The ordering of the leaves is arbitrary, as is their horizontal position.
+The heights of the internal nodes may be arbitrary, or may be related to
+the metric information used to form the clustering.
+
+<H3><A NAME="models">Data Models</A></H3>
+
+The data for a clustering problem may consist of points in a Euclidean
+vector space,
+or more structured objects such as DNA sequences
+(in which case the hierarchical clustering problem is essentially
+equivalent to reconstructing evolutionary trees and is also known as
+"phylogeny").
+However many clustering algorithms assume simply that the input is given
+as a distance matrix.
+The distances may or may not define a metric; one popular data model is that
+the data form an "ultrametric" or "Archimedean metric", a special type
+of metric in which the distances satisfy the "ultrametric triangle inequality"
+<DIV ALIGN=CENTER>
+dist(a,c) <U>&lt;</U> max(dist(a,b), dist(b,c))
+</DIV>
+
+This inequality is satisfied, for instance, if the data points are
+leaves of a dendrogram drawing, with the distance defined to be the height of
+their least common ancestor; in fact this is just an equivalent way of
+defining an ultrametric. The inequality is also satisfied for
+vertices in any graph,
+with the length of a path defined to be its maximum weight edge.
+
+<P>The ultrametric requirement may be too strong -- e.g.
+in evolutionary trees, if one measures distance by mutation rate,
+it would imply the biologically unrealistic condition that
+all species evolve at the same rate.
+A weaker condition is that the distances are formed by path lengths in a
+tree, without the ultrametric requirement that each root-leaf path have
+equal length.  A distance function meeting this weaker requirement is
+also known as an additive metric.
+
+<P>If the data model is that the data points form an ultrametric,
+and that the input to the clustering algorithm is a distance matrix,
+a typical noise model would be that the values in this matrix are
+independently perturbed by some random distribution.
+Additional data observations may consist of new points in this ultrametric
+(e.g. in the large-population genetic studies used to test the
+hypothesis that the human species evolved in Africa before migrating to
+other continents [cite?]),
+or may be used to reduce the perturbation in existing distance measurements
+(e.g. by comparing larger amounts of DNA sequence information).
+
+<P>Another common data and noise model for DNA sequence input is the
+Cavender-Farris model
+[<A HREF="bib.html#C78">C78</A>],
+in which the data parameters consist of an ultrametric (dendrogram with
+edge lengths)
+together with
+a prototype sequence stored at the root of the dendrogram.
+The observed data in this model represent the contents of a single
+position of the DNA sequence for each species, and are formed by
+starting with a symbol at the root of the dendrogram and then
+propagating that value downwards, with mutation rates proportional to
+the dendrogram edge lengths.
+
+<H3><A NAME="dynprog">Dynamic Programming Methods</A></H3>
+
+Dynamic programming may be used to find the "most parsimonious" tree for
+a given set of sequences; that is, a dendrogram, with each internal
+vertex labeled by a sequence constructed by the algorithm
+(the leaves are labeled by the input sequences), such that the total
+amount of mutation
+between sequences adjacent to each other on the tree is minimized.
+However, the computational complexity of this is prohibitive:
+typically, it is something like O(n<sup>k</sup>) where n is the sequence
+length and k is the number of sequences.
+This method may not always converge to the correct tree (e.g. in the
+Cavender-Ferris model), but
+as Rice and Warnow show
+[<A HREF="bib.html#RW97">RW97</A>],
+it performs very well in practice
+
+<P>Another dynamic program arises from the problem of fitting an optimal
+dendrogram to a distance matrix.  If one has a particular dendrogram in mind
+(as an abstract tree), the problem of assigning heights to its vertices
+to minimize the maximum difference between the dendrogram distance and
+the given distance matrix is simply a linear program, where each height
+is linearly constrained to be above its children and within D of each
+distance represented by it in the matrix.  Since this linear program has
+only two variables per inequality, it can be solved efficiently [cite?].
+However, the difficult part of this procedure is in choosing which
+dendrogram to use.  The number of possible different dendrograms
+with k leaves is (2k-1)!!=1*3*5*7*...(2k-1)
+since there are 2k-1 ways of adding a kth leaf to a (k-1)-leaf dendrogram,
+so unless k is very small one can't hope to try them all.
+One could possibly find the optimal solution for somewhat larger (but
+still not very large) k by a dynamic programming method in which
+one finds the optimal dendrogram for each subset of the data points,
+by trying all ways of partitioning that subset into two smaller subsets.
+
+<H3>Local Improvement Methods</H3>
+
+If one can't compute a global optimum, one can at least achieve a local
+optimum: start with any tree, and then repeatedly use dynamic
+programming to re-optimize small subtrees.  This idea can be used to get
+a (1+epsilon)-factor approximation to parsimony [cite?].
+
+<H3><A NAME="bu">Bottom Up Methods</A></H3>
+
+There is a large family of clustering algorithms that all work as
+follows: Choose some measure of "affinity" for clusters.  Start with n
+clusters, each consisting of a single point.  Then repeatedly merge the
+two clusters with the highest affinity into a single supercluster.  The
+differences between these algorithms involve the definition of affinity,
+and the implementation details.  Note that even for points in a metric
+space, the "affinity" need not satisfy the triangle inequality or other
+nice properties.
+
+<P>If the affinity of two clusters is defined to be the distance between
+the closest pair of points, the problem is known as "single-linkage"
+clustering.  Essentially, it is solved by the minimum spanning tree
+(the top level clustering is formed by removing the heaviest edge from
+the MST, and the remaining levels are formed in the same manner recursively).
+Since minimum spanning trees can often be found efficiently, so can this
+clustering, and it does produce the correct results when the input is an
+ultrametric distance matrix (without errors).  However, for points in
+Euclidean spaces, it tends to produce unsatisfactory long stringy clusters.
+
+<P>Another common affinity function is the average distance between
+points in a cluster (complete linkage clustering).  For distance matrix
+input, this can be found by replacing two rows of the matrix by an
+appropriate weighted average.  Alternatively, if one has a good notion
+of single point estimation for a cluster (e.g. the centroid), one can
+define affinity in terms of the distance between cluster centers.
+
+<P>"Neighbor-joining"
+[<A HREF="bib.html#SN87">SN87</A>],
+is a more complicated affinity:
+It assumes that one has a tree in which each point is connected
+to a common center, and measures the amount by which the total edge
+length of the tree would be reduced by placing a "Steiner point"
+between two points, and connecting that Steiner point to the center.
+Formally, the affinity between x and y is
+<DIV ALIGN=CENTER>
+distance(x,center) + distance(y,center)
+- distance(x,SP) - distance(y,SP) - distance(SP,center)
+</DIV>
+where SP is the Steiner point.
+For distance matrix input, the center is found by averaging the rows of
+the whole matrix, so the distance from x to the center is just the average
+distance of x from any point.  Similarly, the Steiner point can be found
+by averaging the rows for x and y (in which case the two terms
+distance(x,SP)+distance(y,SP) add to distance(x,y)).
+Atteson
+[<A HREF="bib.html#A96">A96</A>]
+showed that this method converges to the correct tree
+for distance matrices that are sufficiently close
+(in terms of L<sub>infinity</sub> distance) to a tree metric.
+
+<P>Many of these methods have efficient algorithms, both
+for distance matrix input
+[<A HREF="bib.html#E98">E98</A>],
+and for points in low dimensional Euclidean spaces
+[<A HREF="bib.html#KL95">KL95</A>].
+However, Neighbor-Joining seems more difficult,
+with the best known time bound being O(n<sup>3</sup>)
+(and some commonly available implementations
+taking even more than that).
+However even the faster of these methods are too slow for data consisting
+of millions of points in moderate to high dimensional Euclidean spaces.
+
+<H3>Top Down Methods</H3>
+
+One can also form hierarchical clusterings top down, following the definition
+above: use your favorite <A HREF="cluster.html">nonhierarchical clustering</A>
+algorithm to find a partition of the input into two clusters,
+and then continue recursively on those two clusters.
+
+<P>The advantage of these methods is speed: they can scale to problem sizes
+that are beyond the bottom up methods.  However, the quality of the results
+may be poorer, because the most important decisions are being made early
+in the algorithm before it has accumulated enough information to make
+them well.  Also, because of the emphasis on speed, the nonhierarchical
+clustering methods used tend to be primitive (e.g. split the points by
+an axis-parallel hyperplane).
+
+<H3>Incremental Methods</H3>
+
+Incremental hierarchical clustering methods can be even faster
+than the top down approach.
+These methods
+build the hierarchy one point at a time, without changing the existing
+hierarchy.  To add a new point, simply trace down from the root,
+at each step choosing the child cluster that best contains the given point.
+Once you reach a cluster containing a single point, split it into two
+smaller clusters, one for that point and one for the new point.
+
+<P>This is extremely fast, and good for applications such as nearest
+neighbor classification, but not very good for accurately reconstructing
+the clusters present in the original data model.
+
+<H3><A NAME="nt">Numerical Taxonomy</A></H3>
+
+Cavalli-Sforza and Edwards
+[<A HREF="bib.html#CE67">CE67</A>]
+introduced the problem of finding taxonomy by finding the
+"nearest" tree metric or ultrametric to a given distance matrix.
+Of course one has to define "nearest"; the natural choices
+seem to be L<sub>1</sub>, L<sub>2</sub>, or L<sub>infinity</sub>
+metrics on the distance matrix coordinates.
+
+<P>The L<sub>1</sub> and  L<sub>2</sub> problems are NP-complete
+for both the tree metric and ultrametric
+variants&nbsp;[<A HREF="bib.html#D87">D87</A>].
+However, the L<sub>infinity</sub>-nearest ultrametric can
+be found in time linear in the distance matrix
+size&nbsp;[<A HREF="bib.html#FKW93">FKW95</A>].
+
+<P>Agarwala et al.
+[<A HREF="bib.html#ABFNPT98">ABFNPT98</A>]
+show that it is NP-complete to get within a factor of 9/8
+of the L<sub>infinity</sub>-nearest
+tree metric; however they describe a fast approximation algorithm
+that achieves a factor of three.
+
+<P>There has also been some work within the theoretical computer science
+community (motivated by approximation algorithms for various network
+design problems) on approximating a distance matrix by a tree metric
+with minimum "dilation" or "stretch" (maximum ratio of original distance
+to tree distance).  The main result in this area is that one can define
+a random distribution on trees such that the expected dilation for a
+given pair of vertices is O(log&nbsp;n&nbsp;log&nbsp;log&nbsp;n)
+[<A HREF="bib.html#CCGGP98">CCGGP98</A>]
+This doesn't seem to mean much about finding an individual tree
+with optimal or nearly-optimal dilation, but
+it does imply that one can find a tree with average dilation
+O(log&nbsp;n&nbsp;log&nbsp;log&nbsp;n).
+
+<P>Gu&eacute;noche
+[<A HREF="bib.html#G96">G96</A>]
+has proposed a way for measuring the nearness of a given distance
+matrix to a tree metric, that depends only on the ordering among
+distances and not so much on the exact distance values;
+in that sense it is "distance-free" similarly to the centerpoint and
+regression depth methods for single point estimation and linear regression.
+He defines the "order distance" Delta(x,y)
+to be the number of pairs (u,v) for which x and y
+disagree on the ordering of their distances:
+dist(x,u)&nbsp;&lt;&nbsp;dist(x,v)
+but
+dist(y,u)&nbsp;&gt;&nbsp;dist(y,v)
+(with a pair counted only half in case of an equality).
+He then suggests applying an incremental method using Delta
+instead of the original distance.
+
+<H2><A HREF="bib.html">NEXT: References</A></H2>
+
+<HR><P>
+<A HREF="/~eppstein/">David Eppstein</A>,
+<A HREF="/~theory/">Theory Group</A>,
+<A HREF="/">Dept. Information & Computer Science</A>,
+<A HREF="http://www.uci.edu/">UC Irvine</A>.<BR>
+<SMALL>Last update: <!--#flastmod file="tree.html" --></SMALL>
+</BODY></HTML>

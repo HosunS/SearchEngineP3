@@ -1,0 +1,221 @@
+-- HaskellExamples3.hs
+--
+-- CompSci 141 / CSE 141 / Informatics 101 Spring 2013
+-- Code Example
+--
+-- This module explores a couple of issues that we discussed in the third
+-- lecture on Haskell, including operations on functions such as the "."
+-- operator (function composition) and why infinite recursion works fine
+-- in Haskell.
+
+module HaskellExamples3 where
+
+
+-- To get things off the ground, let's start with a couple of utility functions,
+-- one that squares a number and another that doubles a number.  The type
+-- signatures of these functions both contain type variables (i.e., they're
+-- generic), but also include constraints on those type variables.  The
+-- signature "Num a => a -> a" indicates a function that takes some kind of
+-- argument and returns the same kind of argument, but one that can only be
+-- applied to types that are in the "typeclass Num", which means that they're
+-- numeric (which means, for example, that they can be added, multiplied,
+-- compared for ordering, etc.).
+
+square :: Num a => a -> a
+square n = n * n
+
+
+double :: Num a => a -> a
+double n = n * 2
+
+
+-- Previously, we've seen that you can write functions by defining a sequence of
+-- equations, each specifying what the function's result is, given patterns that
+-- describe its arguments.  So, for example, you might write a function that
+-- squares all of the elements of a list this way, using primitive recursion.
+
+squareAll :: Num a => [a] -> [a]
+squareAll []      = []
+squareAll (n:ns)  = (n * n) : squareAll ns
+
+
+-- You might also use a higher-order function that encapsulates the same pattern
+-- of recursion, so you don't have to write it yourself.  A problem where you're
+-- transforming every element of a list -- so the result is the transformed
+-- version of each element of the original list -- is one that is best solved
+-- using "map".
+
+squareAll2 :: Num a => [a] -> [a]
+squareAll2 ns = map square ns
+
+-- This implementation is fairly direct: "To square all the elements in a list
+-- 'ns', map the function square across the list 'ns'."  If you've written
+-- programs in languages like Java, C++, or Python before, the idea that you
+-- write functions by specifying names for the parameters doesn't seem alien;
+-- it's exactly what you do in those languages, too.
+--
+-- But there's another way to write functions in Haskell, too, one that embraces
+-- the idea that functions are "first-class" (i.e., they're data, just like
+-- integers and lists and characters are).  They're not special like they are
+-- in a lot of programming languages; they're just another kind of value that
+-- you can pass as a parameter, return as a result, or give a name to.
+--
+-- We've seen previously that Haskell allows you to define constants like this:
+
+minimumVotingAge :: Integer
+minimumVotingAge = 18
+
+
+-- You can also use that same technique to define functions.
+
+squareAll3 :: Num a => [a] -> [a]
+squareAll3 = map square
+
+-- This may not look like a function, because it's defined with an equation
+-- that doesn't specify any arguments, but if you break it down, you'll see
+-- that it actually is a function:
+--
+-- * squareAll3 is a constant.  We know this because it's being defined by
+--   an equation that has no arguments listed.  Constant values can have
+--   any type, including functions.
+-- * The type of squareAll3 is listed as "A function that takes a list of
+--   integers and returns a list of integers."
+-- * "map" is a function that takes two arguments, a function and a list,
+--   and applies the function to every element of the list, returning a list
+--   of the results.
+-- * You can give "map" only one argument instead of two, because all
+--   multi-argument functions in Haskell can be partially applied.  If you
+--   supply only the first argument to a function expecting to arguments,
+--   you get back a function that takes only the second argument and then
+--   completes the task.
+-- * So "map square" returns a function that applies the function "square"
+--   to every element of a list.  The list can contain any type of element
+--   that "square" can take as a result, and will return a list containing
+--   whatever type of element "square" would return in that case.  "square"
+--   can take any kind of numeric type as its input, in which case it will
+--   give you the same type of output.  So, ultimately, the type of
+--   "map square" is "Num a => [a] -> [a]".
+
+
+-- Okay, so what if we want to take a list of numbers and transform every
+-- element by squaring it and *then* doubling it?  So, for example, the
+-- element 3 would be transformed to 18 (because squaring 3 gives 9, and
+-- doubling that gives 18).  We could certainly solve the problem by writing
+-- an equation that lists an argument and passes it to "map" explicitly.
+
+squareAndThenDoubleAll :: Num a => [a] -> [a]
+squareAndThenDoubleAll ns = map double (map square ns)
+
+
+-- But there is an alternative approach, one that continues embracing the
+-- idea that functions are first-class values.  Just like integers, functions
+-- can be passed to other functions as arguments.  In fact, just like integers,
+-- there are even operators that you can use on functions.  One such operator
+-- is the "." operator, which specifies "function composition."  As in algebra,
+-- composing two functions means to generate a new function that takes input,
+-- passes it to one of the functions, then takes the output and passes it as
+-- input to another, with the overall output being the output of the latter
+-- function.  g(f(n)) in algebra works that way (n is passed to f, f's result
+-- is passed to g, g's result is the overall result).
+--
+-- Haskell functions can be composed this way.
+
+squareAndThenDoubleAll2 :: Num a => [a] -> [a]
+squareAndThenDoubleAll2 = map double . map square
+
+-- If we work through that, we can see what's going on.
+--
+-- * "map square", as we've seen, is a function that takes a list of numbers
+--   and squares them, returning a list of their squares.
+-- * Similarly, "map double" is a function that takes a list of numbers and
+--   doubles them, returning a list of their doubles.
+-- * Composing these functions with "." means to build a new function that
+--   does this:
+--    - Takes its input and passes it to the function on the right.
+--    - Takes the output of that function and passes it as input to the
+--      function on the left.
+--    - Returns the output of the function on the left.
+--   So, in this case, if we compose "map double" and "map square", we get
+--   a function that:
+--    - Takes a list of numbers and squares them.  (That's the "map square"
+--      part.)
+--    - Takes the resulting list of numbers and doubles them.  (That's the
+--      "map double" part.)
+--    - Returns the resulting list.
+
+
+-- Note, too, that we can use function composition differently to solve this
+-- same problem.  Instead of using two separate calls to "map", we could
+-- instead compose "double" and "square", which gives a function that squares
+-- and then doubles one number, and pass that to "map".
+
+squareAndThenDoubleAll3 :: Num a => [a] -> [a]
+squareAndThenDoubleAll3 = map (double . square)
+
+
+
+
+-- One other feature that sets Haskell apart from many programming languages is
+-- its insistence on lazy evaluation as a default.  In short, this means that
+-- Haskell doesn't evaluate an expression until its result is needed.  It
+-- doesn't evaluate any *part* of an expression until that part is needed in
+-- order to calculate a result.  While that may seem like a strange default, it
+-- leads to the ability to make some interesting design choices that seem
+-- nonsensical when you think of them from the point of view of languages like
+-- Java, which evaluate expressions eagerly.
+--
+-- As a first example, consider this constant definition of an infinitely-long
+-- list of 1's.
+
+ones :: [Integer]
+ones = 1 : ones
+
+-- What is ones?  It's a list whose first element is 1 and whose remaining
+-- elements are ... more ones!  How many more ones?  Infinitely many ones!
+--
+-- Of course, if you evaluate the expression "ones" in the interpreter, you
+-- get an answer that never stops until you interrupt it.
+--
+--   HaskellExamples3> ones
+--   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1...
+--
+-- But that doesn't make "ones" useless.  It just means you have to use it
+-- carefully.  What makes "ones" generate an infinite list of 1's is when you
+-- *ask* it to generate one.  But if you only ask it to generate a finite number
+-- of 1's, that's exactly what you'll get.  Thanks to lazy evaluation, you'll
+-- only get back as many 1's as you ask for.
+--
+--   HaskellExamples3> head ones
+--   1
+--   HaskellExamples3> take 5 ones
+--   [1,1,1,1,1]
+
+
+-- You can also write functions that recurse infinitely, like this one that
+-- generates a never-ending sequence of the same element.  (I've named it
+-- "repeat2" because there is a "repeat" function in Haskell's standard
+-- library.)
+
+repeat2 :: a -> [a]
+repeat2 x = x : repeat2 x
+
+-- How we read that function is like this:
+--
+-- * repeat2 takes a value of some type and returns a list of values of the
+--   same type.  Given a value, it returns that value, followed by a repeated
+--   list of that same value.
+--
+-- This function is clearly recursive, as part of what it does is to call
+-- itself.  Oddly, though, it has no base case; it just seems to go on
+-- forever.  What stops the insanity, though, is lazy evaluation; it will
+-- only actually go as far as you ask it to.
+--
+--   HaskellExamples3> take 10 (repeat2 5)
+--   [5,5,5,5,5,5,5,5,5,5]
+--   HaskellExamples3> zip (repeat2 10) ["A", "B", "C"]
+--   [(10,"A"),(10,"B"),(10,"C")]
+--
+-- Why that can be handy is that it allows you to write simple definitions,
+-- like an ascending sequence of integers, without thinking in terms of base
+-- cases and boundaries; boundaries are established by how you use a function
+-- like this, not by the function itself.

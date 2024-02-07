@@ -1,0 +1,170 @@
+Survey of binary search data structures
+
+General principle:
+    handle insert, delete, successor, predecessor in logarithmic time
+    "balanced" tree: each path has length O(log n)
+    each operation modifies items on a single path
+    various mechanisms for forcing tree to stay balanced
+    various additional advantages/disadvantages beyond e.g. treaps
+	faster for certain types of operation
+	storage space
+	...
+
+treap:
+	described last time
+	used in LEDA algorithm library
+	advantage:
+		same properties as random-insert model for any seq of ops
+		data structure state does not depend on history
+		average access 2 ln n, relatively good
+		conceptually simple 
+	disadvantages:
+		deepest path larger (by constant) than other balanced trees
+		randomized
+
+skip list:
+	each new item flips coin until getting heads
+		makes array of pointers #flips long
+	pointer[i] -> sorted singly linked list of items with >= i flips
+	search(x):
+		i = max(#flips)
+		pos = first item with i flips
+		while i >= 0:
+			if x <= pos.array[i]:
+				pos = pos.array[i]
+			else:
+				i = i - 1
+	expect O(log n) steps per search
+
+	advantage:
+		simple
+		data structure state does not depend on history
+	disadvantages:
+		variable size nodes
+		randomized
+
+a,b-tree: [CLRS 18]
+	NOT binary
+	all items stored at leaves (can also mod to store items internally)
+	each internal node has a <= #children <= b, b >= 2a-1
+		(so search step at each node more complicated)
+	insert:
+		find place to add
+		if too many children, split and zipper upwards
+	delete:
+		remove child, rebalance w/sibling if necessary
+	# nodes touched by update = O(log_a n)
+
+	(2,3)-tree: O(log n) per update
+	advantage: none?
+
+	B-tree: node size = memory page, O(log_B n) per update
+	advantage: adapts to memory hierarchy
+
+red-black tree: [CLRS 13]
+	binary search tree (items stored in both internal nodes and leaves)
+	each node stores one bit: colored red or black
+
+	root must be black
+	any child of a red node must be black
+	all paths root->null pointer have same # black nodes
+
+	view as similar to 2-4 tree:
+		group red nodes with their parents into single supernode
+		=> height <= 2 log_2 n
+
+	insert:
+		do normal tree insert, color new node x red
+			(preserves all-path property, may mess up any child)
+		while x and parent(x) both red:
+			if parent(x) = root:
+				recolor it black
+			else if sibling(parent(x)) red:
+				flip colors among parent,grandparent,sibling
+				x = grandparent
+			else if x-parent-grandparent zigzags:
+				rotate x-parent
+				x = old parent (now child of x, no zigzag)
+			else:
+				rotate parent->grandparent and swap colors
+
+	delete: similar with more cases (read the book)
+
+	advantages:
+		little extra memory (one bit per node)
+		each insert does at most two rotations
+			(useful for persistence, later)
+
+AVL trees:
+	first balanced bst: Adel'son, Velskii, Landis 1962.
+
+	at each node, heights of subtrees differ by at most one
+	each node stores two bits: which of left and right is deeper
+	similar case analysis and rotation-based updates as red-black trees
+
+	advantages:
+		little extra memory
+		more balanced than red-black:
+			height log_phi n instead of 2 log_2 n
+
+BB[alpha]-trees:
+	at each node, #descendants(child) <= (1-alpha) * #descendants(node)
+	each node stores #descendants so we can check this condition
+
+	max height: log_(1/(1-alpha)) n
+
+	insert, delete:
+		perform standard binary search tree ins/del
+		propagate new #descendants up tree
+		at *highest* unbalanced node,
+			replace whole subtree with new complete binary tree
+
+	amortized analysis:
+		Phi = sum_(nodes) | #left - #right |
+		each ins/del adds O(log n) to Phi
+		each rebuild takes time O(k), reduces Phi by alpha k - O(log n)
+		=> amortized time O(log n)
+
+	advantages:
+		can get height (1+epsilon) log_2 n
+			at cost of more frequent rebuilds, slower amort update
+		can store large complicated data structures at each node,
+			rebuild them infrequently, not worry about rotate
+	disadvantages:
+		time is amortized instead of worst case
+
+scapegoat trees:
+	no extra information per node (not even one bit), just tree structure
+	otherwise similar to BB[alpha]-tree
+	if insert places node too deep,
+		computes balance of larger and larger subtrees at ancestors
+		until finding non-alpha-balanced subtree
+			then rebuilds that subtree to be balanced
+		search time adds in geometric series to rebuild time
+
+	time per search worst case O(log n)
+	time per update amortized O(log n)
+
+weighted binary trees (e.g. BB[alpha]-trees with total weight instead of #)
+	time to insert/del/find item i: O(log W/w_i)
+	advantages:
+		can speed up times for frequently accessed items
+	disadvantages:
+		more complex
+		
+finger search trees (locality of reference)
+	time to insert/del find item i: O(log |pos_i - pos_{i-1}|)
+	advantages:
+		locality of reference in input sequence
+		(e.g. sequential order => linear time)
+	disadvantages:
+		more complex
+
+Splay trees:
+	next time
+	advantages:
+		most of above
+		no extra space, weighted w/o change to data struc,
+			finger searches (again w/o change)
+	disadvantages:
+		amortized

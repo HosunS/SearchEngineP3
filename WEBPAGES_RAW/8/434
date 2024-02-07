@@ -1,0 +1,34 @@
+#include "oechem.h"
+#include <iostream>
+
+using namespace OEChem;
+using namespace OESystem;
+using namespace std;
+
+int main()
+{
+  OEMol mol;
+  OEParseSmiles(mol, "c1ccccc1");
+  mol.SetTitle("benzene");
+  
+  // set some sd data
+  OESetSDData(mol, "color", "brown");
+  OESetSDData(mol, OESDDataPair("size", "small"));
+  
+  // loop over data
+  OEIter<OESDDataPair> dp;
+  for (dp=OEGetSDDataPairs(mol);dp;++dp)
+  {
+    cout << dp->GetTag() << " : " << dp->GetValue() << endl;
+  }
+  
+  if (OEHasSDData(mol, "color"))
+    OEDeleteSDData(mol, "color");
+    
+  for (dp=OEGetSDDataPairs(mol);dp;++dp)
+  {
+    cout << dp->GetTag() << " : " << dp->GetValue() << endl;
+  }  
+
+  return 0;
+}

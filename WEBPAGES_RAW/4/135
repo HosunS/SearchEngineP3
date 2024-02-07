@@ -1,0 +1,93 @@
+Problem:
+    given a set of n integers
+    perform dictionary lookups, successor and predecessor queries
+    standard assumption: random access machine with word size w
+	all integers are in the range 0 .. U=2^w-1
+	integer arithmetic operations take time O(1) each
+		(some work here:
+		addition, booleans vs multiplication, division
+		extra operations available on some hardware e.g. P4)
+
+	balanced binary search tree
+		O(log n) per operation
+
+	hash table
+		O(1) but can't do successor/predecessor
+
+van emde Boaz flat trees 1977: O(log log U)
+	(so good when wordsize small, less good for longer words)
+
+Fredman and Willard fusion trees, STOC 1990
+    O(log n / log log n)
+
+exponential search trees
+	Andersson, FOCS 1996
+	Beame and Fich, STOC 1999
+	Andersson and Thorup, STOC 2000
+    O(sqrt(log n / log log n))
+	[tight due to lower bounds of Beame and Fich]
+
+various related methods e.g. for priority queues,
+priority queues with increasing minimum value (e.g. Dijkstra),
+randomization...
+
+
+flat trees
+	flat tree on words of length w:
+		split each word into first half and second half (w/2 each)
+		form flat tree on first halves
+		for each first half present in the input:
+			- build recursive flat tree of second halves
+			- store first and last words w/that first half
+		hash table H[first half] -> recursive flat tree
+
+	to search for e.g. succ(x):
+		find first half of x
+		if x in H and x is before last word in H[x]:
+			recursively search flat tree H[x]
+		else
+			search flat tree of first halves
+			return first word having search result as first half
+
+	space:
+		linear
+	time:
+		T(w) = O(1) + T(w/2) = O(log w) = O(log log U)
+
+
+Fredman-Willard main idea:
+	build search structures for very small numbers of items
+	use those to build up to larger #s of items
+
+so: suppose you have k w-bit integers
+    conceptually:
+	build compressed trie
+	search it in the following strange way:
+		at each node, look at single bit of query word
+			to determine whether to go left or right
+		    (ignoring other bits along compressed edges)
+		once we reach a leaf,
+		    find xor(leaf word, query)
+		    to find position of 1st divergence from trie path
+		    => position of successor
+
+    how to do this quickly:
+	leaf = hash[T,query&MASK]
+	where T = description of compressed trie topology
+	MASK = k nonzero bits in the words you care about
+
+	ffo(leaf,query) => various strategies:
+		floating point normalize
+		machine instruction
+		another hash table
+
+    with hash table of size n (shared hash table for all copies of data struc)
+	can handle k=(log n)^epsilon
+	query = O(1)
+
+B-tree, B=k=(log n)^epsilon
+	=> query time O(log n / loglog n)
+
+
+Exponential search trees etc --
+   combine ideas from both approaches

@@ -1,0 +1,2883 @@
+WEBDAV Working Group                                     J. Slein, Xerox
+INTERNET DRAFT                                           J. Davis, Xerox
+<draft-ietf-webdav-collection-protocol-03.2>     T. Chihaya, DataChannel
+                                                      G. Clemm, Rational
+                                                         C. Fay, FileNet
+                                           E.J. Whitehead Jr., UC Irvine
+                                                          April 18, 1999
+Expires October 18, 1999
+
+			WebDAV Advanced Collections Protocol
+
+Status of this Memo
+
+This document is an Internet-Draft and is in full conformance with all 
+provisions of Section 10 of RFC2026. Internet-Drafts are working 
+documents of the Internet Engineering Task Force (IETF), its areas, and 
+its working groups. Note that other groups may also distribute working 
+documents as Internet-Drafts.
+
+Internet-Drafts are draft documents valid for a maximum of six months 
+and may be updated, replaced, or obsoleted by other documents at any 
+time. It is inappropriate to use Internet-Drafts as reference material 
+or to cite them other than as "work in progress".
+
+To view the list Internet-Draft Shadow Directories, see 
+http://www.ietf.org/shadow.html.
+
+Distribution of this document is unlimited. Please send comments to the 
+Distributed Authoring and Versioning (WebDAV) working group at <w3c-
+dist-auth@w3.org>, which may be joined by sending a message with subject 
+"subscribe" to <w3c-dist-auth-request@w3.org>.
+
+Discussions of the WEBDAV working group are archived at URL: 
+<http://www.w3.org/pub/WWW/Archives/Public/w3c-dist-auth>.
+
+Abstract
+
+The base WebDAV protocol [WebDAV] provides basic support for 
+collections.  It defines a MKCOL method for creating collections and 
+specifies how other HTTP and WebDAV methods interact with collections.  
+It supports internal members of collections, which it defines as URIs 
+that are immediately relative to the URI of the collection.
+
+Many applications, however, need more powerful collections.  There are 
+two areas in particular where more powerful functionality is often 
+needed: shared resources and ordering.
+
+This draft specifies extensions to the base WebDAV protocol to support 
+these more powerful collections.
+
+Table of Contents
+
+1	Notational Conventions........................................4
+2	Terminology...................................................4
+3	Introduction..................................................5
+4	Shared Resources..............................................6
+4.1	Scope.........................................................6
+
+Slein et al.                                                    Page 1
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+4.1.1	Strong References out of Scope................................6
+4.1.2	Direct References out of Scope................................7
+4.2	Overview......................................................7
+4.3	Creating Bindings.............................................9
+4.3.1	The BIND Method...............................................9
+4.3.2	Status Codes..................................................9
+4.3.3	Example: BIND................................................10
+4.4	The Semantics of Bindings....................................10
+4.4.1	Bindings to Collections......................................13
+4.5	Creating Redirect References.................................13
+4.5.1	The MKREF Method.............................................13
+4.5.2	Status Codes.................................................13
+4.5.3	Example: MKREF...............................................14
+4.6	Listing the Redirect References in a Collection..............14
+4.6.1	Example: PROPFIND on a Collection with Redirect References...15
+4.6.2	Example: PROPFIND with Passthrough: F on a Collection with 
+        Redirect References..........................................16
+4.7	Copying Redirect References..................................18
+4.7.1	Example: COPY on a Redirect Reference........................18
+4.7.2	Example: COPY on a Collection That Contains a Redirect 
+        Reference....................................................19
+4.8	Deleting and Moving Redirect References......................19
+4.9	Locking Redirect References..................................20
+4.9.1	LOCK on Redirect References..................................20
+4.9.2	Example: LOCK on a Redirect Reference........................21
+4.9.3	Example: LOCK on a Collection That Contains a Redirect 
+        Reference, with Passthrough: T...............................22
+4.10	Other WebDAV Operations on Redirect References...............24
+4.10.1	Example: PROPPATCH on a Redirect Reference...................24
+4.11	HTTP Operations on Redirect References.......................24
+4.11.1	Example: GET on a Redirect Reference.........................25
+4.11.2	Example: GET on a Redirect Reference with "Passthrough: F"...25
+4.12	Operations on Targets of Redirect References.................25
+4.13	Discovering a Target's References............................26
+4.14	Relative URIs in Ref-Target and DAV:reftarget................27
+4.14.1	Example: Resolving a Relative URI in Ref-Target..............27
+4.14.2	Example: Resolving a Relative URI in DAV:reftarget...........27
+4.15	Redirect References to Collections...........................29
+5	Ordered Collections..........................................29
+5.1	Overview.....................................................29
+5.2	Creating an Ordered Collection...............................30
+5.2.1	Overview.....................................................30
+5.2.2	Example: Creating an Ordered Collection......................30
+5.3	Setting the Position of a Collection Member..................31
+5.3.1	Overview.....................................................31
+5.3.2	Status Codes.................................................31
+5.3.3	Examples: Setting the Position of a Collection Member........31
+5.4	Changing the Semantics of a Collection Ordering..............32
+5.5	Changing the Position of a Collection Member.................32
+5.5.1	The ORDERPATCH Method........................................32
+
+Slein et al.                                                    Page 2
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+5.5.2	Status Codes.................................................32
+5.5.3	Example: Changing the Positions of Collection Members in the 
+        Ordering.....................................................33
+5.5.4	Example: Failure of an ORDERPATCH Request....................34
+6	Headers......................................................34
+6.1	Ref-Target Entity Header.....................................34
+6.2	Resource-Type Entity Header..................................34
+6.3	Ref-Integrity Request Header.................................35
+6.4	Passthrough Request Header...................................35
+6.5	Ordered Entity Header........................................36
+6.6	Position Request Header......................................36
+7	Status Codes.................................................37
+7.1	506 Loop Detected............................................37
+8	Properties...................................................37
+8.1	reftarget Property...........................................37
+8.2	refintegrity Property........................................38
+8.3	location Property............................................38
+8.4	references Property..........................................38
+8.5	orderingtype Property........................................39
+9	XML Elements.................................................39
+9.1	reference XML Element........................................39
+9.2	weak XML Element.............................................39
+9.3	unordered XML Element........................................39
+9.4	custom XML Element...........................................39
+9.5	order XML Element............................................40
+9.6	ordermember XML Element......................................40
+9.7	position XML Element.........................................40
+9.8	first XML Element............................................40
+9.9	last XML Element.............................................41
+9.10	before XML Element...........................................41
+9.11	after XML Element............................................41
+9.12	options XML Element..........................................41
+9.13	refintegrityoptions XML Element..............................41
+9.14	orderingoptions XML Element..................................42
+9.15	do-not-enforce XML Element...................................42
+10	Extensions to the DAV:response XML Element for Multi-Status 
+        Responses....................................................42
+11	Capability Discovery.........................................43
+11.1	Compliance Classes...........................................43
+11.2	Example: Discovery of Compliance Classes.....................43
+11.3	Additional Advanced Collections Capabilities.................43
+11.4	Example: Discovery of Referential Integrity Options..........44
+12	Dependencies on Other Specifications.........................45
+13	Security Considerations......................................45
+13.1	Privacy Concerns.............................................45
+13.2	Redirect Loops...............................................45
+13.3	Redirect References, Bindings, and Denial of Service.........45
+13.4	Private Locations May Be Revealed............................46
+13.5	DAV:references and Denial of Service.........................46
+13.6	DAV:references and Malicious Deletion of Resources...........46
+13.7	Denial of Service and DAV:orderingtype.......................46
+14	Internationalization Considerations..........................47
+15	IANA Considerations..........................................47
+16	Copyright....................................................47
+17	Intellectual Property........................................47
+
+Slein et al.                                                    Page 3
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+18	Acknowledgements.............................................47
+19	References...................................................48
+19.1	Normative References.........................................48
+19.2	Informational References.....................................48
+20	Authors' Addresses...........................................48
+21	Appendices...................................................49
+21.1	Appendix 1: Extensions to the WebDAV Document Type Definition49
+
+1 Notational Conventions
+
+Since this document describes a set of extensions to the HTTP/1.1 
+protocol, the augmented BNF used here to describe protocol elements is 
+exactly the same as described in Section 2.1 of [HTTP].  Since this 
+augmented BNF uses the basic production rules provided in Section 2.2 of 
+[HTTP], these rules apply to this document as well.
+
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", 
+"SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this 
+document are to be interpreted as described in [RFC2119].
+
+2 Terminology
+
+The terminology used here follows and extends that in the base WebDAV 
+protocol specification [WebDAV].
+
+Collection
+     A resource that contains a set of URIs, termed member URIs, which 
+     identify member resources
+
+Member URI
+     A URI which is a member of the set of URIs contained by a 
+     collection
+
+Reference
+     A mechanism for providing resource sharing, allowing a single 
+     resource to be accessed from multiple locations in HTTP 
+     namespaces.  The bindings and redirect references defined in this 
+     specification are types of references.
+
+Binding
+     An association between a URI and a resource, which makes it 
+     possible to submit requests to the resource using the URI as the 
+     request-URI.
+
+Redirect Reference
+     A resource whose purpose is to provide access to another resource, 
+     and that requires client action before it can be resolved.  The 
+     client is aware that this type of reference is mediating between 
+     it and the target resource.
+
+Ordinary Resource
+     A resource that is not a reference to another resource
+
+Target Resource
+     The resource referenced by a referential resource
+
+Slein et al.                                                    Page 4
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+
+Strong Reference
+     A reference whose referential integrity is enforced by the server
+
+Weak Reference
+     A reference whose referential integrity is not enforced by the 
+     server
+
+Referential Integrity
+     The integrity of a reference is preserved as long as it points to 
+     the same resource it pointed to when it was created.  Its 
+     integrity may be destroyed if the target resource is moved without 
+     updating the reference to reflect its new location, or if the 
+     target resource is deleted.
+
+3 Introduction
+
+The simple collections that the base WebDAV specification supports are 
+powerful enough to be widely useful.  They provide for the hierarchical 
+organization of resources, with mechanisms for creating and deleting 
+collections, copying and moving them, locking them, adding members to 
+them and removing members from them, and getting listings of their 
+members.  Delete, copy, move, list, and lock operations can be applied 
+recursively, so that a client can operate on whole hierarchies with a 
+single request.
+
+Many applications, however, need more powerful collections.  There are 
+two areas in particular where more powerful functionality is often 
+needed: shared resources and ordering.  This specification defines 
+OPTIONAL extensions to [WebDAV] in both these areas.
+
+It is useful for the same resource to be accessible from multiple 
+locations in HTTP namespaces.  Different collections, on the same or 
+different servers, may need to share the same resource.  For example, 
+the mathematics department at one university might create a collection 
+of information on fractals that contains the URIs of some local 
+resources, but also provides access to some resources at other 
+universities.  For many reasons, it may be undesirable to make physical 
+copies of the shared resources on the local server - to conserve disk 
+space, to respect copyright constraints, or to make any changes in the 
+shared resources visible automatically.  This protocol provides two 
+mechanisms for sharing resources: bindings and redirect references.
+
+It is useful for many applications to be able to impose an ordering on a 
+collection. Orderings may be based on property values, but they may be 
+completely independent of any properties on the resources identified by 
+the collection's member URIs.  Orderings based on properties can be 
+obtained using a search protocol [DASL], but orderings not based on 
+properties need some other mechanism.  These orderings generally need to 
+be maintained by a human user.  The ordering protocol defined here 
+focuses on support for such human-maintained orderings, but also allows 
+for server-maintained orderings.
+
+Since resource sharing and ordered collections are independent of each 
+other, servers may elect to comply with the Shared Resources section of 
+
+Slein et al.                                                    Page 5
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+this specification or with the Ordered Collections section or both.  A 
+server that supports resource sharing provides both bindings and 
+redirect references.  A server MUST advertise its compliance with 
+particular parts of this specification through its response to an 
+OPTIONS request, as specified in Section 10 below.
+
+4 Shared Resources
+
+4.1 Scope
+
+[CollReq] states requirements for 4 different kinds of references: weak 
+references, strong references, redirect references, and direct 
+references.  This specification supports weak references and redirect 
+references, and is designed so that it can be extended to support strong 
+references in the future.  The bindings defined here provide many of the 
+features of direct references while avoiding some of their complexities.  
+Direct references can also be added in the future.
+
+4.1.1 Strong References out of Scope
+
+Strong references are references whose integrity is enforced by the 
+server; weak references are those whose integrity is not enforced by the 
+server.  Strong references and weak references are both useful in 
+different contexts.  Some applications cannot tolerate broken links.  A 
+software development application, for example, must be able to rely on 
+the integrity of references to component modules. Such applications must 
+be able to request strong references.  Other applications may want to 
+reference target resources on multiple servers, where referential 
+integrity cannot be enforced, and may be less concerned about possible 
+broken references.  Weak references may even be required by some 
+applications.  For example, it may be a common occurrence in some 
+applications for content to be temporarily removed, so that references 
+are temporarily left dangling.
+
+Several considerations led to the decision not to support strong 
+references in the current specification.  First, there are many possible 
+policies that applications and services might use in enforcing 
+referential integrity.  Some examples are:
+
+o Delete strong references when their targets are deleted.
+o Decline to delete targets of strong references.
+o Notify strong references when their targets have been deleted.
+o Replace strong references with copies of their targets before 
+  deleting the targets.
+
+There appears to be no common practice in this area.  Moreover, some of 
+the policies have significant security risks.
+
+o Moving a target of strong references could be a security risk to the 
+  owner of the target by revealing secret locations on the target's 
+  server.
+o A strong reference could be a security risk to the owner of the 
+  reference by revealing secret locations on his server.
+o The presence of strong references to resources on a server could make 
+  it impossible to reclaim space on that server by moving or deleting 
+
+Slein et al.                                                    Page 6
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+  those target resources. 
+
+These considerations together led to the decision not to support strong 
+references in the short term. 
+
+4.1.2 Direct References out of Scope
+
+Direct references would have provided some features that bindings do 
+not.  For example, direct references are resources that can have 
+properties of their own.  In addition, direct references may be weak or 
+strong, and can support a variety of policies for enforcing referential 
+integrity.
+
+However, direct references raise a number of design issues that do not 
+arise for bindings.  It is unclear what the semantics of COPY, MOVE, and 
+LOCK should be for direct references, whereas the semantics of all 
+operations for bindings have already been defined by [HTTP] and 
+[WebDAV].  In addition, behaviors would have to be defined for chains of 
+direct references and for dangling direct references, neither of which 
+can occur in the case of bindings. 
+
+These considerations led to the decision not to support direct 
+references in the short term.
+
+4.2 Overview
+
+Shared resources make the same resource accessible from multiple 
+locations in HTTP namespaces.  This protocol provides two mechanisms for 
+sharing resources: bindings and redirect references.
+
+A binding is an association between a URI and a resource, which makes it 
+possible to submit requests to the resource using the URI as the 
+request-URI.  Since bindings already exist in [HTTP] and [WebDAV], this 
+specification merely provides a way for clients to add new bindings to 
+existing resources.  Bindings are an appealing mechanism for resource 
+sharing because: 
+
+o Once created, clients need do nothing special to use them.  They 
+  behave just like any other binding, transparently applying operations 
+  to the target resource.  
+o Servers already provide bindings, so there is little extra work 
+  involved in allowing clients to create them.
+o The integrity of bindings is guaranteed.  MOVE and DELETE operations 
+  cannot leave bindings in an inconsistent state.  
+
+A limitation of bindings is that a server would need proxy capabilities 
+in order to support bindings to resources on another server.  In light 
+of this complexity, support for cross-server bindings is OPTIONAL.
+
+A redirect reference is a resource whose purpose is to provide access to 
+another resource.  From the client�s point of view, redirect references 
+are less convenient to use than bindings, because redirect references 
+require action by the client before they can be resolved.  Moreover, the 
+server is not required to enforce the integrity of redirect references.  
+However, redirect references have a number of advantages: 
+
+Slein et al.                                                    Page 7
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+
+o They are simple for servers to implement.  Servers already provide 
+  redirect resources, and the same mechanism can be used for redirect 
+  references.
+o The same simple implementation works equally well for target 
+  resources that reside on the same server and for target resources 
+  that reside on a different server.  
+o Redirect references have only limited security implications.  
+o Since redirect references are resources, they can carry properties of 
+  their own.  
+o It is possible to ask a server not to enforce referential integrity 
+  for a redirect reference.  
+
+To distinguish redirect references from ordinary resources, a new value 
+of the DAV:resourcetype property (defined in [WebDAV]) is added here.  
+The DAV:resourcetype property of all redirect references MUST have the 
+new value DAV:reference (defined in Section 8.1 below).  
+
+If the client is aware that it is operating on a redirect reference, it 
+can resolve the reference by retrieving the reference's DAV:reftarget 
+property (defined in Section 7.1 below), whose value is the URI of the 
+target resource.  It can then submit requests to the target resource. 
+Every redirect reference MUST have the DAV:reftarget property.
+
+Otherwise, the client submits a request to the redirect reference.  For 
+most operations, the response is a 302 (Moved Temporarily), accompanied 
+by the Resource-Type header (defined in Section 6.2 below) with the 
+value "DAV:reference" and the Location header with the URI of the target 
+resource.  The client can then resubmit the request to the URI of the 
+target resource.  A few operations, for reasons that will be explained, 
+are exceptions to this general behavior. These exceptional operations 
+are applied to the reference itself and do not result in a 302 response.
+
+Since a redirect reference is a resource, it is possible to apply 
+methods to the reference as well as to its target.  The Passthrough 
+request header (defined in Section 6.4 below) is provided so that 
+referencing-aware clients can control whether an operation is applied to 
+the redirect reference or to its target resource.  The Passthrough 
+header can be used with most requests to redirect references.  This 
+header is particularly useful with PROPFIND, to retrieve the reference's 
+own properties.
+
+Ideally, non-referencing clients should be able to use both bindings and 
+redirect references.  This goal is more difficult to meet for redirect 
+references, since client action is required to resolve them.  The 
+strategy of having redirect references respond to most requests with a 
+302 (Moved Temporarily), accompanied by the URI of the target resource 
+in the Location header, fulfills this goal in most cases.
+
+Although strong references are not currently supported, a new property 
+called DAV:refintegrity is defined in Section 7.2 in anticipation of 
+future support for strong references.  DAV:refintegrity will allow 
+clients to distinguish between weak and strong references.  All redirect 
+references MUST have this property.  Although the only value currently 
+defined for DAV:refintegrity is DAV:weak, other values may be defined in 
+
+Slein et al.                                                    Page 8
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+the future, and servers MAY use extension values to identify their 
+policy for enforcing referential integrity for that reference.  Since 
+servers are required to maintain the integrity of bindings and the 
+semantics for doing so are defined in Section 4.4, no discovery 
+mechanism is needed for referential integrity on bindings.
+
+4.3 Creating Bindings
+
+4.3.1 The BIND Method
+
+Bindings are created using the BIND method.  The request-URI of the BIND 
+request is the new URI through which the resource will be accessible 
+once the operation has completed.
+
+Several headers defined in this specification are used in BIND requests:  
+
+o The Ref-Target header (defined in Section 6.1) MUST be included in 
+  every BIND request to identify the target resource of the new 
+  binding.  
+o The Position request header (defined in Section 6.6) MAY be used in 
+  BIND requests to indicate where the new binding is to be placed in 
+  its parent collection's ordering.
+
+In the context of a BIND request, the URI in the Ref-Target header MUST 
+have an existing binding to some resource.  Otherwise, the BIND request 
+MUST fail with a 409 (Conflict) status code.
+
+When a server receives a BIND request, it looks up the resource that is 
+bound to the URI in the Ref-Target header, and creates a new binding of 
+the request-URI to the same resource.  It also adds the request-URI as a 
+new collection member to its parent collection.  The parent collection 
+is identified by the request-URI minus its final segment.  If this 
+parent collection does not exist, the BIND request MUST fail with a 409 
+(Conflict) status code.
+
+After successful processing of a BIND request, it MUST be possible for 
+clients to use the request-URI to submit requests to the resource 
+identified by the Ref-Target header, and the request-URI MUST be a 
+member of the collection identified by the request-URI minus its final 
+segment.
+
+If the server cannot support the semantics for bindings defined in 
+Section 4.4 for the Request-URI, it MUST fail the request.
+
+If a BIND request has a request-URI that identifies an existing binding, 
+the existing resource MUST be overwritten by default.  This behavior is 
+analogous to the behavior of the PUT method [HTTP].  If overwriting an 
+existing binding destroys the last binding to a given resource, that 
+resource MUST be deleted.  The default overwrite behavior can be 
+overridden using the Overwrite header defined in Section 9.6 of 
+[WebDAV].
+
+4.3.2 Status Codes
+
+Some typical client errors for BIND, and the appropriate response status 
+
+Slein et al.                                                    Page 9
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+codes, include: 
+
+400 (Bad Request): The client set an invalid value for the Ref-Target or 
+Position header.
+
+409 (Conflict): Several conditions may produce this response.  There may 
+be no existing binding for the URI specified in Ref-Target.  The request 
+may be attempting to create a binding in a collection that does not 
+exist. The request may be attempting to position the binding in an 
+unordered collection.
+
+412 (Precondition Failed): The Overwrite header is ?F?, and a binding 
+already exists for the request-URI.
+
+4.3.3 Example: BIND
+
+Request:
+
+BIND /~whitehead/dav/spec08.txt HTTP/1.1
+HOST: www.ics.uci.edu
+Ref-Target: /i-d/draft-webdav-protocol-08.txt
+
+Response:
+
+HTTP/1.1 201 Created
+
+Because the URI in the Ref-Target header was already mapped to the 
+desired target resource, the server was able to look up the target 
+resource and create a new binding to it.  The server created the new 
+binding for the request-URI, associating it with the resource identified 
+by the Ref-Target header.  Clients can now use the request-URI to submit 
+requests to that resource.  In addition, the server added the request-
+URI to the list of members of collection /~whitehead/dav/.
+
+4.4 The Semantics of Bindings
+
+Bindings created with the BIND method are no different from bindings 
+created in any other way.  All bindings associate a URI with a resource, 
+making it possible to submit requests to the resource using the URI as 
+the request-URI.  All methods MUST behave the same way for bindings 
+created with the BIND method as for any other bindings.
+
+Consider a case where there are several bindings to resource R.  Of 
+these bindings, only the one between URI3 and R was created using BIND.
+
+ URI1    URI2     URI3 
+   |       |        |
+   |       |        |      <------- Bindings
+   |       |        |
++---------------------+
+|     Resource R      |
++---------------------+
+           |
+           |
+           |
+
+Slein et al.                                                    Page 10
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
++---------------------+
+| Chunk of State      |
+| (e.g., file,        |
+|  or multiple files, |
+|  or EEPROM memory,  |
+|  or database record,|
+|  etc.)              |
++---------------------+
+
+*** Inconsistencies everywhere about whether we distinguish between a 
+resource and the chunk of state.
+
+A GET on URI3 MUST produce the same response as a GET on URI1 or URI2, 
+as specified in [HTTP], returning an entity response for R.  
+
+A HEAD on URI3 MUST produce the same response as a HEAD on URI1 or URI2, 
+as specified in [HTTP], returning the entity headers for R.
+
+A PUT on URI3 MUST produce the same result as a PUT on URI1 or URI2, as 
+specified in [HTTP]. By default it overwrites the state associated with 
+R, affecting the GET entity response for all three URIs.
+
+A POST on URI3 MUST produce the same result as a POST on URI1 or URI2, 
+as specified in [HTTP].  It may do anything, depending upon the nature 
+of R. 
+
+An OPTIONS request on URI3 MUST produce the same description of R�s 
+capabilities as an OPTIONS request on URI1 or URI2, as specified in 
+[HTTP].
+
+A DELETE on URI3 MUST delete the binding between URI3 and R, just as a 
+DELETE on URI1 would delete the bindings between URI1 and R, or a DELETE 
+on URI2 would delete the binding between URI2 and R.  If a DELETE 
+operation removes the last binding to a resource, the resource MUST be 
+deleted as well.
+
+[Add picture]
+
+[HTTP] states that ?the DELETE method requests that the origin server 
+delete the resource identified by the Request-URI.?  However, we believe 
+that our interpretation of DELETE is consistent with the definition in 
+[HTTP].  Because [HTTP] did not distinguish between bindings and 
+resources, an HTTP/1.1 client would not be able to distinguish between a 
+server that deleted the resource together with all its bindings and a 
+server that deleted only the binding of the Request-URI.  Consequently, 
+it is safe to interpret ?deleting the resource? in [HTTP] as ?removing 
+the binding of the resource to the request-URI?. 
+
+A COPY on URI3 with ?Destination: URIX? MUST duplicate R in a new 
+resource and the state associated with R in a new chunk of state, and 
+then create a mapping of URIX to the new resource.  The mappings of URI1 
+and URI2 are unaffected.  This is consistent with the definition of COPY 
+in [WebDAV].
+
+[Add picture]
+
+Slein et al.                                                    Page 11
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+
+*** If R is a collection, the result of COPY URI3 is . . .
+
+A MOVE on URI3 with ?Destination: URIX? MUST be logically equivalent to 
+performing a COPY on URI3 with ?Destination: URIX?, fixing the bindings 
+of URI1 and URI2 to associate them with the new resource, and performing 
+a DELETE on URI3.  In the end, URIX, URI1, and URI2 will all be bound to 
+the new resource, and R together with its binding to URI3 will have been 
+deleted.  This is consistent with the definition of MOVE in [WebDAV], 
+which allows for consistency maintenance processing between the COPY and 
+DELETE operations, but does not define the consistency maintenance 
+processing.  If the server cannot perform the consistency maintenance 
+processing, it MUST fail the MOVE request.
+
+[Add picture]
+
+The MOVE semantics can alternatively be viewed as logically equivalent 
+to a BIND of URIX to R, followed by a DELETE of URI3.  In this case, the 
+result would be that URIX, URI1, and URI2 would all be bound to R, and 
+URI3 would no longer be bound to R.  Since the state associated with the 
+new resource on the first interpretation is (arguably, with the possible 
+exception of some property values) identical to the state associated 
+with R on the second interpretation, the two interpretations are 
+equivalent.
+
+[Add picture]
+
+*** If R is a collection, the result of MOVE URI3 is . . .
+
+A LOCK on URI3 MUST produce the same result as a LOCK on URI1 or URI2, 
+as specified in [WebDAV]. Resource R is locked, and the lock is visible 
+via all three URIs.  Consistent with the definition of LOCK in [WebDAV], 
+if a write lock is created via URI3, it is not possible for anyone 
+except the lock owner to modify R via any of the URIs bound to it.  Nor 
+is it possible for anyone except the lock owner to LOCK any collection 
+of which any of those URIs is a member, recursively upward through the 
+hierarchy.  Nor is it possible for anyone except the lock owner to MOVE 
+or DELETE any collection of which any of those URIs is a member, 
+recursively upward through the hierarchy.
+
+An UNLOCK on URI3 MUST produce the same result as an UNLOCK on URI1 or 
+URI2, as specified in [WebDAV].  The lock is removed from R, and is no 
+longer visible via URI1, URI2, or URI3.
+
+A PROPFIND on URI3 MUST produce the same response as a PROPFIND on URI1 
+or URI2, as specified in [WebDAV]. It retrieves properties of R.  If R 
+is a collection, the behavior is still as defined in [WebDAV]: The 
+properties of R and its member resources are returned, to the depth 
+requested.
+
+A PROPPATCH on URI3 MUST produce the same result as a PROPFIND on URI1 
+or URI2, as specified in [WebDAV].  It sets or deletes properties on R.
+
+A MKCOL on URI3 MUST produce the same result as a MKCOL on URI1 or URI2, 
+as specified in [WebDAV].  It fails, since a resource is already bound 
+
+Slein et al.                                                    Page 12
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+to URI3.
+
+A MKREF on URI3 MUST produce the same result as a MKREF on URI1 or URI2, 
+as specified in Section 4.5.1.  By default it overwrites R with a new 
+redirect reference.
+
+An ORDERPATCH on URI3 MUST produce the same result as an ORDERPATCH on 
+URI1 or URI2, as specified in 5.5.1.  Assuming that R is a collection 
+with a client-maintained ordering, it modifies the ordering of R�s 
+members.
+
+4.4.1 Bindings to Collections
+
+BIND can create a binding to a collection resource.  A collection 
+accessed through such a binding behaves exactly as would a collection 
+accessed through any other binding.  Bindings to collections can result 
+in loops, which servers MUST detect when processing "Depth: infinity" 
+requests.  When a loop is detected, the server MUST respond with a 506 
+(Loop Detected) status code (defined in Section 7.1).
+
+4.5 Creating Redirect References
+
+4.5.1 The MKREF Method
+
+Redirect references are created using the MKREF method.  Since a 
+redirect reference is a resource, the request-URI of the MKREF request 
+identifies the resource to be created.  
+
+Several headers defined in this specification are used in MKREF 
+requests:  
+
+o The Ref-Target header (defined in Section 6.1) MUST be included in 
+  every MKREF request to identify the target resource of the new 
+  reference.  
+o The Ref-Integrity header (defined in Section 6.3) MUST be included in 
+  every MKREF request to indicate whether and how referential integrity 
+  should be enforced for the new reference.  
+o The Position request header (defined in Section 6.6) MAY be used in 
+  MKREF requests to indicate where the new reference is to be placed in 
+  its parent collection's ordering.
+
+MKREF requests MAY include an entity body.  This specification does not 
+define the body, but allows it for extensibility. 
+
+If a MKREF request has a request-URI that identifies an existing 
+resource, the existing resource MUST be overwritten by default.  This 
+behavior is analogous to the behavior of the PUT method [HTTP].  The 
+default behavior can be overridden using the Overwrite header defined in 
+Section 9.6 of [WebDAV].
+
+4.5.2 Status Codes
+
+Some typical client errors for MKREF, and the appropriate response 
+status codes, include: 
+
+
+Slein et al.                                                    Page 13
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+400 (Bad Request): The client set an invalid value for the Ref-Target, 
+Ref-Integrity, or Position header.
+
+409 (Conflict): Several conditions may produce this response.  There may 
+be no resource at the location specified in Ref-Target, on a server that 
+prohibits dangling references.  The request may be attempting to create 
+the reference in a collection that does not exist.  The request may be 
+attempting to position the reference before or after a resource that is 
+not in the collection, or before or after itself.  The request may be 
+attempting to position the reference in an unordered collection.
+
+412 (Precondition Failed): The Overwrite header is "F", and a resource 
+already exists at the request-URI.  Or the server does not support the 
+specified Ref-Integrity value for the request-URI.
+
+4.5.3 Example: MKREF
+
+Request:
+
+MKREF /~whitehead/dav/spec08.ref HTTP/1.1
+HOST: www.ics.uci.edu
+Ref-Target: /i-d/draft-webdav-protocol-08.txt
+Ref-Integrity: do-not-enforce
+
+Response:
+
+HTTP/1.1 201 Created
+
+This request resulted in the creation of a new referential resource at 
+www.ics.uci.edu/~whitehead/dav/spec08.ref, which points to the resource 
+identified by the Ref-Target header.  Its DAV:resourcetype property is 
+set to DAV:reference.  Its DAV:reftarget property is set to the URI of 
+its target resource.  Since the Ref-Integrity header asks the server not 
+to enforce referential integrity for the new reference, the server sets 
+its DAV:refintegrity property to the value of DAV:weak, indicating that 
+the server will not enforce referential integrity for the new reference. 
+
+4.6 Listing the Redirect References in a Collection
+
+A URI of a redirect reference can be a member of a collection just as 
+the URI of an ordinary resource can.  A listing of the members of a 
+collection shows all of the URIs in the collection, whether they 
+identify redirect references or ordinary resources.  That is, a WebDAV 
+PROPFIND request on a collection resource with Depth = 1 or infinity 
+MUST return a response XML element for each URI in the collection, 
+whether it identifies an ordinary resource or a referential resource.
+
+For each redirect reference, the response element MUST contain a 302 
+(Moved Temporarily) status code unless a Passthrough header with the 
+value "F" is included with the PROPFIND request.  The DAV:location and 
+DAV:resourcetype properties MUST be included with the 302 status code, 
+extending the syntax of the DAV:response element that was defined in 
+[WebDAV] as described in Section 9 below.  A referencing-aware client 
+can tell from the DAV:resourcetype property that the collection contains 
+a redirect reference.  The DAV:location property contains the absolute 
+
+Slein et al.                                                    Page 14
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+URI of the target resource.  A referencing-aware client can either use 
+the URI value of the DAV:location property to retrieve the properties of 
+the target resource, or it can submit a PROPFIND to the redirect 
+reference with "Passthrough: F" to retrieve its properties.  It is 
+recommended that future editors of [WebDAV] define the DAV:location 
+property in [WebDAV], so that non-referencing clients will also be able 
+to use the response to retrieve the properties of the target resource.
+
+If Depth = infinity in the PROPFIND request, the server MUST NOT follow 
+redirect references into any collections to which they may refer.
+
+The Passthrough header (defined in Section 6.4) MAY be used with a 
+PROPFIND request on a collection.  A value of "F" in the Passthrough 
+header indicates that the client wants to see the properties of the 
+redirect references contained in the collection, not the properties of 
+their target resources. 
+
+4.6.1 Example: PROPFIND on a Collection with Redirect References
+
+Suppose a PROPFIND request with Depth = infinity is submitted to the 
+following collection, with the members shown here:
+
+http://www.svr.com/MyCollection/
+   (ordinary resource) diary.html
+   (redirect reference) nunavut
+
+Request:
+
+PROPFIND /MyCollection/ HTTP/1.1
+Host: www.svr.com
+Depth: infinity
+Content-Type: text/xml
+Content-Length: xxxx
+
+<?xml version="1.0" ?>
+<D:propfind xmlns:D="DAV: ">
+   <D:prop xmlns:J="http://www.svr.com/jsprops/">
+      <D:resourcetype/>
+      <J:keywords/>
+   </D:prop>
+</D:propfind>
+
+Response:
+
+HTTP/1.1 207 Multi-Status
+Content-Type: text/xml
+Content-Length: xxxx
+
+<?xml version="1.0" ?>
+<D:multistatus xmlns:D="DAV:"
+               xmlns:J="http://www.svr.com/jsprops/">
+   <D:response>
+      <D:href>http://www.svr.com/MyCollection/</D:href>
+      <D:propstat>
+         <D:prop>
+
+Slein et al.                                                    Page 15
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+            <D:resourcetype><D:collection/></D:resourcetype>
+            <J:keywords>diary, interests, hobbies</J:keywords>
+         </D:prop>
+         <D:status>HTTP/1.1 200 OK</D:status>
+      </D:propstat>
+   </D:response>
+   <D:response>
+      <D:href>http://www.svr.com/MyCollection/diary.html</D:href>
+      <D:propstat>
+         <D:prop>
+            <D:resourcetype/>
+            <J:keywords>diary, travel, family, history</J:keywords>
+         </D:prop>
+         <D:status>HTTP/1.1 200 OK</D:status>
+      </D:propstat>
+   </D:response>
+   <D:response>
+      <D:href>http://www.svr.com/MyCollection/nunavut</D:href>
+      <D:status>HTTP/1.1 302 Moved Temporarily</D:status>
+      <D:prop>
+         <D:location> 
+            <D:href>http://www.inac.gc.ca/art/inuit/</D:href>
+         </D:location>
+         <D:resourcetype>reference</D:resourcetype>
+      </D:prop>
+   </D:response>
+</D:multistatus>
+
+In this example Depth = infinity, and the Passthrough header is not 
+used.  The collection contains one URI that identifies a redirect 
+reference.  The response element for the redirect reference has a status 
+of 302 (Moved Temporarily), and includes a DAV:prop element with the 
+DAV:location and DAV:resourcetype properties to allow clients to 
+retrieve the properties of its target resource.  (The response element 
+for the redirect reference does not include the requested properties.  
+The client can submit another PROPFIND request to the URI in the 
+DAV:location property to retrieve those properties.) 
+
+4.6.2 Example: PROPFIND with Passthrough: F on a Collection with 
+Redirect References
+
+Suppose a PROPFIND request with Passthrough = F and Depth = infinity is 
+submitted to the following collection, with the members shown here:
+
+/MyCollection/
+  (ordinary resource) diary.html
+  (redirect reference) nunavut
+
+Request:
+
+PROPFIND /MyCollection/ HTTP/1.1
+Host: www.svr.com
+Depth: infinity
+Passthrough: F
+Content-Type: text/xml
+
+Slein et al.                                                    Page 16
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+Content-Length: xxxx
+
+<?xml version="1.0" ?>
+<D:propfind xmlns:D="DAV:">
+   <D:prop>
+      <D:resourcetype/>
+      <D:reftarget/>
+   </D:prop>
+</D:propfind>
+
+Response:
+
+HTTP/1.1 207 Multi-Status
+Content-Type: text/xml
+Content-Length: xxxx
+
+<?xml version="1.0" ?>
+<D:multistatus xmlns:D="DAV:">
+   <D:response>
+      <D:href>http://www.svr.com/MyCollection/</D:href>
+      <D:propstat>
+         <D:prop>
+            <D:resourcetype><D:collection/></D:resourcetype>
+         </D:prop>
+         <D:status>HTTP/1.1 200 OK</D:status>
+      </D:propstat>
+      <D:propstat>
+         <D:prop> <D:reftarget/> </D:prop>
+         <D:status>HTTP/1.1 404 Not Found</D:status>
+      </D:propstat>
+   </D:response>
+<D:response>
+      <D:href>http://www.svr.com/MyCollection/diary.html</D:href>
+      <D:propstat>
+         <D:prop>
+            <D:resourcetype/>
+         </D:prop>
+         <D:status>HTTP/1.1 200 OK</D:status>
+      </D:propstat>
+      <D:propstat>
+         <D:prop> <D:reftarget/> </D:prop>
+         <D:status>HTTP/1.1 404 Not Found</D:status>
+      </D:propstat>
+   </D:response>
+   <D:response>
+      <D:href>http://www.svr.com/MyCollection/nunavut</D:href>
+      <D:propstat>
+         <D:prop>
+            <D:resourcetype><D:reference/></D:resourcetype>
+            <D:reftarget>
+               <D:href>http://www.inac.gc.ca/art/inuit/</D:href>
+            </D:reftarget>
+         </D:prop>
+         <D:status>HTTP/1.1 200 OK</D:status>
+      </D:propstat>
+
+Slein et al.                                                    Page 17
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+   </D:response>
+</D:multistatus>
+
+Since the Passthrough header has the value "F", the response shows the 
+properties of the redirect reference in the collection rather than the 
+properties of its target. The value of the Passthrough header also 
+prevents a 302 response from being returned for the redirect reference.
+
+4.7 Copying Redirect References
+
+A client's intent in performing a COPY operation is to create a new 
+resource that is similar to the original resource and behaves like the 
+original resource, and that can be modified without affecting the 
+original resource.  For a COPY request to a redirect reference, the 
+expectation would be a 302 response that the client could use to copy 
+the target resource.  This would yield an independent resource that 
+could be modified without affecting the original resource.  For COPY 
+requests to collections that contain redirect references, the situation 
+is less clear.  There is tension between two expectations. On the one 
+hand, the client may expect the new copy of the collection to behave 
+like the old one (which implies having references where the old one had 
+references).  On the other hand, the client may expect that it will be 
+possible to modify the members of the new collection without affecting 
+the members of the old collection (which implies having copies of the 
+targets where the original collection had references).
+
+For a COPY request on an individual reference, the response MUST be a 
+302 (Move Temporarily) status code, with the URI of the target resource 
+in the Location header, and "Resource-Type: reference" to distinguish 
+the response from an ordinary HTTP redirect.  This is the normal 
+behavior for redirect references, allowing the client to resubmit the 
+request to the target resource identified in the Location header.  This 
+also yields intuitively correct behavior for a COPY request to an 
+individual reference.  Reference-aware clients can use the Passthrough 
+header with the value "F" to copy the redirect reference itself.
+
+For COPY on a collection containing redirect references, different 
+semantics may be desirable in different scenarios.  Consequently, we 
+have made a fairly arbitrary choice to take the simplest path.  When a 
+COPY request is submitted to a collection containing redirect 
+references, the server MUST copy the redirect references to the new 
+collection rather than returning 302 status codes for them.  This will 
+result in a new collection that behaves like the old one, and avoids 
+responding with multiple 302 status codes, each of which the client 
+would have to process separately.  Reference-aware clients can force the 
+server to respond with 302 status codes rather than copying the 
+references by using the Passthrough header with the value "T".
+
+4.7.1 Example: COPY on a Redirect Reference
+
+Request:
+
+COPY /MyCollection/tuva HTTP/1.1
+Host: www.svr.com
+Destination: http://www.svr.com/OtherCollection/tuva.html
+
+Slein et al.                                                    Page 18
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+
+Response:
+
+HTTP/1.1 302 Moved Temporarily
+Location: http://www.svr.com/Asia/History/tuva.html
+Resource-Type: reference
+
+In this example, the request-URI identifies a redirect reference whose 
+target resource is identified by 
+http://www.svr.com/Asia/History/tuva.html.  In this case, the server 
+responded with a 302, and provided the URL of the target resource in the 
+Location header.  The Resource-Type header indicates to a reference-
+aware client that this is not an HTTP 1.1 redirect, but a reference to 
+the resource identified by the Location header.  The client can now 
+resubmit the COPY request to the target resource, producing the desired 
+result: a duplicate of the original target resource that can be modified 
+independently of the original.
+
+4.7.2 Example: COPY on a Collection That Contains a Redirect Reference
+
+Suppose a COPY request is submitted to the following collection, with 
+the members shown:
+
+/MyCollection/
+     (ordinary resource) diary.html
+     (redirect reference) nunavut with target /Someplace/nunavut.map
+
+Request:
+
+COPY /MyCollection/ HTTP/1.1
+Host: www.svr.com
+Destination: http://www.svr.com/OtherCollection/
+
+Response:
+
+HTTP/1.1 201 Created
+
+In this case, since /MyCollection/nunavut is a redirect reference, the 
+reference itself, and not its target, was copied into the new 
+collection.  So the resulting collection is as follows:
+
+/OtherCollection/
+      (ordinary resource) diary.html
+      (redirect reference) nunavut 
+
+4.8 Deleting and Moving Redirect References
+
+The DELETE method is used to delete redirect references. DELETE MUST 
+affect the reference itself, and not its target.  Similarly, when a 
+DELETE on a collection encounters a redirect reference in the subtree 
+under that collection, it MUST delete the reference, and not its target.
+
+A MOVE operation on a redirect reference MUST move the reference to a 
+different location, and MUST NOT change the location of its target. The 
+DAV:reftarget property is unchanged after a MOVE.  Similarly, when a 
+
+Slein et al.                                                    Page 19
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+MOVE on a collection encounters a redirect reference in the subtree 
+under that collection, it MUST move the reference, and not its target.
+
+DELETE and MOVE differ from other methods in that they do not alter the 
+resource that is being deleted or moved, but rather the collection that 
+contains its URI.  They change the membership of that collection.
+
+When a redirect reference is added to a collection, the aim is to make 
+it look as if the target resource were a member of that collection.  
+When the reference is removed from that collection, the aim is to change 
+the membership of that collection.  Membership of the target in any 
+other collections, either internally or by reference, should not be 
+affected.  Consequently, DELETE and MOVE do not follow the normal rules 
+of behavior for references.  Instead, they are always applied to the 
+reference itself, not to its target, and they never result in 302 status 
+codes.
+
+*** Reference-aware clients MAY use the Passthrough header with the 
+value "T" in DELETE and MOVE requests to cause a 302 response, which can 
+then be used to resubmit the request to the target resource. [This would 
+cause 302s in multi-status responses for collections.]
+
+4.9 Locking Redirect References
+
+The semantics of LOCK described here resulted from balancing a set of 
+incompatible considerations:
+
+o Ideally, a LOCK on a redirect reference should lock both the 
+  reference and its target resource.  The owner of an exclusive write 
+  lock, for example, would be surprised if anyone else could modify the 
+  content of the target resource while he held the lock.  He would also 
+  be surprised if anyone else could delete the reference to it, or 
+  replace the reference with one pointing to a different target.
+o Non-referencing clients should be able to use redirect references 
+  without encountering surprising results.
+o The basic characteristics of redirect references should be honored.  
+  Redirect references should be simple for servers to implement. In 
+  particular, a server should never have to resolve a redirect 
+  reference.  A server should not have to provide proxy capabilities in 
+  order to implement redirect references.
+o There should be consistency between the behavior of LOCK on a single 
+  redirect reference and the behavior of LOCK on a collection that 
+  contains redirect references.
+o The behavior of all requests to redirect references should be as 
+  consistent as possible. In the absence of a Passthrough header, all 
+  methods should return a 302 when sent to a redirect reference.
+o LOCK semantics for redirect references should be consistent with the 
+  LOCK semantics defined in [WebDAV].
+
+We have compromised the intuitive locking behavior and support for non-
+referencing clients in order to preserve various sorts of consistency. 
+
+4.9.1 LOCK on Redirect References
+
+The behavior of LOCK for redirect references was determined by what is 
+
+Slein et al.                                                    Page 20
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+possible for the case of locking collections that contain redirect 
+references.  
+
+The expected behavior for any operation on a redirect reference is that 
+a 302 (Moved Temporarily) response will be returned, unless the 
+Passthrough header with a value of "F" is used.  However, this policy 
+would have unacceptable consequences when locking a collection that 
+contains redirect references.  Since [WebDAV] requires LOCK on a 
+collection to be an atomic operation, if a 302 response is received for 
+any member of the collection, the entire LOCK must fail.  This would 
+make it impossible to lock any collection that contained a redirect 
+reference. 
+
+To avoid this result, a LOCK with Depth > 0 on a collection MUST lock 
+any redirect references it encounters, and not return 302 responses for 
+them, unless the Passthrough header with a value of "T" is used.  Use of 
+the Passthrough header with a value of "T" in a LOCK request on a 
+collection will cause the entire lock to fail if a redirect reference is 
+encountered.
+
+This gives part of the expected default lock behavior without forcing 
+the server to resolve the redirect reference or become a proxy server in 
+cases where the target resides on a different server. 
+
+There will be no hint in any response code that there are redirect 
+references whose targets need to be locked.  The client will most likely 
+not lock any targets until it attempts an operation on the target and 
+gets a 302 response.  Non-referencing clients cannot lock the targets of 
+the redirect references and may never realize that the targets have not 
+been locked.  
+
+Clearly, a LOCK with Depth = infinity on a collection MUST NOT follow 
+any redirect references whose targets are collections into the target 
+collections; it MUST NOT cause any members of those target collections 
+to be locked.
+
+The behavior of LOCK for individual redirect references is designed to 
+be consistent with LOCK behavior for collections that contain redirect 
+references.  By default a LOCK on a redirect reference MUST lock only 
+the reference, not its target, and it MUST NOT return a 302 response.  A 
+reference-aware client can use the Passthrough header with a value of 
+"T" to get a 302 response with the URI of the target resource in the 
+Location header.
+
+UNLOCK behaves as specified in [WebDAV], unlocking all resources 
+included in the lock identified by the Lock-Token header.
+
+4.9.2 Example: LOCK on a Redirect Reference
+
+Request:
+
+LOCK /MyCollection/tuva HTTP/1.1
+Host: www.svr.com
+Content-Type: text/xml
+Content-Length: nnnn
+
+Slein et al.                                                    Page 21
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+Authorizaton: Digest username="jas",
+   realm=jas@webdav.sb.aol.com, nonce=". . . ",
+   uri="/MyCollection/tuva",
+   response=". . . ", opaque=". . . "
+
+<?xml version="1.0" ?>
+<D:lockinfo xmlns:D="DAV:">
+   <D:lockscope><D:exclusive/></D:lockscope>
+   <D:locktype><D:write/></D:locktype>
+   <D:owner>
+      <D:href>http://www.svr.com/~jas/contact.html</D:href>
+   </D:owner>
+</D:lockinfo>
+
+Response:
+
+HTTP/1.1 200 OK
+Content-Type: text/xml
+Content-Length: nnnn
+
+<?xml version="1.0" ?>
+<D:prop xmlns:D="DAV:">
+   <D:lockdiscovery>
+      <D:activelock>
+         <D:lockscope><D:exclusive/></D:lockscope>
+         <D:locktype><D:write/></D:locktype>
+         <D:depth>0</D:depth>
+         <D:owner>
+            <D:href>http://www.svr.com/~jas/contact.html</D:href>
+         </D:owner>
+         <D:locktoken>
+            opaquelocktoken:e71dfae-5dec-22d6-fea5-00a0c91e6be4
+         </D:locktoken>
+      </D:activelock>
+   </D:lockdiscovery>
+</D:prop>
+
+The request and response look exactly as specified in [WebDAV].  In this 
+example, the request-URI identifies a redirect reference, which was 
+successfully locked.  The target resource of the redirect reference is 
+not locked.
+
+4.9.3 Example: LOCK on a Collection That Contains a Redirect Reference, 
+with Passthrough: T
+
+Suppose a LOCK request is submitted to the following collection, with 
+the members shown:
+
+/MyCollection/
+     (ordinary resource) diary.html
+     (redirect reference) nunavut
+
+Request:
+
+LOCK /MyCollection/ HTTP/1.1
+
+Slein et al.                                                    Page 22
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+Host: www.svr.com
+Passthrough: T
+Content-Type: text/xml
+Content-Length: nnnn
+Authorizaton: Digest username="jas",
+   realm=jas@webdav.sb.aol.com, nonce=". . . ",
+   uri="/MyCollection/tuva",
+   response=". . . ", opaque=". . . "
+
+<?xml version="1.0" ?>
+<D:lockinfo xmlns:D="DAV:">
+   <D:lockscope><D:exclusive/></D:lockscope>
+   <D:locktype><D:write/></D:locktype>
+   <D:owner>
+      <D:href>http://www.svr.com/~jas/contact.html</D:href>
+   </D:owner>
+</D:lockinfo>
+
+Response:
+
+HTTP/1.1 207 Multi-Status
+Content-Type: text/xml
+Content-Length: nnnn
+
+<?xml version="1.0" ?>
+<D:multistatus xmlns:D="Dav:">
+   <D:response>
+      <D:href>http://www.svr.com/MyCollection/</D:href>
+      <D:propstat>
+         <D:prop><D:lockdiscovery/></D:prop>
+         <D:status>HTTP/1.1 424 Failed Dependency</D:status>
+      </D:propstat>
+   </D:response>
+   <D:response>
+      <D:href>http://www.svr.com/MyCollection/diary.html</D:href>
+      <D:status>HTTP/1.1 424 Failed Dependency</D:status>
+   </D:response>
+   <D:response>
+      <D:href>http://www.svr.com/MyCollection/nunavut</D:href>
+      <D:status>HTTP/1.1 302 Moved Temporarily</D:status>
+      <D:prop>
+         <D:location>
+            <D:href>http://www.inac.gc.ca/art/inuit/</D:href>
+         </D:location>
+         <D:resourcetype>reference</D:resourcetype>
+      </D:prop>
+   </D:response>
+</D:multistatus>
+
+The "Passthrough: T" header caused the server to return a 302 response 
+code for the redirect reference in the collection.  Consequently, 
+neither the collection nor any of its members were locked.  A 
+referencing-aware client can submit a separate LOCK request to the URI 
+in the DAV:location property returned for the redirect reference, and 
+can resubmit the LOCK request with "Passthrough: F" to the collection.  
+
+Slein et al.                                                    Page 23
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+At that point both the reference and its target will be locked (as well 
+as the collection and all its other members).
+
+4.10 Other WebDAV Operations on Redirect References
+
+Although non-referencing WebDAV clients cannot create referential 
+resources, they should be able to use the references created by 
+reference-aware WebDAV clients.  They should be able to follow any 
+references to their targets.  To make this possible, a server that 
+receives a PROPFIND, PROPPATCH, MKCOL, MKREF, BIND, or ORDERPATCH 
+request made via a redirect reference MUST return a 302 (Moved 
+Temporarily) status code. The client and server MUST follow [HTTP] 
+Section 10.3.3 "302 Moved Temporarily," but with these additional rules: 
+
+o The Location response header MUST contain the target URI of the 
+  reference.  
+
+o The response MUST include the Resource-Type header.  This header 
+  allows reference-aware WebDAV clients to recognize the resource as a 
+  reference and understand the reason for the redirection. 
+
+A reference-aware WebDAV client can act on this response in one of two 
+ways.  It can, like a non-referencing client, resubmit the request to 
+the URI in the Location header in order to operate on the target 
+resource.  Alternatively, it can resubmit the request to the URI of the 
+redirect reference with the Passthrough header set to "F" in order to 
+operate on the reference itself.  If the Passthrough header is present 
+with a value of "F", the request MUST be applied to the reference 
+itself, and a 302 response MUST NOT be returned.
+
+If a reference-aware client knows before submitting its request that the 
+request-URI identifies a redirect reference, and if the client wants to 
+apply the method to the reference, it can save the round trip caused by 
+the 302 response by using "Passthrough: F" in its initial request to the 
+URI.
+
+Since MKCOL fails when applied to existing resources, if the client 
+attempts to resubmit the request to the target resource, the request 
+MUST fail (unless the reference is a dangling reference).  Similarly, if 
+the client attempts to resubmit the request to the reference with 
+"Passthrough: F", the request MUST fail.
+
+Since ORDERPATCH applies only to collections, an ORDERPATCH request with 
+a Passthrough header with the value "F" on a redirect reference MUST 
+fail.
+
+4.10.1 Example: PROPPATCH on a Redirect Reference
+
+To Be Supplied
+
+4.11 HTTP Operations on Redirect References
+
+Although existing HTTP clients cannot create referential resources, they 
+should be able to use collections created by reference-aware WebDAV 
+clients.  They should be able to follow any references identified by 
+
+Slein et al.                                                    Page 24
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+URIs in those collections to their targets.  To enable existing HTTP 
+clients to use GET, HEAD, PUT, POST, or OPTIONS via redirect references, 
+a server that receives any of these requests on a redirect reference 
+MUST return a 302 (Moved Temporarily).  The client and server MUST 
+follow [HTTP] Section 10.3.3 "302 Moved Temporarily," but with these 
+additional rules: 
+
+o The Location response header MUST contain the target URI of the 
+  reference.  
+
+o The response MUST include the Resource-Type header.  This header 
+  allows reference-aware WebDAV clients to recognize the resource as a 
+  reference and understand the reason for the redirection. 
+
+Reference-aware clients can act on a 302 response in either of two ways.  
+Like plain HTTP clients, they can resubmit the request to the URI in the 
+Location header (the URI of the target resource).  They may, however, 
+want to operate on the reference rather than on its target.  In this 
+case, they may resubmit the request to the URI of the reference and 
+include the Passthrough header with the value "F" in the request.  If 
+the Passthrough header is present with a value of "F", the request MUST 
+be applied to the reference itself, and a 302 response MUST NOT be 
+returned.
+
+If a reference-aware client knows before submitting its request that the 
+request-URI identifies a redirect reference, and if the client wants to 
+apply the method to the reference, it can save the round trip caused by 
+the 302 response by using "Passthrough: F" in its initial request to the 
+URI.
+
+"Passthrough: F" can be used with GET or HEAD to retrieve the entity 
+headers of a redirect reference.  When "Passthrough: F" is used with GET 
+or HEAD, the referencing entity headers (Ref-Type and Ref-Target) MUST 
+be returned, along with all HTTP headers that make sense for references 
+(at a minimum, Cache-Control, Age, ETag, Expires, and Last-Modified).  
+
+"Passthrough: F" can be used with PUT to replace the redirect reference 
+with an ordinary resource.  It can be used with OPTIONS to retrieve the 
+capabilities of a redirect reference.  
+
+Clients MUST NOT, however, use "Passthrough: F" with POST. Since a 
+reference cannot accept another entity as its subordinate, an attempt to 
+POST to a reference with "Passthrough: F" will also fail.  If a server 
+receives a POST request with "Passthrough: F" on a redirect reference, 
+it MUST fail the request with a 400 (Bad Request) status code.
+
+4.11.1 Example: GET on a Redirect Reference
+
+To Be Supplied
+
+4.11.2 Example: GET on a Redirect Reference with "Passthrough: F"
+
+To Be Supplied
+
+4.12 Operations on Targets of Redirect References
+
+Slein et al.                                                    Page 25
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+
+In general, operations on targets of weak redirect references have no 
+effect on the reference.  However, servers that choose to maintain the 
+integrity of redirect references are free to make changes to the state 
+of redirect references when moving or deleting their targets.
+
+When moving a target resource, a server MAY insert an optional step into 
+the semantics of MOVE as defined in [WebDAV] for the purpose of 
+maintaining referential integrity.  Between the copy step and the delete 
+step of a MOVE, the server MAY perform an update step, which changes the 
+DAV:reftarget property of any references to the target to reflect its 
+new location.
+
+When deleting a target resource, a server MAY perform any internal 
+operations necessary to implement its policy on preserving referential 
+integrity.  For example, it might delete any redirect references to the 
+deleted target, or it might flag them as having a deleted target, or it 
+might replace redirect references with copies of the target.
+
+4.13 Discovering a Target's References
+
+An OPTIONAL DAV:references property on the target resource provides a 
+list of referential resources whose DAV:reftarget property points to 
+that target resource. By retrieving this property, a client can discover 
+the URIs of the references that point to the target, and so can also 
+discover the collections that contain those URIs as members.  As for all 
+DAV: properties, this specification is silent as to how the 
+DAV:references property is implemented on the server.
+
+The DAV:references property is expected to be supported mainly by 
+Document Management Systems (DMSs) and other servers that will maintain 
+the property only for references within their own domain.  It is not in 
+general possible for a server to maintain the property for references on 
+other servers.  If a reference on a different server points to the 
+target, the server where the target is located is unlikely to know about 
+that reference.  This protocol provides no mechanism for one server to 
+notify another of the creation of a reference to one of its resources.  
+Consequently, the list of references in DAV:reftarget may be incomplete.
+
+Rationale: A number of scenarios require clients to navigate from a 
+target resource to the references that point to it, and to the 
+collections that contain the URIs of those references.  This capability 
+is particularly important for DMSs, which may populate their collections 
+entirely by reference.  Their clients may need to determine, for any 
+object in the DMS, what collections contain URIs that identify 
+references to that object.  It is also important in other contexts.  For 
+example, some servers enforce referential integrity by refusing to 
+delete any resource that is referenced by other resources.  In such an 
+environment, the client must be able to discover the references in order 
+to delete them before attempting to delete the target.
+
+Risks: When deciding whether to support the DAV:references property, 
+server implementers / administrators should balance the benefits it 
+provides against the cost of maintaining the property and the security 
+risks enumerated in Sections 12.5 and 12.6.
+
+Slein et al.                                                    Page 26
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+
+*** What to do about this section.  Have a separate DAV:bindings 
+property?  Have the DAV:references property include both redirect 
+references and bindings, but distinguish between them?  Part of the 
+rationale (having to do with referential integrity) doesn�t apply to 
+bindings, but some applications will still want to know what bindings 
+there are to a given resource.  There is no other way to discover 
+bindings to a resource, since bindings do not have the DAV:reftarget 
+propety.
+
+4.14 Relative URIs in Ref-Target and DAV:reftarget
+
+The URI in a Ref-Target header MAY be a relative URI.  Similarly, the 
+href in a DAV:reftarget property MAY be a relative URI.  In both cases, 
+the base URI to be used for resolving the relative URI to absolute form 
+is the URI of the redirect reference to which the Ref-Target header or 
+DAV:reftarget property belongs.  
+
+In the case of a Ref-Target header, the base URI is constructed as 
+follows: Its scheme component is "http", its authority component is the 
+value of the Host header in the request, and its path component is the 
+request-URI in the request.  See [URI] Section 5 for a discussion of 
+relative URI references and how to resolve them.
+
+The DAV:reftarget property appears in the protocol only in the context 
+of a Multi-Status response, in a response element that contains a single 
+DAV:href element.  The value of this DAV:href element serves as the base 
+URI for resolving a relative URI in DAV:reftarget.  The value of 
+DAV:href may itself be relative, in which case it must be resolved first 
+in order to serve as the base URI for the relative URI in DAV:reftarget.  
+If the DAV:href element is relative, its base URI is constructed from 
+the scheme component "http", the value of the Host header in the 
+request, and the request-URI.
+
+4.14.1 Example: Resolving a Relative URI in Ref-Target
+
+Request:
+
+MKREF /north/inuvik HTTP/1.1
+Host: www.somehost.edu
+Ref-Target: mapcollection/inuvik.gif
+Ref-Integrity: do-not-enforce
+
+Response:
+
+HTTP/1.1 201 Created
+
+In this example, the base URI is http://www.somehost.edu/north/inuvik.  
+Then, following the rules in [URI] Section 5, the relative URI in Ref-
+Target resolves to the absolute URI 
+http://www.somehost.edu/north/mapcollection/inuvik.gif. 
+
+4.14.2 Example: Resolving a Relative URI in DAV:reftarget
+
+Request:
+
+Slein et al.                                                    Page 27
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+
+PROPFIND /geog/ HTTP/1.1
+Host: www.xxsvr.com
+Passthrough: F
+Depth: 1
+Content-Type: text/xml
+Content-Length: nnn
+
+<?xml version="1.0" ?>
+<D:propfind xmlns:D="DAV:">
+   <D:prop>
+      <D:resourcetype/>
+      <D:reftarget/>
+   </D:prop>
+</D:propfind>
+
+Response:
+
+HTTP/1.1 207 Multi-Status
+Content-Type: text/xml
+Content-Length: nnn
+
+<?xml version="1/0" ?>
+<D:multistatus xmlns:D="DAV:">
+   <D:response>
+      <D:href>/geog/</D:href>
+      <D:propstat>
+         <D:prop>
+            <D:resourcetype><D:collection/></D:resourcetype>
+         </D:prop>
+         <D:status>HTTP/1.1 200 OK</D:status>
+     </D:propstat>
+     <D:propstat>
+         <D:prop><D:reftarget/></D:prop>
+         <D:status>HTTP/1.1 404 Not Found</D:status>
+     </D:propstat>
+   </D:response>
+   <D:response>
+      <D:href>/geog/stats.html</D:href>
+      <D:propstat>
+         <D:prop>
+            <D:resourcetype><D:reference/></D:resourcetype>
+            <D:reftarget>statistics/population/1997.html</D:reftarget>
+         </D:prop>
+         <D:status>HTTP/1.1 200 OK</D:status>
+      </D:propstat>
+   </D:response>
+</D:multistatus>
+
+In this example, the relative URI statistics/population/1997.html is 
+returned as the value of reftarget for the reference identified by href 
+/geog/stats.html.  The href is itself a relative URI, which resolves to 
+http://www.xxsrv.com/geog/stats.html.  This is the base URI for 
+resolving the relative URI in reftarget.  The absolute URI of reftarget 
+is http://www.xxsrv.com/geog/statistics/population/1997.html.
+
+Slein et al.                                                    Page 28
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+
+4.15 Redirect References to Collections
+
+In a request-URI /segment1/segment2/segment3, any of the three segments 
+may identify a redirect reference.  (See [URI], Section 3.3, for 
+definitions of "path" and "segment".)  It will not be possible to 
+resolve such URIs unless certain constraints hold.  If any segment of 
+the path except the last identifies a reference, that reference MUST 
+ultimately resolve to a resource that behaves as a container.  (Examples 
+are WebDAV collections, tar files, and some CGI scripts.)  The 
+succeeding segment of the path MUST resolve to a resource that is 
+immediately contained in that container.
+
+Consider request-URI /x/y/z.html.  Suppose that /x/ is a reference whose 
+target is collection /a/, which contains reference y whose target is 
+collection /b/, which contains reference z.html whose target is 
+/c/d.html.  
+
+/x/ -----> /a/
+           /a/y/ -----> /b/
+                        /b/z.html -----> /c/d.html
+
+It is possible to resolve the request-URI because each segment of the 
+URI's path satisfies the constraints stated above.  Except for the final 
+segment, each segment that is a reference resolves to a collection that 
+contains the next segment as an internal member.  The final segment, 
+which is a reference, does have a target resource. 
+
+The client must follow up three separate 302 responses before finally 
+reaching the target resource.  The server responds to the initial 
+request with a 302 with Location: /a/y/z.html, and the client resubmits 
+the request to /a/y/z.html.  The server responds to this request with a 
+302 with Location: /b/z.html, and the client resubmits the request to 
+/b/z.html.  The server responds to this request with a 302 with 
+Location: /c/d.html, and the client resubmits the request to /c/d.html.  
+This final request succeeds.
+
+*** Still needs work and forest of references discussion.
+
+5 Ordered Collections
+
+5.1 Overview
+
+Collections on a compliant server may be ordered, but need not be.  It 
+is up to the client to decide whether a given collection is ordered and, 
+if so, to specify the semantics to be used for ordering its members.  If 
+a collection is ordered, each of its members must be in the ordering 
+exactly once, and the ordering must not include any resource that is not 
+a member of the collection.  Only one ordering can be attached to any 
+collection.  Multiple orderings of the same resources can be achieved by 
+creating multiple collections referencing those resources, and attaching 
+a different ordering to each collection.
+
+The server is responsible for enforcing these constraints on orderings.  
+The server MUST remove a member URI from the ordering when it is removed 
+
+Slein et al.                                                    Page 29
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+from the collection. The server MUST add a member URI to the ordering 
+when it is added to the collection.
+
+When responding to a PROPFIND on a collection, the server MUST order the 
+response elements according to the ordering defined on the collection.
+
+Orderings may be client-maintained or server-maintained.  This protocol 
+provides support for both types of orderings.
+
+5.2 Creating an Ordered Collection
+
+5.2.1 Overview 
+
+When a collection is created, the client MAY request that it be ordered 
+and specify the semantics of the ordering by using the new Ordered 
+header (defined in Section 6.5) in the MKCOL request.   
+
+For collections that are ordered, the client SHOULD identify the 
+semantics of the ordering with a URI in the Ordered header.  This URI 
+may identify a server-maintained ordering.  Clients can discover the 
+available server-maintained orderings using the mechanism defined in 
+Section 10.3.  The URI may identify a semantics for a client-maintained 
+ordering, providing the information a human user or software package 
+needs to insert new collection members into the ordering intelligently.  
+Although the URI in the Ordered header MAY point to a resource that 
+contains a definition of the semantics of the ordering, clients are 
+discouraged from accessing that resource, in order to avoid 
+overburdening its server.  The client MAY set the header value to 
+DAV:custom to indicate that the collection is ordered, but the semantics 
+of the ordering are not being advertised.  If the client does not want 
+the collection to be ordered, it may omit the Ordered header, or use it 
+with the value DAV:unordered.
+
+If the server does not recognize the value of the Ordered header as one 
+of its server-maintained orderings, it MUST assume that a client-
+maintained ordering is intended.  If the value of the Ordered header is 
+one of the server-maintained orderings that the server supports, it MUST 
+maintain the collection's ordering according to that ordering semantics 
+as new members are added.
+
+Every collection MUST have the new DAV:orderingtype property (defined in 
+Section 7.5), which indicates whether the collection is ordered and, if 
+so, identifies the semantics of the ordering.  The server sets the 
+initial value of this property based on the value of the Ordering header 
+in the MKCOL request.
+
+If the collection is ordered, the server MUST respond to PROPFIND 
+requests on the collection using the specified ordering. If the 
+collection is unordered, the client cannot depend on the repeatability 
+of the ordering of results from a PROPFIND request.
+
+5.2.2 Example: Creating an Ordered Collection
+
+Request:
+
+
+Slein et al.                                                    Page 30
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+MKCOL /theNorth/ HTTP/1.1
+Host: www.server.org
+Ordered: http://www.server.org/orderings/compass.html
+
+Response:
+
+HTTP/1.1 201 Created
+
+In this example, a new, ordered collection was created.  Its 
+DAV:orderingtype property has as its value the URI from the Ordered 
+header.  In this case, the URI identifies the semantics governing a 
+client-maintained ordering.  As new members are added to the collection, 
+clients or end users can use the semantics to determine where to 
+position the new members in the ordering. 
+
+5.3 Setting the Position of a Collection Member
+
+5.3.1 Overview
+
+When a new member is added to a collection with a client-maintained 
+ordering (for example, with PUT, MKREF, or MKCOL), its position in the 
+ordering can be set with the new Position header (defined in Section 
+6.6).  The Position header allows the client to specify that the member 
+should be first in the collection's ordering, last in the collection's 
+ordering, before some other collection member in the collection's 
+ordering, or after some other collection member in the collection's 
+ordering.
+
+5.3.2 Status Codes
+
+Some likely client errors and the corresponding response status codes 
+include: 
+
+409 (Conflict): The request may be attempting to position the collection 
+member before or after a URI that is not in the collection, or before or 
+after itself, or it may be attempting to position the collection member 
+in an unordered collection or in a collection with a server-maintained 
+ordering.
+
+5.3.3 Examples: Setting the Position of a Collection Member
+
+Request:
+
+MKREF /~whitehead/dav/spec08.ref HTTP/1.1
+HOST: www.ics.uci.edu
+Ref-Target: http://www.ics.uci.edu/i-d/draft-webdav-protocol-08.txt
+Position: After <requirements.html>       
+
+Response:
+
+HTTP/1.1 201 Created
+
+This request resulted in the creation of a new referential resource at 
+www.ics.uci.edu/~whitehead/dav/spec08.ref, which points to the resource 
+identified by the Ref-Target header.  The Position header in this 
+
+Slein et al.                                                    Page 31
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+example caused the server to set its position in the ordering of the 
+/~whitehead/dav/ collection immediately after requirements.html.
+
+Request:
+
+MOVE /i-d/draft-webdav-protocol-08.txt HTTP/1.1
+Host: www.ics.uci.edu
+Destination: http://www.ics.uci.edu/~whitehead/dav/draft-webdav-
+     protocol-08.txt
+Position: First
+
+Response:
+
+HTTP/1.1 409 Conflict
+
+In this case, the server returned a 409 Conflict status code because the 
+/~whitehead/dav/ collection is an unordered collection.  Consequently, 
+the server was unable to satisfy the Position header.
+
+5.4 Changing the Semantics of a Collection Ordering
+
+After a collection has been created, a client can change its ordering 
+semantics, or change an ordered collection to an unordered collection or 
+vice versa, by using PROPPATCH to change the value of its 
+DAV:orderingtype property (defined in Section 7.5).  If the new value 
+identifies a client-maintained ordering, the client is then responsible 
+for updating the ordering of the collection members according to the new 
+semantics.  If it identifies a server-maintained ordering, the server 
+MUST reorder the collection according to the new semantics.  PROPPATCH 
+is defined in [WebDAV], Section 7.2.
+
+5.5 Changing the Position of a Collection Member
+
+5.5.1 The ORDERPATCH Method
+
+To change the positions of collection members in the collection's 
+ordering, the client MUST use an ORDERPATCH request with a request body 
+containing an order XML element.  The request-URI of an ORDERPATCH 
+request is the URI of the collection whose ordering is to be updated.  
+The order XML element identifies the member URIs whose positions are to 
+be changed, and describes their new positions in the ordering.  Each new 
+position can be specified as first in the ordering, last in the 
+ordering, before some other collection member in the ordering, or after 
+some other collection member in the ordering.  
+
+The server MUST apply the changes in the order they appear in the order 
+element.  The server MUST either apply all the changes or apply none of 
+them.  If any error occurs during processing, all executed changes MUST 
+be undone and a proper error result returned.
+
+5.5.2 Status Codes
+
+Since multiple changes can be requested in a single ORDERPATCH request, 
+the server MUST return a 207 (Multi-Status) response, as defined in 
+[WebDAV].
+
+Slein et al.                                                    Page 32
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+
+The following are examples of response codes one would expect to be used 
+in a 207 (Multi-Status) response for this method: 
+
+200 (OK): The change in ordering was successfully made.
+
+409 (Conflict): An attempt was made to position the collection member 
+before or after a URI that is not in the collection, or before or after 
+itself, or an attempt was made to position the collection member in an 
+unordered collection or in a collection with a server-maintained 
+ordering.
+
+A request to reposition a collection member to the same place in the 
+ordering is not an error. 
+
+5.5.3 Example: Changing the Positions of Collection Members in the 
+Ordering
+
+Consider a collection /coll-1/ with members ordered as follows:
+
+nunavut.map
+nunavut.img
+baffin.map
+baffin.desc
+baffin.img
+iqaluit.map
+nunavut.desc
+iqaluit.img
+iqaluit.desc
+
+Request:
+
+ORDERPATCH /coll-1/ HTTP/1.1
+Host: www.nunanet.com
+Content-Type: text/xml
+Content-Length: xxx
+
+<?xml version="1.0" ?>
+<d:order xmlns:d="DAV:">
+   <d:ordermember>
+      <d:href>nunavut.desc</d:href>
+      <d:position> 
+         <d:after>
+            <d:href>nunavut.map</d:href>
+         </d:after>
+      </d:position>
+   </d:ordermember>
+   <d:ordermember>
+      <d:href>iqaluit.img</d:href>
+      <d:position>
+         <d:last/>
+      </d:position>
+   </d:ordermember>
+</d:order>
+
+
+Slein et al.                                                    Page 33
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+Response:
+
+HTTP/1.1 207 Multi-Status
+Content-Type: text/xml
+Content-Length: xxx
+
+<?xml version="1.0" ?>
+<d:multistatus xmlns:d="DAV:">
+   <d:response>
+      <d:href>http://www.nunanet.com/coll-1/nunavut.desc</d:href>
+      <d:status>HTTP/1.1 200 OK</d:status>
+   </d:response>
+   <d:response>
+      <d:href>http://www.nunanet.com/coll-1/iqaluit.img</d:href>
+      <d:status>HTTP/1.1 200 OK</d:status>
+   </d:response>
+</d:multistatus>
+
+If the href elements are relative URIs, as in this example, they are 
+interpreted relative to the collection that is being reordered.  In this 
+example, after the request has been processed, the collection's ordering 
+is as follows:
+
+nunavut.map
+nunavut.desc
+nunavut.img
+baffin.map
+baffin.desc
+baffin.img
+iqaluit.map
+iqaluit.desc
+iqaluit.img
+
+5.5.4 Example: Failure of an ORDERPATCH Request
+
+To Be Supplied
+
+6 Headers
+
+6.1 Ref-Target Entity Header
+
+Ref-Target = "Ref-Target" ":" (absoluteURI | relativeURI)
+
+The Ref-Target header is used with MKREF requests to identify the target 
+resource of the new referential resource being created.  For an example, 
+see Section 4.5.3.
+
+To comply with the rules specified in [HTTP] for responding to GET and 
+HEAD requests, the Ref-Target entity header is also included in 
+responses to GET and HEAD that include the Passthrough header with the 
+value "F".  (See Section 4.11.) 
+
+6.2 Resource-Type Entity Header
+
+Resource-Type = "Resource-Type" ":" ("DAV:reference" | ext-resource-
+
+Slein et al.                                                    Page 34
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+type)
+ext-resource-type = quoted-URL 
+
+The Resource-Type header is defined primarily for use in 302 responses, 
+to allow reference-aware clients to distinguish between HTTP 1.1 
+redirects and 302 responses for redirect references(see Sections 4.2, 
+4.10, and 4.11).  The possible values of this header are DAV:reference, 
+and ext-ref-type. The value ext-ref-type provides extensibility.  
+
+To comply with the rules specified in [HTTP] for responding to GET and 
+HEAD requests, the Ref-Type entity header is also included in responses 
+to GET and HEAD that include the Passthrough header with the value "F" 
+(see Section 4.11).  
+
+6.3 Ref-Integrity Request Header
+
+Ref-Integrity = "Ref-Integrity" ":" ("DAV:do-not-enforce" | 
+                                      ext-ref-integrity)
+ext-ref-integrity = quoted-URL
+
+The Ref-Integrity header is defined primarily to allow future support 
+for strong references.  It specifies whether and how the server should 
+enforce referential integrity for a referential resource being created 
+with MKREF. 
+
+The value "DAV:do-not-enforce" means that the client wants the server 
+not to enforce referential integrity for the newly created reference.  A 
+client might use this value if, for example, it wanted to populate a 
+collection with references before their content was made available on 
+the Web.  If the server cannot honor a Ref-Integrity value of "DAV:do-
+not-enforce" in a MKREF request, it MUST fail the request with status 
+code 412 (Precondition Failed).
+
+Clients may use other values of the Ref-Integrity header, to specify the 
+desired policy for enforcing referential integrity.  Clients can 
+discover the valid values for Ref-Integrity for a given request-URI by 
+submitting an OPTIONS request to that URI and including the 
+DAV:refintegrityoptions element in the request body (see Section 10).  
+If a server receives an extension value that it does not understand, it 
+MUST fail the request with status code 400 (Bad Request).
+
+If the Ref-Integrity header is not present on a MKREF request, the 
+server MUST fail the request with status code 400 (Bad Request).
+
+6.4 Passthrough Request Header
+
+Passthrough = " Passthrough" ":" ("T" | "F")
+
+The optional Passthrough header can be used on any request to a redirect 
+reference.  If the Passthrough header has the value "F", the request 
+MUST be applied to the reference itself, and a 302 response MUST NOT be 
+returned.  If the Passthrough header has the value "T", a 302 response 
+MUST be returned, with the URI of the target resource in the Location 
+header and the Resource-Type header with a value "DAV:reference".  
+
+
+Slein et al.                                                    Page 35
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+If the Passthrough header is used on a request to any other sort of 
+resource besides a reference, the server SHOULD ignore it.  If the 
+Passthrough header with the value "F" appears in a POST or ORDERPATCH 
+request to a reference, the server MUST respond with a 400 (Bad 
+Request).
+
+By default, PROPFIND operations on collections behave as if they 
+included "Passthrough: T".  "Passthrough: F" can be used with PROPFIND 
+requests on collections with Depth = infinity.  When it is used in this 
+way, the server MUST return the properties of any redirect references in 
+the collection, and not return 302 (Moved Temporarily) status codes for 
+them.  
+
+By default, LOCK operations on collections with Depth = infinity behave 
+as if they included "Passthrough: F".  If "Passthrough: T" is used with 
+a LOCK request on a collection with Depth = infinity, and a redirect 
+reference is encountered during processing, the server MUST include a 
+302 response code for the redirect reference.  Since [WebDAV] defines 
+LOCK to be an atomic operation, if any redirect references are 
+encountered, the entire LOCK operation fails. 
+
+By default, COPY operations on collections with Depth > 0 behave as if 
+they included "Passthrough: F". If "Passthrough: T" is used with a COPY 
+request on a collection with Depth > 0, and a redirect reference is 
+encountered during processing, the server MUST include a 302 response 
+code for the redirect reference.  As specified in [WebDAV], the server 
+SHOULD complete as much of the COPY operation as it can while preserving 
+a consistent namespace.
+
+6.5 Ordered Entity Header
+
+Ordered = "Ordered" ":" ("DAV:unordered" | "DAV:custom" | absoluteURI)
+
+The Ordered header may be used with MKCOL to request that the new 
+collection be ordered and to specify its ordering semantics.  A value of 
+"DAV:unordered" indicates that the collection is not ordered. A value of 
+"DAV:custom" indicates that the collection is to be ordered, but the 
+semantics of the ordering is not being advertised.  Any other 
+absoluteURI value indicates that the collection is ordered, and 
+identifies the semantics of the ordering.  The absoluteURI MAY point to 
+a resource that contains a definition of the semantics of the ordering.  
+
+If the Ordered header is present on a MKCOL request, the server MUST set 
+the collection's DAV:orderingtype property to the value of the Ordered 
+header.  If the Ordered header is not present, the server MUST treat the 
+request as if it had an Ordered header with the value "DAV:unordered".  
+
+6.6 Position Request Header
+
+Position = "Position" ":" ("First" | "Last" | 
+                           (("Before" | "After") Generic-Coded-url))
+Generic-Coded-url = "<" (absoluteURI | relativeURI) ">"
+absoluteURI and relativeURI are defined in [URI].
+
+The Position header may be used with any method that adds a member to a 
+
+Slein et al.                                                    Page 36
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+collection with a client-maintained ordering, to tell the server where 
+in the collection ordering to position the new member being added to the 
+collection.  It may be used for both ordinary and referential members.
+
+If the Coded-url is a relative URL, it is interpreted relative to the 
+collection to which the new member is being added. 
+
+The server MUST insert the new member into the ordering at the location 
+specified in the Position header, if one is present (and if the 
+collection has a client-maintained ordering). 
+
+If the request is replacing an existing resource, and the Position 
+header is present, the server MUST remove the member from its previous 
+position, and then insert it at the requested position.
+
+If the Position request header is not used when adding a member to a 
+collection with a client-maintained ordering, then:
+
+If the request is replacing an existing resource, the server MUST 
+preserve the present ordering.
+
+If the request is adding a new member to the collection, the server MUST 
+append the new member to the end of the ordering.
+
+If an attempt is made to use the Position header on a collection that is 
+unordered or that has a server-maintained ordering, the server MUST fail 
+the request with a 409 (Conflict) status code.
+
+7 Status Codes
+
+7.1 506 Loop Detected
+
+The 506 (Loop Detected) indicates that the server detected an infinite 
+loop while processing a request with "Depth: infinity".  It is possible 
+for loops to be created by BIND requests that create bindings to 
+collection resources.  This specification does not prohibit such loops 
+from being created, but does require servers to detect them while 
+processing requests that encounter loops.
+
+8 Properties
+
+8.1 reftarget Property
+
+Name:	    reftarget
+Namespace:  DAV:
+Purpose:    A property of redirect references that provides an efficient 
+            way for clients to discover the URI of the target resource.  
+            This is a read-only property, whose value can only be set by 
+            using the Ref-Target header with a MKREF request.
+Value: 	    URI of the target resource.  This value MAY be a relative       
+            URI.  The reftarget property can occur in the entity bodies 
+            of responses to PROPFIND requests.  It always occurs in the 
+            context of a Multi-Status response, inside a DAV:response 
+            element that has a single DAV:href element.  
+
+
+Slein et al.                                                    Page 37
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+<!ELEMENT reftarget href>
+
+8.2 refintegrity Property
+ 
+Name:	    refintegrity
+Namespace:  DAV:
+Purpose:    A property of a redirect reference that indicates whether 
+            and how the server enforces referential integrity for that 
+            reference.  The refintegrity property is defined to allow 
+            future support for strong references.  The only value 
+            currently defined for refintegrity is weak, which means that 
+            the server does not enforce referential integrity for the 
+            reference.  A server may assign another value to identify 
+            its policy for enforcing referential integrity for the 
+            reference.  This is a read-only property, set based on the 
+            value of the Ref-Integrity header in the MKREF request that 
+            created the reference.
+Value:	    weak or an extension value
+
+<!ELEMENT refintegrity (weak | #PCDATA)>
+
+8.3 location Property
+
+Name:       location
+Namespace:  DAV:
+Purpose:    For use with 302 (Moved Temporarily) response codes in 
+            Multi-Status responses.  It contains the absolute URI of the 
+            temporary location of the resource.  In the context of 
+            redirect references, this value is the absolute URI of the 
+            target resource.  It is analogous to the Location header in 
+            HTTP 302 responses defined in [HTTP] Section 10.3.3 "302 
+            Moved Temporarily."  Including the location property in a 
+            Multi-Status response requires an extension to the syntax of 
+            the DAV:response element defined in [WebDAV], which is 
+            defined in Section 9 below.  This property is not expected 
+            to be stored on the reference. It is modeled as a property 
+            only so that it can be returned inside a DAV:prop element in 
+            a Multi-Status response.
+Value:      href containing the absolute URI of the target resource.
+
+<!ELEMENT location href >
+
+8.4 references Property
+
+Name:	    references
+Namespace:  DAV:
+Purpose:    Enables clients to discover, for any target resource, what 
+            references point to it and what collections contain it by 
+            reference.  This is an optional property.  If present, it is 
+            a read-only property, maintained by the server.
+Value:	    List of the URIs of the references that point to the target 
+            resource.
+
+<!ELEMENT references (href*)>
+
+
+Slein et al.                                                    Page 38
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+8.5 orderingtype Property
+
+Name:	    orderingtype
+Namespace:  DAV:
+Purpose:    Indicates whether the collection is ordered and, if so, 
+            uniquely identifies the semantics of the ordering being 
+            used.  May also point to an explanation of the semantics in 
+            human and / or machine-readable form.  At a minimum, this 
+            allows human users who add members to the collection to 
+            understand where to position them in the ordering.
+Value:	    unordered for an unordered collection, or a URI that 
+            uniquely identifies the semantics of the collection's 
+            ordering.  The value custom indicates that the collection is 
+            ordered, but the semantics are not being advertised. 
+
+<!ELEMENT orderingtype (unordered | custom | href) >
+
+9 XML Elements
+
+9.1 reference XML Element
+
+Name: 	    reference
+Namespace:  DAV:
+Purpose:    A new value of the DAV:resourcetype property that identifies 
+            its resource as a referential resource.  
+Value:	    EMPTY
+
+<!ELEMENT reference EMPTY >
+
+9.2 weak XML Element
+
+Name:	    weak
+Namespace:  DAV:
+Purpose:    A value of the DAV:refintegrity property.  It means that the 
+            server does not enforce referential integrity for the 
+            reference to which the property belongs.
+Value: 	    EMPTY
+
+<!ELEMENT weak EMPTY >
+
+9.3 unordered XML Element
+
+Name:	    unordered
+Namespace:  DAV:
+Purpose:    A value of the DAV:orderingtype property that indicates that 
+            the collection is not ordered.  That is, the client cannot 
+            depend on the repeatability of the ordering of results from 
+            a PROPFIND request.
+Value:	    EMPTY
+
+<!ELEMENT unordered EMPTY >
+
+9.4 custom XML Element
+
+Name: 	    custom
+
+Slein et al.                                                    Page 39
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+Namespace:  DAV:
+Purpose:    A value of the DAV:orderingtype property that indicates that 
+            the collection is ordered, but the semantics of the ordering 
+            are not being advertised. 
+Value: 	    EMPTY
+
+<!ELEMENT custom EMPTY >
+
+9.5 order XML Element
+        
+Name: 	    order
+Namespace:  DAV:
+Purpose:    For use with the new ORDERPATCH method.  Describes a change 
+            to be made in a collection ordering.
+Value: 	    A description of the new positions of collection members in 
+            the collection's ordering.
+
+<!ELEMENT order (ordermember+) >
+
+9.6 ordermember XML Element
+ 
+Name: 	    ordermember
+Namespace:  DAV:
+Purpose:    Occurs in the order XML Element, and describes the new 
+            position of a single collection member in the collection's 
+            ordering.
+Value: 	    An href containing a relative URI, and a description of its 
+            new position in the ordering.  The href XML element is 
+            defined in [WebDAV], Section 11.3.
+
+<!ELEMENT ordermember (href, position) >
+
+9.7 position XML Element
+
+Name: 	    position
+Namespace:  DAV:
+Purpose:    Occurs in the member XML element.  Describes the new 
+            position in a collection's ordering of one of the 
+            collection's members.
+Value: 	    The new position can be described as first in the 
+            collection's ordering, last in the collection's ordering, 
+            before some other member of the collection, or after some 
+            other member of the collection.
+
+<!ELEMENT position (first | last | before | after)>
+
+9.8 first XML Element
+
+Name: 	    first
+Namespace:  DAV:
+Purpose:    Occurs in the position XML element.  Describes the 
+            collection member's position as first in the collection's 
+            ordering.
+Value: 	    EMPTY
+
+
+Slein et al.                                                    Page 40
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+<!ELEMENT first EMPTY >
+
+9.9 last XML Element
+
+Name: 	    last
+Namespace:  DAV:
+Purpose:    Occurs in the position XML element.  Describes the 
+            collection member's position as last in the collection's 
+            ordering.
+Value: 	    EMPTY
+
+<!ELEMENT last EMPTY >
+
+9.10 before XML Element
+
+Name: 	    before
+Namespace:  DAV:
+Purpose:    Occurs in the position XML element.  Describes the 
+            collection member's position as coming before some other 
+            collection member in the collection's ordering.
+Value: 	    href of the member it precedes in the ordering
+
+<!ELEMENT before href >
+
+9.11 after XML Element
+
+Name: 	    after
+Namespace:  DAV:
+Purpose:    Occurs in the position XML element.  Describes the 
+            collection member's position as coming after some other 
+            collection member in the collection's ordering.
+Value: 	    href of the member it follows in the ordering
+
+<!ELEMENT after href >
+
+9.12 options XML Element
+
+Name:       options
+Namespace:  DAV:
+Purpose:    Used in OPTIONS requests to ask for more detailed     
+            information about capabilities than can be provided in the  
+            DAV: response header.  Used in OPTIONS responses to provide
+            that information.
+Value:      List of elements identifying or providing the additional 
+            information desired.
+
+<!ELEMENT options (refintegrityoptions | orderingoptions)+ >
+
+9.13 refintegrityoptions XML Element
+
+Name:       refintegrityoptions
+Namespace:  DAV:
+Purpose:    Used in OPTIONS requests to ask for the list of referential       
+            enforcement policies that can be supported at the request-
+            URI.  Used in OPTIONS responses to provide that information.  
+
+Slein et al.                                                    Page 41
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+            This is the list of valid values for the Ref-Integrity 
+            Header for that request-URI.
+Value:      EMPTY on requests.  On responses, it is the list of valid 
+            values for Ref-Integrity.
+
+<!ELEMENT refintegrityoptions ( (#PCDATA)+ | EMPTY) >
+
+9.14 orderingoptions XML Element
+
+Name:       orderingoptions
+Namespace:  DAV:
+Purpose:    Used in OPTIONS requests to ask for the list server-    
+            maintained orderings that can be supported at the request-
+            URI.  Used in OPTIONS responses to provide that information.  
+            These values can be used in the Ordered header or the 
+            DAV:orderingtype property to request that a particular  
+            server-maintained ordering be applied to the collection.
+Value:      EMPTY on requests.  On responses, it is the list of server-
+            maintained orderings available for the request-URI.
+
+<!ELEMENT orderingoptions ( (#PCDATA)+ | EMPTY) >
+
+9.15 do-not-enforce XML Element
+
+Name:       do-not-enforce
+Namespace:  DAV:
+Purpose:    Used in responses to OPTIONS requests for 
+            refintegrityoptions, to indicate that the server can honor 
+            requests that referential integrity not be enforced for the 
+            request-URI.  If it is included in an OPTIONS response, then 
+            the client can use it as a value of the Ref-Integrity header 
+            in a MKREF request to the same URI.
+Value:      EMPTY.
+
+<!ELEMENT do-not-enforce EMPTY >
+
+10 Extensions to the DAV:response XML Element for Multi-Status Responses
+
+As described in Sections 4.6 and 4.9, the DAV:location property and the 
+DAV:reftype property may be returned in the DAV:response element of a 
+207 Multi-Status response, to allow clients to resubmit their requests 
+to the target resource of a redirect reference.  
+
+Whenever these properties are included in a Multi-Status response, they 
+will be placed in a DAV:prop element associated with the href to which 
+they apply.  This structure provides a framework for future extensions 
+by other standards that may need to include additional properties in 
+their responses.
+
+Consequently, the definition of the DAV:response XML element changes to 
+the following:
+
+<!ELEMENT response (href, ((href*, status, prop?) | (propstat+)), 
+responsedescription?) >
+
+
+Slein et al.                                                    Page 42
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+11 Capability Discovery
+
+11.1 Compliance Classes
+
+This specification defines OPTIONAL extensions to [WebDAV].  Since 
+resource sharing and ordering are independent capabilities, a resource 
+MAY support either, both, or neither of these capabilities.  A resource 
+that provides resource sharing MUST support both bindings and redirect 
+references.  A response to an OPTIONS request MUST indicate which of 
+these capabilities the resource supports.
+
+This specification defines three new methods: BIND and MKREF in support 
+of shared resources, and ORDERPATCH in support of ordering.  The 
+response MUST indicate which of these methods the resource allows.  In 
+addition, the response MUST include the DAV header, as described in 
+Sections 9.1 and 15 of [WebDAV].  Two new compliance classes are defined 
+here for use with the DAV header: sharing and orderedcoll. 
+
+When responding to an OPTIONS request, only a collection or a null 
+resource can include orderedcoll in the value of the DAV header.  By 
+including orderedcoll, the resource indicates that its immediate member 
+URIs can be ordered.  It implies nothing about whether any collections 
+identified by its member URIs can be ordered.
+
+When responding to an OPTIONS request, any type of resource can include 
+sharing in the value of the DAV header.  Including sharing indicates 
+that the server permits a redirect reference or a binding at the request 
+URI.
+
+11.2 Example: Discovery of Compliance Classes
+
+Request:
+
+OPTIONS /somecollection/ HTTP/1.1
+HOST: somehost.org
+
+Response:
+
+HTTP/1.1 200 OK
+Date: Tue, 20 Jan 1998 20:52:29 GMT
+Connection: close
+Accept-Ranges: none
+Allow: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE, MKCOL, 
+PROPFIND, PROPPATCH, LOCK, UNLOCK, BIND, MKREF, ORDERPATCH
+Public: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE, MKCOL, 
+PROPFIND, PROPPATCH, LOCK, UNLOCK, BIND, MKREF, ORDERPATCH
+DAV: 1, 2, sharing, orderedcoll
+
+This response indicates that the resource /somecollection/ is level 1 
+and level 2 compliant, as defined in [WebDAV].  In addition, 
+/somecollection/ supports ordering and is in a part of the server 
+namespace that allows creation of bindings and redirect references. 
+
+11.3 Additional Advanced Collections Capabilities
+
+
+Slein et al.                                                    Page 43
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+Clients may need detailed information about specific areas of advanced 
+collections functionality.  This information can be requested by sending 
+an OPTIONS request with an XML body that includes a DAV:options element.  
+The DAV:options element contains a list of empty elements identifying 
+the information the client needs.
+
+As described in Section 4.5, clients are required to include the Ref-
+Integrity header in any MKREF request to specify the desired referential 
+integrity enforcement policy for the new reference.  The only value of 
+Ref-Integrity defined in this specification is DAV:do-not-enforce.  If 
+the client wants referential integrity to be enforced, it needs to know 
+what other values of Ref-Integrity the server can support.  To discover 
+what values can be used for a particular request-URI, the client 
+includes an empty DAV:refintegrityoptions element in the DAV:options 
+element.  The response will include a DAV:refintegrityoptions element 
+with the list of supported referential integrity enforcement policies.  
+Servers MUST advertise the referential integrity enforcement policies 
+available at a URI using this mechanism.
+
+As described in Section 5.2, servers may offer a set of server-
+maintained orderings on collections.  Clients can discover the list of 
+server-maintained orderings available for the request-URI by including 
+an empty DAV:orderingoptions element in the DAV:options element.  The 
+response will include a DAV:orderingoptions element with the list of 
+supported server-maintained orderings.  Servers SHOULD advertise the 
+server-maintained orderings available using this mechanism.
+
+11.4 Example: Discovery of Referential Integrity Options
+
+Request:
+
+OPTIONS /somecollection/fooref HTTP/1.1
+HOST: somehost.org
+
+<?xml version="1.0" ?>
+<D:options xmlns:D="DAV:">
+  <D:refintegrityoptions/>
+</D:options>
+
+Response:
+
+HTTP/1.1 200 OK
+Date: Tue, 20 Jan 1998 20:52:29 GMT
+Connection: close
+Accept-Ranges: none
+Allow: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE, MKCOL, 
+PROPFIND, PROPPATCH, LOCK, UNLOCK, BIND, MKREF
+Public: OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE, MKCOL, 
+PROPFIND, PROPPATCH, LOCK, UNLOCK, BIND, MKREF
+DAV: 1, sharing
+
+<?xml version="1.0" ?>
+<D:options xmlns:D="DAV:">
+  <D:refintegrityoptions xmlns:X="Xerox:">
+      <D:do-not-enforce/>
+
+Slein et al.                                                    Page 44
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+      <X:block-deletes/>
+  </D:refintegrityoptions>
+</D:options>
+
+This response indicates that the resource /somecollection/fooref is 
+level 1 compliant, as defined in [WebDAV].  In addition, 
+/somecollection/fooref is in a part of the server namespace that allows 
+creation of bindings and redirect references.  The client also asked for 
+a list of the values of Ref-Integrity that are supported for 
+/somecollection/fooref.  The response indicates that the values DAV:do-
+not-enforce and Xerox:block-deletes are supported.
+
+12 Dependencies on Other Specifications
+
+TBD
+
+13 Security Considerations
+
+This section is provided to detail issues concerning security 
+implications of which WebDAV applications need to be aware. 
+
+All of the security considerations of HTTP/1.1 and the base WebDAV 
+protocol also apply to WebDAV collections.  In addition, referential 
+resources and ordered collections introduce several new security 
+concerns and increase the risk of some existing threats.  These issues 
+are detailed below.
+
+13.1 Privacy Concerns
+
+By creating redirect references on a trusted server, it is possible for 
+a hostile agent to induce users to send private information to a target 
+on a different server.   This risk is mitigated somewhat, since clients 
+are required to notify the user of the redirection for any request other 
+than GET or HEAD. (See [HTTP], Section 10.3.3 Moved Temporarily.)
+
+13.2 Redirect Loops
+
+Although redirect loops were already possible in HTTP 1.1, the 
+introduction of the BIND and MKREF methods creates a new avenue for 
+clients to create loops accidentally or maliciously.  If the referential 
+resource and its target are on the same server, the server may be able 
+to detect MKREF and BIND requests that would create loops. See also 
+[HTTP], Section 10.3 "Redirection 3xx."  Servers are required to detect 
+loops caused by bindings to collections, during the processing of any 
+requests with "Depth: infinity".
+
+13.3 Redirect References, Bindings, and Denial of Service
+
+Denial of service attacks were already possible by posting URLs that 
+were intended for limited use at heavily used Web sites.  The 
+introduction of BIND and MKREF creates a new avenue for similar denial 
+of service attacks.  Clients can now create bindings and redirect 
+references with target resources at heavily used sites to target 
+locations that were not designed for heavy usage.
+
+
+Slein et al.                                                    Page 45
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+13.4 Private Locations May Be Revealed
+
+There are several ways that redirect references may reveal information 
+about directory structures.  First, the DAV:reftarget property of every 
+redirect reference contains the URI of the target resource.  Anyone who 
+has access to the reference can discover the directory path that leads 
+to the target resource.   The owner of the target resource may have 
+wanted to limit knowledge of this directory structure.
+
+Sufficiently powerful access control mechanisms can control this risk to 
+some extent.  Property-level access control could prevent users from 
+examining the DAV:reftarget property.  (The Ref-Target and Location 
+headers, which are returned in most responses to requests on redirect 
+references, reveal the same information, however.)  In some 
+environments, the owner of a resource might be able to use access 
+control to prevent others from creating references to that resource.
+
+Second, although this specification does not require servers to maintain 
+referential integrity, it does not prevent them from doing so.  If a 
+server updates a redirect reference�s DAV:reftarget property when its 
+target resource is moved, there is the risk that a private location will 
+be revealed in the new value of DAV:reftarget.  Clients can avoid this 
+risk by doing a COPY followed by a DELETE rather than a MOVE.
+
+Finally, if backpointers are maintained on the target resource, the 
+owners of redirect references and bindings face these same risks.  The 
+directory structures where references or bindings are located are 
+revealed to anyone who has access to the DAV:references property on a 
+target resource.  Moving a redirect reference may reveal its new 
+location to anyone with access to DAV:references on its target resource.
+
+13.5 DAV:references and Denial of Service
+
+If the server maintains the DAV:references property in response to 
+references created in other administrative domains, it is exposed to 
+hostile attempts to make it devote resources to adding references to the 
+list.
+
+13.6 DAV:references and Malicious Deletion of Resources
+
+Servers that support the DAV:references property should insure that 
+clients cannot create editable properties with the name DAV:references.  
+An editable DAV:references property would constitute a security risk on 
+servers that enforce referential integrity by deleting redirect 
+references or bindings when their target is deleted.  These servers 
+could be tricked into deleting a resource by listing it in the 
+DAV:references property of some target resource.
+
+13.7 Denial of Service and DAV:orderingtype
+
+There may be some risk of denial of service at sites that are advertised 
+in the DAV:orderingtype property of collections.  However, it is 
+anticipated that widely-deployed applications will use hard-coded values 
+for frequently-used ordering semantics rather than looking up the 
+semantics at the location specified by DAV:orderingtype.  In addition, 
+
+Slein et al.                                                    Page 46
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+Section 5.2 discourages clients from looking up the semantics at that 
+location.
+
+14 Internationalization Considerations
+
+This specification follows the practices of [WebDAV] in encoding all 
+human-readable content using XML [XML] and in the treatment of names.  
+Consequently, this specification complies with the IETF Character Set 
+Policy [Alvestrand].
+
+WebDAV applications MUST support the character set tagging, character 
+set encoding, and the language tagging functionality of the XML 
+specification.  This constraint ensures that the human-readable content 
+of this specification complies with [Alvestrand].
+
+As in [WebDAV}, names in this specification fall into three categories: 
+names of protocol elements such as methods and headers, names of XML 
+elements, and names of properties.  Naming of protocol elements follows 
+the precedent of HTTP, using English names encoded in USASCII for 
+methods and headers.  The names of XML elements used in this 
+specification are English names encoded in UTF-8.
+
+For error reporting, [WebDAV] follows the convention of HTTP/1.1 status 
+codes, including with each status code a short, English description of 
+the code (e.g., 423 Locked).  Internationalized applications will ignore 
+this message, and display an appropriate message in the user's language 
+and character set.
+ 
+For rationales for these decisions and advice for application 
+implementors, see [WebDAV].
+
+15 IANA Considerations
+
+This document uses the namespaces defined by [WebDAV] for properties and 
+XML elements.  All other IANA considerations mentioned in [WebDAV] also 
+apply to this document.
+
+16 Copyright
+
+To be supplied.
+
+17 Intellectual Property
+
+To be supplied.
+
+18 Acknowledgements
+
+This draft has benefited from thoughtful discussion by Jim Amsden, Steve 
+Carter, Ken Coar, Ellis Cohen, Bruce Cragun, Spencer Dawkins, Mark Day, 
+Rajiv Dulepet, David Durand, Roy Fielding, Yaron Goland, Fred Hitt, Alex 
+Hopmann, Marcus Jager, Chris Kaler, Manoj Kasichainula, Rohit Khare, 
+Daniel LaLiberte, Steve Martin, Larry Masinter, Jeff McAffer, Surendra 
+Koduru Reddy, Max Rible, Sam Ruby, Bradley Sergeant, Nick Shelness, John 
+Stracke, John Tigue, John Turner, and others.
+
+
+Slein et al.                                                    Page 47
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+Ccjason, 
+
+19 References
+
+19.1 Normative References
+
+[URI] T. Berners-Lee, R. Fielding, L. Masinter, "Uniform Resource 
+Identifiers (URI): Generic Syntax." RFC 2396. MIT/LCS, U.C. Irvine, 
+Xerox. August, 1998.
+
+[RFC2119] S. Bradner, "Key words for use in RFCs to Indicate Requirement 
+Levels."  RFC 2119, BCP 14.  Harvard University.  March, 1997.
+
+[XML] T. Bray, J. Paoli, C.M. Sperberg-McQueen, "Extensible Markup 
+Language (XML)."  World Wide Web Consortium Recommendation REC-xml-
+19980210. http://www.w3.org/TR/1998/REC-xml-19980210.
+
+[HTTP] R. Fielding, J. Gettys, J. Mogul, H. Frystyk, T. Berners-Lee, 
+"Hypertext Transfer Protocol -- HTTP/1.1." RFC 2068.  UC Irvine, DEC, 
+MIT/LCS.  January, 1997.
+
+[WebDAV] Y. Y. Goland, E. J. Whitehead, Jr., A. Faizi, S. R. Carter, D. 
+Jensen, "HTTP Extensions for Distributed Authoring - WebDAV." RFC 2518.  
+Microsoft, U.C. Irvine, Netscape, Novell.  February, 1999.
+
+19.2 Informational References
+
+[DASL] Saveen Reddy, D. Jensen, Surendra Reddy, R. Henderson, J. Davis, 
+A. Babich, "DAV Searching & Locating." Draft-reddy-dasl-protocol-03. 
+Internet Draft, work in progress. Microsoft, Novell, Oracle, Netscape, 
+Xerox, Filenet.  November, 1998.
+ 
+[CollReq] J. Slein, J. Davis, "Requirements for Advanced Collection 
+Functionality in WebDAV." Draft-ietf-webdav-collection-reqts-02. 
+Internet Draft, work in progress.  Xerox.  February, 1999.
+
+20 Authors' Addresses
+
+J. Slein
+Xerox Corporation
+800 Phillips Road, 105-50C
+Webster, NY 14580
+Email: jslein@crt.xerox.com
+
+J. Davis
+CourseNet Systems
+170 Capp Street
+San Francisco, CA 94110
+Email: jrd3@alum.mit.edu
+
+T. Chihaya
+DataChannel, Inc.
+155 108th Ave. N.E., Suite 400
+Bellevue, WA 98004
+Email: Tyson@DataChannel.com
+
+Slein et al.                                                    Page 48
+INTERNET-DRAFT           WebDAV Collections Protocol         April 1999
+
+
+G. Clemm
+Rational Software Corporation
+20 Maguire Road
+Lexington, MA 02173-3104
+Email: gclemm@rational.com
+
+C. Fay
+FileNet Corporation
+3565 Harbor Boulevard
+Costa Mesa, CA 92626-1420
+Email: cfay@filenet.com
+
+E.J. Whitehead Jr.
+Dept. of Information and Computer Science
+University of California, Irvine
+Irvine, CA 92697-3425
+Email: ejw@ics.uci.edu
+
+21 Appendices
+
+21.1 Appendix 1: Extensions to the WebDAV Document Type Definition
+
+<!--============= XML Elements from Section 8 =======================-->
+<!ELEMENT reference EMPTY >
+<!ELEMENT weak EMPTY >
+<!ELEMENT unordered EMPTY >
+<!ELEMENT custom EMPTY >
+<!ELEMENT order (ordermember+) >
+<!ELEMENT ordermember (href, position) >
+<!ELEMENT position (first | last | before | after)>
+<!ELEMENT first EMPTY >
+<!ELEMENT last EMPTY >
+<!ELEMENT before href >
+<!ELEMENT after href >
+<!ELEMENT options (refintegrityoptions | orderingoptions)+ >
+<!ELEMENT refintegrityoptions ( (#PCDATA)+ | EMPTY) >
+<!ELEMENT orderingoptions ( (#PCDATA)+ | EMPTY) >
+<!ELEMENT do-not-enforce EMPTY >
+<!--============= Property Elements from Section 7 ==================-->
+<!ELEMENT reftarget href>
+<!ELEMENT refintegrity (weak | #PCDATA)>
+<!ELEMENT location href>
+<!ELEMENT references (href*)>
+<!ELEMENT orderingtype (arbitrary | custom | href) >
+<!--====== Changes to the DAV:response Element from Section 9 ====-->
+<!ELEMENT response (href, ((href*, status, prop?) | (propstat+)), 
+responsedescription?) >
+
+
+Expires October 18, 1999
+
+Slein et al.                                                    Page 49
+

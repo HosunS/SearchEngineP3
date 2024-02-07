@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>Cryptogram Helper Algorithm</title>
+</head>
+<body text="#000000" bgcolor="#FFFFFF">
+<div align="CENTER">
+<h1>Cryptogram Helper Algorithm</h1>
+
+<hr>
+</div>
+
+<p>The algorithm used by the applet's "Solve" button is a
+deterministic, iterative procedure based around a 26x26 matrix of
+probabilities (how likely the algorithm thinks it is that a given
+code letter should be replaced by a given text letter). The matrix
+starts out with all probabilities equal, then (after loading <a
+href="freqc.txt.gz">a dictionary of English word frequencies</a>)
+repeats the following steps:</p>
+
+<ol>
+<li>For each word in the dictionary that matches a word of the
+cryptogram, the word's frequency is multiplied by the matrix
+entries for its individual letters, giving an overall probability
+of seeing that word in that position.</li>
+
+<li>For each pair of a code word and a possible decryption of that
+word, we build a 26x26 matrix in which the probability of finding
+that word is as large as possible (with uniform probabilities for
+unrelated letters). We then replace our original matrix with a new
+matrix formed as a weighted average of the word matrices, where the
+weights are the word probabilities computed in the first step.</li>
+
+<li>A minimum-weight perfect matching algorithm computes the most
+likely decryption for the current matrix.</li>
+
+<li>We try all possible ways of swapping two letters in the
+decryption, keeping a swap when it improves the quality (number of
+recognized words and product of frequencies of those words). If we
+find a good swap we also adjust the matrix to make that decryption
+more likely in future iterations.</li>
+
+<li>For each word of the decryption, we use the dictionary to find
+all other words that could replace it without changing anything in
+the rest of the decryption. If we find any such words, we use the
+one with the highest frequency.</li>
+</ol>
+
+<p>At each iteration, the iteration number and quality of the current
+translation are shown in the browser's status line. The decryption
+shown in the main window is the best one found so far, which is not
+necessarily the one from the latest iteration.</p>
+
+<p>See <a href="http://www.gtoal.com/wordgames/cryptograms.html">Graham
+Toal's cryptogram source code page</a> for alternative cryptogram-solving
+algorithms.</p>
+
+<hr>
+<table width="100%">
+<tr>
+<td align="LEFT"><small><a href= 
+"http://www.ics.uci.edu/~eppstein/cryptogram">Return to
+Cryptogram Helper</a></small></td>
+<td align="RIGHT"><small><a href="source.html">View source</a></small></td>
+</tr>
+</table>
+</body>
+</html>
+

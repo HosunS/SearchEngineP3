@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MolInfo: Calculate Assorted Information for a Molecule</title>
+    <meta charset="utf-8"> 
+    <!-- Include JQuery for tabs and UI plugins -->     
+    <script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.unserialize.js"></script>
+    <script type="text/javascript" src="/js/jquery-ui-1.8.16.custom.min.js"></script>    
+    <script type="text/javascript" src="/js/jquery.colorbox-min.js"></script> 
+    <script type="text/javascript" src="/js/chemdb.js"></script>
+    <!-- Include styling -->
+    <link rel="stylesheet" type="text/css" href="/css/chemdb.css" />
+    <link rel="stylesheet" type="text/css" href="/css/colorbox.css" /> 
+    <link type="text/css" href="/css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />
+    
+    <script type="text/javascript" src="../../resource/toolkit.js"></script>
+    <script type="text/javascript">
+    function setAllCheckboxes(obj)
+    {
+    	if ( $(obj).is(':checked') )
+    		$("input[type=checkbox]").attr('checked', true);
+    	else
+    		$("input[type=checkbox]").attr('checked', false);
+    }
+    
+    // Wait until DOM is fully loaded
+    $(document).ready(function(){
+        // Initialize buttons
+        $(".button").button();       
+        
+        // Initialize tabs
+        $("#tabs").tabs();
+        
+        // Initialize checkboxes                
+        $("#checkall").click(function(){    	
+            setAllCheckboxes(this);
+        });
+        $("input[type=checkbox]").attr('checked', true);
+        
+        // Bind function to form submission event
+        $("#MolInfoWeb").submit(function(){        	
+            // Load into results div
+            var url = $(this).attr("action");
+            var params = $(this).serialize();
+            $.post(url, params, function(data){             
+                $("#results").html($(data).find("#results").contents());
+                $("#results").find("img").addClass("shadow");                
+            });
+            $(".hide").show();
+            return false;
+        });
+    });
+    </script>
+</head>
+<body onLoad="document.forms[0].smiles.focus(); document.forms[0].smiles.select();" topmargin=0 leftmargin=0>
+<div id="background">           
+    <div id="content">
+        <div id="header">
+            <div id="chemdb-logo"></div>
+            <span>MolInfo: Calculate Assorted Information for a Molecule</span>
+            <div id="top-nav">                
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Tools</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/BabelWeb.py">Babel</a></li>
+                        <li><a href="/cgibin/Mass2Structure.py">Mass2Structure</a></li>                        
+                        <li class="odd"><a href="/cgibin/tools/MolInfoWeb.py">MolInfo</a></li>
+                        <li><a href="/cgibin/MSFragment.py">MSFragment</a></li>
+                        <li class="odd"><a href="/cgibin/PatternCountScreenWeb.py">Pattern Count Screen</a></li>
+                        <li><a href="/cgibin/PatternMatchCounterWeb.py">Pattern Match Counter</a></li>
+                        <li class="odd"><a href="/cgibin/Smi2DepictWeb.py">Smi2Depict</a></li>
+                        <li><a href="/cgibin/reaction/ReactionProcessorWeb.py">Reaction Processor</a></li>
+                        <li class="odd"><a href="/cgibin/tools/AquaSolWeb.py">AquaSol</a></li>
+                    </ul>
+                </div>                                                                          
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Applications</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/ChemicalIndexWeb.py">Chemical Search</a></li>
+                        <li><a href="http://cosmos.igb.uci.edu/">COSMOS</a></li>
+                        <li class="odd"><a href="/cgibin/tutorial/ReactionTutorialSetupWeb.py">Reaction Explorer</a></li>
+                        <li><a href="http://reactions.igb.uci.edu/">Reaction Predictor</a></li>                        
+                        <li class="odd"><a href="/cgibin/reaction/VirtualSpaceWeb.py">Virtual Chemical Space</a></li>
+                    </ul>
+                </div>
+            </div>   
+            <div id="crumbs"><!-- <a class="breadcrumb" href="http://chemdb.ics.uci.edu" target="_top">ChemDB</a>
+ --><a href="/">Home</a> <img class="crumb-arrow" src='/images/arrow.png' /> <a class="breadcrumb" href="#">MolInfo</a></div>
+        </div>
+        
+        <div id="loadingDiv"><img src="/images/loading.gif" /></div>
+        <div id="tabs" class="margin-top">
+            <form id="MolInfoWeb" name="MolInfoWeb" action="MolInfoWeb.py" method=post>
+                <ul>
+                    <li><a href="#tabs-1">Molecule Input</a></li>
+                    <li><a href="#tabs-2">Properties</a></li>
+                </ul>
+                
+                <div id="tabs-1" class="module">
+                    <div class="module">                                                            
+                        <div>Kernel-based calculations can take up to a minute per molecule.  
+            In the future, look for a batch submission option with subsequent e-mail results.
+            <br>
+            Details on these property predictions methods can be found in the respective
+            journal article referenced in the <a
+href="http://chemdb.ics.uci.edu/cgibin/Publications.py">Publications</a> section.
+            <br><br></div>
+                        <span class="module-sub-header float-left margin-top">SMILES</span>
+                        <a class="sketch-button float-right" href="../JMEPopupWeb.py?parentForm=MolInfoWeb&smilesField=smiles&JMEPopupWeb=True">Sketch <img src="../../resource/edit.gif" style="border:0; float:none;" alt="Draw structure" /></a>
+                        <input type="text" id="smiles" name="smiles" class="margin-top" style="width:100%" value="">
+                    </div>
+                    
+                    <input type="hidden" name="MolInfoWeb" value="Submit">
+                    <button type="submit" class="search-button float-right margin-top">Search</button>
+                </div>                           
+                    
+                <div id="tabs-2">                    
+                    <table class="module" cellspacing=0 cellpadding=4>                
+                        <tr valign=bottom>
+                            <th><input id="checkall" type=checkbox></th>
+                            <th>Description</th>
+                            <th>Reliability</th>
+                            <th>Source / Reference</th>
+                        </tr>
+                        <tr valign=top align=left class="">
+    <td><input type=checkbox name="inchi" value="checked" %(inchi)s>
+</td>
+    <td>InChi</td>
+    <td></td>
+    <td><a href="http://www.iupac.org/inchi/">IUPAC</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="inchi_aux" value="checked" %(inchi_aux)s>
+</td>
+    <td>InChi auxilliary info</td>
+    <td></td>
+    <td><a href="http://www.iupac.org/inchi/">IUPAC</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="molecular_formula" value="checked" %(molecular_formula)s>
+</td>
+    <td>Molecular Formula</td>
+    <td></td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="name" value="checked" %(name)s>
+</td>
+    <td>Systematic name</td>
+    <td></td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="molecular_weight" value="checked" %(molecular_weight)s>
+</td>
+    <td>Molecular weight (daltons)</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="chiral_atoms" value="checked" %(chiral_atoms)s>
+</td>
+    <td>Chiral atoms</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="h_acceptors" value="checked" %(h_acceptors)s>
+</td>
+    <td>H-bond acceptors</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="h_donors" value="checked" %(h_donors)s>
+</td>
+    <td>H-bond donors</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="num_atoms" value="checked" %(num_atoms)s>
+</td>
+    <td>Atoms</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="num_c" value="checked" %(num_c)s>
+</td>
+    <td>Carbons</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="num_h" value="checked" %(num_h)s>
+</td>
+    <td>Hydrogens</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="num_heavy_atoms" value="checked" %(num_heavy_atoms)s>
+</td>
+    <td>Heavy atoms</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="num_n" value="checked" %(num_n)s>
+</td>
+    <td>Nitrogens</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="num_o" value="checked" %(num_o)s>
+</td>
+    <td>Oxygens</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="chiral_bonds" value="checked" %(chiral_bonds)s>
+</td>
+    <td>Chiral bonds</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="num_bonds" value="checked" %(num_bonds)s>
+</td>
+    <td>Bonds</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="num_db_bonds" value="checked" %(num_db_bonds)s>
+</td>
+    <td>Double bonds</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="num_rotors" value="checked" %(num_rotors)s>
+</td>
+    <td>Rotatable bonds</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="num_sg_bonds" value="checked" %(num_sg_bonds)s>
+</td>
+    <td>Single bonds</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="rigid_segments" value="checked" %(rigid_segments)s>
+</td>
+    <td>Rigid segments</td>
+    <td>Exact</td>
+    <td><a href="http://www.eyesopen.com">OpenEye OEChem</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="enthalpy" value="checked" %(enthalpy)s>
+</td>
+    <td>Enthalpy (heat) of formation</td>
+    <td>Prediction</td>
+    <td></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="klogp" value="checked" %(klogp)s>
+</td>
+    <td>KLogP: Kernel-based octanol / water partition coefficient</td>
+    <td>Prediction</td>
+    <td><a href="http://cdb.ics.uci.edu/cgibin/Publications.py">Kernel Regression</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="kmelt" value="checked" %(kmelt)s>
+</td>
+    <td>KMelt: Kernel-based melting point</td>
+    <td>Prediction</td>
+    <td><a href="http://cdb.ics.uci.edu/cgibin/Publications.py">Kernel Regression</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="ksol" value="checked" %(ksol)s>
+</td>
+    <td>KSol: Kernel-based aqueous solubility</td>
+    <td>Prediction</td>
+    <td><a href="http://cdb.ics.uci.edu/cgibin/Publications.py">Kernel Regression</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="zap_area" value="checked" %(zap_area)s>
+</td>
+    <td>ZAP Area</td>
+    <td>Prediction</td>
+    <td><a href="http://www.eyesopen.com">OpenEye ZAP</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="zap_coulombic" value="checked" %(zap_coulombic)s>
+</td>
+    <td>ZAP Coulombic</td>
+    <td>Prediction</td>
+    <td><a href="http://www.eyesopen.com">OpenEye ZAP</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="zap_solvation" value="checked" %(zap_solvation)s>
+</td>
+    <td>ZAP Solvation</td>
+    <td>Prediction</td>
+    <td><a href="http://www.eyesopen.com">OpenEye ZAP</a></td>
+</tr>
+<tr valign=top align=left class="">
+    <td><input type=checkbox name="zap_total" value="checked" %(zap_total)s>
+</td>
+    <td>ZAP Total</td>
+    <td>Prediction</td>
+    <td><a href="http://www.eyesopen.com">OpenEye ZAP</a></td>
+</tr>
+
+                    </table>
+                </div>                                          
+            </form>
+        </div>
+        
+            <div class="ui-widget-header hide">Results</div>                           
+            <div id="results" class="module hide">
+                <div class="module-sub-header module-column-left">Molecule</div>
+                <div class="module-sub-header module-column-right">Information </div>      
+                <div class="chemical-row"></div>            
+            </div>
+    </div>
+</div>
+</body>
+</html>

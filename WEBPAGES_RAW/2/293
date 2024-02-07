@@ -1,0 +1,390 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>Sorting by divide-and-conquer</title>
+<meta name="Owner" value="eppstein">
+<meta name="Reply-To" value="eppstein@ics.uci.edu">
+</head>
+<body>
+<h1>ICS 161: Design and Analysis of Algorithms<br>
+Lecture notes for January 18, 1996</h1>
+
+<!--#config timefmt="%d %h %Y, %T %Z" -->
+<hr>
+<p></p>
+
+<h1>Three Divide and Conquer Sorting Algorithms</h1>
+
+Today we'll finish heapsort, and describe both mergesort and
+quicksort. Why do we need multiple sorting algorithms? Different
+methods work better in different applications. 
+
+<ul>
+<li>Heapsort uses close to the right number of comparisons but
+needs to move data around quite a bit. It can be done in a way that
+uses very little extra memory. It's probably good when memory is
+tight, and you are sorting many small items that come stored in an
+array.</li>
+
+<li>Merge sort is good for data that's too big to have in memory at
+once, because its pattern of storage access is very regular. It
+also uses even fewer comparisons than heapsort, and is especially
+suited for data stored as linked lists.</li>
+
+<li>Quicksort also uses few comparisons (somewhat more than the
+other two). Like heapsort it can sort "in place" by moving data in
+an array.</li>
+</ul>
+
+<h2>Heapification</h2>
+
+Recall the idea of heapsort: 
+
+<pre>
+    heapsort(list L)
+    {
+    make heap H from L
+    make empty list X
+    while H nonempty
+        remove smallest from H and add it to X
+    return X
+    }
+</pre>
+
+Remember that a heap is just a balanced binary tree in which the
+value at any node is smaller than the values at its children. We
+went over most of this last time. The total number of comparisons
+is n log n + however many are needed to make H. The only missing
+step: how to make a heap? 
+
+<p>To start with, we can set up a binary tree of the right size and
+shape, and put the objects into the tree in any old order. This is
+all easy and doesn't require any comparisons. Now we have to switch
+objects around to get them back in order.</p>
+
+<p>The divide and conquer idea: find natural subproblems, solve
+them recursively, and combine them to get an overall solution. Here
+the obvious subproblems are the subtrees. If we solve them
+recursively, we get something that is close to being a heap, except
+that perhaps the root doesn't satisfy the heap property. To make
+the whole thing a heap, we merely have to percolate that value down
+to a lower level in the tree.</p>
+
+<pre>
+    heapify(tree T)
+    {
+        if (T is nonempty) {
+            heapify(left subtree)
+            heapify(right subtree)
+            let x = value at tree root
+            while node containing x doesn't satisfy heap propert
+                switch values of node and its smallest child
+        }
+    }
+</pre>
+
+The while loop performs two comparisons per iteration, and takes at
+most log n iterations, so the time for this satisfies a recurrence 
+
+<pre>
+    T(n) &lt;= 2 T(n/2) + 2 log n
+</pre>
+
+How to solve it? 
+
+<h2>Divide and conquer recurrences</h2>
+
+In general, divide and conquer is based on the following idea. The
+whole problem we want to solve may too big to understand or solve
+at once. We break it up into smaller pieces, solve the pieces
+separately, and combine the separate pieces together. 
+
+<p>We analyze this in some generality: suppose we have a pieces,
+each of size n/b and merging takes time f(n). (In the heapification
+example a=b=2 and f(n)=O(log n) but it will not always be true that
+a=b -- sometimes the pieces will overlap.)</p>
+
+<p>The easiest way to understand what's going on here is to draw a
+tree with nodes corresponding to subproblems (labeled with the size
+of the subproblem)</p>
+
+<pre>
+       n
+    /  |  \
+    n/b   n/b   n/b
+    /|\   /|\   /|\ 
+     .     .     .
+     .     .     .
+     .     .     .
+</pre>
+
+For simplicity, let's assume n is a power of b, and that the
+recursion stops when n is 1. Notice that the size of a node depends
+only on its level: 
+
+<pre>
+    size(i) = n/(b^i).
+</pre>
+
+What is time taken by a node at level i? 
+
+<pre>
+    time(i) = f(n/b^i)
+</pre>
+
+How many levels can we have before we get down to n=1? For bottom
+level, n/b^i=1, so n=b^i and i=(log n)/(log b). How many items at
+level i? a^i. So putting these together we have 
+
+<pre>
+       (log n)/(log b)
+    T(n) =      sum       a^i f(n/b^i)
+        i=0
+</pre>
+
+This looks messy, but it's not too bad. There are only a few terms
+(logarithmically many) and often the sum is dominated by the terms
+at one end (f(n)) or the other (n^(log a/log b)). In fact, you will
+generally only be a logarithmic factor away from the truth if you
+approximate the solution by the sum of these two, O(f(n) + n^(log
+a/log b)). 
+
+<p>Let's use this to analyze heapification. By plugging in
+parameters a=b=2, f(n)=log n, we get</p>
+
+<pre>
+         log n
+    T(n) = 2  sum  2^i log(n/2^i)
+          i=0
+</pre>
+
+Rewriting the same terms in the opposite order, this turns out to
+equal 
+
+<pre>
+         log n
+    T(n) = 2  sum  n/2^i log(2^i)
+          i=0
+
+           log n
+     = 2n   sum  i/2^i
+        i=0
+
+           infty
+     &lt;= 2n   sum  i/2^i
+        i=0
+
+     = 4n
+</pre>
+
+So heapification takes at most 4n comparisons and heapsort takes at
+most n log n + 4n. (There's an n log n - 1.44n lower bound so we're
+only within O(n) of the absolute best possible.) 
+
+<p>This was an example of a sorting algorithm where one part used
+divide and conquer. What about doing the whole algorithm that
+way?</p>
+
+<h2>Merge sort</h2>
+
+According to Knuth, merge sort was one of the earliest sorting
+algorithms, invented by <a href="people.html#jvn">John von
+Neumann</a> in 1945. 
+
+<p>Let's look at the combine step first. Suppose you have some data
+that's close to sorted -- it forms two sorted lists. You want to
+merge the two sorted lists quickly rather than having to resort to
+a general purpose sorting algorithm. This is easy enough:</p>
+
+<pre>
+    merge(L1,L2)
+    {
+    list X = empty
+    while (neither L1 nor L2 empty)
+    {
+        compare first items of L1 &amp; L2
+        remove smaller of the two from its list
+        add to end of X
+    }
+    catenate remaining list to end of X
+    return X
+    }
+</pre>
+
+Time analysis: in the worst case both lists empty at about same
+time, so everything has to be compared. Each comparison adds one
+item to X so the worst case is |X|-1 = |L1|+|L2|-1 comparisons. One
+can do a little better sometimes e.g. if L1 is smaller than most of
+L2. 
+
+<p>Once we know how to combine two sorted lists, we can construct a
+divide and conquer sorting algorithm that simply divides the list
+in two, sorts the two recursively, and merges the results:</p>
+
+<pre>
+    merge sort(L)
+    {
+        if (length(L) &lt; 2) return L
+        else {
+            split L into lists L1 and L2, each of n/2 elements
+            L1 = merge sort(L1)
+            L2 = merge sort(L2)
+            return merge(L1,L2)
+        }
+    }
+</pre>
+
+This is simpler than heapsort (so easier to program) and works
+pretty well. How many comparisons does it use? We can use the
+analysis of the merge step to write down a recurrence: 
+
+<pre>
+    C(n) &lt;= n-1 + 2C(n/2)
+</pre>
+
+As you saw in homework 1.31, for n = power of 2, the solution to
+this is n log n - n + 1. For other n, it's similar but more
+complicated. To prove this (at least the power of 2 version), you
+can use the formula above to produce 
+
+<pre>
+        log n
+    C(N) &lt;=  sum  2^i (n/2^i - 1)
+         i=0
+
+          log n
+        =  sum  n - 2^i
+           i=0
+
+        = n(log n + 1) - (2n - 1)
+
+        = n log n - n + 1
+</pre>
+
+So the number of comparisons is even less than heapsort. 
+
+<h2>Quicksort</h2>
+
+Quicksort, invented by <a href="people.html#hoare">Tony Hoare</a>,
+follows a very similar divide and conquer idea: partition into two
+lists and put them back together again It does more work on the
+divide side, less on the combine side. 
+
+<p>Merge sort worked no matter how you split the lists (one obvious
+way is to take first n/2 and last n/2 elements, another is to take
+every other element). But if you could perform the splits so that
+everything in one list was smaller than everything in the other,
+this information could be used to make merging much easier: you
+could merge just by concatenating the lists.</p>
+
+<p>How to split so one list smaller than the other? e.g. for
+alphabetical order, you could split into A-M, N-Z so could use some
+split depending on what data looks like, but we want a comparison
+sorting algorithm that works for any data.</p>
+
+<p>Quicksort uses a simple idea: pick one object x from the list,
+and split the rest into those before x and those after x.</p>
+
+<pre>
+    quicksort(L)
+    {
+        if (length(L) &lt; 2) return L
+        else {
+            pick some x in L
+            L1 = { y in L : y &lt; x }
+            L2 = { y in L : y &gt; x }
+            L3 = { y in L : y = x }
+            quicksort(L1)
+            quicksort(L2)
+            return concatenation of L1, L3, and L2
+        }
+    }
+</pre>
+
+(We don't need to sort L3 because everything in it is equal). 
+
+<h2>Quicksort analysis</h2>
+
+The partition step of quicksort takes n-1 comparisons. So we can
+write a recurrence for the total number of comparisons done by
+quicksort: 
+
+<pre>
+    C(n) = n-1 + C(a) + C(b)
+</pre>
+
+where a and b are the sizes of L1 and L2, generally satisfying
+a+b=n-1. In the worst case, we might pick x to be the minimum
+element in L. Then a=0, b=n-1, and the recurrence simplifies to
+C(n)=n-1 + C(n-1) = O(n^2). So this seems like a very bad
+algorithm. 
+
+<p>Why do we call it quicksort? How can we make it less bad?
+Randomization!</p>
+
+<p>Suppose we pick x=a[k] where k is chosen randomly. Then any
+value of a is equally likely from 0 to n-1. To do average case
+analysis, we write out the sum over possible random choices of the
+probability of that choice times the time for that choice. Here the
+choices are the values of k, the probabilities are all 1/n, and the
+times can be described by formulas involving the time for the
+recursive calls to the algorithm. So average case analysis of a
+randomized algorithm gives a randomized recurrence:</p>
+
+<pre>
+       n-1
+    C(n) = sum (1/n)[n - 1 + C(a) + C(n-a-1)]
+       a=0
+</pre>
+
+To simplify the recurrence, note that if C(a) occurs one place in
+the sum, the same number will occur as C(n-a-1) in another term --
+we rearrange the sum to group the two together. We can also take
+the (n-1) parts out of the sum since the sum of 1/n copies of 1/n
+times n-1 is just n-1. 
+
+<pre>
+           n-1
+    C(n) = n - 1 + sum (2/n) C(a)
+           a=0
+</pre>
+
+The book gives two proofs that this is O(n log n). Of these,
+induction is easier. 
+
+<p>One useful idea here: we want to prove f(n) is O(g(n)). The O()
+hides too much information, instead we need to prove f(n) &lt;= a
+g(n) but we don't know what value a should take. We work it out
+with a left as a variable then use the analysis to see what values
+of a work.</p>
+
+<p>We have C(1) = 0 = a (1 log 1) for all a. Suppose C(i) &lt;= a i
+log i for some a, all i&lt;n. Then</p>
+
+<pre>
+    C(n) = n-1 + sum(2/n) C(a)
+     &lt;= n-1 + sum(2/n)ai log i
+     = n-1 + 2a/n sum(i=2 to n-1) (i log i)
+     &lt;= n-1 + 2a/n integral(i=2 to n)(i log i)
+     = n-1 + 2a/n (n^2 log n / 2 - n^2/4 - 2 ln 2 + 1)
+     = n-1 + a n log n - an/2 - O(1)
+</pre>
+
+and this will work if n-1 &lt; an/2, and in particular if a=2. So
+we can conclude that C(n) &lt;= 2 n log n. 
+
+<p>Note that this is worse than either merge sort or heap sort, and
+requires random number generator to avoid being really bad. But
+it's pretty commonly used, and can be tuned in various ways to work
+better. (For instance, let x be the median of three randomly chosen
+values rather than just one value).</p>
+
+<hr>
+<p><a href="/~eppstein/161/">ICS 161</a> -- <a href="/">Dept.
+Information &amp; Computer Science</a> -- <a href= 
+"http://www.uci.edu/">UC Irvine</a><br>
+<small>Last update: 
+<!--#flastmod file="960118.html" --></small></p>
+</body>
+</html>
+

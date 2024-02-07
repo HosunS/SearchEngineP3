@@ -1,0 +1,138 @@
+// Test of closest pair algorithms
+// David Eppstein, UC Irvine, 19 Apr 1997
+//
+// Nearest neighbor closest pair algorithm
+
+#include "Neighbors.h"
+#include "Error.h"
+
+// Subroutine to find nearest neighbor of a given point
+void NeighborCP::FindNeighbor(point p)
+{
+	// if no neighbors avail, set flag for UpdatePoint to find
+	if (npoints == 1) {
+		neighbors[p] = p;
+		return;
+	}
+
+	// find first point unequal to p itself
+	int first_nbr = 0;
+	if (p == points[first_nbr]) first_nbr = 1;
+	neighbors[p] = points[first_nbr];
+	nbr_dist[p] = dist(p, neighbors[p]);
+
+	// now test whether each other point is closer
+	for (long i = first_nbr + 1; i < npoints; i++)
+	{
+		point q = points[i];
+		if (q != p) {
+			double d = dist(p,q);
+			if (d < nbr_dist[p]) {
+				nbr_dist[p] = d;
+				neighbors[p] = q;
+			}
+		}
+	}
+}
+
+NeighborCP::NeighborCP(long np, long mp, Distance & d)
+	: BruteForceCP(np,mp,d),
+	  neighbors(new point[mp]), nbr_dist(new double[mp])
+{
+	if (neighbors == 0 || nbr_dist == 0)
+		error("NeighborCP: unable to create neighbor arrays");
+	
+	// Find all neighbors. We do this ourselves rather than calling
+	// FindNeighbor to reduce the total number of distance calculations.
+	long i, j;
+	for (i = 0; i < np; i++) {
+		neighbors[i] = i;	// flag to say no nbr yet
+		nbr_dist[i] = MAX_DISTANCE;
+	}
+	for (i = 1; i < np; i++)
+		for (j = 0; j < i; j++) {
+			double d = dist(i,j);
+			if (d < nbr_dist[i]) {
+				nbr_dist[i] = d;
+				neighbors[i] = j;
+			}
+			if (d < nbr_dist[j]) {
+				nbr_dist[j] = d;
+				neighbors[j] = i;
+			}
+		}
+}
+
+// Add a point and check if any neighbors need to be changed
+void NeighborCP::operator += (point p)
+{
+	BruteForceCP::operator+= (p);
+	UpdatePoint(p);
+}
+
+// Remove a point and update neighbors of points for which it had been nearest
+void NeighborCP::operator -= (point p)
+{
+	BruteForceCP::operator-= (p);
+	for (long i = 0; i < npoints; i++)
+		if (neighbors[points[i]] == p)
+			FindNeighbor(points[i]);
+}
+
+// Find closest pair by scanning list of nearest neighbors
+double NeighborCP::operator () (point & a, point & b)
+{
+	if (npoints < 2) error("NeighborCP: not enough points to form pair");
+	gPairs++;
+	double d = nbr_dist[points[0]];
+	a = points[0];
+	b = neighbors[points[0]];
+	for (long i = 1; i < npoints; i++) {
+		if (nbr_dist[points[i]] < d) {
+			d = nbr_dist[points[i]];
+			a = points[i];
+			b = neighbors[points[i]];
+		}
+	}
+	return d;
+}
+
+// All distances to point have changed, check if our structures are ok
+// Note that although we completely recompute the neighbors of p,
+// we don't explicitly call FindNeighbor, since that would double
+// the number of distance computations made by this routine.
+void NeighborCP::UpdatePoint(point p)
+{
+	neighbors[p] = p;	// flag for not yet found any
+	nbr_dist[p] = MAX_DISTANCE;
+	for (long i = 0; i < npoints; i++) {
+		point q = points[i];
+		if (q != p) {
+			double d = dist(p,q);
+			if (d < nbr_dist[p]) {
+				nbr_dist[p] = d;
+				neighbors[p] = q;
+			}
+			if (d < nbr_dist[q]) {
+				nbr_dist[q] = d;
+				neighbors[q] = p;
+			} else if (neighbors[q] == p && d > nbr_dist[q]) FindNeighbor(q);
+		}
+	}
+}
+
+// Single distance has changed, check if our structures are ok
+void NeighborCP::UpdateDistance(point p, point q)
+{
+	double d = dist(p,q);
+
+	if (d < nbr_dist[p]) {
+		nbr_dist[p] = q;
+		neighbors[p] = q;
+	} else if (neighbors[p] == q && d > nbr_dist[p]) FindNeighbor(p);
+
+	if (d < nbr_dist[q]) {
+		nbr_dist[q] = p;
+		neighbors[q] = p;
+	} else if (neighbors[q] == p && d > nbr_dist[q]) FindNeighbor(q);
+}

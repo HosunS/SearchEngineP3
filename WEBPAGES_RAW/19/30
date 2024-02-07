@@ -1,0 +1,95 @@
+//TestGetScore: demonstrate the getScore() method
+//
+// Coded by Norman Jacobson, December 2008
+// Minor update by Norman Jacobson, September 2009
+
+import java.util.*;			// Library containing the Scanner class
+
+public class TestGetScore
+{
+	public static final int SENTINEL = -99;
+
+	public static void main(String[] args)
+	{
+		System.out.println(getScore());
+	}
+
+
+	// getScore(): Asks user to enter, via keyboard, an integer from 0 to 100,
+	//             or the SENTINEL value to stop. If other than one of these
+	//             values is entered, the user is informed the value is bad and is
+	//             again asked for a legal value. If a 'good' value is entered,
+	//             getScore() returns it.
+	//
+	//             getScore assumes a constant SENTINEL is available to it
+	//             that contains the sentinel value. That value must not
+	//             be in the range 0 to 100.
+	//
+	//             getScore() uses the Scanner class and its exceptions,
+	//             so a program using this must import java.util.*;
+	public static int getScore()
+	{
+		// 'console' is an object that accepts keyboard input
+		Scanner console = new Scanner(System.in);
+
+
+		final int BAD_SCORE = -9;	// An invalid score not the sentinel was entered
+		final int LOW_SCORE = 0;	// Lowest allowed score
+		final int HI_SCORE = 100;	// Highest allowed score
+
+		int enteredScore = BAD_SCORE;	// Score's bad until user enters a good one
+		boolean integerEntered;	        // Entered score was an integer;
+
+		// Until we get a good score or the sentinel, keep asking...
+		do
+		{
+			System.out.println("Enter a integer score from " + LOW_SCORE +
+			                   " to " + HI_SCORE + ", or " +
+			                   SENTINEL + " when finished.");
+
+			// See if user entered an integer; if did, so mark
+			try
+			{
+				enteredScore = console.nextInt();
+				integerEntered = true;
+			}
+
+			// Code jumps to catch if nexInt() does not see an integer:
+			// -- Tell user s/he must enter integer
+			// -- Scanner does not "chew up" the bad input; it leaves it
+			//    in the input queue. We force it to be taken up,
+			//    and we ignore it; this clears the input queue so that
+			//    when the user types in the next value, that new value
+			//    will be the one retrieved.
+			// -- Leave enteredScore as BAD_SCORE, since entered value
+			//    was, well, bad!
+			// -- Record entered score was not an integer, so checks
+			//    for integer scores are skipped
+			catch (InputMismatchException e)
+			{
+				System.out.println ("Sorry - score must be an integer");
+				console.next();
+				integerEntered = false;
+			}
+
+			// If not legal score and not sentinel, tell user, mark as bad
+			if (integerEntered)
+			{
+				if ((enteredScore < LOW_SCORE || enteredScore > HI_SCORE) &&
+				     enteredScore != SENTINEL)
+				{
+					System.out.println("Sorry - score is out of range");
+					enteredScore = BAD_SCORE;
+				}
+			}
+		} while (enteredScore == BAD_SCORE);
+
+		// Score's good
+		return enteredScore;
+	}
+}
+
+
+
+
+

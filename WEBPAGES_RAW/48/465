@@ -1,0 +1,76 @@
+//    Processing educational code
+//    Copyright (C) 2013  Lee Martie
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+public class Pebble {
+  PVector location;
+  PVector acceleration;
+  PVector velocity;
+
+  //mass of objects (adjust and see what happens)
+  float mass = .03;
+  
+  float G = 1;
+
+PVector attract(Pebble p){
+ 
+ PVector force = PVector.sub(location,p.location);
+ float d = force.mag();
+ d = constrain(d,5,25);
+ force.normalize();
+ float strength = G * mass *p.mass /(d*d);
+ force.mult(strength);
+ 
+ return force;
+ 
+}
+  //constructor
+  public Pebble(float x, float y) {
+    location = new PVector(x, y);
+    velocity = new PVector(0, 0);
+    acceleration = new PVector(0, 0);
+  }
+
+  //update acceleraction by applying a force
+  void applyForce(PVector force) {
+    PVector f = PVector.div(force, mass);
+    acceleration.add(f);
+  }
+
+
+
+  //update pebble location with forces :D
+  public void step() {
+
+    velocity.add(acceleration);
+    location.add(velocity);   
+
+    //important  step!
+    acceleration.mult(0);
+  }
+
+
+
+  //display where this pebble is now
+  public void display() {
+    fill(255);
+    pushMatrix();
+    translate(location.x, location.y);
+    ellipseMode(CENTER);
+    ellipse(0, 0, 2, 3);
+    popMatrix();
+  }
+}
+

@@ -1,0 +1,527 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC
+ "-//W3C//DTD XHTML 1.1//EN"
+ "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<link rel="stylesheet" href="../../course.css" type="text/css" />
+
+<title>ICS 65 Fall 2012, Project #3: Back on the Chain Gang</title>
+</head>
+
+<body>
+
+<div class="navbar">
+
+<p>
+ICS 65 Fall 2012 |
+<a href="../../index.html">News</a> |
+<a href="../../CourseReference.html">Course Reference</a> |
+<a href="../../Schedule.html">Schedule</a> |
+<a href="../../ProjectGuide">Project Guide</a> |
+<a href="../../CodeExamples">Code Examples</a> |
+<a href="http://www.ics.uci.edu/~thornton/">About Alex</a>
+</p>
+
+<hr />
+
+</div>
+
+<div class="header">
+
+<p>ICS 65 Fall 2012<br />
+   Project #3: <i>Back on the Chain Gang</i></p>
+   
+</div>
+
+<div class="section">
+
+<p class="center"><b>Due date and time:</b> <i>Monday, November 19, 11:59pm</i></p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Introduction</p>
+
+<p>The openness of the Internet's email service is both a strength and a weakness.  It's nice to be able to send messages to people knowing only their email addresses, just as it's nice to be able to receive email from old friends who found your address, say, on your LinkedIn profile.  Unfortunately, not everyone on the Internet is well-intentioned, so a variety of problems, such as spam and phishing schemes, have arisen from the ability of anyone to send email to anyone else at virtually no charge.</p>
+
+<p>Even people with good intentions can cause problems on an email network.  <i>Chain letters</i>, letters designed to motivate receivers to forward them to their friends and acquaintenances, have been around for many decades in paper form, sent via physical postal services.  Since Internet-based email's relatively humble beginnings, electronic equivalents of chain letters have been propagating throughout the network; thanks to the relative ease and low cost of forwarding a message to many recipients at once, it was inevitable.</p>
+
+<p>In this project, you'll write a simulation of chain letters propagating through an email network.  As in real life, people in our network will behave differently from one another.  Some will be more apt to forward chain letters while others will prefer to ignore them.  Some will be tend to forward chain letters to many of the people on their contact list; others will be more selective.  Your program will show how individual messages work their way through the network, and also will keep track of how many copies of each message are received by each person.</p>
+
+<p>This project will allow you to practice using inheritance and polymorphism in C++.  It will also provide you with an opportunity to use a number of features from the C++ standard library (maps, lists, and generic algorithms) that we have not covered in lecture, building your ability to learn new library features from existing documentation &mdash; a critical skill for writing real software.  The documentation will acquaint you not only with precisely what functions and classes are available in the library, but will also begin to get you accustomed to C++ idioms and terminology that we might not have covered yet; all of this makes you a better C++ programmer.  (Of course, I'm happy to help if you get stuck, though you may discover that I'll need to look up some of the details myself; no one is ever able to keep an entire library memorized, which is, in large part, why being able to quickly look things up in documentation is so important.)</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The simulation</p>
+
+<p class="subtitle">Central concepts</p>
+
+<p>Our simulation is centered around the following concepts:</p>
+
+<ul>
+  <li>There is at least one <i>person</i> &mdash; and the simulation will only be interesting if there are more than one.  Persons have:
+    <ul>
+      <li>an <i>inbox</i>, which is a list of messages waiting for their attention</li>
+      <li>a <i>contact list</i>, which is a list of addresses of people to whom they send email regularly</li>
+      <li><i>strategies</i> that define how they decide whether to forward a chain letter and which people on their contact list should receive a forwarded copy</li>
+    </ul>
+  </li>
+  <li>There are also <i>messages</i>, which consist of:
+    <ul>
+      <li>two addresses &mdash; "from" and "to"</li>
+      <li><i>content</i>, which is made up of a unique ID (representing, abstractly, what the message says), a type (e.g., joke, feel-good story), and a quality (an unsigned integer stating, in general, how likely it is to be forwarded, with higher quality values being more likely to be forwarded)
+        <ul>
+          <li>When a message is forwarded from one person to another, the content remains the same, but the "from" and "to" addresses are different.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>Additionally, there is a <i>message dispatcher</i>, which keeps track of a mapping between addresses and people, and knows how to place a message in a person's inbox based on the "to" address of the message.</li>
+</ul>
+
+<p class="subtitle">The simulation process</p>
+
+<p>Your program will begin by reading an input file, which specifies the email addresses of all the people in the simulation, the addresses of all the people in each person's contact list, and the strategies that govern each person's behavior.  The input file also specifies the set of chain letters that are to be placed in each person's inbox before the simulation begins.  (The only email in this simulation are chain letters of various types; "normal" messages are not included.)  Once the simulation is ready to begin, it proceeds according to the following algorithm:</p>
+
+<ul>
+  <li>Suppose that there are <i>n</i> people and they are numbered from 0..<i>n</i>-1.</li>
+  <li>While at least one person has at least one message in his/her inbox:
+    <ul>
+      <li>For each person in ascending order of their numbers (from 0..<i>n</i>-1):
+        <ul>
+          <li>If the person has at least one message in his/her inbox:
+            <ul>
+              <li>Take the first message in the person's inbox and decide whether that person believes, in general, that the message is worth forwarding
+                <ul>
+                   <li>If so, decide who the message should be forwarded and (if anyone is in that group) then forward the message</li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<p>The "round robin" nature of this simulation, moving from one person to the next and processing one message at a time for each, is a crude simulation of the way that people often interleave email with other work that they might be doing throughout the day.</p>
+
+<p class="subtitle">Message types</p>
+
+<p>There are four kinds of chain letters that our simulation will include:</p>
+
+<ul>
+  <li>Jokes</li>
+  <li>Pyramid schemes</li>
+  <li>"Feel good" stories</li>
+  <li>Bogus virus warnings</li>
+</ul>
+
+<p class="subtitle">Message quality</p>
+
+<p>Messages of each type, separately, have a "quality" rating, which is an unsigned integer that indicates how likely it is that someone would want to forward a message to others.  This rating allows us to simulate the fact that some real-world chain letters are better-written than others &mdash; some jokes are considered funny by a broader audience than others, some bogus virus warnings are more believable than others &mdash; and are thus more likely to be forwarded.  Higher ratings are considered better than lower ones.  There is no upper bound on the quality rating for a message, other than the implicit upper bound that arises from the fact that the <b>unsigned int</b> type in our implementation of C++ has an upper bound of around 4,000,000,000.</p>
+
+<p class="subtitle">Strategies for determining whether a message is worth forwarding</p>
+
+<p>Each person has a strategy for determining whether a particular message is worth forwarding to others.  A person will have one of the following strategies for this:</p>
+
+<ul>
+  <li>Forward all messages, regardless of their type or quality.</li>
+  <li>Forward all messages of one particular type (e.g., jokes), but no messages of any other type.</li>
+  <li>Forward a message only if it has a quality rating at or above some threshold, regardless of the message's type.</li>
+  <li>Forward all messages of one particular type (e.g., jokes), but only if the message has a quality rating at or above some threshold; don't forward messages of any other type.</li>
+  <li>Never forward any messages.</li>
+</ul>
+
+<p class="subtitle">Strategies for deciding on a list of recipients of a forwarded message</p>
+
+<p>In addition to a strategy for determining whether to forward a message, each person also has a separate strategy for deciding who among the members of his or her contact list should receive a forwarded copy of the message.  Once a person decides to forward a message, this strategy is used to decide who the recipients of forwarded copies will be.  A person will have one of the following strategies for determining a recipient list.</p>
+
+<ul>
+  <li>Forward the message to all members of the contact list, including (possibly) the sender of the message.</li>
+  <li>Forward the message to all members of the contact list <i>except</i> the sender (if the sender appears in the contact list).</li>
+  <li>Forward the message to the "next" member on the person's contact list.  The first message a person forwards should be sent to the first member of that person's contact list; the second message should be sent to the second member; and so on.  After all members have received one forwarded message, the process repeats.  (This roughly simulates the idea that a person might be apt to think of a single person who might be interested in each message.)</li>
+</ul>
+
+<p class="subtitle">Handling duplicate messages</p>
+
+<p>Each person keeps track of which message content they've seen previously.  If a person receives a message whose content he or she has seen before, the message is disregarded and not forwarded to anyone, regardless of the person's strategies.  This rule turns out to be important, not only for "accuracy" of the simulation, but because it will allow the simulation to terminate.  (Without this rule, two people might forward a message back and forth between one another forever.)</p>
+
+<p class="subtitle">An assumption about email addresses and people</p>
+
+<p>For simplicity, we'll assume in our simulation that no person has more than one email address.  For this reason, email addresses can be assumed to uniquely identify individual people.</p>
+
+<p class="subtitle">Configuring the simulation</p>
+
+<p>An input file specifies all of the information that configures the simulation.  Your program should accept one command-line argument, specifying the name of the input file that should be used to configure the simulation before it runs.  (More information about command-line arguments and reading input from files is provided later in the write-up.)</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Input file format</p>
+
+<p>The input file specifies two things: information about each person, and information about each chain letter that should initially be placed in a person's inbox.</p>
+
+<p>It begins with a number specifying how many people will be included in the simulation, followed by information about each person.  For each person, the following information is listed:</p>
+
+<ul>
+  <li>The email address of the person.  It is assumed that email addresses have no whitespace in them.</li>
+  <li>An unsigned integer specifying the number of people on this person's contact list.</li>
+  <li>The email addresses of each person on the contact list.</li>
+  <li>A number corresponding to the strategy this person uses for determining whether to forward a message:
+    <ul>
+      <li><b>1</b> means to forward all messages, regardless of quality.</li>
+      <li><b>2</b> means to forward all messages of a particular type, regardless of quality.  In this case, the 2 will be followed by a number corresponding to the message type.  Message types are always indicated by the following numbers (here and everywhere else that they appear in the input file):
+        <ol>
+          <li>Joke</li>
+          <li>Pyramid scheme</li>
+          <li>"Feel good" story</li>
+          <li>Bogus virus warning</li>
+        </ol>
+      </li>
+      <li><b>3</b> means to forward all messages at or above a particular quality rating, regardless of their type.  In this case, the 3 will be followed by the minimum quality rating of messages this person will forward.</li>
+      <li><b>4</b> means to forward all messages of a particular type, but only if they meet a minimum quality rating.  In this case, the 4 will be followed by two numbers: the message type and the minimum quality rating.</li>
+      <li><b>5</b> means never to forward any messages.</li>
+    </ul>
+  </li>
+  <li>A number corresponding to the strategy this person uses to decide who should be on the list of recipients of a forwarded message:
+    <ul>
+      <li><b>1</b> means to forward the message to all members of the contact list.</li>
+      <li><b>2</b> means to forward the message to all members of the contact list except (possibly) the sender.</li>
+      <li><b>3</b> means to forward the message to the "next" member on the person's contact list.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>After the information about all of the people, there is a number that indicates how many chain letters will initially be placed in people's inboxes before the simulation starts.  This is followed by information about each message:</p>
+
+<ul>
+  <li>The message's type</li>
+  <li>The quality rating of the message</li>
+  <li>The email address of the sender, which is not required to be (but may be) a "known" email address that was defined earlier</li>
+  <li>The email address of the recipient, which is a "known" address already defined</li>
+</ul>
+
+<p>Here is an example input file:</p>
+
+<blockquote><pre>
+3
+alex@alex.com
+    1 hello@paul.com
+    3 10
+    2
+hello@paul.com
+    2 alex@alex.com bruce@springsteen.net
+    1
+    1
+bruce@springsteen.net
+    1 alex@alex.com
+    4 3 7
+    3
+2
+3 6 feelgood@happy.com alex@alex.com
+4 1 scary@virus.org bruce@springsteen.net
+</pre></blockquote>
+
+<p>You may assume that any input file is properly formatted according to these rules.  I designed the file format so that you can use the &gt;&gt; operator to read from the file, without regard to parsing spaces or worrying about lines, so all of the information could appear on one line or on separate lines as shown above, and your program should easily be able to handle it.  (More information about reading from files follows in a later section of this write-up.)  It's okay for your program to misbehave or crash if given an improperly-formatted input file.  On the other hand, your program should not crash if given the name of a non-existent file, or if the program is not given any command-line argument at all.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">The output of your simulation</p>
+
+<p>As your simulation runs, you should print out information about each message that is placed in someone's inbox (including the messages initially sent before the simulation starts).  The information must be formatted precisely like this; pay attention to spacing, capitalization, and punctuation here.</p>
+
+<blockquote><pre>
+Message received!
+From   : blah@blah.com
+To     : hello@paul.com
+Content: ID#1 (Type#2)
+</pre></blockquote>
+
+<p>where the "Content" field shows the ID of the message content (which is a placeholder for the actual text of the message) and the number corresponding to the message's type.  Use the same numbers as in the input file (i.e., jokes are indicated as "Type#1", pyramid schemes as "Type#2", and so on).</p>
+
+<p>For clarity, please follow each such block of message information by a blank line.</p>
+
+<p>At the conclusion of the simulation, print, for each person, how many copies of each message (uniquely identified by its content) were received, as well as the total number of messages received by that person.  That output must again be formatted precisely, following this model.  Spacing, punctuation, and capitalization are all relevant.</p>
+
+<blockquote><pre>
+Messages received by hello@paul.com:
+    Content#1: 3
+    Content#3: 1
+    Content#5: 2
+    TOTAL RECEIVED: 6
+</pre></blockquote>
+
+<p>Print only the information that corresponds to messages actually received by a person; in other words, there should be no counts of "0" in this section, except in the "TOTAL RECEIVED" field when a person never received any messages.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Design advice</p>
+
+<p>You'll find that this program is not as big as it sounds; you may not even find that you're writing a whole lot more code than you wrote in the previous project.  Rather than focusing your efforts on low-level details of memory management, as you did in the previous project, you'll instead be focused on building a larger program out of many smaller pieces, using inheritance and polymorphism in a couple of instances.  The trick, as with most software, is the design; the better your design is, the easier it will be to write the program.  With that in mind, I have some design advice that you should read through and understand before you proceed with implementing the project.</p>
+
+<ul>
+  <li>In general, you should prefer using well-behaved data types whenever possible, keeping things like pointers and dynamic allocation to a minimum.  While you won't be able to avoid pointers and dynamic allocation entirely, your program will be made a lot simpler by avoiding it whenever you can.</li>
+  <li>You'll probably want a class called Message.  Each message consists of "from" and "to" addresses (strings) and a MessageContent.  The MessageContent class consists of a unique ID, a quality rating, and a MessageType.  MessageType might best be implemented as an enumeration (which we'll discuss briefly in the next week or so).
+    <ul> 
+      <li>Note that I'm not suggesting the use of inheritance for different kinds of messages.  This may seem like sacrilege in an object-oriented environment, but in our program, messages don't "do" anything, so there's no behavior to differentiate one kind of message from another.</li>
+      <li>The best reason to encapsulate the content of a message into its own class is that it makes it easy to construct a forwarded message from an existing one, by simply copying the MessageContent and supplying new values for the "from" and "to" addresses.  It also makes it easy to compare the content of two messages, especially if you choose to overload the == and != operators on MessageContent objects.</li>
+      <li>To simplify the printing of information about messages as they're received, it would be wise to overload the &lt;&lt; operator on both Message and MessageContent, to teach them how to "put" themselves to an output stream.  Note that there's no need to overload the &gt;&gt; operator, since you'll never be reading a message from the input.  (We'll talk about operator overloading in the next week or so, as well.)</li>
+    </ul>
+  </li>
+  <li>You'll probably want a class called Person, so each person can be represented as an object.  A person object might contain the following members:
+    <ul>
+      <li>An inbox, which could be implemented as a <b>vector</b> or <b>list</b> of Message objects.  (Since it will be processed, essentially, as a queue, the standard collection <b>list</b> would be a better choice than <b>vector</b>, since it's more efficient to remove the first element of a linked list than the first element of a vector.  You can also consider looking into the <b>queue</b> adapter in the standard library, but there isn't a tremendous advantage to using it instead of <b>list</b>, though it does offer one additional small learning experience.)</li>
+      <li>A contact list, which could be implemented as a <b>vector</b> or <b>list</b> of email addresses (strings).</li>
+      <li>An indication of how many times each message content has been seen.  This might best be implemented with a <b>map</b>, specifically one that maps a MessageContent to an unsigned int (the number of times the message content has been seen).  If a MessageContent has never been seen at all, it would not appear in the map.
+        <ul>
+          <li>Be aware that <b>map</b> is implemented as a balanced binary search tree, which means that the ability to compare objects for ordering (using <b>==</b> and <b>&lt;</b> operators) is necessary in your key type.  So if your keys are MessageContent objects, you'll need to overload these operators for MessageContents.</li>
+        </ul>
+      </li>
+      <li>A pointer to each kind of strategy.  Why pointers?  Polymorphism!  More about this next.</li>
+    </ul>
+  </li>
+  <li>It would be best to implement the two kinds of strategies as inheritance hierarchies, so that each Person could be given an object for each of its strategies, then ask the strategy objects to figure out whether to forward a message and who should receive a forwarded copy.  This keeps Person simple.
+    <ul>
+      <li>Implement one inheritance hierarchy for the quality-checking strategies.  Have an abstract base class that contains a pure virtual function that takes a Message and returns a bool specifying whether it's worth forwarding.  Each concrete strategy inherits from the abstract base class, implementing the virtual function in the appropriate way.</li>
+      <li>Similarly, implement another inheritance hierarchy for the building of a recipient list.  Again, have an abstract base class with one pure virtual function, this one building a recipient list given a message.  Each concrete strategy inherits from the abstract base class, implementing the virtual function in the appropriate way.</li>
+    </ul>
+  </li>
+  <li>There could also be a MessageDispatcher class.  Its job is to route messages to the appropriate person's inbox, given an address.  To do this job, it must be clear what Person object corresponds to each string.  (The reason why you'd want to the map to contain pointers, rather than Person objects, is so that you'd be able to have it point to the actual Persons that are being used throughout the simulation, rather than copies.)</li>
+</ul>
+
+<p>You may use anything in the C++ standard library &mdash; classes and/or functions &mdash; that you'd like.  In the "real world," there's never a reason to re-invent the wheel when a suitable pre-built (and pre-tested!) implementation is already available.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Accepting command-line arguments in a C++ program</p>
+
+<p class="subtitle">Writing your program to accept command-line arguments</p>
+
+<p>As in Java, command-line arguments can be passed to C++ programs.  The typical mechanism for accepting command-line arguments in a C++ program is to declare the main() function so that it accepts two arguments, <b>argc</b> and <b>argv</b>.  argc indicates the number of command-line arguments have been passed, while argv is an array of strings consisting of the actual arguments.  (The reason why both an array and a count are necessary in C++, whereas only the array is necessary in Java, is because C++ arrays, unlike their Java counterparts, do not know their own size.  We'll talk in more detail about single- and multi-dimension arrays later in the quarter.)</p>
+
+<p>The proper declaration for main(), if you'd like it to accept command-line arguments, is this:</p>
+
+<pre>
+    int main(int argc, char** argv)
+    {
+        // ...
+        
+        return 0;
+    }
+</pre>
+
+<p>The declaration of argv seems a little strange (pointer to pointer to char?).  This is actually C++ lingo for an array of C-style character strings, where a C-style string is implemented as a pointer to an array of characters, and an array is implemented as a pointer to its first element.  The details, for now, are not especially important, but suffice it to say that you can treat each element of the argv array as a string.  For example, the following code would print the first command-line argument to the console:</p>
+
+<pre>
+        cout &lt;&lt; argv[1] &lt;&lt; endl;
+</pre>
+
+<p>C-style strings can be implicitly converted to C++ <b>string</b> objects, so you'd also be able to do something like this, if need be:</p>
+
+<pre>
+        string s = argv[1];
+</pre>
+
+<p>The count, argc, will actually be one greater than the number of command-line arguments.  This is because the name of the executable program is itself included as the first element of the argv array.  So, for example, if you execute a program from the command line with the following command:</p>
+
+<pre>
+    MyProgram alex is happy today
+</pre>
+
+<p>Then argc will be 5, and argv will look like this:</p>
+
+<table class="normal">
+  <tr class="top"><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+  <tr><td>C:\CPP\MyProgram\MyProgram.exe</td><td>alex</td><td>is</td><td>happy</td><td>today</td></tr>
+</table>
+
+<p>where argv[0] consists of the entire path to the executable version of your program.</p>
+
+<p class="subtitle">Specifying command-line arguments when executing your program via Visual Studio</p>
+
+<p>When developing your program with Visual Studio, you'll want to execute your program using the <b>Start Without Debugging</b> or <b>Start Debugging</b> menu options (or corresponding keyboard shortcuts), as you have likely been doing all quarter.  When a program takes command-line arguments, you need to tell Visual Studio ahead of time what the command-line arguments should be.  You can specify your program's arguments using the following procedure:</p>
+
+<ul>
+  <li>Right-click on the name of your project in the Solution Explorer.  The project's name is generally shown in boldface text.  (Note that right-clicking on the name of the solution or the name of one of the source files will not do what you want.)</li>
+  <li>From the ensuing popup menu, select <b>Properties</b>.</li>
+  <li>You'll now see a dialog displaying "property pages" for your project.  In the list along the left side of the dialog, select <b>Debugging</b>.</li>
+  <li>On the right, you'll now see a list of parameters that can be used to configure how the program should be executed.  One of those parameters is named <b>Command Arguments</b>.  You can specify your command-line arguments by changing the value of this parameter (which defaults to the empty string).  Note that you do not need to include the name of the program; the arguments you list in this parameter are passed to the program as argv[1], argv[2], etc., with the name of the program automatically becoming argv[0].  If you need to specify a path that contains spaces, you'll need to surround it with double-quotes.</li>
+</ul>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Reading input from a file instead of the console</p>
+
+<p class="subtitle">File input/output in C++</p>
+
+<p>So far this quarter, we've used two <i>streams</i>: <b>cin</b>, which represents console input, and <b>cout</b>, which represents console output.  These streams are part of the <b>iostreams</b> library that is part of the C++ Standard Library.  The iostreams library also supports file I/O, as well as I/O to and from <b>string</b> objects.  Thanks to inheritance and polymorphism, file I/O works very similarly to the console I/O that you're already familiar with; the differences mostly revolve around the fact that files are less reliable &mdash; they may not exist, they have finite length &mdash; and files can be accessed in a non-sequential order.  In this program, however, we're reading an input file with a predefined format, operating under the assumption that the file (if it exists) is properly formatted.  So, we can treat our input file much like the console, except that we have to open it beforehand, close it when we're done, and deal with the fact that it might not exist.</p>
+
+<p>Before you can use file streams, you'll need to include the appropriate header from the C++ Standard Library:</p>
+
+<pre>
+    #include &lt;fstream&gt;
+</pre>
+
+<p class="subtitle">Opening a file for input</p>
+
+<p>An input file can be opened and manipulated using an <b>ifstream</b> object (where the "if" stands for "input file").  The ifstream constructor takes, as its parameter, the name of a file, then tries to open the file.  So, to open the input file, you'll just need to do this:</p>
+
+<pre>
+    ifstream inputFile("filename.txt");
+</pre>
+
+<p>One minor caveat: the constructor expects a C-style string as its parameter, not a C++ <b>string</b> object.  This means it will be safe for you to pass argv[1] as the parameter, since it's a C-style string.  If you want to pass a C++ string to it, you'll first need to convert it to a C-style string, which you can do by calling c_str() on the string, like this:
+
+<pre>
+    string filename;
+
+    // ...
+
+    ifstream inputFile(filename.c_str());
+</pre>
+
+<p>It's possible that opening a file will fail, because the file may not exist, it may be locked by another running program, or the program may not have access to it for security reasons.  Unlike in Java, the ifstream constructor will not throw an exception if it fails to open the file, so you'll need to test the stream afterward to make sure that opening the file was successful.  You can most easily test this by calling the is_open() method on the stream, like this:</p>
+
+<pre>
+    if (!inputFile.is_open())
+    {
+        // deal with the fact that the file could not be opened
+    }
+</pre>
+
+<p class="subtitle">Reading from the file once it's open</p>
+
+<p>Once the file is open, reading from it is just like reading from the console, using either the &gt;&gt; operator or getline().  For example:</p>
+
+<pre>
+    int i;
+    inputFile &gt;&gt; i;
+    
+    string s;
+    getline(inputFile, s);
+</pre>
+
+<p class="subtitle">Closing the file</p>
+
+<p>When you're done reading from the file, it's best to close it.  You can close a file by calling the close() method on the ifstream object, like this:</p>
+
+<pre>
+    inputFile.close();
+</pre>
+
+<p>It should be noted that ifstream's destructor automatically closes the underlying file if it's not closed already, so you can omit the call to close() if the file object dies automatically in an appropriate place.  For example, if you have one function that reads the input file and then returns, with ifstream being a local variable within that function, you will not need to call close().  (One of the advantages of a programming language where you're in control of when objects die &mdash; as opposed to garbage-collected languages where the collector decides &mdash; is that you can associate the releasing of resources with the destruction of the object, yet still be certain of when the resources will be released.  This is part of a broader design strategy, which is called "resource acquisition is initialization," which we'll talk more about later this quarter.)</p>
+
+<p class="subtitle">Where your program will search for files by default if run via Visual Studio</p>
+
+<p>On the Windows operating system, all running programs have a "working directory," which is the directory that will be searched whenever the program attempts to open a file without specifying the complete path to the file.  By default, Visual Studio sets the working directory of your program to the same directory as your source code (.cpp and .h files).  When you write test input files, it would be best to place them into your source code directory, so that your program will be able to find them easily.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">A word about randomness in simulations</p>
+
+<p>In real simulation work, it's a good idea for simulations to generate random behavior according to statistical distributions, rather than having all of the behavior be deterministic.  I've opted to design this simulation to have deterministic behavior, so that it will always be clear exactly what the output of the simulation should be.  This allows you to more easily determine whether your program is working; it also more easily allows me to grade it.  But it should be pointed out that a "real" simulation would include randomness in its behavior.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Testing your simulation</p>
+
+<p>To test your simulation, you'll need to design some input files, work out their expected output on paper, and check your output to see if it matches your expectations.  Because this can be a somewhat arduous task, I encourage you to share your test input and expected output with one another, so everyone can benefit from one another's work.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Finding good reference material online about the standard library</p>
+
+<p>While there is no "default" location where online documentation for the C++ standard library resides, a handful of sites exist that provide some nice documentation.  Among the best is <a href="http://www.cppreference.com/">cppreference.com</a>.  As you find yourself exploring new parts of the library, or wondering whether something exists in the library, this is a great place to start your search.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Starting point</p>
+
+<p>This project has no starting point, as I'd like you to build it from scratch, though I've given a fair amount of design advice along the way.  As always, feel free to ask questions as you have them.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">A word of warning about compatibility</p>
+
+<p>While this course is entirely focused on standard C++, as defined in the C++11 standard, it's important to realize that the C++11 standard was completed relatively recently and, therefore, compiler support for it varies somewhat dramatically from one compiler to another, particularly in terms of what portions of the new library changes are implemented (and, in some cases, how).  Be aware that your submission is required to compile and run on Windows using Visual Studio 2012.</p>
+
+<p>As this project explores the standard library inn more depth, those of you who are doing your work predominantly using a compiler other than Visual Studio 2012's C++ compiler &mdash; because, for example, you're running Linux and don't have the option available &mdash; are well-advised to test your work on Visual Studio 2012 more thoroughly than you may have done in previous projects, as it will be easier than it has been to fall into one of the gaps between what is supported by one compiler and what is supported by another.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Deliverables</p>
+
+<p>Submit all of the source (<b>.cpp</b>) and header (<b>.h</b>) files that comprise your program.  Afterward, take a moment to be sure that you submitted all of the files; if you missed one, we won't be able to compile and run your program, which can result in a substantial penalty, since we won't be able to evaluate your program's correctness.</p>
+
+<p>Follow <a href="../SubmittingProjects.html">this link</a> for a discussion of how to submit your project via Checkmate.  Be aware that I'll be holding you to all of the rules specified in that document, including the one that says that you're responsible for submitting the version of the project that you want graded.  We won't regrade a project simply because you accidentally submitted the wrong version.</p>
+
+</div>
+
+<div class="history">
+
+<hr />
+
+<ul class="nomarker">
+  <li>A handful of modifications and some additional information added by Alex Thornton, Fall 2012.</li>
+  <li>Originally written by Alex Thornton, Summer 2006.</li>
+</ul>
+
+</div>
+
+</body>
+</html>

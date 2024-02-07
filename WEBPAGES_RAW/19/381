@@ -1,0 +1,273 @@
+	B-Trees: An Efficent Structure for Searching Data on External Memory
+
+
+In this lecture we will examine one data structure and algorithm that is useful
+when storing the data needs more space than is available in main memory. We
+will analyze this algorithm with respect to how often it moves blocks of data
+between main and external memory (discussed in the previous lecture). Typically
+the cost of such memory transfers dominates the cost of executing code on the
+block while it is in memory. That is, a transfer between main and external
+memory might take 10 milliseconds, while processing the data in the block might
+take microseconds (a few 1/1000ths of a millisecond) before making another
+memory transfer. A processor executing 10^9 instructions per second can process
+10^7 (10 million) instructions in 10 ms. So, we can virtually ignore the time
+taken to process each block retrieved from memory, counting only the number of
+transfers.
+
+------------------------------------------------------------------------------
+
+Searching with B-Trees:
+
+A B-Tree is special kind of N-ary Search Tree (NST - contrast to BST).
+
+There are many different kinds of B-trees. We characterize each B-tree in terms
+of it ORDER, b: each memory block stores b-1 keys and b pointers to children
+(subtrees). For b = 5 -the example we will use here- we can visualize each node
+in the tree as containing two arrays: the key array (storing the keys aka
+values in the B-tree) and the subtree/children array, storing pointers to
+children nodes, their roots in subtrees. We will use the familiar terminology
+of root, internal node, and leaf to describe these trees.
+
+For example, here is the data for one node in a B-tree of order 5: it has room
+for 4 keys, 5 children.
+
+            0   1   2   3
+          +---+---+---+---+
+key       |   |   |   |   |
+          +---+---+---+---+
+          0   1   2   3   4
+        +---+---+---+---+---+
+subtree |   |   |   |   |   |
+        +---+---+---+---+---+
+
+By the order property (see it below)
+all values in subtree[0] are less than key[0]
+all values in subtree[1] are greater than key[0] and less than key[1],
+all values in subtree[2] are greater than key[1] and less than key[2],
+all values in subtree[3] are greater than key[2] and less than key[3],
+all values in subtree[4] are greater than key[3]
+
+B-Trees have other properties (listed below): for example, their arrays don't
+have to be filled, but all nodes except the root must be at least half filled
+with respect to the number of child pointers they store (see the structure
+property below).
+
+Ultimately, b will be a large value, such that storing the arrays in the node
+will take up the size of a large block easily readable from external storage 
+(typically containing thousands of keys/subtree pointers). So, if it were
+convenient to transfer blocks of 1,000 words of memory, we would choose b to
+be 500, having 499 (b-1) keys and 500 (b) subtrees/children. It is not 
+unreasonable to transfer blocks of 10K or even 100K or 1M words, because the
+latency and bandwidth properties of external storage allow that much information
+to be transferred quickly.
+
+In the examples below, we will choose b to be 5. This b is big enough to be
+interesting (and different than a Binary Search Tree) but small enough to cause
+lots of node merges and splits when doing insertions and deletions: if b were
+500, we would have to insert 500 values before we required a second block of
+memory to be used.
+
+We will now characterize the order and structure properties of B-trees
+
+Order Property
+  1) The keys in a node are sorted left to right, key[i]<key[i+1]
+      (for simplicity, assume unique values).
+  2) A subtree between key[i] and key[i+1] (see the picture above) contains
+      values x such that key[i]<x<key[i+1]. For a leftmost subtree, it contains
+      values x only such that x < key[0]; for a rightmost subtree k it contains
+      values x such that x > key[k-1]
+
+Structure Propery of B-trees of order b (5)
+  1) All leaves are at the same depth and store their information as keys only
+     (all the subtree pointers for leaves, of course, store nullptr, so this
+      space gets wasted)
+  2) Every non-leaf node with k keys contains k+1 children
+     (leaf nodes contain, by definition, no children)
+  3) Every node has at most b-1 keys (5-1=4)
+  4) Every node except the root has >= b/2 (5/2 = 2) keys (it is at least 1/2
+       full with respect to children pointers)
+  5) The root may be empty and it may also be a leaf
+
+Below is the psuedocode for searching for, inserting, and removing values in a
+B-tree. Aside: I expect you to know (i.e., memorize) how to search and insert,
+but not delete (which is a bit too complicated).
+
+------------------------------
+
+Searching for x in a node (start searching at the root):
+
+Overview: Recall that all leaves are at the same depth (call it d). At most we
+will look at d+1 nodes, each requiring tranfering one block of memory from the
+external device to the main memory. Recall, the depth of the root is 0.
+
+  If there is no root node, x is not in the tree
+  If there is a root node
+    Using the order property, do a "binary" search on the keys in the node
+    (actually a (b)-ary search since each node has up to b children)
+      a) if there is an i such that keys[i] = x, x is in the tree at this node
+      b) otherwise, if x < key[0] search subtree with index 0
+                    if keys[i] < x < keys[i+1] search the subtree at index i+1
+                    if x > the last key[k] search the subtree with index k+1
+
+*Note that we do a "binary" search on each B-Node block, which take a trivial
+amount of time compared to bringing the block into memory. For a block of size
+1000 (499 keys + 500 children pointers), it takes only 100s of instructions.
+
+------------------------------
+
+Insertion of x (assuming it is not already in the tree; for simplicity assume
+unique values, as in sets and maps):
+
+Overview: x will be added as a key/value in some leaf; if that leaf is already
+full, it will split into two nodes, with one key/value propagating upward to
+its parent. If the parent is full, it will split, .... Eventually a parent will
+not be filled and accommodate the key, or a new root will be created,
+increasing the height of the tree (and the depth of all the leaves) by 1. So
+unlike BSTs (which grow from their leaves downward), B-Trees grow from their
+roots upward.
+
+  Search the tree to find in which LEAF x belongs
+
+  If there is room in that leaf, put x in the key array at the correct index
+    adjusting the children pointers as necessary
+  If there is NO room for the key/value in the leaf (the node's keys are full)
+    Find the median value among the values in the leaf, including the new value
+    Using the median as the separator value, split the leaf into two new nodes
+      (one with all values<median, one with all values>median)
+    Insert the median in the parent's node adjusting the children (now 1 more)
+      as necessary; if there is no room for the key/value in the parent
+      split it using these same instructions
+
+  It is possible, if this process goes back to a full root node, that the
+  root node will itself need to split into two children of a newly created
+  root, which will have just one value (allowed at the root by the structure
+  property). So, unlike BSTs, B-trees grow at the root, not the leaves. This 
+  ensures the property that all the leaves are at the same depth.
+
+Note that because the median is inserted in the parent, the two children will
+be well balanced, each containing half the values in the original leaf node
+that was split (no matter what order they were inserted). Also, each split node
+will be only 1/2 full, so it will have room to add more keys later, without
+having to split immediately.
+
+------------------------------
+
+Deletion for x:
+
+Overview 1: Deletion in a B-Tree is similar to deletion in a BST. Either the
+value being deleted is in a leaf or it is in an internal node. If it is in a
+leaf, it is deleted there (see Overview 2); if it is in an internal node, we
+replace its value by the largest value smaller than x or the smallest value
+bigger than x (that value will always be in a leaf) and delete this replacing
+value from its leaf (see Overview 2).
+
+Overview 2: To delete a value from a leaf we remove it; if it has enough keys/
+values (remember the structure propoerty, part 4) we are done. If the leaf has
+too few keys/values we try to borrow one from any of its adjacent siblings; if
+we can (so the leaf and its sibling have the required minimum keys/values), we
+are done. If not we REBALANCE the leaf with one of its adjacent siblings and a
+value from its parent, possibly leading to more REBALANCE operations between the
+parent, its adjacent siblings, and its parent....ultimately possibly removing
+the root node and decreasing the height of the tree.
+
+  Search the tree to find in which node x is present.
+  If it is not present, "there is nothing left to do" (TINLTD)
+
+  If the node containing x is is a LEAF
+    remove x  from the keys/values
+    if the node that contained x is also the root, or
+       the # of keys/values is still >= b/2: TINLTD
+
+    if the # of keys/values is now < b/2 and the node is not the root, we say
+      the node with  x removed "deficient" (it doesn't have >= b/2 values);
+      perform the code labeled "REBALANCE" below, which will restore a
+      deficient node but possible make its parent deficient (if so, requiring
+      REBLANCE to be called on it), possibly processing nodes all the way
+      up to the root.
+
+  If the node containing x is an INTERNAL NODE (not a leaf)
+    replace x by an "extremal" value (largest value in the left subtree or
+      smallest value in the right subtree) and then remove that value (which
+      is in a LEAF by the rules above).
+
+
+REBALANCE: A deficient node (DN) has < b/2 values
+
+Below is the "rebalance" code when deleting x from a node that becomes
+deficient. This code may terminate, or bring the deficiency from child to
+parent, where it is executed again. Note that it is ok for a root to be
+deficient: we don't have to REBALANCE it.
+
+Let DN be the deficient node (originaly, the one from which x was removed).
+Choose one of the 3 possibilities below: Note 1 and 2 are symmetric for
+right/left siblings (if both are true, choose to do either one)
+
+1) If DN's right sibling has > b/2 (5/2 = 2) values
+     (in this case, it won't be deficient after removing one of its keys/value)
+     add the parent's separator of these siblings to the DN at the end
+      (remove it from the parent; the DN is now not deficient)
+     update the parent's separator to be the first element in the right sibling
+       (remove it from the right sibling)
+
+2) If DN's left sibling has > b/2 (5/2 = 2) values
+     (in this case, it won't be deficient after removing one of its keys/value)
+     add the parent's separator of these siblings to the DN at the beginning
+      (remove it from the parent; the DN is now not deficient)
+     update the parent's separator to be the last element in the left sibling
+       (remove it from the left sibling)
+
+3) If DN's left and right siblings are both <= b/2 values (5/2 = 2)
+   create a new node with DN's values, the values of one sibling, and the
+     separator in the parent of DN and that sibling; the DN is now not deficient
+   remove the separator from parent, if the parent is deficient (but not root)
+     repeat this rebalancing
+
+
+Analysis:
+
+Recall that we are choosing a B-tree of order b. Such a tree, in the best case,
+will have b-1 keys/values at the root; it will have b(b-1) keys/values at depth
+1, ... it will have b^d(b-1) at depth d. In the best case, the height
+of an N value tree will be about Log(base b) N (with each node filled with
+keys/ values). In the worst case we will have b/2 values at all depths but the
+root, so the height will be at worst about Log(base b/2) N.
+
+The idea is to choose b to be as big as possible (the biggest possible base
+for the logarithm) so that as many the keys and subtree pointers as possible
+fit into one block of memory that can be easily transferred between main and
+external memory. Recall that getting/putting information from/to external
+memory takes about the same amount of time no matter even if a large amount of
+information is transferred, so let's transfer a lot each time. We make b so big
+that it stores hundreds or thousands of keys and subtree pointers in each
+memory block. Note that for complexity class analysis, all log bases are the
+equivalent, but we know that Log(base 2) N is going to be bigger than
+Log(base 1,000) N: by a factor of about 10. So it would require doing 1/10th
+the number of block transfers.
+
+For all the B-tree operations, we must get the block for the root (we might as
+well pre-fetch/cache this permanently in main memory), then get the block for
+each subtree node we visit on the path to each key/value we are searching for,
+inserting, or deleting.  In the worst case we must search all the way down to
+a leaf node, doing one block transfer for each depth in the tree; for insertion
+and deletion, in the worst case we must revisit every node back on the path to
+the root (and possibly its siblings), and change information in these nodes and 
+write them back to external memory. So the total number of block transwers will
+typically be bounded by the depth times some small constant.
+
+For example, if we are doing an insert, we must
+
+  1) transfer each block into main memory going down the tree to a leaf
+  2) update the "leaf" block with the new value and transfer it back to
+       external memory
+  3) transfer each "parent" block into main memory when going back up the tree
+       (when promoting a value from child to parent)
+  4) update each "parent block" and transfer it back to external memory.
+
+Note, we are likely able to cache each block that is transfered on the way down,
+so step 3 is not necessary, but if we update each "parent" block, step 4 is
+still necessary.
+
+Finally, there are pictures that are available online with this lecture that
+illustrates examples that I will do on the board in class, for inserting and
+removing nodes from a B-tree of order 5: so every node (but the root) will
+store between 2-4 values (and 3-5 pointers to subtrees).

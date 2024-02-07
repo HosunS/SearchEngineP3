@@ -1,0 +1,25 @@
+// **** Bit Count **** //
+//The bit counting algorithm was adapted from the GBoost software. Details can be found from
+//Wan et al. 2010 AJHG 87(3): p. 325-340.
+
+typedef unsigned long long uint64;
+
+int bitCount(uint64 i)
+{
+	i = i - ((i >> 1) & 0x5555555555555555);
+	i = (i & 0x3333333333333333) + ((i >> 2) & 0x3333333333333333);
+	i = (i + (i >> 4)) & 0x0f0f0f0f0f0f0f0f;
+	i = i + (i >> 8);
+	i = i + (i >> 16);
+	i = i + (i >> 32);
+	return (int)i & 0x7f;
+}
+
+static unsigned char wordbits[65536];// { bitcounts of ints between 0 and 65535 };
+
+// compute number of 1s in 64 bit string
+static int popcount( uint64 i )
+{
+	return( wordbits[i&0xFFFF] + wordbits[(i>>16)&0xFFFF] + wordbits[(i>>32)&0xFFFF] + wordbits[i>>48]);
+}
+

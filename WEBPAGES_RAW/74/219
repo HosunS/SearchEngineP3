@@ -1,0 +1,135 @@
+<!-- received="Tue Jun 11 18:02:10 1996 PDT" -->
+<!-- sent="Tue, 11 Jun 1996 18:02:16 -0700" -->
+<!-- name="Jim Whitehead" -->
+<!-- email="ejw@ics.uci.edu" -->
+<!-- subject="Name space munging ... blech!" -->
+<!-- id="ade3be500c0210047411@[128.195.21.209]" -->
+<!-- inreplyto="" -->
+<title>Archive of Working Group on Versioning and Configuration Management of World Wide Web Content: Name space munging ... blech!</title>
+<h1>Name space munging ... blech!</h1>
+<b>Jim Whitehead</b> (<a href="mailto:ejw@ics.uci.edu"><i>ejw@ics.uci.edu</i></a>)<br>
+<i>Tue, 11 Jun 1996 18:02:16 -0700</i>
+<p>
+<ul>
+<li> <b>Messages sorted by:</b> <a href="index.html#83">[ date ]</a><a href="thread.html#83">[ thread ]</a><a href="subject.html#83">[ subject ]</a><a href="author.html#83">[ author ]</a>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0084.html">Larry Masinter: "Re: Re2: what's doable in Web version control"</a>
+<li> <b>Previous message:</b> <a href="0082.html">Fabio Vitali: "Re: Version identifier in URL"</a>
+<!-- nextthread="start" -->
+<li> <b>Next in thread:</b> <a href="0085.html">Larry Masinter: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0085.html">Larry Masinter: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0086.html">Christopher Seiwald: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0087.html">Jim Whitehead: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0088.html">Jim Whitehead: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0089.html">Christopher Seiwald: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0090.html">Christopher Seiwald: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0091.html">Jim Whitehead: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0092.html">Christopher Seiwald: "Re: Name space munging ... blech!"</a>
+<!-- reply="end" -->
+</ul>
+<hr>
+<!-- body="start" -->
+<pre>
+Late last Friday night, Fabio Vitali, after giving an excellent overview of
+all proposals for describing the particular version of a resource within a
+URL, then started defending name space munging:
+
+&gt;On the other hand,
+&gt;        <a href="http://host/dir/projectX/1.5/Macintosh/French/file.c">http://host/dir/projectX/1.5/Macintosh/French/file.c</a>
+&gt;        <a href="http://host/dir/projectX/file.c/1.5/Macintosh/French">http://host/dir/projectX/file.c/1.5/Macintosh/French</a>
+&gt;        <a href="http://host/dir/projectX/French/Macintosh/1.5/file.c">http://host/dir/projectX/French/Macintosh/1.5/file.c</a>
+&gt;        <a href="http://host/dir/projectX/French/Macintosh/1.5/file.c/george">http://host/dir/projectX/French/Macintosh/1.5/file.c/george</a>
+&gt;        <a href="http://host/dir/projectX/French/Macintosh/1.5.file.c/draft/2.1">http://host/dir/projectX/French/Macintosh/1.5.file.c/draft/2.1</a>
+&gt;
+&gt;are all non ambiguous and may well refer to exactly the same resource. Hey,
+&gt;I think it is even possible to simply use the file system for them!
+
+Adding specific semantics to the name space is a bad idea, for the
+following reasons.
+
+1) Legacy problem: Existing sites containing hundreds of thousands of pages
+(the current size of many large corporation intranets) will be completely
+unwilling to change their existing name space to gain the advantages of
+versioning.  This is because they would be required to rewrite the
+destination URL of all anchors to versioned documents:
+
+For example,
+
+&lt;A HREF="<a href="http://foo.bar.com/top/middle/doc.html">http://foo.bar.com/top/middle/doc.html</a>"&gt;
+
+would need to be changed to:
+
+&lt;A HREF="<a href="http://foo.bar.com/top/middle/1.5/doc.html">http://foo.bar.com/top/middle/1.5/doc.html</a>"&gt;
+
+In thousands of documents.  This then provides a powerful disincentive for
+the adoption of our versioning technology by the groups who would most
+benefit.
+
+In contrast, the ";version={version id}" or "?version={version id}" schemes
+do not modify the name space and hence would not require modification of
+existing documents.
+
+2)  Competing name space semantics: What gives us the right to partition
+the name space for HTTP servers which employ versioning?  How can we
+guarantee that our partitioning of the name space will not contain
+collisions with other name space partitionings required by other
+technologies, present or future?  We cannot.  In fact, this particular
+partitioning of the name space already collides with existing naming
+practice of many public domain Unix tools, and for this reason alone
+concerns me.
+
+This was also discussed by David Fiander in a previous post:
+
+&gt;Unfortunately, neither option addresses the practical concern
+&gt;that the server has to have some way of determining
+&gt;&lt;strong&gt;when&lt;/&gt; a URL contains a version. I mean, the path
+&gt;
+&gt;       <a href="http://host/foo/1.5/bar.html">http://host/foo/1.5/bar.html</a>
+&gt;
+&gt;could easily reference a page discussing the history of the "bar"
+&gt;facility in Lisp 1.5.
+
+3) It is impossible for a HTTP user-agent, or for a human being, to
+determine whether a directory named "1.5" is an actual physical directory,
+or a version number, without querying the HTTP server.  It is extremely
+useful for a user to know just by looking at a URL whether a resource is a
+particular version.  Allowing arbitrary opaque identifiers (one area on
+which we do have consensus) for version names makes matters even more
+confusing: in &lt;<a href="http://foo.bar.com/src/alpha/foo.c.html">http://foo.bar.com/src/alpha/foo.c.html</a>&gt; is "alpha" a
+version name for the "alpha" release of the code, or is it the name of the
+directory containing code for the DEC Alpha?
+
+4) The main benefit of placing version identifiers into the name space,
+"surfing" into the past via relative URLs, does not work.  One scenario
+outlines this:
+
+<a href="http://foo.bar.com/1.5/A.html">http://foo.bar.com/1.5/A.html</a>  (where 1.5 is the version id) contains a
+relative URL of GIF "../background.gif."  In this case, version 1.5 of
+background.gif would also be retrieved.  However, experience to date with
+versioning systems shows that all objects are not versioned at the same
+rate.  Thus it is much more likely that version "1.1" (or some other
+arbitrary version of the GIF) is what really needed to be retrieved.  OK,
+so the relative URL could be changed to "../../1.1/background.gif", but
+then what has been gained over <a href="http://foo.bar.com/1.1/background.gif?">http://foo.bar.com/1.1/background.gif?</a>
+
+- Jim Whitehead &lt;<a href="mailto:ejw@ics.uci.edu">ejw@ics.uci.edu</a>&gt;
+</pre>
+<!-- body="end" -->
+<hr>
+<p>
+<ul>
+<!-- next="start" -->
+<li> <b>Next message:</b> <a href="0084.html">Larry Masinter: "Re: Re2: what's doable in Web version control"</a>
+<li> <b>Previous message:</b> <a href="0082.html">Fabio Vitali: "Re: Version identifier in URL"</a>
+<!-- nextthread="start" -->
+<li> <b>Next in thread:</b> <a href="0085.html">Larry Masinter: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0085.html">Larry Masinter: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0086.html">Christopher Seiwald: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0087.html">Jim Whitehead: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0088.html">Jim Whitehead: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0089.html">Christopher Seiwald: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0090.html">Christopher Seiwald: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0091.html">Jim Whitehead: "Re: Name space munging ... blech!"</a>
+<li> <b>Maybe reply:</b> <a href="0092.html">Christopher Seiwald: "Re: Name space munging ... blech!"</a>
+<!-- reply="end" -->
+</ul>

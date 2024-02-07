@@ -1,0 +1,218 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<!-- Page automatically generated from latex_to_html converter. -->
+<!-- by cc_extract_html, $Revision: 3.19 $ -->
+<!-- LaTeX source file: './Point_set_2/main.tex' -->
+<html> <head>  
+<title>2D Search Structures</title>
+</head>  
+<link href="../latex_to_html.css" rel="STYLESHEET">
+<body bgcolor="white">
+<!-- ------------------------------------------------------------------- -->
+
+
+<!-- Top Navigation ---------------------------------------------------- -->
+<div class="NavTop">
+<hr>
+  <strong>Navigation:</strong>
+<a href="Chapter_main.html">Up</a>, 
+  <a href="../contents.html">Table of Contents</A>,
+  <a href="../biblio.html">Bibliography</a>,
+  <a href="../manual_index.html">Index</a>,
+  <a href="../title.html">Title Page</a>
+<hr><!-- End of Top Navigation ----------------------------------------- -->
+</div>
+
+<a name="Chapter_53"></a>
+  
+<h1>Chapter 53<BR>2D Search Structures</h1>
+
+<A NAME="chapterPoint_set_2"></A>
+<EM>Matthias B&auml;sken</EM><BR>
+
+
+<P>
+
+<a name="Section_1"></a>
+        
+<h2>53.1&nbsp;&nbsp;&nbsp;Introduction</h2>
+<P>
+
+Geometric queries are fundamental to many applications in computational
+geometry. The task is to maintain a dynamic set of geometric objects
+in such a way that certain queries can be performed efficiently.
+Typical examples of queries are:
+find out whether a given object is contained in the set,
+find all objects of the set lying in a given <A HREF="../Kernel_23_ref/Function_area.html#Cross_link_anchor_159">area</A> (e.g. rectangle),
+find the object closest to a given point or
+find the pair of objects in the set lying closest to each other. 
+Furthermore, the set should be dynamic in the sense that deletions and 
+insertions of objects can be performed efficiently.
+<P>
+
+In computational geometry literature one can find many different data structures for
+maintaining sets of geometric objects. Most of them are data structures 
+that have been developed to support a single very special kind of query 
+operation.
+Examples are Voronoi diagrams for answering nearest neighbor
+searches, range trees for orthogonal range queries, partition trees
+for more general range queries, hierarchical triangulations for point
+location and segment trees for <A HREF="../Kernel_23_ref/Function_intersection.html#Cross_link_anchor_221">intersection</A> queries ....
+<P>
+
+In many applications, different types of queries have to be
+performed on the same set of objects. A naive approach to this
+problem would use a collection of the above mentioned data structures to
+represent the set of objects and delegate every query operation to
+the corresponding structure.
+However, this is completely impractical since it uses too much
+memory and requires the maintenance of all these data structures in the presence of
+update operations.
+<P>
+
+Data structures that are non-optimal in theory seem to perform quite well in
+practice for many of these queries.
+For example, the Delaunay diagram turns out to be a very powerful
+data structure for storing dynamic sets of points under range and nearest
+neighbor queries. A first implementation and computational
+study of using Delaunay diagrams for geometric queries is described by
+Mehlhorn and N&auml;her in &nbsp;[<A HREF="../biblio.html#Biblio_mn-lpcgc-00">MN00</A>].
+<P>
+
+In this section we present a generic variant of a two dimensional point set
+data type supporting various geometric queries.
+<P>
+
+The <I><A HREF="../Point_set_2_ref/Class_Point_set_2.html#Cross_link_anchor_1217">CGAL::Point_set_2</A></I> class in this section is inherited
+from the two-dimensional CGAL <I>Delaunay Triangulation</I> data type.
+<P>
+
+The <I><A HREF="../Point_set_2_ref/Class_Point_set_2.html#Cross_link_anchor_1217">CGAL::Point_set_2</A></I> class depends on two template parameters T1 and T2.
+They are used as template parameters for the <I><A HREF="../Triangulation_2_ref/Class_Delaunay_triangulation_2.html#Cross_link_anchor_919">CGAL::Delaunay_triangulation_2</A></I>
+class <I><A HREF="../Point_set_2_ref/Class_Point_set_2.html#Cross_link_anchor_1217">CGAL::Point_set_2</A></I> is inherited from. T1 is a model for the
+geometric traits and T2 is a model for the triangulation data structure that the Delaunay triangulation
+expects.
+<P>
+
+The <I><A HREF="../Point_set_2_ref/Class_Point_set_2.html#Cross_link_anchor_1217">CGAL::Point_set_2</A></I> class supports the following kinds of queries:
+<UL>
+<LI>circular range search
+<LI>triangular range search
+<LI>isorectangular range search
+<LI>(k) nearest neighbor(s)
+</UL>
+For details about the running times see &nbsp;[<A HREF="../biblio.html#Biblio_mn-lpcgc-00">MN00</A>].
+<P>
+
+<a name="Section_2"></a>
+        
+<h2>53.2&nbsp;&nbsp;&nbsp;Examples</h2>
+<P>
+
+<h3>53.2.1&nbsp;&nbsp;&nbsp;Range search operations</h3>
+<P>
+
+The following example program demonstrates the various range search operations
+of the two dimensional point set.
+First we construct a two dimensional point set <MATH><I>PSet</I></MATH> and initialize it with a few points.
+Then we perform circular, triangular and isorectangular range search operations on the
+point set.
+<P>
+
+<!-- REMOVE_LINKS_BEGIN -->
+<P>
+
+<B>rs_example.C :</B>
+<P>
+
+<pre class="ExampleCode">// file: examples/Point_set_2/rs_example.C
+
+#include &lt;CGAL/Cartesian.h&gt;
+#include &lt;list&gt;
+#include &lt;CGAL/Point_set_2.h&gt;
+
+typedef CGAL::Cartesian&lt;double&gt;     K;
+
+typedef CGAL::Point_set_2&lt;K&gt;::Vertex_handle  Vertex_handle;
+typedef CGAL::Point_2&lt;K&gt;                         Point;
+
+int main()
+{
+  CGAL::Point_set_2&lt;K&gt; PSet;
+  std::list&lt;Point&gt; Lr;
+  
+  Point p1(12,14);
+  Point p2(-12,14);  
+  Point p3(2,11);
+  Point p4(5,6);
+  Point p5(6.7,3.8);
+  Point p6(11,20);
+  Point p7(-5,6);  
+  Point p8(12,0);
+  Point p9(4,31);
+  Point p10(-10,-10); 
+ 
+  Lr.push_back(p1); Lr.push_back(p2); Lr.push_back(p3);
+  Lr.push_back(p4); Lr.push_back(p5); Lr.push_back(p6);
+  Lr.push_back(p7); Lr.push_back(p8); Lr.push_back(p9);
+  Lr.push_back(p10); 
+
+  PSet.insert(Lr.begin(),Lr.end()); 
+
+  std::cout &lt;&lt; &quot;circular range search !\n&quot;;  
+  CGAL::Circle_2&lt;K&gt; rc(p5,p6);
+
+  std::list&lt;Vertex_handle&gt; LV;
+  PSet.range_search(rc, std::back_inserter(LV));
+
+  std::list&lt;Vertex_handle&gt;::const_iterator it;
+  for (it=LV.begin();it != LV.end(); it++)
+     std::cout &lt;&lt; (*it)-&gt;point() &lt;&lt; &quot;\n&quot;;      
+ 
+  std::cout &lt;&lt; &quot;triangular range search !\n&quot;;    
+  
+  LV.clear();
+  PSet.range_search(p1,p2,p3, std::back_inserter(LV));
+  for (it=LV.begin();it != LV.end(); it++)
+     std::cout &lt;&lt; (*it)-&gt;point() &lt;&lt; &quot;\n&quot;;    
+  LV.clear();
+ 
+  std::cout &lt;&lt; &quot;isorectangular range search !\n&quot;;
+  Point pt1=p10; 
+  Point pt3=p3; 
+  Point pt2 = Point(pt3.x(),pt1.y());
+  Point pt4 = Point(pt1.x(),pt3.y());
+  
+  PSet.range_search(pt1,pt2,pt3,pt4, std::back_inserter(LV));
+  for (it=LV.begin();it != LV.end(); it++)
+    std::cout &lt;&lt; (*it)-&gt;point() &lt;&lt; &quot;\n&quot;; 
+  return 0;
+}
+</pre>
+<P>
+
+<!-- REMOVE_LINKS_END -->
+<P>
+
+<div class="NavNext"><hr> Next chapter: <a href="../Point_set_2_ref/Chapter_intro.html">2D Search Structures</a> 
+
+
+    
+<div class="NavBottom">
+<hr><!-- Bottom Navigation --------------------------------------------- -->
+  <strong>Navigation:</strong>
+<!Up_chapter_link_53!>
+  <a href="../contents.html">Table of Contents</A>,
+  <a href="../biblio.html">Bibliography</a>,
+  <a href="../manual_index.html">Index</a>,
+  <a href="../title.html">Title Page</a>
+<!-- End of Bottom Navigation ------------------------------------------ -->
+
+
+<hr><!-- --------------------------------------------------------------- -->
+<div class="NavAddress">
+
+The <A HREF=http://www.cgal.org>CGAL Project</A> .
+
+Tue, December 21, 2004 .
+<hr></div>
+</body>  </html>  

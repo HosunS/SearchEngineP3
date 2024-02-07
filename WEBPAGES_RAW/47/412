@@ -1,0 +1,332 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="GENERATOR" CONTENT="Globetrotter 1.1.1" />
+<META HTTP-EQUIV="AUTHOR" CONTENT="David G. Kay" />
+<META HTTP-EQUIV="UPDATED" CONTENT="Thursday, November 17, 2005 5:48 PM" />
+<TITLE>Lab Assignment 9</TITLE>
+<META HTTP-EQUIV="X-GLOBETROTTERDATA" CONTENT="D210014B" />
+<META HTTP-EQUIV=KEYWORDS CONTENT="CS 1, CS1, assignment, Scheme" />
+<META HTTP-EQUIV="DESCRIPTION" CONTENT="An assignment for ICS H21, an honors first-quarter course in computer science in Information and Computer Science, UC Irvine, using How to Design Programs by Matthias Felleisen et al." />
+<META HTTP-EQUIV="COPYRIGHT" CONTENT="Copyright &#169; 2001-2004 by David G. Kay.  All rights reserved." />
+<link href="/~kay/courses/h21/code.css" rel="stylesheet" type="text/css" />
+<style type="text/css">
+<!--
+.style2 {font-family: Garamond}
+-->
+</style>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+<P><font size="2" face="Garamond">ICS H21 &bull; UC IRVINE &bull; DAVID G. KAY &bull; FALL 2009</font></P>
+<P><FONT FACE="Garamond" SIZE=6><B>Lab Assignment 9</B></FONT></P>
+<P class="style2"><FONT FACE="Garamond">This assignment is due at the end of lab on
+  Friday, December 4.  </FONT></P>
+<P>
+  <span class="style2"><FONT FACE="Garamond">Choose a partner for this assignment, someone
+you haven&#39;t worked with already.</FONT></span></P>
+<P class="style2"><B><B>(a)</B> </B><FONT FACE="Garamond" SIZE=4>Do exercises 35.2.2, 35.2.3, and
+35.4.1. Then do exercises 37.5.1, 37.5.2, and 37.5.3.</FONT></P>
+<P> <FONT FACE="Garamond" SIZE=4>Submit your definitions via Checkmate.</FONT></P>
+<P class="style2"><strong>(b) </strong><FONT FACE="Garamond" size=4>Professor Andrea Anteater wants you to design
+  a grade management system for her students in Applied Epistemology 101.
+  This system will read and write students&#39; scores from a file and allow
+  the user to produce statistics and histograms (frequency graphs) of the
+scores.</FONT></P>
+<P> <FONT FACE="Garamond" size=4>Your task this week is to create this program
+  from scratch.  It&#39;s not really from scratch, though:  We provide a set
+  of specifications for you to implement and you can use all of the example
+  programs we&#39;ve seen all quarter.  Hardly any programming today is totally
+  from scratch; we have application frameworks (skeleton programs with all
+  the infrastructure supplied), we have function libraries that provide commonly
+  useful tasks, we have object libraries and class hierarchies that we can
+  adopt and adapt to our own purposes.</FONT></P>
+<P> <FONT FACE="Garamond" size=4>To help you along, here are five pieces of
+  development advice:</FONT></P>
+<ul>
+  <li> <FONT FACE="Garamond" size=4>Read the specifications carefully, more
+    than once.  Technical documents must be milked for all the detailed information
+    they contain; you can&#39;t just read them one time quickly, like a mystery
+    novel.</FONT></li>
+  <li> <FONT FACE="Garamond" size=4>Follow the model-view-controller organization;
+    have a separate top-level &quot;front end&quot; part of your program (the view and controller part) that handles interaction
+    with the user and a &quot;back end&quot; part (the model) that implements the operations
+    on the different classes of data.</FONT></li>
+  <li> <FONT FACE="Garamond" size=4>As you build the &quot;model&quot; part
+    of the program, follow the design recipes, especially for creating examples
+    and tests in advance.</FONT></li>
+  <li><font face="Garamond" size=4>How do you know if you have enough tests, or the right tests? One simple measure of test effectiveness is called &quot;code coverage&quot;&mdash;your tests should, at the very least, evaluate each expression in the code. DrScheme helps you with this: After running your program, if you haven't tested every expression, some of the code appears highlighted in black. The highlighted code hasn't been evaluated, so you should add  tests to exercises those parts of the program.</font></li>
+  <li> <FONT FACE="Garamond" size=4>Implement one small feature at a time, test
+    it thoroughly, and then save a copy of your program so far.  That way, if
+    your next phase of development runs into trouble, you can &quot;roll back&quot;
+    to the previous version and start over.</FONT></li>
+</ul>
+<P> <FONT FACE="Garamond" size=4>You&#39;ll be using Advanced Student Scheme
+  for this program, with the </FONT><FONT FACE="Courier New" SIZE=2><A HREF="http://www.ics.uci.edu/~kay/scheme/advanced-file-io.ss">advanced-file-io.ss</A> </FONT><FONT FACE="Garamond" size=4>teachpack. (Download the file; don't just copy and paste the code.)</FONT></P>
+<P><FONT FACE="Garamond" size=4><B>(b.1)</B> Your program</FONT><FONT FACE="Garamond" size=4> will handle these
+  classes of data: </FONT></P>
+<UL>
+  <LI> <FONT FACE="Garamond" size=4>Assignments, each represented by a name, a
+    weight in computing the course grade [the weights of all assignments should
+    sum to 100, though we&#39;re not requiring you to check this], and a number
+    of points possible [which is independent of the weight; a three-point assignment
+    could be worth 50% of the course grade].  (&quot;Graded item&quot; would
+    be a better term, since it includes things like exams and projects.  But
+    we&#39;ll use &quot;assignment&quot; just because it&#39;s shorter.)</FONT></LI>
+  <BR />
+  <LI> <FONT FACE="Garamond" size=4>A collection of assignment descriptions that
+    together describe the graded items in the course</FONT><BR />
+    <BR />
+  </LI>
+  <LI> <FONT FACE="Garamond" size=4>Students, each represented by a name, an ID
+    number, and a vector of scores (which should be the same size as the collection
+    of assignments, one score for this student on each assignment)</FONT></LI>
+  <BR />
+  <LI> <FONT FACE="Garamond" size=4>A collection of students</FONT></LI>
+</UL>
+<P> <FONT FACE="Garamond" size=4>To start out, make sure you understand these
+  data structures:  Make up some examples; draw a picture; get comfortable
+  with how they&#39;re organized.  Then you&#39;ll want to define functions
+  that create objects in each of these classes (these can be quite simple)
+  and that display those objects. <a href="javascript:void(0)" onClick="MM_openBrWindow('http://www.ics.uci.edu/~kay/courses/i41/OOPterms.html','Terminology','width=500,height=900')">[Note on terminology]</a></FONT></P>
+<P> <FONT FACE="Garamond" size=4><B>(b.2)</B> When your program starts, it will
+  read the collection of assignments from a plain text file called </FONT><FONT FACE="Courier New" SIZE=2>Assignments.txt</FONT><FONT FACE="Garamond" size=4>.
+    (If you place your program file and these data files in the same directory/folder,
+    DrScheme will find them without your having to do anything fancy.)  Then
+    it will read the collection of students from a text file called </FONT><FONT FACE="Courier New" SIZE=2>Students.txt</FONT><FONT FACE="Garamond" size=4>.
+      Since the user can create these files without knowing any Scheme, your
+      program won&#39;t have to handle changes to the data (although that&#39;s
+      an enhancement we discuss below).</FONT></P>
+<P> <FONT FACE="Garamond" size=4>The user can create these files using a plain
+  ASCII text editor like NotePad (or from Word by using Save As and the Text
+  Only format, which saves plain ASCII without the additional Word formatting
+  information that your program can&#39;t read). </FONT></P>
+<P> <FONT FACE="Garamond" size=4>For a course with a 75-point midterm worth
+  40% of the grade and a 100-point final worth 60%, the assignments file would
+  look like this:</FONT></P>
+<P><code>2 <br />
+  Midterm Exam<br />
+  40 75<br />
+  Final Exam<br />
+  60 100</code></P>
+<P> <FONT FACE="Garamond" size=4>The first line contains the number of assignments.
+  Then each assignment has two lines, the first containing the assignment&#39;s
+  name and the second containing two numbers, the weight followed by the possible
+  points.</FONT></P>
+<P> <FONT FACE="Garamond" size=4>A file of students for this course would look
+  like this:</FONT></P>
+<P><code>2<br />
+  Aardvark, Aaron<br />
+  11223344<br />
+  68 85<br />
+  Tapir, Tamara<br />
+  44332211<br />
+  74 92</code></P>
+<P> <FONT FACE="Garamond" size=4>The first line contains the number of students.
+  Then each student has three lines, the first containing the student&#39;s
+  name, the second containing the student&#39;s ID, and the third containing
+  the student&#39;s scores on each assignment, in order.</FONT></P>
+<P> <FONT FACE="Garamond" size=4>As you read these files, remember that the </FONT><FONT FACE="Courier New" SIZE=2>read-line</FONT><FONT FACE="Garamond" size=4> function reads an entire line of input and returns a string (this is useful
+  for reading strings that may contain blanks, without requiring the user
+  to enclose the strings in quotation marks).  The </FONT><FONT FACE="Courier New" SIZE=2>read</FONT><FONT FACE="Garamond" size=4> function reads the next Scheme expression (e.g., a single number) from the
+    input.  You&#39;ll also want to call </FONT><FONT FACE="Courier New" SIZE=2>read-line</FONT><FONT FACE="Garamond" size=4> (ignoring its return value) after reading numbers from a line; this will
+      put you at the start of the next line so you&#39;re ready to read what&#39;s
+      there.   Some <A HREF="http://www.ics.uci.edu/~kay/scheme/copy-file.scm">sample code</A> using </FONT><FONT FACE="Courier New" SIZE=2>read-line</FONT><FONT FACE="Garamond" size=4> is available. </FONT></P>
+<P><FONT FACE="Garamond" size=4>[This organization of the input files should make it easy for you to use </FONT><FONT FACE="Courier New" SIZE=2>read</FONT><FONT FACE="Garamond" size=4> and </FONT><FONT FACE="Courier New" SIZE=2>read-line</FONT><FONT FACE="Garamond" size=4> to create the internal representation of the data in your program; your task is to fit these components together, and you should spend some time trying to do that. But if you decide you need some additional guidance, start here: (a) As always when designing programs with more than one &quot;layer&quot; of data structures, you should treat one layer at a time. For the file of students, for example, you should have a function to read and create the collection of <em>n</em> students (where <em>n</em> is the number specified on the first line of the file); that function will call a function to read and create the strucure for one student; that function, in turn, will call a function to read <em>m</em> numbers from one line (where <em>m</em> is the number of assignments, from the first line of the assignments file) and create a vector of those scores. (b) Make sure you understand how to use </FONT><FONT FACE="Courier New" SIZE=2>read</FONT><FONT FACE="Garamond" size=4> and </FONT><FONT FACE="Courier New" SIZE=2>read-line</FONT><FONT FACE="Garamond" size=4>: Choose the right function for the right kind of data, as described above.]</FONT></P>
+<P> <FONT FACE="Garamond" size=4>Define functions that will fill the assignment
+  and student collections by reading these files. It will also be helpful to write functions that print out these collections legibly; they'll help you in testing.</FONT></P>
+<P> <FONT FACE="Garamond" size=4><B>(b.3)</B> Since assignments don&#39;t necessarily
+  all have the same number of points possible, it will be useful to compute
+  and store a scaled score on each assignment (i.e., a number from 0 to 100,
+  calculated from the student&#39;s raw score and the number of points possible
+  on the assignment).  It might be easiest to implement this by storing for
+  each student a second, parallel vector of scaled scores.</FONT></P>
+<P> <FONT FACE="Garamond" size=4>You should also compute and store for each
+  student the weighted overall score in the course, a number from 0 to 100
+  calculated from the scaled scores and the weights of each assignment.</FONT></P>
+<P> <FONT FACE="Garamond" size=4>To make the output look reasonable, use the
+  function </FONT><FONT FACE="Courier New" SIZE=2><A HREF="http://www.ics.uci.edu/~kay/scheme/format-decimal.scm">format-decimal</A>.</FONT><FONT FACE="Garamond" size=4> It takes two numbers (the first is the value to display, the second is
+    the number of digits after the decimal point) and returns a string, suitable
+    for use as an argument to </FONT><FONT FACE="Courier New" SIZE=2>display</FONT><FONT FACE="Garamond" size=4>.
+      So, </FONT><FONT FACE="Courier New" SIZE=2>(format-decimal 25 2)</FONT><FONT FACE="Garamond" size=4> returns </FONT><FONT FACE="Courier New" SIZE=2>&quot;25.00&quot;</FONT><FONT FACE="Garamond" size=4> and </FONT><FONT FACE="Courier New" SIZE=2>(format-decimal 17.9876 3)</FONT><FONT FACE="Garamond" size=4> returns </FONT><FONT FACE="Courier New" SIZE=2>&quot;17.988&quot;</FONT><FONT FACE="Garamond" size=4>.</FONT></P>
+<P> <FONT FACE="Garamond" size=4><B>(b.4)</B> Your program will have a text-based
+  menu interface like the one in the restaurants programs.  It should include
+  commands to</FONT></P>
+<UL>
+  <LI> <FONT FACE="Garamond" size=4>Search for a student by name or by ID (and
+    display the student&#39;s information).</FONT><BR />
+    <BR />
+  </LI>
+  <LI> <FONT FACE="Garamond" size=4>Display all the students&#39; information sorted
+    by name or by overall score.  [If your collection of students is a list,
+    you can use the predefined </FONT><FONT FACE="Courier New" SIZE=2>quicksort</FONT><FONT FACE="Garamond" size=4> function with a carefully constructed lambda expression to accomplish this
+      automatically.]</FONT><BR />
+    <BR />
+  </LI>
+  <LI> <FONT FACE="Garamond" size=4>Display the information for all the assignments.</FONT><BR />
+      <BR />
+  </LI>
+  <LI> <FONT FACE="Garamond" size=4>Display a histogram for overall course scores
+    or for the scores on a single assignment (see below).</FONT><BR />
+    <BR />
+  </LI>
+  <LI> <FONT FACE="Garamond" size=4>Quit.</FONT></LI>
+</UL>
+<P> <FONT FACE="Garamond" size=4>[Your first step here should be to write the
+  menu-handling code, based on the restaurants programs, before writing code
+  to do anything when the user selects a given command.  For each menu command besides Quit, just print out &quot;Received command X,&quot; where X is the command; we call this a &quot;program stub,&quot; a simple placeholder so you can see that the menu framework works before you write the code that actually performs each command. Then take each command, one by one, and code and test its implementation. You should use the restaurants code as a starting point, just changing the things you need to change for this task; don't try to create a new view/controller from scratch. Start with displaying the assignment information (because that&#39;s
+  the easiest).]</FONT></P>
+<P> <FONT FACE="Garamond" size=4><B>(b.5)</B> A histogram is a bar graph showing
+  the distribution of all the students&#39; scores, from highest to lowest.
+  Given a list of scores, for example</FONT></P>
+<P><code>(list 23 23 20 18 25 14 16 18 15 16 23)</code></P>
+<P> <FONT FACE="Garamond" size=4>the histogram should display</FONT></P>
+<P><code>&nbsp;&nbsp; 25 *<br />
+  &nbsp;&nbsp; 24<br />
+  &nbsp;&nbsp; 23 ***<br />
+  &nbsp;&nbsp; 22<br />
+  &nbsp;&nbsp; 21<br />
+  &nbsp;&nbsp; 20 *<br />
+  &nbsp;&nbsp; 19<br />
+  &nbsp;&nbsp; 18 **<br />
+  &nbsp;&nbsp; 17<br />
+  &nbsp;&nbsp; 16 **<br />
+  &nbsp;&nbsp; 15 *<br />
+  &nbsp;&nbsp; 14 *</code></P>
+<P> <FONT FACE="Garamond" size=4>Hints:  You might find it particularly convenient
+  to create a vector of frequencies where </FONT><FONT FACE="Courier New" SIZE=2>(vector-ref
+    freqency-vector N)</FONT><FONT FACE="Garamond" size=4> contains the number
+      of students whose score was N.  A simpler histogram would display the frequencies
+      of scaled (0 to 100) scores, with 101 lines from 100 down to 0; start by
+      implementing it that way.  You&#39;ll want to use the predefined </FONT><FONT FACE="Courier New" SIZE=2>round</FONT><FONT FACE="Garamond" size=4> function to convert all the scores to integers.</FONT></P>
+<P> <FONT FACE="Garamond" size=4><B>(b.6)</B> Implement at least one of the following
+  enhancements.  In a comment at the top of your definitions, list which one(s)
+  you implemented.  Note that it is never acceptable (in class or in the real
+  world) to submit buggy code.  It is much better to deliver fewer features,
+  but features that work correctly, than to provide fancier functionality
+  that &quot;almost works.&quot;   [This doesn&#39;t mean that you have to
+  implement every single aspect of a bullet item below, but it does mean that
+  whatever you do implement must work correctly and consistently with the
+  rest of your program.]</FONT></P>
+<UL>
+  <LI> <FONT FACE="Garamond" size=4>Allow the user to change assignment and student
+    information within the program, rather than just by editing the data files.
+    Of course this also requires recomputing scaled and weighted scores and
+    writing the files out when the user quits the program.</FONT><BR />
+    <BR />
+  </LI>
+  <LI> <FONT FACE="Garamond" size=4>Allow the user to add new students and new
+    assignments, and to remove students and assignments, within the program
+    rather than just by editing the data files.  This will require creating
+    new, larger (or smaller) vectors (or else creating vectors with a default
+    size and keeping separate track for each vector of how much of it is actually
+    being used).  Adding a new student would require adding scores for that
+    student on each assignment (although you could implement a default score
+    of zero), and adding a new assignment would require adding scores for all
+    students on that assignment (though you might handle it by reading the new
+    scores in from a separate file).</FONT><BR />
+    <BR />
+  </LI>
+  <LI> <FONT FACE="Garamond" size=4>Improve the interface somehow (to give the
+    user clearer or better organized information, help the user navigate through
+    the functions and menus, or make it easier and less error-prone to enter
+    data--not just to add decoration that doesn&#39;t serve any purpose).  For
+    example, you could allow the user to request a list of students sorted by
+    score on an individual assignment (or to specify sorting in ascending or
+    descending order).  Or, you could implement a log file that saves a record
+    of each transaction (each operation that changes the data); this could be
+    useful for reconstructing the data files if they get damaged or deleted.
+    <!-- You could even implement a web interface!-->
+    </FONT><BR />
+    <BR />
+  </LI>
+  <LI> <FONT FACE="Garamond" size=4>Implement some error checking.  What if the
+    input file doesn&#39;t exist (or what if it does exist when you ask to create
+    a new file)?  What if the input data are not in the right order or format?
+    Do the weights of the assignments add up to 100%?  And so on.</FONT><BR />
+     <BR />
+  </LI>
+  <LI> <FONT FACE="Garamond" size=4>Implement hierarchical, nested assignments.
+    In a typical course, there might be lab assignments worth 30% of the course
+    grade (let&#39;s say five assignments, each equally weighted at 20% of the
+    total lab assignment score), a midterm worth 25% of the course grade, and
+    a final exam worth 45% of the course grade (made up of eight problems whose
+    points total to 100).  The point is that each graded item can be a single
+    item (as we&#39;ve been handling all along) or it can be a compound item
+    (with its overall weight in the course along with some number of subcomponents
+    (each of which has its own name, possible points, and weight as part of
+    its parent component).   Of course that means a subcomponent is just a graded
+    item, and that there&#39;s no reason subcomponents can&#39;t have their
+    own subcomponents.  You&#39;ll need to represent these graded items in the
+    &quot;model&quot; part of the program and work out how to read, write, and
+    display them.</FONT><BR />
+    <BR />
+  </LI>
+  <LI> <FONT FACE="Garamond" size=4>Enhance the file-handling.  You could get a
+    name or number for each course; incorporating that into the names of the
+    data files would allow using the program for more than one course.  Then,
+    when the program starts, you&#39;d need to ask the user which course to
+    handle.  You might also give the user the option to create a new class rather
+    than reading information from an existing one, or to choose any name for
+    the assignment and student files.</FONT></LI>
+  <br />
+  <LI><FONT FACE="Garamond" size=4>Add a command to produce a histogram of the scores for a given graded item (e.g., just the midterm).</FONT></LI>
+  <BR />
+  <LI> <FONT FACE="Garamond" size=4>Enhance the histogram in a variety of ways:</FONT></LI>
+  <BR />
+  <UL>
+    <LI> <FONT FACE="Garamond" size=4>The original histogram displays scores in one-point
+      intervals.  That could lead to a pretty big histogram on a 100-point test.
+      This interval is sometimes called the &quot;bin size.&quot; You can allow
+      the user to specify the bin size and display scores grouped accordingly.</FONT></LI>
+    <BR />
+    <LI> <FONT FACE="Garamond" size=4>Make the upper end of the top bin&#39;s interval
+      the highest score on the list (so if nobody scored above, say, 80, you don&#39;t
+      have empty space between 80 and 100.  Likewise, don&#39;t go lower than
+      the lowest score.</FONT><BR />
+      <BR />
+    </LI>
+    <LI> <FONT FACE="Garamond" size=4>Take the number of bins as the parameter (so
+      you&#39;d calculate the bin size based on the top score, the bottom score,
+      and how many bins the user wants).</FONT></LI>
+    <BR />
+    <LI> <FONT FACE="Garamond" size=4>Take the lowest 5% of the scores and collect
+      them into the bottom bin, &quot;N points and under.&quot;  This may spare
+      the feelings of the person who had the very lowest score in the class.</FONT><BR />
+      <BR />
+    </LI>
+    <LI> <FONT FACE="Garamond" size=4>Scale the histogram horizontally, too:  The
+      bars may be too wide if the class is large.  Let the user specify the length
+      of the widest bar and scale the others accordingly.</FONT></LI>
+    <BR />
+    <LI> <FONT FACE="Garamond" size=4>Print the histogram horizontally (on its back,
+      so to speak).</FONT><BR />
+      <BR />
+    </LI>
+    <LI> <FONT FACE="Garamond" size=4>Use the functions in the </FONT><FONT FACE="Courier New" SIZE=2>image.ss</FONT><FONT FACE="Garamond" size=4> teachpack to produce the histograms graphically.</FONT><BR />
+        <BR />
+    </LI>
+  </UL>
+  <LI> <FONT FACE="Garamond" size=4>Implement the collection of students as a binary
+    search tree, sorted by the students&#39; names.</FONT></LI>
+  <BR />
+  <LI> <FONT FACE="Garamond" size=4>Distinguish between no score (which would be
+    appropriate if someone missed an assignment entirely) and a zero (for someone
+    who did the assignment but earned zero credit).</FONT></LI>
+</UL>
+
+<P>
+  <span class="style2"><FONT FACE="Garamond"><B>(</B></FONT></span><FONT FACE="Garamond"><B>b.7</B><span class="style2"><B>) </B></span></FONT><FONT FACE="Garamond" SIZE=4>Submit the file containing all your definitions as usual via Checkmate<span class="style2">.</span></FONT></P>
+<P><span class="style2"><FONT FACE="Garamond"><B>(c) </B></FONT><FONT FACE="Garamond" SIZE=4>Fill out your last partner evaluation
+  form at eee.uci.edu.  Please do this by noon on Saturday at the latest,
+  or you won&#39;t get credit.</FONT></span><BR />
+</P>
+<P>
+<FONT FACE="Helvetica" SIZE=1>Based in part on ICS H21assignments by David
+G. Kay from Fall 2003; modified by David G. Kay, Fall 2004, Fall 2008, Fall 2009..</FONT><BR CLEAR=ALL />
+</P>
+<HR />
+<FONT FACE="Garamond"><A HREF="http://www.ics.uci.edu/~kay/">David G. Kay</A>, <a href=mailto:kay@uci.edu>kay@uci.edu</A> </FONT><span><br />
+<font size="2" face="Garamond">
+<!-- #BeginDate format:fcAm1a -->Saturday, November 21, 2009 9:57 AM<!-- #EndDate -->
+</font></span></BODY>
+</HTML>

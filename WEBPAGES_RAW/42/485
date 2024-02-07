@@ -1,0 +1,771 @@
+/* ART'S MULTI-EFFECTS PROCESSOR (A.M.P.) 
+*  amp.c
+*  by Arthur Asuncion, for ICS 180
+*
+*  This code is based on Professor Dobrian's pa_cosine.c
+*  and the patest_saw.c and patest_record.c files included with PortAudio
+*
+*  These PortAudio files need to be included in order to compile this program:
+*  pa_lib.c, pa_win_wmme.c, pa_trace.h, pa_trace.c, pa_host.h, pa_convert.c, portaudio.h
+*
+*  Also, 'winmm.lib' (a standard library that is installed with windows) is an 
+*  additional dependency that needs to be linked.
+*
+*  Not only is A.M.P. a real-time processor, but it is also an extensible framework that allows 
+*  DSP effects to be easily created and inserted into the effects chain.  Three effects have 
+*  already been implemented and included in A.M.P.: DISTORTION, TREMOLO, and DELAY.  Additional 
+*  effects can be quickly implemented by emulating the implementation of one of
+*  the effects (DISTORTION is the simplest effect to emulate).
+*
+*  To extend this framework and make your own effect, simply look for all of the 'EXTEND'
+*  comment tags and replace the commented sample code with your specialized effect code.
+*  You would need to create two major functions: the effect function and the parameter 
+*  modifier function.
+*
+*  Other notes:
+*  1. A.M.P. allows you to add (and remove) implemented effects in different configurations 
+*     in real-time.
+*  2. A.M.P. allows you to modify effect parameters in real-time.  Note that there is only one
+*     set of parameters for each implemented effect.  For instance, while there can be multiple 
+*     DELAY processors in the effects chain, each DELAY processor would have the same parameters.
+*  3. All parameters are restricted to integer values between 1 and 9.
+*  4. This A.M.P. framework uses 2 channels so it can also support stereo (panning) effects.
+*/
+
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include "portaudio.h"
+#define SAMPLE_RATE					(44100)
+#define TWOPI						(6.283185307179586)
+#define BUFFER_SIZE					(256)
+/* This determines the maximum amount of delay (samples) that the DELAY effect can provide */
+#define DELAY_BUFFER_SIZE			(44100)
+/* This determines the number of possible effects that can run simultaneously */
+#define EFFECTS_CHAIN_SIZE			(10)
+/* EXTEND: This number would need to be incremented if additional effects are implemented */
+#define NUMBER_IMPLEMENTED_EFFECTS	(3)
+
+/* This struct holds all of the information about the effects chain and the effects. */
+typedef struct
+{
+	/* This buffer is used as an 'intermediate' to transfer the signal from
+	 * one effect to another.  The size is multiplied by 2 since I interleave
+	 * the 2 channels. */
+	float processBuffer [2 * BUFFER_SIZE];
+	/* This buffer contains pointers to all of implemented effects functions. */
+	void* implementedEffects[NUMBER_IMPLEMENTED_EFFECTS];
+	/* This buffer contains pointers to all of the parameter-modifier functions.
+	 * Each implemented effect in the 'implementedEfffects' buffer above would
+	 * have a corresponding parameter-modifier function in 'parameterFuctions'. */
+	void* modifierFunctions[NUMBER_IMPLEMENTED_EFFECTS];
+	/* This keeps a running total of how many frames have elapsed */
+	int count;
+
+	/* This buffer contains pointers to all of the effects (functions) that are
+	 * currently in the effects chain. */
+	void* effectsChain[EFFECTS_CHAIN_SIZE];
+	int numberEffects;	/* The number of effects in the effects chain */
+		/* parameters for DISTORTION */	int distortionLevel;	/* value from 1 - 9 */	/* paramters for TREMOLO */	int tremoloRate;		/* value from 1 - 9 */
+	int tremoloDepth;		/* value from 1 - 9 */	
+	/* data for DELAY */
+	float delayBuffer [DELAY_BUFFER_SIZE];	/* 1-channel buffer that holds previous samples */
+	int delayIndex;			/* index for the current position in the delayBuffer */
+
+	/* parameters for DELAY */
+	int delayFeedback;		/* value from 1 - 9 */
+	int delayRate;			/* value from 1-9 */
+	
+} ampData;
+
+/* Function pointer type for an effect function */
+typedef int (*fp_Effect)(float*, float*, int, ampData*);
+
+/* Function pointer type for an effect parameter modifier function */
+typedef int (*fp_Modifier)();
+
+
+/* Function prototypes of static functions (including the effect functions)
+ * Prototypes of non-static functions come later in this c file. */
+
+static int ampCallback( void *inputBuffer, void *outputBuffer,
+                           unsigned long framesPerBuffer,
+                           PaTimestamp outTime, void *userData );
+
+static int distortion (float* in, float* out, int framesPerBuffer, ampData* data);
+static int tremolo(float* in, float* out, int framesPerBuffer, ampData* data);
+static int delay(float* in, float* out, int framesPerBuffer, ampData* data);
+static int bypass (float* in, float* out, int framesPerBuffer, ampData* data);
+
+/* EXTEND: */
+/* static int <your effect here> (float* in, float* out, int framesPerBuffer, ampData* data); */
+
+
+/* This callback function is used by PortAudio.
+ * 
+ * PortAudio's comments: 
+ * "This routine will be called by the PortAudio engine when audio is needed.
+ * It may called at interrupt level on some machines so don't do anything
+ * that could mess up the system like calling malloc() or free()."
+ */
+static int ampCallback( void *inputBuffer, void *outputBuffer,
+                           unsigned long framesPerBuffer,
+                           PaTimestamp outTime, void *userData )
+{
+    int i; /* a counter */
+	/* Cast data passed through stream to the format of the local structure. */
+    ampData *data = (ampData*)userData;
+	int numberEffects = data->numberEffects; /* # of effects in effects chain */
+	float *in = (float*)inputBuffer; /* in stream */
+    float *out = (float*)outputBuffer; /* out stream */
+	float *processBuffer = data->processBuffer; /* 'intermediate' buffer */
+	float *inTemp, *outTemp; /* placeholder buffer */
+
+	if (numberEffects == 0) /* signal will not be changed */
+	{
+		bypass(in, out, framesPerBuffer, data);
+	}
+	else
+	{	/* Put the signal through all of the effects in the effects chain */
+		for (i = 0; i < numberEffects; i++) {
+			if (i == 0) inTemp = in;		/* first effect receives in-buffer */
+			else inTemp = processBuffer;	/* 'intermediate' buffer */
+
+			if (i == numberEffects - 1) outTemp = out; /* last effect receives out-buffer */
+			else outTemp = processBuffer;	/* 'intermediate' buffer */
+
+			/* A function pointer is taken from 'effectsChain' array and cast to the 
+			 * fp_Effect type before being called. */
+			((fp_Effect) (data->effectsChain[i])) (inTemp, outTemp, framesPerBuffer, data);
+		}
+	}
+
+    return 0;
+}
+
+
+/* This bypass function is called when no effects are in the effects chain.
+ * It is structured identically to the the other effect functions, except that 
+ * it does not modify the signal */
+static int bypass(float* in, float* out, int framesPerBuffer, ampData* data)
+{
+	int i;
+	for(i = 0 ; i < framesPerBuffer ; i++)
+	{	
+		/* Gets the current 'in' float value and writes it to the out buffer
+		 * (before incrementing both values).  There are two identical lines because there
+		 * are two channels (since A.M.P. is a stereo framework). */ 
+		*out++ = *in++;
+		*out++ = *in++;
+	}
+
+    return 0;	
+}
+
+/* This DISTORTION effect function adds random noise to the signal */
+static int distortion (float* in, float* out, int framesPerBuffer, ampData* data)
+{
+    int i;
+	int distortionLevel = data->distortionLevel; /* gets a DISTORTION parameter */
+
+	for( i = 0 ; i < framesPerBuffer ; i++ )
+	{	
+		/* I multiply a random value that is between 0-1 (to add noise) with the current
+		 * 'in' amplitude (to make the amount of noise proportional to the 'in' signal)
+		 * and the distortion level parameter (to allow the user to modify the amount
+		 * of distortion).  Then I divide this product by 100 (to lower the overall noise)
+		 * and add it to the 'in' amplitude.  The end effect is a controlled amount of 
+		 * distortion that is proportional to the signal.
+		 *
+		 * As the 'distortionLevel' parameter increases, the distortion increases.*/
+		*out++ = *in + ((rand() % 2) * *in++ * distortionLevel) / 100.;	/* left channel */
+		*out++ = *in + ((rand() % 2) * *in++ * distortionLevel) / 100.; /* right channel*/
+	}
+
+    return 0;
+}
+
+/* This TREMOLO effect function alters the signal's amplitude in a periodic wave-like fashion */
+static int tremolo(float* in, float* out, int framesPerBuffer, ampData* data)
+{
+    int i;
+    
+	/* TREMOLO parameters */
+	int tremoloRate = data->tremoloRate;
+	int tremoloDepth = data->tremoloDepth;
+    
+	/* This approach was inspired Professor Dobrian's pa_cosine.c file
+	 * 
+	 * The value 'twoPiOverR' means: 2PI / sample_rate
+	 * In this case, 'tremoloRate' is also factored in to let the user modify the tremolo rate.
+	 * I divide 'tremoloRate' (which can be between 1-9) by 10 to keep 'tremoloRate' 
+	 * between 0-1. Also, the amplitude only changes frame by frame, so I factor in a 
+	 * BUFFER_SIZE as well.
+	 *
+	 * As the 'tremoloRate' parameter increases, the tremolo effect becomes accelerated.
+	 * 
+	 * The value 'amplitude' is calculated by a using a cosine function to add the variation
+	 * of amplitude.  The 'data->count' (which acts as the frequency value) is multiplied by 
+	 * twoPiOverR before being evaluated by the cosine function.  The cosine function has an
+	 * amplitude that is determined by the 'tremoloDepth' parameter.  (1 - tremoloDepth / 10)
+	 * is added to the cosine wave to vertically shift up the sinusodial axis of the wave
+	 * (the negative tremoloDepth value is used to keep the cosine wave from surpassing the
+	 * original peak amplitude).
+	 *
+	 * As the 'tremoloDepth' parameter increases, the tremolo effect becomes more pronounced. */
+	float twoPiOverR = TWOPI*BUFFER_SIZE / ((1 - (tremoloRate) / 10.) * SAMPLE_RATE);
+	float amplitude = (1 - tremoloDepth / 10.) + (tremoloDepth / 10.)*cos(twoPiOverR * data->count++);
+
+	for( i = 0 ; i < framesPerBuffer ; i++ )
+	{	/* So the signal is altered by the 'amplitude' factor, which 
+		 * varies in a wave-like fashion */
+		*out++ = *in++ * amplitude;			/* left channel */
+		*out++ = *in++ * amplitude; 		/* right channel*/
+	}
+
+    return 0;
+
+}
+
+/* This DELAY effect stores previous signal samples and adds them to current signal
+ * The maximum amount of delay is dictated by the DELAY_BUFFER_SIZE.
+ * If the DELAY_BUFFER_SIZE is 44100 and the SAMPLE_RATE is 44100, then the maximum 
+ * amount of delay possible is 1 second.
+ * Since there is only one delayBuffer, the DELAY effect is not in stereo. */
+static int delay(float* in, float* out, int framesPerBuffer, ampData* data)
+{
+	int i;
+	float delayedSample, outSampleLeft, outSampleRight;
+	/* previous samples stored in this buffer */
+	float* delayBuffer = data->delayBuffer;
+	int delayIndex = data->delayIndex; /* Indicates the current location in the buffer */
+	/* DELAY parameters */
+	int delayFeedback = data->delayFeedback;
+	int delayRate = data->delayRate;
+
+	for( i = 0 ; i < framesPerBuffer ; i++ )
+	{
+		/* The 'delayedSample' (which represents a sample that was already previously played) 
+		 * is taken from the delayBuffer, which can actually be thought of as a circular queue.
+		 * The formula for obtaining the index of delayBuffer is a little complicated.
+		 * I begin with the current delayIndex and add the DELAY_BUFFER_SIZE tempered with
+		 * the 'delayIndex' parameter.  You may wonder why I add these values instead of
+		 * subtracting them (since we are trying to go back in history to get the delay).
+		 * Remember that delayBuffer is a circular queue (modded by the DELAY_BUFFER_SIZE),
+		 * so addition can be thought of as a form of subtraction.  The reason why I did it
+		 * this way is so that the 'delayRate' parameter can be directly proportional to the
+		 * speed of delay.  
+		 *
+		 * As the 'delayRate' parameter increases, the delay effect becomes quicker. */
+		delayedSample = (delayFeedback / 10.) * delayBuffer [(delayIndex + (int) (delayRate  / 10. * DELAY_BUFFER_SIZE)) % DELAY_BUFFER_SIZE];
+		
+		
+		outSampleLeft = *out++ = *in++ + delayedSample;		/* left channel */
+		outSampleRight = *out++ = *in++ + delayedSample; 	/* right channel*/
+
+		/* I then mix the current 'out' samples (left and right channels) before putting it back 
+		 * into the delayBuffer.  Since these samples include the 'delayedSample', the 
+		 * delayed signal gets delayed itself! */
+		delayBuffer[delayIndex] = (outSampleLeft + outSampleRight) / 2;
+
+		/* Then I increment the delayIndex and make sure that it never goes above the 
+		 * DELAY_BUFFER_SIZE */
+		delayIndex++;
+		if (delayIndex == DELAY_BUFFER_SIZE) {
+			delayIndex = delayIndex % DELAY_BUFFER_SIZE;
+		}
+	}
+
+	/* Write the current delayIndex back into the data struct for the next frames to use */
+	data->delayIndex = delayIndex;
+	
+	return 0;
+}
+
+
+/* EXTEND: */
+/*
+static int <your effect function>(float* in, float* out, int framesPerBuffer, ampData* data)
+{
+	<Get your effect data and parameters from the 'data' struct and put them here>
+
+	int i;
+	for( i = 0 ; i < framesPerBuffer ; i++ )
+	{	
+		<process the 'in' samples inside here>
+		*out++ = *in;	
+		*out++ = *in; 
+	}
+
+    return 0;
+}
+*/
+
+
+  
+/*******************************************************************/
+
+
+/* Here are the prototypes for the non-static functions.  These functions
+ * mainly have to do with the user interface and parameter modification */
+
+int main();
+int handleMainMenu();
+void handleAddMenu();
+void handleRemoveMenu();
+void handleModifyMenu();
+void handleClearMenu();
+
+char* lookupEffectName(fp_Effect e);
+void printCurrentEffectsChain();
+void clearLine();
+
+void distortionModifier();
+void tremoloModifier();
+void delayModifier();
+
+/* EXTEND: */
+/* void <your effect modifier function name here>(); */
+
+
+/* This static struct is globally stored for the entirety of the program */
+static ampData data;
+
+/* This main function drives the A.M.P. program.  It sets up the input and output signal
+ * streams and initializes the 'data' struct.  This main function was adapted from 
+ * Professor Dobrian's pa_cosine.c example. */
+int main()
+{
+	PortAudioStream *stream;
+	PaError err;
+	unsigned int i;
+
+	printf("A.M.P. -- Art's Multi-effects Processor \n");
+	printf("by Arthur Asuncion, for ICS 180 (DSP)\n");
+
+	/* Initialize data struct for use by callback. */
+	
+	data.count = 0;
+
+	for (i = 0 ; i < 2 * BUFFER_SIZE; i ++) 
+	{
+		data.processBuffer[i] = 0;
+	}
+
+	/* Putting the effect function pointers into the 'implementedEffects' array */
+	data.implementedEffects[0] = (fp_Effect) delay;
+	data.implementedEffects[1] = (fp_Effect) distortion;
+	data.implementedEffects[2] = (fp_Effect) tremolo;
+
+	/* EXTEND: */
+	/* data.implementedEffects[3] = (fp_Effect) <your effect function here>; */
+
+	/* Putting the parameter modifier function pointers into the 'modifierFunctions' array */
+	data.modifierFunctions[0] = (fp_Modifier) delayModifier;
+	data.modifierFunctions[1] = (fp_Modifier) distortionModifier;
+	data.modifierFunctions[2] = (fp_Modifier) tremoloModifier;
+
+	/* EXTEND: */
+	/* data.modifierFunctions[3] = (fp_Modifier) <your modifier function here>; */
+
+	for (i = 1; i < EFFECTS_CHAIN_SIZE; i++) 
+	{
+		data.effectsChain[i] = 0;
+	}
+	
+	data.numberEffects = 0;
+	
+	/* All parameters can only have values from 1 - 9 and 
+	 * 5 is the default value for all parameters */
+
+	data.distortionLevel = 5; 
+
+	data.tremoloRate = 5;
+	data.tremoloDepth = 5;	
+	for (i = 0; i < DELAY_BUFFER_SIZE; i++) {
+		data.delayBuffer[i] = 0;
+	}	data.delayIndex = 0; /* Not a parameter */	data.delayFeedback = 5;
+	data.delayRate = 5;
+
+
+	/* Initialize library before making any other calls. */
+	err = Pa_Initialize();
+	if( err != paNoError ) goto error;
+
+	/* Open an audio I/O stream. */
+	err = Pa_OpenDefaultStream(
+				&stream,
+				2,              /* 2 input channels */
+				2,              /* stereo output */
+				paFloat32,      /* 32 bit floating point output */
+				SAMPLE_RATE,
+				BUFFER_SIZE,	/* frames per buffer */
+				0,              /* number of buffers, if zero then use default minimum */
+				ampCallback,
+				&data );
+	if( err != paNoError ) goto error;
+
+	err = Pa_StartStream( stream );
+	if( err != paNoError ) goto error;
+
+
+	/* This loop prompts the user with menus until the user quits the program */
+	while(handleMainMenu() != 1) {
+		/* Sleep for one second between prompts */
+		Pa_Sleep(1000);	
+	}
+
+	
+	err = Pa_StopStream( stream );
+	if( err != paNoError ) goto error;
+
+	err = Pa_CloseStream( stream );
+	if( err != paNoError ) goto error;
+
+	Pa_Terminate();
+	
+	printf("\nThanks for using A.M.P.\n");
+	return err;
+
+error:
+	Pa_Terminate();
+	fprintf( stderr, "An error occured while using the portaudio stream.\n" ); 
+	fprintf( stderr, "Error number: %d\n", err );
+	fprintf( stderr, "Error message: %s\n", Pa_GetErrorText( err ) );
+	return err;
+}
+
+
+
+
+
+/* This function provides the main menu and handles the user input.
+ * An output of 1 indicates that the user is quitting, while an output of 0
+ * means that the user has not yet quit the program. */
+int handleMainMenu()
+{
+	char response;
+
+	printCurrentEffectsChain(); /* Calls a function that displays the effects chain */
+
+	/* Prints out the main menu */
+	printf("\nPlease select an option:\n");
+	printf("\t1: add effect\n");
+	printf("\t2: remove last effect in chain\n");
+	printf("\t3: modify effect\n");
+	printf("\t4: clear all effects\n");
+	printf("\t5: exit\n");
+
+	/* Gets the first character that the user types in as a response and clears 
+	 * the rest of the input line */
+	response = getchar();
+	clearLine();
+
+	/* if the response does not fall into 1-5 in the ASCII range, go into this validation loop. */
+	while (response < '1' || response > '5') 
+	{
+		printf("\nSorry, your input was not valid.  Please enter an integer from 1-5.\n");
+		response = getchar();
+		clearLine();
+	}
+
+	/* Calls sub-menus based upon the user's input */
+	if (response == '1') handleAddMenu();
+	else if (response == '2') handleRemoveMenu();
+	else if (response == '3') handleModifyMenu();
+	else if (response == '4') handleClearMenu();
+	else return 1; /* exit */
+
+	return 0;
+}
+
+/* This function handles the sub-menu that adds effects onto the chain.
+ * The menu is generated dynamically from the struct's 'implementedEffects'
+ * array. */
+void handleAddMenu()
+{
+	int i;
+	char response;
+
+	if (data.numberEffects > EFFECTS_CHAIN_SIZE)
+	{
+		printf("\nCannot add any more effects.  Effects chain is full.\n");
+		return;
+	}
+
+	printf("\nWhich effect would you like to add?");
+	
+	/* Dynamic generation of effects menu */
+	for (i = 0; i < NUMBER_IMPLEMENTED_EFFECTS; i++)
+	{
+		printf("\n\t%d: ", i + 1);
+		printf("%s", lookupEffectName(data.implementedEffects[i]));
+	}
+	printf("\n");
+	
+	response = getchar();
+	clearLine();
+
+	/* If the response does not fall into range of valid ASCII input, go into this loop */
+	while (response < '1' || response > '1' + NUMBER_IMPLEMENTED_EFFECTS - 1) 
+	{
+		printf("\nSorry, you did not a enter valid input.  A valid input is an integer from 1-%d.\n", NUMBER_IMPLEMENTED_EFFECTS);
+		response = getchar();
+		clearLine();
+	}
+
+	/* Add the effect (pointer) into the effects chain (have to offset the index
+	 * by the ASCII value of 1). */
+	data.effectsChain[data.numberEffects++] = data.implementedEffects[response - '1']; 
+	
+	return;
+}
+
+
+/* This function handles the sub-menu that removes the last effect from the effect chain */
+void handleRemoveMenu()
+{
+	char* effectName;
+
+	if (data.numberEffects > 0)
+	{
+		/* Gets the name of the effect to be removed */
+		effectName = lookupEffectName(data.effectsChain[data.numberEffects - 1]);
+		/* Removes the effect */
+		data.effectsChain[data.numberEffects - 1] = 0;
+		data.numberEffects--;
+
+		printf("\nThe effect '%s' has been removed.\n", effectName);
+
+	}
+	else printf("\nThere are no effects to remove in the effects chain.\n");
+
+	return;
+}
+
+/* This function handles the sub-menu that allows the users to select an effect
+ * in order to change its parameters.  The effect menu is generated dynamically. */
+void handleModifyMenu()
+{
+	int i;
+	char response;
+
+	printf("\nWhich effect would you like to modify?");
+
+	for (i = 0; i < NUMBER_IMPLEMENTED_EFFECTS; i++)
+	{
+		printf("\n\t%d: ", i + 1);
+		printf("%s", lookupEffectName(data.implementedEffects[i]));
+	}
+	printf("\n");
+	
+	response = getchar();
+	clearLine();
+
+	/* If the response does not fall into range of valid ASCII input, go into this loop */
+	while (response < '1' || response > '1' + NUMBER_IMPLEMENTED_EFFECTS - 1) 
+	{
+		printf("\nSorry, you did not a enter valid input.  A valid input is an integer from 1-%d.\n", NUMBER_IMPLEMENTED_EFFECTS);
+		response = getchar();
+		clearLine();
+	}
+
+	/* Calls a modifier function that will prompt the user for the desired parameter levels.
+	 * The modifier function is taken from the function pointer array dynamically based on 
+	 * the effect that the user chooses. */
+	((fp_Modifier) data.modifierFunctions[response - '1']) ();
+
+	return;
+}
+
+/* This function clears the effects chain (it's not technically a menu). */
+void handleClearMenu()
+{
+	int i;
+	printf("\nClearing the effects chain.\n");
+
+	for (i = 0; i < EFFECTS_CHAIN_SIZE; i++) {
+		data.effectsChain[i] = 0;
+	}
+	
+	data.numberEffects = 0;
+
+	return;
+}
+
+
+
+/* This is a parameter modifier function for DISTORTION that asks the user to specify the
+ * levels for each of the effect's parameter */
+void distortionModifier()
+{
+	char digit;
+
+	printf("\nDISTORTION LEVEL: Specify an integer from 1-9 (current level is %d).\n", data.distortionLevel);
+	digit = getchar();
+	clearLine();
+
+	/* if the response is not a digit, go into this loop */
+	while (digit < '1' || digit > '9') 
+	{
+		printf("\nSorry, you did not a enter a valid distortion level.  Specify an integer from 1-9.\n");
+		digit = getchar();
+		clearLine();
+	}
+
+	data.distortionLevel = digit - '0'; /* Need to have ASCII offset */
+
+	printf("\nDistortion level has been changed to %d\n", data.distortionLevel);
+
+	return;
+}
+
+/* This is a parameter modifier function for TREMOLO that asks the user to specify the
+ * levels for each of the effect's parameter */
+void tremoloModifier()
+{
+	char digit;
+
+	printf("\nTREMOLO DEPTH: Specify an integer from 1-9 (current level is %d).\n", data.tremoloDepth);
+	digit = getchar();
+	clearLine();
+
+	/* if the response is not a digit, go into this loop */
+	while (digit < '1' || digit > '9')
+	{
+		printf("\nSorry, you did not a enter a valid tremolo depth level.  Specify an integer from 1-9.\n");
+		digit = getchar();
+		clearLine();
+	}
+
+	data.tremoloDepth = digit - '0'; /* Need to have ASCII offset */
+
+	printf("\nTremolo depth level has been changed to %d\n", data.tremoloDepth);
+
+	printf("\nTREMOLO RATE: Specify an integer from 1-9 (current level is %d).\n", data.tremoloRate);
+	digit = getchar();
+	clearLine();
+
+	/* if the response is not a digit, go into this loop */
+	while (digit < '1' || digit > '9')
+	{
+		printf("\nSorry, you did not a enter a valid tremolo rate.  Specify an integer from 1-9.\n");
+		digit = getchar();
+		clearLine();
+	}
+
+	data.tremoloRate = digit - '0'; /* Need to have ASCII offset */
+
+	printf("\nTremolo rate has been changed to %d\n", data.tremoloRate);
+
+
+	return;
+}
+
+/* This is a parameter modifier function for DELAY that asks the user to specify the
+ * levels for each of the effect's parameter */
+void delayModifier()
+{
+	char digit;
+	
+
+	printf("\nDELAY FEEDBACK LEVEL: Specify an integer from 1-9 (current level is %d).\n", data.delayFeedback);
+	digit = getchar();
+	clearLine();
+
+	/* if the response is not a digit, go into this loop */
+	while (digit < '1' || digit > '9')
+	{
+		printf("\nSorry, you did not a enter a valid delay feedback level.  Specify an integer from 1-9.\n");
+		digit = getchar();
+		clearLine();
+	}
+
+	data.delayFeedback = digit - '0'; /* Need to have ASCII offset */
+
+	printf("\nDelay feedback level has been changed to %d\n", data.delayFeedback);
+
+	printf("\nDELAY FEEDBACK RATE: Specify an integer from 1-9 (current rate is %d).\n", data.delayRate);
+	digit = getchar();
+	clearLine();
+
+	/* if the response is not a digit, go into this loop */
+	while (digit < '1' || digit > '9')
+	{
+		printf("\nSorry, you did not a enter a valid delay feedback rate.  Specify an integer from 1-9.\n");
+		digit = getchar();
+		clearLine();
+	}
+
+	data.delayRate = digit - '0'; /* Need to have ASCII offset */
+
+	printf("\nDelay feedback rate has been changed to %d\n", data.delayRate);
+
+	return;
+}
+
+/* EXTEND: */
+/*
+void <your modifier function here>()
+{
+	char digit;
+
+	printf("\n <your parameter String name>: Specify an integer from 1-9 (current level is %d).\n", data.<your parameter>);
+	digit = getchar();
+	clearLine();
+
+	while (digit < '1' || digit > '9') 
+	{
+		printf("\nSorry, you did not a enter a valid <your parameter String name> level.  Specify an integer from 1-9.\n");
+		digit = getchar();
+		clearLine();
+	}
+
+	data.<your parameter> = digit - '0';
+
+	printf("\n <your parameter String name> has been changed to %d\n", data.<your parameter>);
+
+	return;
+}
+*/
+
+
+
+/* This function takes in an effect function pointer and outputs the name of the effect */
+char* lookupEffectName(fp_Effect e)
+{
+	if (e == distortion) return "Distortion";
+	if (e == tremolo) return "Tremolo";
+	if (e == delay) return "Delay";
+	
+	/* EXTEND: */
+	/* if (e == <your effect function>) return "<the String name for your effect>"; */
+
+	return "Unknown";
+}
+
+/* This function prints out the effects chain */
+void printCurrentEffectsChain()
+{
+	int i;
+	printf("\nEffects Chain: Input --> ");
+
+	for (i = 0; i < data.numberEffects; i++)
+	{
+		printf("%s --> ", lookupEffectName(data.effectsChain[i]));
+	}
+
+	printf("Output\n");
+}
+
+/* This function clears the input line on the console, adding to the robustness
+ *  of the program.  It was taken from 
+ *  http://gd.tuwien.ac.at/languages/c/programming-bbrown/c_055.htm
+ */
+void clearLine( void )
+{
+	char ch;
+	ch = getchar();
+	while( ch != '\n' )
+		ch = getchar();
+}

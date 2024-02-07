@@ -1,0 +1,155 @@
+WebDAV Advanced Collections Minutes December 15, 1999
+
+ATTENDING: Judy Slein, Jason Crawford, Geoff Clemm, Chuck Fay
+
+DISCLAIMER: All decisions made by the design team are subject to review by 
+the WebDAV mailing list.
+
+LOGISTICS:
+
+No meeting next week.
+
+Judy will finish the specs and submit them to Internet-Drafts this week.
+Jim can then decide how to handle last calls for them.
+
+THE BINDING SPEC
+
+LOOPS
+Any second thoughts on loops?
+Geoff: Allow the server to fail creation of loop. 
+This will make life easier for systems like Oracle's, which don't want to
+be forced to allow creation of loops.
+Geoff would oppose forbidding cycles.  It would be too hard for him to
+prevent them.
+So we have to allow servers to fail BIND requests that create loops, but
+not force them to.
+
+Our original motive in saying that the server MUST allow loops was to
+insure that clients knew what to expect.  We want to use MUST unless there
+is good reason not to.  We think there is good reason in this case.
+Flexibility is needed here.
+
+Agreed: Servers MAY fail BIND requests that would create loops.
+
+We will not add a special error code for this case, but just use 409
+Conflict (Judy will check whether that's the best available code).  We
+want to be sure server implementers understand that they are allowed to
+fail a BIND request that would create a cycle, but are not required to
+do so.
+
+ATOMICITY
+
+Jason's most recent note to Lisa should help people understand what we
+meant by DELETE is atomic.  It's not anything to do with transactions,
+but just that the definition of DELETE has the result that it is a simple,
+single-step operation.  It's just removing a single binding, even in the
+case of deleting a collection.
+It's critical in an environment with multiple bindings to individual
+resources that bindings to resources further down the hierarchy survive
+a DELETE on one of their parent collections. The example in Jason's note 
+shows why.
+We have to pick a single semantics for DELETE on a collection.  It's
+either removing the binding to the collection, or removing the binding
+to that collection and to each of its descendents in the hierarchy. 
+Jason's example shows why it has to be just removing the binding to the
+collection.
+
+Chuck: Atomicity doesn't extend to garbage collection, right? This was
+an issue for Eric.
+Geoff: He wanted to change the protocol so that garbage collection would
+be easier for his server.  Our earlier decision to let servers fail BIND
+requests that would create cycles should help him with that.
+
+Chuck: It looked as if Eric's position was that destruction of the
+resource should be atomic with the delete.
+Geoff: He thinks delete also involves removing weak bindings. We can't ask
+all servers to behave as his does.
+
+Chuck:  We are saying that DELETE on a collection removes the top level 
+binding, and it's not allowed to remove any bindings below that. 
+Geoff: Right. We don't want a delete at one uURL to cause deletes at
+other URLs.
+
+Chuck: Jason's suggestion that you could treat a DELETE on a collection
+as a MOVE to another part of the namespace (like recycle bin) is really
+an implementation suggestion. It's a way of implementing the DELETE we 
+have in mind.  There has been no response to that suggestion yet.
+Geoff: There is nothing odd about the implementation of NTFS that should 
+make this difficult. It's just a question of whether they are wedded to a 
+different definition of DELETE.
+Lisa said Exchange could bend on the definition.  It would mean additional
+work, not that it can't be done.
+
+Agreed: We will keep our current definition of DELETE for now.
+
+LOCK / UNLOCK
+Agreed: We will not mention LOCK or UNLOCK in the binding spec.
+
+ORDERING SPEC
+
+INCOMPLETE SPECIFICATION OF AN ORDERING
+Currently the spec doesn't say what should happen if a client changes
+the ordering semantics with ORDERPATCH but doesn't include instructions
+for positioning all the collection members.
+
+Chuck: The server has no way of knowing whether the client might have set
+the positions first, then in a separate request set the semantics.
+
+We say that if a collection is ordered, every member must appear in the 
+ordering exactly once.
+
+What if a collection changes from unordered to ordered, but the client
+doesn't completely specify the positions of the members?
+
+Agreed: When ORDERPATCH sets the semantics, if it does not set the 
+position of any member, the server assigns the member a position.
+
+TRAVERSAL RULES
+The spec currently says that the server is free to use whatever
+traversal algorithm it likes.  So long as the members of an ordered
+collection appear relative to each other in the right order, any other
+URIs in the hierarchy can be interleaved with them in the response.
+
+This is not friendly to clients.  For them, it would be best to require
+breadth-first traversal so that all members of a single collection would
+be consecutive.
+
+It's better for servers.  For different servers, different traversal
+orders may be more efficient.
+
+Why isn't this already an issue in RFC 2518? Are any clients doing
+Depth: infinity PROPFIND requests? Shouldn't RFC 2518 take a position on
+this? As it is, clients can't predict the traversal algorithm a server
+will use.
+
+Chuck: We could add a header on PROPFIND: depth-first, breadth-first 
+that applies only to ordered collections.  It the header is not present,
+the server uses whatever traversal order it likes.  This header would
+be optional for servers to support.
+Are there any other headers in WebDAV that are optional for servers to
+support? (Judy find out.)
+
+Chuck: It's puzzling that since the default of PROPFIND is Depth: infinity
+we haven't heard complaints from client developers.  Are they not doing
+Depth: infinity PROPFINDs? 
+
+Geoff: Would be happy to say the traversal must be breadth-first, but
+can imagine others not accepting this.
+
+If no one has complained yet about RFC 2518, they probably won't complain
+here.  Clients can do Depth: 1 PROPFINDS if they don't want to cope with
+a variety of traversal algorithms.
+
+Chuck: It really is an issue for RFC 2518.  Add to the RFC 2518 issue
+list if anyone cares about it.
+
+Agreed: We leave it up to the server to decide.  A note to client
+implementers can suggest that they do Depth: 1 PROPFINDs.
+
+418 VS. 409
+No strong opinions.  We'll remove the 418 status code, and use 409
+instead.
+
+DEPENDENCIES ON BINDING SPEC
+Agreed: We'll revert to the RFC 2518 terminology to avoid dependency on
+the binding spec.

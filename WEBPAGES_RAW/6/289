@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Database Download</title>
+    <meta charset="utf-8">
+    <!-- Added simple Captcha blocker 2016-09-28 -->
+	<script type="text/javascript" src="test_onsubmit_event2.js"></script>
+    <!-- Include JQuery for tabs and UI plugins -->     
+    <script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery-ui-1.8.16.custom.min.js"></script>
+    <script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.9/jquery.validate.min.js"></script>
+    <script type="text/javascript" src="/js/chemdb.js"></script>
+    <!-- Include styling -->
+    <link rel="stylesheet" type="text/css" href="/css/chemdb.css" />
+    <link rel="stylesheet" type="text/css" href="/css/smoothness/jquery-ui-1.8.16.custom.css" />
+
+    <script type="text/javascript">
+        $(document).ready(function(){
+            // Init buttons and validation on form
+        	$('.button').button();            
+            $("#downloadForm").validate();
+            
+            // Bind function to form submission event
+            $("#downloadForm").submit(function(){
+                // Load molecule images into results div
+                var url = $(this).attr("action");
+                var params = $(this).serialize();
+                $.post(url, params, function(data){
+                    $("#results").html($(data).find("#results").contents());
+                });
+                $(".hide").show();
+                return false;
+            });
+        });
+    </script>
+</head>
+<body>
+    <div id="background">           
+        <div id="content">
+            <div id="header">
+                <div id="chemdb-logo"></div>
+                <span>Download: All Chemical Isomers</span>
+                <div id="top-nav">                
+                    <div class="nav-menu-item-wrapper">
+                        <button class="menu-item">Tools</button>
+                        <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                            <li class="odd"><a href="/cgibin/BabelWeb.py">Babel</a></li>
+                            <li><a href="/cgibin/Mass2Structure.py">Mass2Structure</a></li>                        
+                            <li class="odd"><a href="/cgibin/tools/MolInfoWeb.py">MolInfo</a></li>
+                            <li><a href="/cgibin/MSFragment.py">MSFragment</a></li>
+                            <li class="odd"><a href="/cgibin/PatternCountScreenWeb.py">Pattern Count Screen</a></li>
+                            <li><a href="/cgibin/PatternMatchCounterWeb.py">Pattern Match Counter</a></li>
+                            <li class="odd"><a href="/cgibin/Smi2DepictWeb.py">Smi2Depict</a></li>
+                            <li><a href="/cgibin/reaction/ReactionProcessorWeb.py">Reaction Processor</a></li>
+                        </ul>
+                    </div>                                                                          
+                    <div class="nav-menu-item-wrapper">
+                        <button class="menu-item">Applications</button>
+                        <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                            <li class="odd"><a href="/cgibin/ChemicalIndexWeb.py">Chemical Search</a></li>
+                            <li><a href="http://cosmos.igb.uci.edu/">COSMOS</a></li>
+                            <li class="odd"><a href="/cgibin/tutorial/ReactionTutorialSetupWeb.py">Reaction Explorer</a></li>
+                            <li><a href="http://reactions.igb.uci.edu/">Reaction Predictor</a></li>                        
+                            <li class="odd"><a href="/cgibin/reaction/VirtualSpaceWeb.py">Virtual Chemical Space</a></li>
+                        </ul>
+                    </div>
+                </div>   
+                <div id="crumbs"><!-- <a class="breadcrumb" href="../../index.htm" target="_top">ChemDB</a>
+ / 
+<a class="breadcrumb" href="../SupplementIndex.py" target="_top">Supplements</a>
+ --><a href="/">Home</a> <img class="crumb-arrow" src='/images/arrow.png' /> <a class="breadcrumb" href="#">Database Download</a></div>
+            </div>
+
+            <div id="loadingDiv"><img src="/images/loading.gif" /></div>
+            <div id="results" class="hide"></div>
+
+            <div class="ui-widget-header">Terms &amp; Agreements</div>            
+            <div class="module">
+                <div class="module-sub-header">Description</div>
+                <div class="bottom-border">
+                    <span>All of the chemical isomers in the database are available for download,
+                    including all of their primary chemical annotations.
+                    They are available for download as a collection of gzipped SDF
+                    molecular format files, each about 100 MB large.</span>
+    
+                    <p>Note that small subsets of chemicals and isomers are available
+                    for download based on specific search criteria are via the
+                    <a href="../ChemicalIndexWeb.py">ChemicalSearch</a> page.</p>
+                </div>               
+                
+                <div class="module-sub-header">Terms</div>
+                <div>
+                    <span>The data is made freely available for non-profit, academic use only.
+                    Agreements with our vendors limits our ability to distribute the data
+                    for commercial purposes. If you wish to use the data for commercial purposes,
+                    please contact Prof. Pierre Baldi
+                    (<a href="mailto:pfbaldi@ics[.]uci[.]edu">pfbaldi@ics.uci.edu</a>) first
+                    and we may be able to provide a stripped down "raw" version of the data for you.</span>
+    
+                    <p>In either case, to access the download files, submit your
+                    contact information below and the download address will be e-mailed to you.
+                    We will not distribute your information to any other 3rd party or other
+                    marketing purpose, it is only for our internal tracking.</p>
+                </div>
+            </div>
+                
+            <div class="ui-widget-header">Contact Info</div>
+            <div class="module">
+                <form id="downloadForm" name="downloadForm" action="DownloadLinkEmail.py" method="post" onsubmit="return ValidationCaptchaEvent()">
+                    <div style="margin-left:300px">
+                        <div class="float-left">
+                            <div class="module-sub-header">Name</div>                          
+                            <div class="module-sub-header margin-top">E-mail</div>                        
+                            <div class="module-sub-header margin-top">Organization</div>                    
+                            <div class="module-sub-header margin-top">Phone</div>                          
+							<br />
+							<div class="module-sub-header margin-top">Input 4 numbers below</div>
+                                                        <img src="captcha-numbers.jpg" >
+                        </div>
+                        
+                        <div class="float-left">
+                            <div><input class="required" type=text name="name" size=20></div>
+                            <div class="margin-top"><input class="required email" type=text name="email" size=20></div>
+                            <div class="margin-top"><input class="required" type=text name="organization" size=20></div>
+                            <div class="margin-top"><input class="required digits" type=text name="phone" size=20></div>
+							<div class="margin-top"><input id="captcha" type=text name="captcha" id="captcha" size=4></div>
+                        </div>
+                    </div>
+                    
+                    <div class="clear">
+                        <input type="hidden" name="DownloadLinkEmail" value="Submit">
+                        <button class="convert-button float-right" type=submit id="DownloadLinkEmail" value="Submit">Submit</button>
+                    </div>
+                </form>            
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

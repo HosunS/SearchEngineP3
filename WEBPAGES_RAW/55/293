@@ -1,0 +1,317 @@
+WebDAV Advanced Collections Minutes September 21, 1999
+
+ATTENDING: Judy Slein, Chuck Fay, Geoff Clemm
+
+ACTION ITEMS
+
+JUDY: Check with Jim Whitehead about proposed new meeting time
+GEOFF: Present on the mailing list his arguments against protecting 
+the lock Request-URI
+JUDY: Send a note to authors only, proposing that we change the
+meanings of Request-URI and Destination in BIND to make them match
+COPY / MOVE.
+GEOFF: Revise the language for the mappings algorithm.
+JUDY: Propose syntax for BIND error descriptions.
+GEOFF: Write your proposal for GET, etc., with bindings that takes
+into account executable resources, and send it to the mailing list.
+JUDY: Send the proposal that we always respond to all methods for
+redirect references with 302 to authors only.
+
+LOGISTICS
+
+Can we reschedule to accommodate Jason? 
+We propose Wednesdays 2:00 - 4:00 Eastern time, but need
+to check with Jim Whitehead
+
+Deadline for Internet-Drafts is October 22
+
+ISSUE 2: PROTECTING THE URI OF A LOCKED RESOURCE 
+
+Chuck: Is protecting the URI required by RFC 2518?
+
+It's implicit in the definitions in RFC 2518, and Yaron's e-mail
+implies that it was intended.
+
+If we decide not to require protecting the lock Request-URI, will 
+that require any ching in RFC 2518?
+
+Geoff: Unsure how hard to push on this issue.  If you have just one
+tree on one server, it's a little expensive to protect the URI if
+the tree is deep.  But the real costs appear when you add multiple
+bindings. 
+
+How does this issue apply to Document Management Systems?
+
+DMA 1.0 outlaws cross-server containment, but allows a reference from 
+one server to another (more like a redirect reference). Versioning is 
+all on one server, but has nothing equivalent to workspaces / 
+selection rules.  Names are immutable OIIDs, though a docspace 
+identifier is part of the OIID, so that's a problem if you want to
+do replication. 
+
+DMA separates the containment hierarchy from the one true name.  
+The containment hierarchy has names that build into paths.  DMA does
+not support versioning of collections.
+
+So DMA does not have the same problems as WebDAV versioning about
+protecting the lock Request-URI.
+
+Chuck: Assumed that you would implement protecting the URI by
+defining a special kind of lock that you would put on each collection 
+in the path to prevent delete/move on the collection.
+
+Geoff: That doesn't work when you are using dynamic URIs, that may
+refer to a different resource in different circumstances based on
+computational rules.
+
+Chuck: Simplify by assuming static URLs, and rule the others out of 
+scope.
+
+Geoff: The client may not know whether urls are static or dynamic.
+
+Chuck: If you lock a resource that you found using dynamic rules, 
+then would you want the lock to move with the resource? 
+
+Geoff: Yes, the lock stays with resource, regardless of its name. You
+use lock discovery to find the resource if its name changes.
+
+Judy: How does lock discovery let you do this?
+
+Geoff: You would have to do a PROPFIND on the DAV:lockdiscovery
+property for the whole space, or use DASL. 
+
+Geoff: If we say we won't protect the lock Request-URI in versioning
+and bindings, but it is protected in RFC 2518, can people live with 
+that noninteroperability?
+
+ISSSUE 23: REQUEST-URI AND DESTINATION IN BIND REQUESTS
+
+Geoff and Judy have been assuming different things about the meaning
+of the Request-URI and Destination header in BIND requests.
+
+Judy assumed (and the spec currently says) that the Request-URI
+identifies the segment and collection, and the Destination header
+identifies the resource for the binding.
+
+Geoff assumed that the request-URI identifies the resource, and the
+Destination header identifies the segment / collection for the binding.
+
+Geoff would like BIND to be analogous to MOVE and COPY, where the 
+Destination header tells you where the resource will end up.  In
+MOVE and COPY, the Request-URI identifies the resource, and the
+Destination header tells you the collection / segment for creating
+the binding to the resource.  Let's make BIND work the same way.
+
+Judy: When you think in English about the relationship you are
+creating, you say "Create a binding between this segment in this
+collection to this resource." So let the request syntax reflect this
+natural-language thought.  The Request-URI represents the
+collection / segment, and the Destination represents the resource.
+
+Geoff: An aside: For both mappings and bindings I tend to talk
+about mapping / binding a segment to a resource.  Others talk about
+bindings a resource to a name.  We should pick one of these and be
+consistent about using it.
+
+Currently the spec uses binding a name to a resource.  (To reflect 
+that in the method syntax, we would have the Request-URI be the name
+and the Destination header be the resource.)
+
+Geoff: In MOVE / COPY (and generally in HTTP methods), the Request-URI
+must refer to a real resource.  The Destination is just a URL.
+
+Geoff: Think about the effect of Overwrite.  We want it to be analogous
+to Overwrite for COPY and MOVE.  For COPY and MOVE you are concerned
+about whether a resource already exists at the Destination URL.  It
+should be the same for BIND.  We don't want to be asking whether a
+resource already exists at the Request-URI for BIND, but at the
+Destination URL for COPY and MOVE.
+
+Judy will send a note to authors only, proposing that we change the
+meanings of Request-URI and Destination in BIND to make them match
+COPY / MOVE.
+
+ISSUE 7: RESOURCE-TYPE HEADER
+
+Last time we decided to get rid of the Resource-Type header, and instead
+to return the DAV:reftarget property in the response body. 
+
+John Stracke pointed out that HTTP already defines a response body for
+302's, so we can't do that.
+
+Agreed: We'll return a Ref-Target header (whose value is the same as
+the DAV:reftarget property) instead.
+
+ISSUE 10: ALGORITHM FOR MAPPINGS
+
+Geoff sent out proposed language this morning.
+
+Chuck: In the first paragraph, it might be better to avoid using the
+term "members".  It's unclear whether that's talking about collection
+members or set members.
+
+Geoff: I'll just say "For each URL C-URL in C-MAP".
+
+Judy's note pointed out that there will also be new URI mappings to
+the descendents of R if R is a collection.  But she didn't propose
+precise language for identifying those mappings.
+
+Geoff: Let's not try to define that precisely.  He'll combine
+the first sentence of Judy's paragraph with his note on binding to
+oneself or to a parent collection.  We won't try to be precise about
+these, but just present them as comments on the main algorithm.
+
+Chuck: Is it ok to create an infinite set of mappings?  When are they
+useful?
+
+Geoff: It's a good representation of intrinsically recursive 
+relationship.
+
+It's good to have this explicit remark about cycles and infinite
+sets of mappings, with the accompanying example.
+
+Chuck: Did RFC 2518 say anything about cycles?
+
+No.  It recognized that there could be multiple URL mappings to the
+same resource (created out of band), but didn't explore that.
+
+ISSUE 20: ERROR CODES
+
+The mailing list seems to be agreeing that we should just use 501
+for BIND failures, and describe what went wrong in the response body.
+
+Do we want to specify syntax for some common cases?
+Yes for "can't create cross-server binding" and "cycle not allowed".
+Make each of these an XML element, and wrap them in some existing 
+XML element.
+
+Judy will propose the syntax.
+
+ISSUE 11: BINDINGS TO EXECUTABLE RESOURCES
+
+Judy: John Stracke thinks it is important to be able to bind to
+executable resources.
+
+Geoff: Had this new idea about how we can allow that, but still
+constrain bindings in a useful way:  Say that GET through a given
+URL is equivalent to BINDing the resource to another place, then 
+MOVEing it back to the original location, then doing the GET. That 
+means that only the binding name can contribute to the modified 
+behavior.  Geoff will propose this to the mailing list.
+
+For operation X, if you do X vs do BIND, MOVE to original location, 
+then do X, the results will be the same.  That is, BIND + MOVE 
+is idempotent.
+
+Chuck: Is this really a useful constraint on the behavior of 
+bindings with these methods?
+
+Geoff: Each binding can have different semantics, but for any one 
+binding, the semantics of X must be the same.  The behavior of the
+resource can only depend on the state of the resource and the URL
+used to access it.
+
+So if you do a PROPFIND on DAV:guid, if you create a new binding to
+it and then under the hood created a new GUID then move it back, 
+you should get original guid if you do PROPFIND again.
+
+It's like the algebraic definition of PUSH and POP.
+
+Chuck: What about live properties? Could they give different results? 
+Time-dependent ones would have to be exceptions.
+
+ISSUE 12: DAV:guid
+
+Judy: There was no controversy about this.  Jason asked whether we
+can standardize on an algorithm.
+
+Geoff: Probably we should not, but we can suggest an algorithm.  Make
+the guid a URN so that we can tell what algorithm was used.  This will
+avoid collisions caused by different algorithms generating the same
+identifier.  We might want to register a name for the algorithm.
+
+Chuck: Use the same algorithm that was used for lock tokens, and
+make up a name for it.
+
+ISSUE 22: BIND WITH REQUEST-URI = "/"
+
+Geoff: We can't allow creation of a binding with Request-URI = "/".
+Root doesn't have a parent collection; there's no segment here.
+We could allow creation of a mapping in some special way, but there's
+really no point in doing this.  The only thing you could do would be
+to move the root down.  Only the administrator could do anything else.
+
+All you could do would be to hide part of the tree by moving the
+root down, and then you would never be able to get back again.
+
+We shouldn't make a special case for changing the root to be 
+something that I already have access to.
+
+If we do try to make a special case for "/", we'll only confuse
+people between bindings and mappings.
+
+We need more discussion on the list.
+
+ISSUE 15: COPY SEMANTICS FOR REDIRECT REFERENCES
+
+Geoff: At the moment is inclined to go for extreme consistency.
+Any operation on a redirect reference responds with 302, unless
+Passthrough = false.  Then it's clear what should happend for new
+methods as they come along.
+
+Judy: The only problematic cases were COPY, LOCK, MOVE, DELETE.  Of
+these, LOCK is probably the most serious.  It would be impossible to
+lock a collection that contains any redirect references.  Down-level
+clients would have to lock every resource individually.
+
+Geoff: Doesn't find that a very serious concern (doesn't like
+depth locking anyhow).
+
+The rationale for having MOVE and DELETE affect the reference instead
+of responding with 302 was probably left over from direct references.
+It was considered dangerous to let MOVE and DELETE affect the target,
+especially if the target turned out to be a collection.  But that's
+not a concern if the response is a 302.
+
+Jim Amsden hates special cases for any method, wants to just operate
+on the resource (COPY the reference).
+
+Also, he thinks it would be least surprising to clients to copy the
+reference, so that the behavior of the copied resource would be the
+same the client had experienced in the past from a GET on it, for
+example.
+
+Geoff: Most resources that respond with 302's aren't copyable / 
+moveable, so it would be surprising to copy the reference.
+
+Lock the reference is really the wrong thing to do because
+it makes people think (wrongly) that they've locked the target.
+
+Currently, we say that the reference gets locked.  If you really 
+wanted to lock target, you would have to lock the target separately.
+
+If instead you get a 302, and you want to lock the reference, you
+say Passthrough = false.
+
+There will be lots of cases where you can't lock recursively anyhow.
+It's not so terrible to create one more in the case of redirect
+references.
+
+Does Passthrough work on depth operations? Yes, it applies
+recursively.
+
+Chuck: Agrees, it's appealing to always respond with 302 in the
+absence of Passthrough = false.
+
+What will be the impact on all the depth operations: COPY, MOVE, LOCK,
+DELETE, PROPFIND?
+
+Nonreferencing clients won't be able to lock a redirect reference
+or do a lock or copy with depth infinity.
+
+DELETE just removes the collection's binding.  You don't have to look
+below except for checking on locks.
+
+Judy will send the proposal that we always respond to all methods for
+redirect references with 302 to authors only.
+

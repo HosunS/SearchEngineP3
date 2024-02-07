@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smi2Depict: Generate 2D Images from Molecule Files</title>
+    <meta charset="utf-8"> 
+    <!-- Include JQuery for tabs and UI plugins -->     
+    <script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.unserialize.js"></script>
+    <script type="text/javascript" src="/js/jquery-ui-1.8.16.custom.min.js"></script>    
+    <script type="text/javascript" src="/js/jquery.colorbox-min.js"></script>
+    <script type="text/javascript" src="/js/jquery.ui.selectmenu.js"></script>    
+    <script type="text/javascript" src="/js/chemdb.js"></script>
+    <!-- Include styling -->
+    <link rel="stylesheet" type="text/css" href="/css/chemdb.css" />
+    <link rel="stylesheet" type="text/css" href="/css/colorbox.css" /> 
+    <link type="text/css" href="/css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />    
+    <link rel="stylesheet" type="text/css" href="/css/jquery.ui.selectmenu.css" />
+    
+    <script type="text/javascript">
+    
+            function magnifyMolecule( smilesField )
+            {
+                var smiles = smilesField.value; // Indirect access to ensure proper handling of special characters
+                var zoomPopup =
+                    window.open('./tools/MoleculeView.py?MoleculeView=True&smiles='+smiles );
+            }
+            
+    
+    /**
+     * Copy the given line to the copyCell for future use.
+     */
+    function copyLine( line )
+    {
+    	$("#copyCell textarea").val( $("#copyCell textarea").val() + line + '\n' );
+    }
+    
+    $(document).ready(function(){
+    	var messages={"#clipAlert":"Added molecule to clipboard","#optionsText":'MarvinView image generator options:<br/>Add a line like <br/><b>extraImageSetting:lp,anum</b> to modify the format of generated images.</p><p>A full list of MarvinView image export options can be found at <a href="http://www.chemaxon.com/marvin/help/formats/images-doc.html#options">ChemAxon</a></p>'}
+    	
+    	// Initialize buttons, selects, and dialogs 	
+    	$("#copyCellLink").colorbox({inline:true});                
+        $("#copyCellLink").button({
+            icons: {            
+                secondary: "ui-icon-newwin"
+            }
+        });
+        $(".select").selectmenu({style:"dropdown"});
+        $(".dialog").click(function(){
+            var key = $(this).attr("href");
+            $("#dialog").html(messages[key]);
+            $( "#dialog" ).dialog({
+                modal: true,
+                buttons: {
+                    Ok: function() {
+                        $( this ).dialog( "close" );
+                    }
+                }
+            });
+        });
+        
+        // Bind function to form submission event
+    	$("#Smi2DepictWeb").submit(function(){
+    		// Load molecule images into results div
+    		var url = $(this).attr("action");
+    		var params = $(this).serialize();
+    		$.post(url, params, function(data){    			
+    		    $("#molecule-images").html($(data).find("#molecule-images").contents());
+    		    $("#molecule-images").find("img").addClass("shadow");
+    		    $("#dialog").html(messages["#clipAlert"]);
+    		    $(".dialog").click(function(){
+    		    	$("#dialog").dialog({
+    		    		modal: true,
+    		            buttons: {
+    		                Ok: function() {
+    		                    $( this ).dialog( "close" );
+    		                }
+    		            }
+    		    	});
+    		    });
+    		});
+    		$(".hide").show();
+    		return false;
+    	});
+    });
+    </script>   
+</head>
+
+<body>
+<div id="background">           
+    <div id="content">
+        <div id="header">
+            <div id="chemdb-logo"></div>
+            <span>Smi2Depict: Generate 2D Images from Molecule Files</span>
+            <div id="top-nav">                
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Tools</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/BabelWeb.py">Babel</a></li>
+                        <li><a href="/cgibin/Mass2Structure.py">Mass2Structure</a></li>                        
+                        <li class="odd"><a href="/cgibin/tools/MolInfoWeb.py">MolInfo</a></li>
+                        <li><a href="/cgibin/MSFragment.py">MSFragment</a></li>
+                        <li class="odd"><a href="/cgibin/PatternCountScreenWeb.py">Pattern Count Screen</a></li>
+                        <li><a href="/cgibin/PatternMatchCounterWeb.py">Pattern Match Counter</a></li>
+                        <li class="odd"><a href="/cgibin/Smi2DepictWeb.py">Smi2Depict</a></li>
+                        <li><a href="/cgibin/reaction/ReactionProcessorWeb.py">Reaction Processor</a></li>
+                        <li class="odd"><a href="/cgibin/tools/AquaSolWeb.py">AquaSol</a></li>
+                    </ul>
+                </div>                                                                          
+                <div class="nav-menu-item-wrapper">
+                    <button class="menu-item">Applications</button>
+                    <ul class="sub-menu ui-menu ui-widget ui-widget-content ui-corner-all">
+                        <li class="odd"><a href="/cgibin/ChemicalIndexWeb.py">Chemical Search</a></li>
+                        <li><a href="http://cosmos.igb.uci.edu/">COSMOS</a></li>
+                        <li class="odd"><a href="/cgibin/tutorial/ReactionTutorialSetupWeb.py">Reaction Explorer</a></li>
+                        <li><a href="http://reactions.igb.uci.edu/">Reaction Predictor</a></li>                        
+                        <li class="odd"><a href="/cgibin/reaction/VirtualSpaceWeb.py">Virtual Chemical Space</a></li>
+                    </ul>
+                </div>
+            </div>   
+            <div id="crumbs"><!-- <a class="breadcrumb" href="../index.htm" target="_top">ChemDB</a>
+ --><a href="/">Home</a> <img class="crumb-arrow" src='/images/arrow.png' /> <a class="breadcrumb" href="#">Smi2Depict</a></div>
+        </div>
+        
+        <div id="loadingDiv"><img src="/images/loading.gif" /></div>
+        <div class="hidden">
+            <div id="dialog"></div>
+            <div id="copyCell">
+                <div class="ui-widget-header">Clip Board</div>
+                <textarea name="copyCell" rows=20 cols=60></textarea>
+            </div>
+        </div>
+
+        <a id="copyCellLink" class="margin-top" href="#copyCell">My Clip Board</a>
+        <div class="ui-widget-header">Depiction Parameters</div>        
+        <form id="Smi2DepictWeb" name="Smi2DepictWeb" action="Smi2DepictWeb.py" method=post>
+            <input type="hidden" name="Smi2DepictWeb" value="Generate Images" />
+            <div class="module">
+                <div>                                               
+                    <span class="module-sub-header float-left margin-top-big">SMILES</span>
+                    <a class="sketch-button float-right" href="JMEPopupWeb.py?parentForm=Smi2DepictWeb&smilesField=smiles&JMEPopupWeb=True&">Sketch <IMG SRC="../resource/edit.gif" style="width:19; height:17; border:0" alt="Draw structure"></a>
+                    <textarea tabindex=200 id="smiles" name="smiles" rows=10 style="width:100%">c1ccccc1O
+NC(O)C(=O)O
+O/C=C\N
+CC=CC(=O)O
+OCC[C@H](O)CC
+</textarea></td>
+                </div>                                                          
+                
+                <div class="margin-top">                            
+                    <span class="module-sub-header block" style="padding-bottom:2px;"><a class="dialog" href="#optionsText">Options</a></span>                    
+                    <textarea tabindex=100 id="depictOpts" name="depictOpts" rows=10 style="width:100%">width:800
+extraImageSetting:amap
+height:400
+arrows</textarea></td>
+                </div>
+                
+                <div class="float-left margin-top">                                                      
+                    <span class="module-sub-header">Image Module</span>
+                    <select tabindex=100 name="formatSelect" class="select" style="width:250px;">
+                        <option value="4" selected>ChemAxon Marvin</option>
+<option value="5">ChemAxon Marvin Applet</option>
+<option value="3">OpenEye OGham</option>
+<option value="2">JME Editor</option>
+<option value="1">Daylight Depict</option>
+
+                    </select>
+                </div>
+                           
+                <div class="float-right margin-top">       
+                    <span class="module-sub-header">Display</span>
+                    <input type=checkbox name="displaySmiles" value="checked" >SMILES
+                    <input type=checkbox name="displayLabel" value="checked" >Label
+                    <input type=checkbox name="outputOnly" value="checked">Output Only                                       
+                </div>
+                                          
+                <div class="clear margin-top float-right"><button class="convert-button float-right clear" tabindex=300 type="submit">Generate Images</button></div>
+            </div>
+            
+            <div class="ui-widget-header hide">Molecule Images</div>
+            <table id="molecule-images" class="module hide">        
+                <tr valign=top>
+                    <td align="center">
+                        
+                    </td>
+                </tr>
+            </table>                   
+        </form>
+    </div>    
+</div>
+       
+</body>
+</html>

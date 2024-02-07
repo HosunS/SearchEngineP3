@@ -1,0 +1,830 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+  <title>Expressions</title>
+</head>
+
+<body BGCOLOR="white">
+
+<center>
+<h1>Expressions</h1>
+<p>
+<h2>ICS-31: Introduction to Programming
+</h2>
+<p>
+</center>
+
+
+<a name="StructureAndEvaluation"><hr align="left" width="100%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>The Structure and Evaluation of Expressions</b></td>
+<td width ="80%">
+   In this section we begin our examination of how to build simple and
+     complicated expressions from literals, names, operators, functions, and
+     methods.
+   The EBNF rules specifying the structure of expressions are overly 
+     complicated, so instead we will just describe their syntax in English
+     (one of the few times we shall do so).
+   Here are the three structural rules for expressions; each rule concerns
+     the syntax of legal expressions.
+  <ul>
+    <li><b>S1</b>: A literal is a legal expression
+    <li><b>S2</b>: A (variable) name is a legal expression; its type.
+    <li><b>S3</b>: An operator (or function or method) whose operands (each of
+          which must be a legal expression) is a legal expression.
+  </ul>
+  We will be interested in computing the type of the object resulting from an
+   expression, which we can determine if we know the types of its literals,
+   (variable) names and the prototpyes/annotations of its operators, functions,
+   and methods.
+  <p>
+  For each syntax rule there is a companion semantic rule for <b>evaluating</b>
+    expressions.
+  In some sense, each expression is a question, "What is the value of ..."
+    which Python answers by evaluating the expression.
+  <ul>
+    <li><b>E1</b>: A literal evaluates to itself (a trivial but noteworthy
+          rule, for the sake of completeness).
+    <li><b>E2</b>: A name evaluates to the current object it is bound to
+          (refers to it).
+    <li><b>E3</b>: An operator (or function or method)
+    <ul><li>Evaluates each of its operands or arguments (which are themselves
+              legal expressions).
+        <li>Performs any implicit conversions
+            (e.g., promoting <b>int</b> to <b>float</b> or <b>bool</b> to
+            <b>int</b> for arithmetic on mixed types
+        <li>Applies the operator to its operands (or calls the function or
+              method on its arguments) to to compute its result, which is based
+              on the semantics of that operator, function, or method.
+            </ul>
+  </ul>
+  Here, as above, <b>E1</b> and <b>E2</b> are simple rules; all the power is
+    in rule <b>E3</b>.
+  <p>
+  For example, assume that we assign <b>x = 3</b> in a script and then
+    want to determine whether the expression <b>3*x+1</b> is a legal expression
+   (and what its resulting type and value is).
+  Here is a proof in English that this expression is legal and has the value
+    <b>10</b>.
+  <ul>
+    <li>We can prove that <b>3</b> is a legal expression (by <b>S1</b>);
+          its value is <b>3</b> (by <b>E1</b>) whose type is <b>int</b>.
+    <li>We can prove that <b>x</b> is a legal expression (by <b>S2</b>);
+          its value is <b>3</b> (by <b>E2</b>) whose type is <b>int</b>.
+    <li>We can prove that <b>3*x</b> is a legal expression (by <b>S3</b>:
+          we just proved both <b>3</b> and <b>x</b> are legal
+          expressions of type <b>int</b>, and one of the prototypes of
+          <b>*</b> is <b>(int,int) -> int</b>); its result value is <b>9</b>
+          (by <b>E3</b> and applying the semantics of the multiply operator)
+          whose type if <b>int</b>.
+    <li>We can prove that <b>1</b> is a legal expression (by <b>S1</b>); its
+           value is <b>1</b> (by <b>E1</b>) whose type is <b>int</b>.
+    <li>Finally, we can prove that <b>3*x+1</b> is a legal expression
+         (by <b>S3</b>: we just proved both <b>3*x</b> and
+          <b>1</b> are legal expressions of type <b>int</b>, and one of the
+          prototypes of <b>+</b> is <b>+ (int,int) -> int</b>); its result
+          value is <b>10</b> (by <b>E3</b> again, and applying the semantics
+          of the add operator) whose type if <b>int</b>.
+  </ul>
+  In fact, these three rules allow us to identify the structure of -and
+    evaluate- arbitrarily complicated expressions built from literals,
+    (variable) names, operators, functions, and methods.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Oval Diagrams -->
+
+<a name="OvalDiagrams"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Oval Diagrams</b></td>
+<td width ="80%">
+  To illustate that we understand how Python structures and evaluates our
+    expressions (and more importantly, to give us a tool to analyze and debug
+    incorrectly written expressions), we will study how to illustrate an
+    expression as an <b>Oval</b> diagram.
+  As we write expressions with many operators, functions, and methods mixing
+    many types, this tool will become more and more important.
+  <p>
+  To create an oval diagram, first circle (or draw an oval around) every 
+    literal and (variable) name in the expression.
+  These expressions are like atoms in chemistry: they contain no smaller
+    constituents.
+  Next, label their values on the bottoms and the types on these values on the
+    top.
+  Then, draw an oval around each operator and its operands (or each function or
+    method and its arguments); label the bottom with the result value (using
+    the semantics of the operator, function, or method) and the top with its
+    type.
+  <p>
+  The outermost oval is labelled by the value and type of the result of the
+    entire expression.
+  Here is an example of an oval diagram for the previously discussed expression: <b>3*x+1</b> with <b>x</b> bound to <b>3</b>.
+<p>
+<img src="images/oval1.jpg"></image><p>
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Operator Precedence -->
+
+<a name="OperatorPrecedence"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Operator Precedence and Associativity</b></td>
+<td width ="80%">
+  Examine the oval diagram below.
+  It has exactly the same tokens as the oval diagram above, but the ovals are
+     a bit different.
+  They both seem to "follow all the rules" for forming/evaluating expressions,
+    but the ovals are in different positions, and they ultimately produce
+    different values as a result.
+  The questions are: which oval diagram is correct (which is the way Python
+     analyzes and evaluates expressions) and what extra rules do we need to
+     know about to  construct correct oval diagrams?
+ <p><img src="images/oval2.jpg"></image><p>
+</td>
+</tbody>
+</table>
+
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>&nbsp</b></td>
+<td width ="80%">
+  The answers have to do with the concepts of "operator precedence" and
+   "operator associativity": which operators take precedence over other
+    operators (which operators are circled/evaluated first) in an expression.
+  During this discussin we will learn that we can also use parentheses to
+    override the standard operator precedence/associativity when we need to.
+  Here is an operator precedence/association table that includes all the
+    operators in Python -some we know, others will be covered later- in
+    highest to lowest precedence.
+<p>
+  <table cellspacing="0" cellpadding="5" border="1" rules="all">
+  <thead>
+  <tr align="left">
+  <th>Operator</th><th>Name</th><th>Associativity</th>
+  </thead>
+  <tbody>
+<tr align="left"><td><pre><b>() [] {}</b></pre></td><td>Grouping or tuple, list, set/dictionary</td><td></td>
+<tr align="left"><td><pre><b>x.attr, x(...), x[...]</b></pre></td><td>Attribute, call, index/slice</td><td></td>
+<tr align="left"><td><pre><b>x**y</b></pre></td><td>Power (exponentiation)</td><td>Right</td>
+<tr align="left"><td><pre><b>-x +x ~x</b></pre></td><td>Positive, negative, bit-wise not</td><td></td>
+<tr align="left"><td><pre><b>* % / //</b></pre></td><td>Multiply/repetition, remainder/formatting, divide, floor divide</td><td>Left</td>
+<tr align="left"><td><pre><b>+ -</b></pre></td><td>Add/catenation, subtract/set-difference</td><td>Left</td>
+<tr align="left"><td><pre><b>x&lt;&lt;y x&gt;&gt;y</b></pre></td><td>>>Shift x left/right by y bits</td><td></td>
+<tr align="left"><td><pre><b>&</b></pre></td><td>Bitwise AND/set-intersection</td><td></td>
+<tr align="left"><td><pre><b>^</b></pre></td><td>Bitwise NOT/set-symmetric-difference(XOR)</td><td></td>
+<tr align="left"><td><pre><b>|</b></pre></td><td>Bitwise OR/set-union</td><td></td>
+<tr align="left"><td><pre><b>< <= > >= == !=<br>is, is not, in, not in</b></pre></td><td>Comparison<br>object identity, membership</td><td>Chained<br>&nbsp;</td>
+<tr align="left"><td><pre><b>not</b></pre></td><td>Logical negation</td><td></td>
+<tr align="left"><td><pre><b>and</b></pre></td><td>Logical and (short-circuit)</td><td></td>
+<tr align="left"><td><pre><b>or</b></pre></td><td>Logical not (short-circuit)</td><td></td>
+<tr align="left"><td><pre><b>x if b else y</b></pre></td><td>Conditional expression</td><td></td>
+<tr align="left"><td><pre><b>lambda a : e</b></pre></td><td>Un-named(anonymous) function generation</td><td></td>
+<tr align="left"><td><pre><b>yield</b></pre></td><td>Generator function send protocol</td><td></td>
+  </td>
+  </tbody>
+  </table>
+  <p>
+  The rules for using these tables on expressions are
+  <ul>
+    <li>O1: When an expression contains two consecutive operators, neither
+            appearing in parentheses, Python applies the higher precedence
+            operator first.
+    <li>O2: When an expression contains two consecutive operators, neither
+            appearing in parentheses, and both have the same precedence,
+            Python applies left associative operators left to right; it
+            applies right associative operators right to left; it applies
+            chained operators as one group.
+    <li>O3: Python always evaluates expressions in parentheses before it uses
+            them as operands/arguments in other expressions (so we can use
+            parentheses to override precedence, forcing the operators inside the
+            parentheses to be evaluated before the operators outside the
+            parentheses).
+  </ul>
+  Thus, in the expression <b>3*x+1</b> we start by circling all literals and
+    (variable) names.
+  Then we see two consecutive operators with no parentheses: the <b>*</b>
+    operator has a higher precedence than the <b>+</b> operator, so it and its
+    operands are circled first.
+  Then the <b>+</b> operator and its operands are circled, completing the
+    oval diagram. 
+  Remember, higher precendence operaters are evaluated earlier, lower
+    precedence operators are evaluated later.
+  <p>
+  In the expression below <b>3*(x+1)</b> the subexpression <b>x+1</b> appears
+    in parentheses.
+  Again, we start by circling all literals and (variable) names.
+  Then we see two consecutive operators, but this time the second one is in
+    parentheses.
+  By rule O3, we must handle all the operators inside the parentheses first
+    (circling the <b>+</b> operator first) and then circling the <b>*</b>
+    operator last, after its operand has been circled.
+  This complete this oval diagram.
+  <p>
+ <p><img src="images/oval3.jpg"></image><p>
+ In fact, the parentheses themselves are suggestive of two sides of an 
+   oval; you can always draw ovals around parenthesized expressions: they
+   can be used to represent the result computed by the last operator inside
+   the parentheses.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Examples -->
+
+<a name="Examples"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Examples</b></td>
+<td width ="80%">
+  Note that in the expression <b>A &nbsp / &nbsp B*C</b> it looks like
+    <b>A</b> is being divided by the product <b>B*C</b>, but both operators
+    have the same precedence, and are left associative, and all the redundant
+    white space is meaningless once we have tokenized the expression (which is
+    exactly what Python does first).
+  So, this expression is equivalent to <b>A/B*C)</b> (with the extra spaces
+    removed) which is equivalent to <b>(A/B)*C</b> (because these operators are
+    left associative) and not <b>A/(B*C)</b>.
+  If a formula has the product of <b>B</b> and <b>C</b> in the denominator,
+    then according to the rules of operator precedence and associativity, we
+    must use parentheses in the denominator to instruct Python to compute the
+    denominator first.
+  Some students, in an attempt to avoid parentheses, write this expression as
+    <b>A/B/C</b>, which has the same value, but I think that this form is
+    uglier and harder to understand than just putting in the parentheses.
+  <p>
+  Next, let's examine how to write an oval diagram for a more complicated
+    expression, which computes the volume of a sphere of radius <b>r</b>.
+ <pre><b>  4/3*pi*r**3</b></pre>
+  Assume that we bind <b>r = 2</b> and <b>pi = 3.1416</b> (which simplifies
+    the math).
+  Notice how implicit coversion and operator prototypes ultimately compute a
+    <b>float</b> result from this mixture of <b>int</b> and <b>float</b> values
+  (detailed below the oval diagram).
+</td>
+</tbody>
+</table>
+
+<img src="images/sphere.jpg"></image><p>
+
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>&nbsp</b></td>
+<td width ="80%">
+Note that there is one <b>/</b> operator, two <b>*</b> operators, and one
+  <b>**</b> operator.
+Because of the operator precedence and associativity rules, we do not need
+  to use any parentheses to write this expression correctly.
+These rules ensure (a) division occurs before the multiplication following it
+  (these equal precedence operators are left associative) and (b) exponentiation
+  occurs before the multiplication preceding it (exponentiation has higher
+  precedence).
+<p>
+Also note that when two <b>int</b> values are divided the result is a
+  <b>float</b> (according to the prototype <b>/ (int,int) -> float</b>)
+  and in <b>r**3</b> the <b>3</b> is implicitly converted/promoted from an
+  <b>int</b> to a <b>float</b> (as required, to match the prototype
+   <b>** (float,float) -> float</b>).
+We could have explictly written this subexpression as <b>r**3.</b> which would
+  have required no conversion/promotion because <b>3.</b> is a <b>float</b>
+  literal.
+<p>
+Next, let's examine the combination of relational, logical and arithmetic
+  operators (and note how multiple adjacent relational operators use chained
+    associatitivity).
+This expression, resulting in the <b>bool</b> value <b>False</b> computes
+  whether <b>x</b> is between <b>1</b> and <b>10</b> inclusive and <b>x</b>
+  is strictly greater than twice <b>y</b>.
+</td>
+</tbody>
+</table>
+
+<img src="images/logical.jpg"></image><p>
+</td>
+</tbody>
+</table>
+
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>&nbsp</b></td>
+<td width ="80%">
+Note that all the relational operators (here <b>&lt;=&nbsp;&nbsp;&lt</b>) have
+  a higher precedence than the logical operators (here <b>and</b>)
+That makes sense because relational operators produce <b>bool</b> results and
+  logical operators use <b>bool</b> values as their operands; so the relational
+  operators should have higher precedence.
+Arithmetic operators even higher precedence.
+<p>
+Also note that because the two <b>&lt;=</b> operators are adjacent, and
+  relational operators use chained associativity, we draw one large oval around
+  this sequence/chain of operators and their operands.
+So, <b>0 &lt;= x &lt;= 10</b> computes whether both <b>0</b> is less than or
+  equal to <b>x</b> and <b>x</b> is less than or equal to <b>10</b>.
+We could write this subexpression as the equivalent
+  <b>0 &lt;= x  and x &lt;= 10</b>.
+We prefer the former way, using chained relational operators, because it is
+  shorter and just as meaningful.
+<p>
+Here is one more expression to analyze: it actually is quite interesting in
+  what it does and how it does it.
+</td>
+</tbody>
+</table>
+
+<img src="images/min.jpg"></image><p>
+</td>
+</tbody>
+</table>
+
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>&nbsp</b></td>
+<td width ="80%">
+Note that twice the expression computes a <b>bool</b> values and multiplies it
+   times an <b>int</b> value.
+To match the prototype (<b>* (int,int) -> int</b>) of the <b>*</b> operator,
+  Python implicity converts/promotes each <b>bool</b> to an <b>int</b> according
+  to the rule: <b>False</b> promotes to <b>0</b> and <b>True</b> promotes to
+   <b>1</b>.
+<p>
+Try evaluating this expression with <b>x = 3</b> and <b>y = 5</b>; the result
+  is again <b>3</b>, but now the left product is <b>3</b> and the right product
+  is <b>0</b>.
+Choose different values to bind to <b>x</b> and <b>y</b> and evaluate this
+  expression: you will find that it always is the smaller of these values; this
+  expression computes the minimum of <b>x</b> and <b>y</b>.
+Here is a quick justification.
+The two boolean subexpressions are <b>x<=y</b> and <b>x>y</b>; these are
+  opposite tests: when one is <b>True</b> the other is <b>False</b>.
+So one side of the sum will always be zero; the other side will be <b>x</b>
+  or <b>y</b>; it will be <b>x</b> if <b>x<=y</b> evalutes to <b>True</b>;
+  it will be <b>y</b> when <b>x>y</b> evalutes to <b>True</b>.
+So, it will be <b>x</b> when <b>x</b> is the smaller number and it will be
+  <b>y</b> when <b>y</b> is the smaller number.
+<p>
+Finally, we could have made the conversion explicit by instead writing this
+  expression as <b>int(x<=y)*x + int(x>y)*y</b>.
+Because implicit conversion from <b>bool</b> to <b>int</b> is not familiar to
+  most people, the explicit conversion version is probably better.
+Of course, if we ever must analyze and expression to understand it better,
+  these oval diagrams are exactly what you should use.
+<p>
+As another example, what would the previous expression mean in Python if 
+  <b>y</b> were bound to a <b>float</b> value instead?
+Here is an example.
+Notice implicit conversions from both <b>bool</b> to <b>float</b> and from
+  <b>int</b> to <b>float</b>.
+The result is a <b>float</b>.
+Suprisingly, even if we had written <b>x = 5.</b> and <b>y = 3</b> the result
+ would have been <b>3.</b> (not <b>3</b>) because of the conversions.
+<p>
+Finally, let's look at an example that involves a method call instead of a
+  function call; this example is also interesting because it use the string
+  (<b>str</b>) type, including string semantics for the <b>+</b> and <b>*</b>
+  operators.
+The following expression computes an all upper-case letter version of <b>s</b>
+  and concatenates it with the <b>!</b> character repeated 3 times.
+The result is the <b>str</b> <b>FIRE!!!</b>
+</td>
+</tbody>
+</table>
+
+<img src="images/string.jpg"></image><p>
+</td>
+</tbody>
+</table>
+
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>&nbsp</b></td>
+<td width ="80%">
+Notice how the method call <b>upper</b> appears, and note that the <b>*</b>
+  operator still has precedence over <b>+</b> whether we are using numeric or
+  string operands.
+</td>
+</tbody>
+</table>
+
+
+
+<!-- Expression Pragmatics -->
+
+<a name="ExpressionPragmatics"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Expression Pragmatics</b></td>
+<td width ="80%">
+  Write expressions correctly (for computers) and clearly (for people,
+    including yourself).
+  Use suggestive spacing, redundant parentheses, or both to clarify (for the
+    person) the meanings of complicated expressions.
+  <ul>
+    <li>Suggestive Spacing: use extra whitespace around lower-precedence
+          operators to suggest that they are evaluated later.
+        Recall that whitespace doesn't change the meaning of a program (all the
+          tokens remain the same), but this spacing makes it easier for
+          people to "see" operator precedence.
+    <li>Redundant Parentheses: use unneeded parentheses (they do not override
+          the precedence of any operators) around higher-precedence operators
+          to reinforce that they are evaluated earlier.
+  </ul>
+  <p>
+  <table cellspacing="0" cellpadding="5" border="1" rules="all">
+  <thead><tr><th align="left">Expression</th><th>Suggestive Spacing</th><th>Redundant ()</th>
+  </thead>
+  <tbody>
+  <tr valign="top"><td><pre><b>.5*a*t**2+v*t+d</b></pre></td>
+    <td><pre><b>.5*a * t**2  +  v*t  +  d</b></pre></td>
+    <td><pre><b>.5*a*(t**2)+(v*t)+d</b></pre></td>
+  </tbody>
+  </table>
+  <p>
+  Also, use literals of the correct type to avoid implicit conversion (which
+    often leads to harder-to-understand expression).
+  If you want to indicate conversion, use explict conversion functions to make
+    it explicit: doing so doesn't change how Python evaluates the expression
+    (implicit/explicit conversion both do the same thing) but for anyone
+    reading the code (including you), the expression will be easier to
+    understand.
+  We can check the expressions we write by analyzing them with oval diagrams,
+    and evaluating them for a few different values to ensure that they compute
+    the correct answers.
+  <p>
+  Don't convert literals; when I see students write <b>float(5)</b> it pains me
+    greatly: write just <b>5.</b> instead.
+</tbody>
+</table>
+
+
+
+<!-- Synthesis -->
+
+<a name="Synthesis"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Synthesis:Formulas -> Expressions</b></td>
+<td width ="80%">
+Now let's look at the problem of translating mathematical formulas (often
+  written in a 2-dimensional notation) into  equivlalent Python expressions
+  (written in a 1-dimensional notation).
+The key to such a process will be to find the operator that will be applied
+  last (after its operands/subexpressions are computed); then to write the
+  operator and placeholders for its operands, and apply this process
+  recursively to synthesize its subexpressions.
+Let's apply this process to to translating the following formula into a Python
+  expression: it computes one root of a quadratic equation.
+<b><pre>              __________
+             / 2
+    -b  +  \/ b  - 4ac
+
+  ---------------------------
+               2a</pre></b>
+
+So, for the root of the quadratic equation, the division between the numerator
+and the denominator is applied last, so we would start with
+
+<b><pre>  numerator/denominator</pre></b>
+
+The denominator is just <b>2a</b>, so we rewrite the formula as follows,
+  putting the denominator in paretheses to avoid the common operator
+  precedence mistake.
+ 
+<b><pre>  numerator/(2*a)</pre></b>
+
+Now, the last operator applied in the <b>numerator</b> is the <b>+</b>.
+So we rewrite the formula as follows, putting the <b>numerator</b> in
+  parentheses to force the <b>+</b> to be applied before the <b>/</b>.
+We use <b><pre>  (left + right) / (2*a)</pre></b>
+because	<b><pre>  left + right / (2*a)</pre></b> would compute incorrectly: it
+  would apply the <b>+</b> after division.
+<p>
+The <b>left</b> is just <b>-b</b>, so we rewrite the formula as follows.
+We don't need to put -b in parentheses, because the negative operator (-)
+  has a precedence higher than <b>+</b> so it will be applied earlier.
+We now have <b><pre>  (-b + right) / (2*a)</pre></b>
+
+The <b>right</b> requires using the <b>sqrt</b> function (assume
+  <b>from math import sqrt</b>), so we rewrite the formula as follows
+<b><pre>  (-b + sqrt(body)) / (2*a)</pre></b>
+Inside the <b>body</b> the last operator applied is <b>-</b>.
+So we rerwite the formula as follows.
+<b><pre>  (-b + sqrt(left - right)) / (2*a)</pre></b>
+
+The left formula is just <b>b**2</b>, so we rewrite the formula as follows.
+We don't need to put <b>b**2</b> in parentheses, because the <b>**</b> operator
+  has a higher precedence than <b>-</b> so it will be applied earlier.
+<b><pre>  (-b + sqrt(b**2 - right)) / (2*a)</pre></b>
+
+The <b>right</b> formula performs two multiplications.
+Since adjacent multiplications are done left to right, the left operand is
+<b>4a</b> and the right is <b>c</b>, so we can rewrite the formula as follows.
+We don't need to put <b>left*c</b> in parentheses, because the * operator has
+  a higher precedence than the <b>-</b> operator.
+<b><pre>  (-b + sqrt(b**2 - left*c)) / (2*a)</pre></b>
+
+Finally, we can rewite left as just <b>4*a</b> and we are done converting the
+mathematical formula into an Python expression.
+<b><pre>  (-b + sqrt(b**2 - 4*a*c)) / (2*a)</pre></b>
+
+Try to use an oval diagram to analyze this expression to see if we converted
+  it correctly.
+<p>
+We can carefully apply this method to convert any mathematical formula into a
+  Python expression, no matter how complicated it is, but we must also remember
+  rules of operator precedence and associativity.
+</tbody>
+</table>
+
+
+
+<!-- Simple Functions -->
+
+<a name="SimpleFunctions"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Simple Functions</b></td>
+<td width ="80%">
+
+Although this is getting a bit ahead of ourselves, we know enough now to
+  define simple functions, using the <b>return</b> keyword.
+Here is a definition of the <b>quadratic</b> function, which combines a
+  function header (which we know about from reading/calling functions) with
+  and expression (which we know about from this chapter) just the keyword
+  <b>return</b>, which we will discuss exactly when we discuss functions in
+  detail: for now, it just tells the function what value to return as a result.
+<b><pre>  def quadratic(a,b,c,x):
+      return a*x**2 + b*x + c</pre></b>
+With this knowledge you can abstract any compuatation that is an expression into
+  a function you can define.
+You can put such a definition in a script (for use once, in the current
+  computation) or in a library module, so you can import the function and use
+  it in any script.
+This is just the tip of the iceberg about functions, we we will study in more
+  detail after we discuss the control structures that often inside them.
+</tbody>
+</table>
+
+
+
+<!-- Final -->
+
+<a name="Final"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Final Topics</b></td>
+<td width ="80%">
+
+We briefly touch on two topics here that we will learn much more about later
+  (some in ICS-33).
+First Python translate all the operators into calls on special methods defined
+  in the classes that specify their left operand.
+So, for example, in the <b>int</b> class there is a special method call
+  <b>__add__</b> that is called whenever an <b>int</b> object is the left
+  operand of a <b>+</b> operator; this method determines the type of the
+  <b>right</b> operand to determine how to perform the addition: it produces
+  an <b>int</b> result if the right operand is an <b>int</b>, but produces a
+  <b>float</b> result if the right operand is a <b>float</b>.
+When we learn how to define our own classes, we can write methods like
+  <b>__add__</b> that the <b>+</b> operator will call.
+<p>
+There is a special function named <b>eval</b> that is defined in the
+  <b>builtins</b> module (whose names are automatically imported into every
+  module).
+It has a single <b>str</b> argument and returns some object: the result of
+  treating that argument as if Python were to evaluate it as an expression.
+Its prototype is <b>eval(str) -> object</b>.
+For example, if we had a script
+<b><pre>  a = 1
+  b = 2
+  print (eval('a+b'))</pre></b>
+Python would print <b>3</b>.
+Big deal, we could have written <b>print(a+b)</b> inside the script.
+But now let us look at another script.
+<b><pre>  a = 1
+  b = 2
+print (eval(prompt.for_string('Enter expression using a and b'))))</pre></b>
+Now, the user is prompted and could enter any string, say <b>a+3*b</b> and
+  Python would <b>eval</b> that string and print the answer <b>7</b>.
+So, in the middle of running a script, Python can ask the user for some
+  information (here an expression) and determine its value in the context of
+  where the "code" was entered.
+That is different than Python knowing what should be in the script before it
+  starts running.
+This is a powerful feature that we will use when we need the power.
+What do you think we happen if we entered <b>a+c</b>?
+
+Note that <b>eval("3")</b> is the <b>int</b> object with the value
+    <b>3</b> (just as <b>int("3")</b> would be;
+  <b>eval("True")</b> is the <b>bool</b> object with the value
+     <b>true</b>;
+  <b>eval("'abc'")</b> is the <b>str</b> object with the value
+     <b>'abc'</b>;
+  <b>eval('v')</b> is whatever object the name <b>v</b> is bound to
+     (which might raise and exception if <b>v</b> is not a defined name:
+     <b>NameError: name 'v' is not defined</b>.
+</tbody>
+</table>
+
+
+
+<!-- Problem Set -->
+
+<a name="ProblemSet"><hr align="left" width="33%">
+<table cellspacing="0" cellpadding="5" border="0" rules="none" width="100%">
+<tbody>
+<tr valign="top">
+<td width ="20%"><b>Problem Set</b></td>
+<td width ="80%">
+  To ensure that you understand all the material in this lecture, please solve
+    the the announced problems after you read the lecture.
+  <p>
+  If you get stumped on any problem, go back and read the relevant part of the
+     lecture.
+  If you still have questions, please get help from the Instructor, a CA, a Tutor,
+    or any other student.
+  <ol>
+    <li>What are the results of each of the the following operators?
+    <pre><b>    7/10   7./10   7/10.   7./10.
+    7/10   57/10   157/10   2157/10
+    7//10  57//10  157//10  2157/10
+    7%10   57%10   157%10   2157%10</b></pre>
+    <p>
+
+       
+    <li>Analyze each of the following expressions, assuming
+        <b>a = 1</b> and <b>b=2</b> and write an
+          oval diagram for each.
+    <pre><b>      (a+b)/2       a+b/2
+      100*a//b      100*(a//b)      a//b*100</b></pre>
+    <p>
+
+    <li>Evaluate the expression <b>(a+b - abs(a-b))//2</b> when
+        <ul>
+          <li><b>a = 3</b> and <b>b = 5</b>
+          <li><b>a = 5</b> and <b>b = 3</b>.
+        </ul>
+        Try a few other example values for <b>a</b> and <b>b</b>.
+        Describe in general terms what this expression evaluates to.
+    <p>
+        
+    <li>Suppose that we define <b>attendance = 3000</b> and
+          <b>capacity=10000</b> the number of fans attending an event at a
+          stadium and the maximum number of fans possible at that
+          stadium respectively.
+        Which of the following expressions evaluates to 30, the percentage of
+          fans in the stadium?
+        What do the "incorrect" expressions evaluate to?
+        <pre><b>        attendance//capacity
+        100*attendance//capacity
+        100*(attendance//capacity)
+        attendance//capacity*100        </b></pre>
+
+     <li>Assume that we define <b>year</b> to be some <b>int</b> value.
+         Write an expression whose result is <b>True</b> whenever <b>year</b>
+           stores a leap year and <b>false</b> otherwise.
+         We define a leap year as any year that is a perfect multiple of of
+           <b>4</b>, but not if it is a perfect multiple of <b>100</b>
+           (unless it is also a perfect multiple of <b>400</b>).
+         Note that one number is a perfect multiple of another if the
+           remainder after division equals zero.
+     <p>
+
+     <li>Assume that we define <b>x</b>, <b>y</b>, and <b>z</b> to refer to
+           <b>int</b> values.
+         Write an expression that computes whether...
+         <ul>
+            <li>...<b>x</b> is odd
+            <li>...<b>x</b> is a multiple of 20 (e.g., 20, 40, 60, ...)
+         </ul>
+         Assume that zero is a positive number.
+         Write an expression that computes whether...
+         <ul>
+            <li>...<b>x</b> and <b>y</b> are both positive
+            <li>...<b>x</b> and <b>y</b> have the same sign
+            (both are positive or both are negative)
+            <li>...<b>x</b> and <b>y</b> have different signs
+            (one is positive and one is negative)
+         </ul>
+         Write an expression that computes whether...
+         <ul>
+            <li>...all three names (<b>x</b>, <b>y</b>, and <b>z</b>) are bound
+                to equal values
+            <li>...all three names (<b>x</b>, <b>y</b>, and <b>z</b>) are bound
+                to different values (none the same)
+            <li>...two variables store the same value, but the third one is
+                different
+         </ul>
+       <p>
+
+     <li>Assume that we specify two points in space by definint the x and y
+           coordinate of each using
+           <b>x1</b>, <b>y1</b>, <b>x2</b>, and <b>y2</b> all which are
+           <b>float</b>.
+         Write an expression that computes...
+         <ul>
+            <li>...the distance between these points
+            <li>...the slope of the line from the first point to the second
+            <li>...whether both points lie on the same line from the origin
+            <li>...whether the first point is above the second
+            <li>...what quadrant the first point lies in (1st, 2nd, 3rd, or 4th)
+            <li>...whether the two points lie in the same quadrant
+         </ul>
+     <p>
+
+     <li>Assume that we specify a circle with the definitions
+           <b>centerX</b>, <b>centerY</b>, and <b>radius</b>
+           and a point by the defintions <b>x</b> ,<b>y</b> all which are
+           <b>float</b>.
+         Write an expression that computes whether or not the point lies inside
+            the circle (include points on the boundary).
+     <p>
+
+     <li>Assume that specify an interval by a pair of <b>int</b> values (the
+           ones at the beginning and end of the interval: <b>5</b> and <b>8</b>
+           would specify the interval containing the numbers <b>5</b>,
+           <b>6</b>, <b>7</b>, and <b>8</b> inclusive.
+         We declare <b>b1</b>, <b>e1</b>, <b>b2</b>, adn <b>e2</b> to
+           represent the beginning and end of two intervals (all <b>int</b>),
+           and <b>x</b> so represent some <b>int</b> value.
+         Note that we will guarantee that the intervals are "well formed":
+           <b>b1 <= e1</b> and  <b>b2 <= e2</b>.
+         <ul>
+            <li>Write an expression that computes the number of values in an 
+                  interval beginning with <b>b1</b> and ending with <b>e1</b>.
+            <li>Write an expression that computes whether...
+               <ul>
+                 <li>...<b>x</b> is inside the first interval
+                 <li>...<b>x</b> is not inside the first interval
+                 <li>...<b>x</b> is inside the first interval but not the second
+                 <li>...<b>x</b> is inside either the first or second interval (or both)
+                 <li>...<b>x</b> is inside either the first or second interval (but not both)
+               </ul>
+            <li>Write an expression that computes whether...
+               <ul>
+                 <li>...the first interval is the same as the second
+                 <li>...the first interval ends before the second one begins
+                 <li>...the first interval ends on the same value as the second one begins
+                 <li>...the first interval is inside the second one
+                 <li>...the first interval and the second interval overlap (at least one common value)
+                 <li>...the first interval and the second interval do not overlap (no common values)
+               </ul>
+         </ul>
+         Draw pictures to help you visualize the relationships; choose your relational and logical
+           operators carefully, and try a few examples to convince yourself that your expressions are
+           correct.
+         For example, the following picture shows the first interval inside the second.<br>
+         <img src="images/inside.gif"></image>
+     <p>
+
+     <li>Assume that we define <b>x</b>, <b>y</b>, and <b>z</b> to refer to
+           <b>int</b> values.
+         Write an expression that computes the minimum of these three values.
+         You may use the <b>min</b> function; its prototype is
+           <b>min(int,int) -> int</b> and it computes/returns the minimum of its
+           arguments.
+     <p>
+
+     <li>Assume that we defined
+         <b>low</b>, <b>high</b>,and <b>x</b> to be <b>int</b> and that we
+         guarantee that <b>low <= high</b>.
+         Write an expression whose result is <b>low</b> if <b>x</b> is smaller
+          than <b>low</b>,  <b>high</b> if <b>x</b> is greater than
+          <b>high</b>, and <b>x</b> if it is between these values.
+          You may use the <b>min</b> and the <b>max</b> functions (see the
+          problem above).
+     <p>
+
+
+ </ol>
+</td>
+</td>
+</tbody>
+</table>
+
+
+</body>
+</html>

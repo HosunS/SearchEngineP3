@@ -1,0 +1,652 @@
+				Binary Search Trees
+
+
+This lecture will cover a specific kind of binary tree: a Binary Search Tree
+(BST). We can use these trees, if they are well balanced, to insert, search, and
+remove values with complexity of O(Log N). Such a data structure would be an
+improvement for implementing sets, maps, and priority queues, where some of
+these operations are O(N) for array and linked list implementations. We will
+discuss the ordering property of binary search trees, along with iterative and
+recursive versions of the insert, search, and remove functions, and finally
+illustrate four kinds of tree traversal orders and how to create iterators for
+BSTs.  
+
+------------------------------------------------------------------------------
+
+Order Property/Structure Property:
+
+The order property of a binary search tree is that EVERY node (not just the
+root), must have a value that is greater than all the values in its left
+subtree and less than all the values in its right subtree. This property is
+trivially true for empty trees and leaves (because they have no subtrees that
+might contain nodes that have incorrect values).
+
+Note that this property applies between a parent and ALL its DESCENDANTS (ALL
+the nodes in its left and right subtree), NOT JUST ITS CHILDREN. The following
+property is similar, simpler, and WRONG: a node must be greater than its left
+child and less than its right child. Certainly a BST by the definition above
+implies that a node and its children satisfy this property, but the implication
+doesn't go the other way around. So remember the right definition, not the
+wrong one.
+
+Challenge: Draw a small tree that satisifies the second property stated in this
+paragraph, but is not a true BST by the first property. Hint: you don't need
+many nodes.
+
+Note that the values that are inserted in a BST do NOT determine the structure
+(shape) of the BST that contains them. The structure depends on the ORDER that
+these values are INSERTED into the BST (see the insertion function below).
+Depending on the order that the values are inserted, the height of the tree can
+be pathological or well-balanced: O(N) or O(Log N).
+
+In later lectures we will examine other kinds of trees, with different order and
+structure properties: e.g., heaps and AVL trees.
+
+Finally, we will generally assume that a BST stores unique values (as they
+would in sets and maps -organized by unique keys). If we wanted to store
+multiple copies of a value, there are two standard approaches:
+
+1) We could add an int field to each node keeping a count of how many times
+   its value occurred. Thus, there would still be unique values in every node.
+
+2) We could change the order property slightly, such that for any node, all
+   values in the left subtree are less than OR EQUAL and all values in the
+   right subtree are still strictly greater (or, symmetrically, values in the
+   left subtree are stictly < and all values in the right subtree are >=).
+
+------------------------------------------------------------------------------
+
+Seaching:
+
+Given any tree satisfying the BST order property, there is a unique location in
+that BST for any specific value in the tree. We can write simple functions, both
+iterative and recursive, that attempt to find (and return a pointer to) the
+node that stores such a value.
+
+Because of this order property and the law of trichotomy (a==b, a<b, or a>b),
+when we compare the value we are searching for with any node in the tree -we
+start at the root- and know
+
+  (a) value == node's value: we have found the node containing the value
+  (b) value <  nodes' value: the value, if in the tree, is in the left subtree
+  (c) value >  node's value: the value, if in the tree, is in the right subtree
+
+Contrast this situation with the recursive tree functions that we have studied
+(e.g., size and height) which needed to examine BOTH subtrees to compute their
+answers. We found that in these cases, we must do two recursive calls inside
+such functions, always recurring both to the left and to the right. For
+searching in a BST, we must examine at most one subtree of a node (left OR
+right) based on a comparison at the root of a subtree, so we can write a search
+function iteratively. The following code mimics iterative code that searches a 
+linear-linked list, but instead of updating the cursor as c=c->next we have
+either c=c->left or c=c->right, depending on how to_find compares to c->value.
+
+template<class T>
+TN<T>* find (TN<T>* root, T to_find) {
+  for (TN<T>* c=root; c!=nullptr; c = (to_find < c->value ? c->left : c->right))
+    if (to_find == c->value)
+      return c;
+
+  return nullptr;
+}
+
+We can also write this function recursively. The recursive function is a bit
+longer than the iterative one, but it has the added advantate that its
+structure is almost identical to the recursive code for inserting a value in a
+BST (which we will examine soon; insertion is harder to do iteratively):
+
+template<class T>
+TN<T>* find (TN<T>* t, T to_find) {
+  if (t == nullptr)
+    return nullptr;
+  else
+    if (to_find == t->value)
+      return t;
+    else if (to_find < t->value)
+      return find(t->left, to_find);
+    else /* if (to_find > t->value) */
+      return find(t->right,to_find);
+}
+
+The test in the comment does not need to be performed: it is guaranteed to be
+true by the law of trichotomy, if the earlier tests are false.
+
+We can simplify the final if/else in this code using a conditional expression,
+similar to what we wrote in the iterative function.
+
+template<class T>
+TN<T>* find (TN<T>* t, T to_find) {
+  if (t == nullptr)
+    return nullptr;
+  else
+    if (to_find == t->value)
+      return t;
+    else
+      return find( (to_find < t->values ? t->left : t->right), to_find);
+}
+
+We can prove that this function is correct as follows.
+
+1) There are no nodes containing any values in an empty tree. This function
+   immediately recognizes this base case and returns nulltpr.
+
+2) For any non-empty tree t, a recursive call on t->left or t->right is always
+   using an argument closer to the base case than t: each contains at least 1
+   fewer TNs than t does (and often each contains about 1/2 the TNs t does).
+
+3) Assuming find(t->left,to_find) and find(t->right,to_find) correctly return
+   a pointer to the node storing to_find in a subtree, this function checks
+   whether to_find is at its root and returns a pointer to that node if it
+   does; if it doesn't, it returns the answer computed by calling find on
+   either the left or right subtree, as appropriate for the order property of
+   the BST, and these functions return the correct result.
+
+We can also combine the  nullptr/== case as follows, where both non-recursive
+results are returned in the if; here short-circuit evaluation is important.
+
+template<class T>
+TN<T>* find (TN<T>* t, T to_find) {
+  if (t == nullptr || to_find == t->value)
+     return t;
+  else
+     return find( (to_find < t->value ? t->left : t->right), to_find);
+}
+
+These functions, in the worst case, will search through the number of nodes
+equal to the height of the tree + 1: every call is at a depth that is 1 lower,
+and the height is the maximum depth. In a pathological tree, it will search
+all N nodes; in a well balanced tree (one with about the same number of left and
+right descendants, for every node) it will search about Log2 N nodes. Thus,
+when asked what is the complexity class of searching in a BST we would first
+have to know whether the tree is pathological or balanced. Or, we could just say
+O(Height of the tree), which is a correct -if a bit non-commital- answer for
+both kinds of trees. We know H is both Omega(Log2 N) and O(N).
+
+------------------------------------------------------------------------------
+
+Insertion:
+
+Insertion is simlar to searching: the place where we would "insert" the node is
+the place where we would "find" the node if searching for it (and we will likely
+search for it after we insert it). We will write this function in two recursive
+ways: (1) returning a result and (2) void, but with a reference parameter.
+Finally we will show an iterative function that solves the problem, but is
+much messier and more complicated.
+
+Note that BSTs grow at their leaves: each insertion creates a new leaf, growing
+it from another leaf or an internal node with just one child.
+
+(1) By using the same technique we used to mutate linked lists in recursive
+functions (very similar to the recursive function that inserts a value at the
+rear of a linked list), we can solve this problem recursively with code that
+mirrors the recursive searching code. Here will will do nothing if the value is
+already stored in the BST.
+
+template<class T>
+TN<T>* insert (TN<T>* t, T to_insert) {
+  if (t == nullptr)
+    return new TN<T>(to_insert); //nullptr implicit for left/right subtrees
+  else {
+    if (to_insert < t->value)
+      t->left = insert(t->left, to_insert);
+    else if (to_insert > t->value)
+      t->right = insert(t->right, to_insert);
+  /*else,  for == case
+      ;*/
+
+    return t;
+  }
+}
+
+Here insert returns a pointer to the root of a BST that is mutated to include
+the value to_insert.  So we call this function like
+
+   root = insert(root, to_insert);
+
+For an empty BST, it directly returns a pointer to a new node; for a non-empty
+BST it will return the original root, but the root, or exactly one of the
+root's descendants will have its left or right pointer now point to a new leaf
+node storing to_insert.
+
+Note that if to_insert == t->value in the else, it is neither < or > t->value,
+so this function returns without making any changes to the BST.
+
+
+(2) By using a reference parameter for t, we can write even simpler code, but
+still looking like the recursive insert code.
+
+template<class T>
+void insert (TN<T>*& t, T to_insert) {
+  if (t == nullptr)
+    t = new TN<T>(to_insert);    //nullptr implicit for left/right subtrees
+  else
+    if (to_insert < t->value)
+      insert(t->left, to_insert);
+    else if (to_insert > t->value)
+      insert(t->right, to_insert);
+  /*else, for == case
+      ;*/
+}
+
+Again, note that if to_insert == t->value in the else, this function returns
+without making any changes to the BST.
+
+Note that we call this function like insert(root, to_insert);
+
+Finally, here is an iterative function to insert a value into a BST. It is more
+complicated than the recursive functions above - and not much like the
+iterative search function either. It works by searching downward (into either a
+left or right subtree) for a node such that to_insert belongs to its left (or
+right) and there currently is no node to it left (or right) and then puts a
+node with the value to_insert there. The nested if statements produce 
+complicated logic.
+
+template<class T>
+TN<T>* insert_i (TN<T>* root, T to_insert) {
+  if (root == nullptr)
+    return new TN<T>(to_insert);
+  else {
+    TN<T>* t = root;
+    for (;;)
+      if (to_insert == t->value)
+        return root;
+      else if (to_insert < t->value) {
+        if (t->left == nullptr) {
+          t->left = new TN<T>(to_insert);
+          return root;
+        }else
+          t = t->left;
+      }else /* to_insert > t->value */{
+        if (t->right == nullptr) {
+          t->right = new TN<T>(to_insert);
+          return root;
+        }else
+          t = t->right;
+      }
+  }
+}
+
+Note in this function, if the value belongs in the left/right subtree of a
+node, but that subtree already contains a node, we just advance t to point to
+node at the root of the the left/right subtree and continue downward.
+
+Note that we must call this function like root = insert(root, to_insert);
+
+The root of the entire tree is always returned; but when inserting a value into
+an empty tree, the old root is nullptr so a new root is returned.
+
+
+------------------------------------------------------------------------------
+
+Removal:
+
+There are many different algorithms to remove a value from a BST. One property
+good algorithms should have is that they do not increase the height of the
+tree. After all, we are removing a node, so the height should stay the same,
+or get smaller. The algorithm I'll show will have this property. The exact
+code to execute depends on the number of children of the node being removed.
+
+( 1) Find the node containing the value to be removed
+
+(2a) If it is a LEAF, delete it: make the pointer from its parent (left or
+       right) nullptr, instead of pointing to the deleted node.
+
+(2b) If it is an INTERNAL node with ONE CHILD, delete it: make the pointer from
+       its parent (left or right) point to its child, instead of pointing to the
+        deleted node.
+
+(2c) If it is an internal node with TWO CHILDREN 
+     (2c1) Find the node containing the closest value: either the largest value
+             smaller than it or the smallest value larger than it (it doesn't
+             matter which) 
+     (2c2) Remove that node from the tree: it is guaranteed to have at most
+              one child, so it will be easy to remove using this algorithm via
+              steps 2a or 2b 
+     (2c3) Replace the value of the original node (the one containing the value
+              to remove) with the value of this node just deleted
+
+The actual C++ code for this algorithm (below) is a bit subtle (notice the &
+parameter). UNLIKE the other code that appears in this lecture, I do not expect
+you to be able to replicate it. But I expect you to try to understand it. Here
+in the TWO CHILDREN case the node with the "closest" value will be the node that
+is the biggest value less than the value in the node being removed.
+
+
+template<class T>
+T remove_closest(TN<T>*& t) {
+  if (t->right == nullptr) {
+    T to_return = t->value;
+    TN<T>* to_delete = t;
+    t = t->left;
+    delete to_delete;
+    return to_return;
+  }else
+    return remove_closest(t->right);
+}
+
+template<class T>
+void remove (TN<T>*& t, T to_remove) {
+  if (t == nullptr)
+    return;
+  else
+    if (to_remove == t->value) {
+      if (t->left == nullptr) {
+        TN<T>* to_delete = t;
+        t = t->right;
+        delete to_delete;
+      }else if (t->right == nullptr) {
+        TN<T>* to_delete = t;
+        t = t->left;
+        delete to_delete;
+      }else
+        t->value = remove_closest(t->left);
+    }else
+      remove( (to_remove < t->value ? t->left : t->right), to_remove);
+}
+
+------------------------------------------------------------------------------
+
+Miscellaneous: Copying a Tree/Checking for "equal" Trees
+
+Here is an elegant recursive function that copies a binary tree (whether or not
+it is a BST); it is similar in form to copying a linear linked list. It is O(N)
+because each of the N nodes in the tree is processed once, in a constant amount
+of time: O(1) to call new and copy the information in the constructor.
+
+template<class T>
+TN<T>* copy (TN<T>* t) {
+  if (t == nullptr)
+    return nullptr;
+  else
+    return new TN<T>(t->value, copy(t->left), copy(t->right));
+}
+
+Likewise, here is an elegant recursive function that determines whether two
+binary trees (whether or not they are BST) are equal. Here, equal means the
+same structure storing the same values. Notice how short-circuit evaluation
+means that if nodes have different values, their subtrees are not checked for
+equality, possibly speeding up the comparison.
+
+template<class T>
+bool equal (TN<T>* t1, TN<T>* t2) {
+  if (t1 == nullptr || t2 == nullptr)
+    return t1 == nullptr && t2 == nullptr;
+  else
+    return t1->value == t2->value &&
+           equal(t1->left,t2->left) && equal(t1->right,t2->right);
+}
+
+------------------------------------------------------------------------------
+
+Traversals:
+
+We will now discuss the four standard traversal orders: Preorder, Inorder,
+Postorder (which are all depth-first orders), and Breadth-First. As we continue
+to discuss tree-processing functions, we will see examples of all these orders.
+Although we are illustrating these traverals in a BST, we can discuss
+traversing any kind of tree, with any number of children, and any (or no)
+ordering among its nodes.
+
+Note that the first three traversals are all accomplished with variants of a
+simple recursive function. In Preorder traversals, the parent is processed
+BEFORE (pre) its children; in Inorder the parent is processed IN-BETWEEN its
+children; and in Postorder the parent is processed AFTER (post) its children.
+Normally we will process the subtrees of a parent in left-to-right order, but
+any order is OK; see the print_rotated function in the previous lecture, which
+is an Inorder traversal that processes first the right subtree, then the parent,
+and finally the left subtree of every node in a binary tree.
+
+In breadth first search nodes are processed by increasing depth from the root:
+first the root (depth 0), then its children (depth 1), then its grandchildren
+(depth 2), etc.
+
+The exact meaning of "processed" changes depending on that we are doing with 
+he tree. In the example below, "processed" means print out the value of the
+node.
+
+The general method for visiting and printing the first three kinds of traverals
+is shown below. Preorder printing prints a node before its children; inorder
+printing prints a node between its two children; postorder printing prints a
+node after its children. The only difference is where the cout appears.
+
+template(class T>
+void print (TN<T>* t) {  //Preorder, Inorder, Postorder form
+  if (t == nullptr)
+    return;
+  else {
+    //Uncomment for preorder traversals:  std::cout << t->value << std::endl;
+    print(t->left);
+    //Uncomment for inorder traversals:   std::cout << t->value << std::endl;
+    print(t->right);
+    //Uncomment for postorder traversals: std::cout << t->value << std::endl;
+  }
+}
+
+Finally, the breath-first order prints all the nodes at a certain depth
+(starting at the root) before any of the nodes at the next depth. There is no
+nice recursive solution here, but there is a simple function that uses a queue:
+adding all the nodes at each level before adding any nodes at the next
+level.
+
+template<class T>
+void print_breadthfirst (TN<T>* t) { //Breadth-First
+  ics::ArrayQueue<TN<T>*> q;
+  q.enqueue(t);                           //Initialize with the root
+
+  while (!q.empty()) {
+    TN<T>* next = q.dequeue();
+    std::cout << next->value << " ";
+    if (next->left != nullptr)     //Only non-nullptr values added
+      q.enqueue(next->left);
+    if (next->right != nullptr)
+      q.enqueue(next->right);
+  }
+}
+
+Given a tree, you should be able to quickly and accurately show the order that
+its nodes are traversed for each traversal order.
+
+A preorder traversal is interesting because if we print the values from a tree
+in that order (say into a file) and read in that file as the order in which to
+add values to a tree, we will get the original tree. Actually, reading a printed
+breadth-first traversal does the same thing, although the order is different.
+Recall that a BST grows from the leaves, and both these orders guarantee that
+the parent in the original tree will be proccessed (printed) before either of
+its children. So, nodes are always added into the tree after their parents, but
+before their children,  guaranteeing that they appear in the tree "lower" than
+their parents but higher than their children.
+
+An inorder traversal is interesting because it prints the values "in order"
+based on the ordering property used to build the BST. Basically, printing an
+inorder traversal is like printing the "sorted" tree.
+
+Note that the complexity class of all these traversals is O(N): each node is
+visited exactly once during a traversal. Students have a hard time
+understanding this complexity class, because of multiple recursion, but it is
+really like printing N linked list nodes.
+
+Finally, we know that for a reasonably balanced tree, it takes O(N Log N)
+to build the tree: N inserts, each O(Log N). If we have all N values before
+starting to build the tree (this is called an offline algorithm -a term we will
+examine in more detail later, and when we study heaps), and want to build as
+good of a tree for searching as we can (lowest height), we would sort the array
+first, which is itself O(N Log N). Then put the middle value in the tree first
+(it will become the root, with about as many values on the left as the right),
+then recursive put all values before the middle in the left subtree and all
+values after the middle in a right subtree. Building this BST is O(N) (each
+node is visited just once) so the total complexity class is O(N Log N) + O(N) =
+O(N Log N + N) =  O(N Log N), because the sorting complexity is dominant.
+
+So if we know all the values going into a tree, we can build a well-balanced
+tree in O(N Log N) time; it would take the same amount of time to add these
+values into a BST (if by luck we happened to add them in the "right" order).
+
+Here is a simple recursive function to build a perfectly balanced tree from a
+sorted array of values.
+
+template<class T>
+TN<T>* build_optimal_tree(int[] sorted, low, high) {
+  if (low > high)
+    return nullptr;
+  else {
+    int mid = (low + high)/2;
+    //Better to write ... = low/2 + high/2 +(low%2==1 && high%2==1 ? 1 : 0);
+    //Do you know why?
+    return new TN<T>(sorted[mid],
+                      build_optimal_tree(sorted, low, mid-1),
+                      build_optimal)tree(sorted, mid+1, high));
+  }
+}
+
+We call this function like: root = buildTree(s, 0, length-1);
+
+Or we can write a build_optimal_tree function with a simpler interface (it has
+fewer parameters), which calls the function above (assuming the array is
+filled) as 
+
+template<class T>
+TN<T> build_optimal_tree(int[] sorted,length)
+  {return build_optimlal_tree(sorted, 0, length-1);}
+
+We call this function like: root = build_optimal_tree(s,10);
+
+"Online" algorithms receive their inputs ONE AT A TIME and have to completely
+update their data structure before the next value is received and processed.
+Building a BST by adding one value at a time is an example of an online
+algorithm. When we build a BST online, it might be pathological (have height
+O(N) instead of O(Log N) and could take O(N^2) time to build.
+
+"Offline" algorithms receive ALL their inputs before they are required to 
+process any of them. We then use all these values to update the data structure
+in any order we want.
+
+The code above is an offline algorithm to build a BALANCED (height is
+guaranteed to be O(Log N)) BST of N values. We would sort all the values that
+are going into the tree be BEFORE we start building it, and build it using
+the function above.
+
+------------------------------------------------------------------------------
+
+Iterators for BSTs:
+
+An easy way to create an iterator for a BST is just to traverse the tree
+recursively (in one of the orders above), storing pointers to all its nodes
+in an array (the length of the array is the size of the tree). Then we can
+write the rest of this iterator to just iterate through the array of pointers
+that is created.
+
+Such an iterator takes O(N) time to construct (allocating the array, filling in
+each of its pointer value while traversing the tree) and uses O(N) extra space
+in the array. The ++ and * operators are just O(1). So, the cost of constructing
+such an iterator AND iterating through ALL its values is still O(N).
+
+Here is code to fill in the array with tree references. It builds an array from
+recursively traversing a tree: in some sense it is the opposite of the code
+above to build a tree from an array. In this code the tree is traversed using
+an inorder traversal, so the array values are sorted. The int value returned is
+the next position in the array to put the value.
+
+template<class T>
+int fill_inorder(TN<T>* t, TN<T>* a[], int next_index) {
+  if (t == nullptr)
+    return next_index;
+  else {
+    next_index = fill_inorder(t->left,  a, next_index);
+    a[next_index] = t->entry;
+    next_index = fill_inorder(t->right, a, next_index+1);
+    return next_index;
+  }
+}
+
+We can create an iterator in an alternative way, so that there isn't such a big
+cost for creating the iterator (either in time or space), but the cost for each
+++ or * operator is increased (mostly O(1) but sometimes O(Height of the tree)).
+The cost of constructing such an iterator and iterating through ALL its values
+is still O(N) in the worst case, as it was with the array, but it is typically
+faster to construct the iterator and throughout the iteration it uses less
+space.
+
+For one example, we can write an iterator that does a breadth-first traveral.
+The constructor would construct a queue and leave it empty if the tree is empty
+or enqueue the root if the tree isn't empty (so that is O(1)); the * operator
+checks if the queue is empty and peeks at the next values (also both O(1)); the
+++ dequeues the first value in the queue (assuming the queue isn't empty) and
+enqueues each non-empty child onto the queue (also O(1)). Note that the biggest
+this queue can get is O(N): the worst case is actually a completely full tree,
+in which case about N/2 values (all its leaves) can be in the queue at one time
+(right before the deepest depth is processed). See the print method above for an
+example of such a traversal (but for an iterator, the loop is outside the
+iterator code).
+
+In fact, we can also do an inorder traversal using a stack. The constructor
+would construct a stack and leave it empty if the tree is empty, or push the
+root if the tree isn't empty and continually pushes left descendants until there
+are none (so that is O(Height)); the * operator determines if the stack is
+empty and peeks at the next value (also both O(1)); the ++ operator pops a value
+from the stack (assuming the stack isn't empty) and pushes its right child and
+all its left descendants until there are none (so, that is O(Height)).
+
+For example suppose we are iterating over the following BST:
+
+                     50
+                 /          \ 
+           30                   70
+          /   \               /    \
+      20        40         60       80
+    /   \       / \       /   \    /   \
+  15     25   35   45    55   65  75   85
+
+So to start, we push 50, 30, 20, and 15 onto the stack, which we will represent
+by
+
+  Stack:  50 | 30 | 20 | 15
+
+using * returns 15; using ++ it has no right child so the stack is now
+           
+  Stack:  50 | 30 | 20
+
+using * returns 20; using ++ it has one right child (25) but it has no left
+descendants, so the stack is now
+           
+  Stack:  50 | 30 | 25
+
+using * returns 25; using ++ it has no right child so the stack is now
+           
+  Stack:  50 | 30
+
+using * 30; using ++ it has one right child (40) which has one left descendant
+35), so the stack is now
+
+  Stack:  50 | 40 | 35
+
+using * returns 35; using ++ it has no right child so the stack is now
+           
+  Stack:  50 | 40
+
+using * returns 40; using ++ it has one right child (45) but it has no left
+descendants, so the stack is now
+           
+  Stack:  50 | 45
+
+using * returns 45; using ++ it has no right child so the stack is now
+           
+  Stack:  50 
+
+using * returns 50; using ++ it has one right child (70) which has left
+descendant 60 and 55, so the stack is now
+
+  Stack:  70 | 60 | 55
+
+...and so on. Notice that the vaues are processed inorder.
+
+Note that the biggest this stack can get is O(Height), which for a well
+balanced tree is O(Log2 N) - a much smaller amount of space than any of the
+other ways we discussed to implement iterators for trees, which all had a
+worst case of O(N).
+
+Of course for a pathological democratic tree, whose height is O(N), this method
+of iteration requires O(N) space too: it starts by pushing all the values onto
+the stack.
+
+Eventually we will implement maps/sets with trees and write an iterator using a
+stack like this one.

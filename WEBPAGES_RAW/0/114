@@ -1,0 +1,119 @@
+// GameView.h : interface of the CGameView class
+//
+/////////////////////////////////////////////////////////////////////////////
+/*------------------------------------------------------------------------------
+ 
+ Written by Dong Le for Professor Richard Lathrop.
+ Contact: Dong Le (dle@kofax.com)
+-------------------------------------------------------------------------------*/
+
+#include <fstream.h>
+#include "GameDoc.h"
+
+#if !defined(AFX_GAMEVIEW_H__4D8469CF_D0B0_11D1_821F_444553540000__INCLUDED_)
+#define AFX_GAMEVIEW_H__4D8469CF_D0B0_11D1_821F_444553540000__INCLUDED_
+
+
+#if _MSC_VER >= 1000
+#pragma once
+#endif // _MSC_VER >= 1000
+
+
+class CStatDlg;
+class Vertex;
+
+class CGameView : public CView
+{
+protected: // create from serialization only
+	CGameView();
+	DECLARE_DYNCREATE(CGameView)
+
+private:
+	//file name
+	CString m_strFileName;
+
+	//maze's attributes
+	int numOfVertices;
+	Vertex * Array;
+	double maxX_coordinate;
+	double maxY_coordinate;
+	int colorArray[1000];
+	
+	//path's attributes
+	int pointsInPath;
+	const Vertex * pathArray;
+
+
+//statistic modeles dialog box and its attributes
+public:
+	CStatDlg* m_pDlg;
+	int    searchTime;
+	double pathCost;
+
+	
+// Operations
+private:
+	void drawXYcoordinate(CDC* pDC);
+	void makeArray(ifstream &inFile, Vertex & start, Vertex &goal);
+	void initializing();
+	void cleanUp();
+	void Save2File();
+	void drawPath(CDC* pDC);
+	double getPathCost();
+
+// Attributes
+public:
+	CGameDoc* GetDocument();
+
+// Operations
+public:
+// Overrides
+	// ClassWizard generated virtual function overrides
+	//{{AFX_VIRTUAL(CGameView)
+	public:
+	virtual void OnDraw(CDC* pDC);  // overridden to draw this view
+	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
+
+	protected:
+	virtual BOOL OnPreparePrinting(CPrintInfo* pInfo);
+	virtual void OnBeginPrinting(CDC* pDC, CPrintInfo* pInfo);
+	virtual void OnEndPrinting(CDC* pDC, CPrintInfo* pInfo);
+	//}}AFX_VIRTUAL
+
+	virtual void OnPrint(CDC* pDC, CPrintInfo* pInfo);
+
+
+// Implementation
+public:
+	virtual ~CGameView();
+#ifdef _DEBUG
+	virtual void AssertValid() const;
+	virtual void Dump(CDumpContext& dc) const;
+#endif
+
+protected:
+
+// Generated message map functions
+protected:
+	//{{AFX_MSG(CGameView)
+	afx_msg void OnViewShowstatisticwindow();
+	afx_msg void OnFileOpen();
+	afx_msg void OnSearch();
+	afx_msg void OnUpdateSearch(CCmdUI* pCmdUI);
+	afx_msg void OnFileNew();
+	afx_msg void OnUpdateViewShowstatisticwindow(CCmdUI* pCmdUI);
+	//}}AFX_MSG
+	DECLARE_MESSAGE_MAP()
+};
+
+#ifndef _DEBUG  // debug version in GameView.cpp
+inline CGameDoc* CGameView::GetDocument()
+   { return (CGameDoc*)m_pDocument; }
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+
+//{{AFX_INSERT_LOCATION}}
+// Microsoft Developer Studio will insert additional declarations immediately before the previous line.
+
+#endif // !defined(AFX_GAMEVIEW_H__4D8469CF_D0B0_11D1_821F_444553540000__INCLUDED_)

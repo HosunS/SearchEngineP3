@@ -1,0 +1,182 @@
+WebDAV Advanced Collections Minutes December 8, 1999
+
+ATTENDING: Judy Slein, Chuck Fay, Jim Whitehead, Geoff Clemm, Kevin Wiggen
+
+DISCLAIMER: All decisions made by the design team are subject to review by 
+the WebDAV mailing list.
+
+ACTION ITEMS
+
+Chuck: Re-send edits to the simple binding example.
+Geoff: Send Judy the latest definition of MKRESOURCE from the DeltaV spec.
+Jim: Ask Yaron to review the section on Redirect References to Collections.
+
+LOGISTICS
+
+Next meeting Wednesday December 15, if there are agenda items to make it
+worthwhile.
+
+THE BINDING SPEC
+
+COMMENTS
+
+Jim liked the changes to the introduction.
+
+Chuck liked the simple example that used to be in the abstract.  He would
+like to see it used someplace.
+Agreed: We'll include it in the terminology section, in the definition
+of Binding, immediately after the introduction of the C: (S -> R) notation
+and before the discussion of URI mappings.  Incorporate Chuck's edits.
+
+ATOMICITY
+Jason reported no response from the people at Microsoft he asked about
+how hard it would be for their file systems to support atomic DELETE / MOVE.
+Geoff talked to Chris Kaler thinks maybe it is hard, but doesn't know any
+detail about why.
+We need explanation to convince us that atomic DELETE / MOVE are not
+feasible.
+Agreed: The spec will continue to require atomic DELETE / MOVE for the
+time being.
+
+UUID URI SCHEME
+Yaron's point about this is that we shouldn't proliferate URI schemes that
+basically do the same thing.
+Can we just use the opaquelocktoken URI scheme?  Can we use it but give it
+a different name that's less confusing in our context?  If we change the
+name, it still has to be registered independently with IANA.
+can we use opaquelocktoken name?
+Jim: Using the name "opaquelocktoken" will be confusing, since we are using
+it to identify a resource, not a lock.
+Agreed: Call the URI scheme something new. Call it resourceid, then someone else can 
+define a more carefully thought out generic UUID URI scheme someday.  Don't even
+mention opaquelocktoken, even though the definition is copied from there.
+
+In the definition of the DAV:resourceid property (as opposed to the URI scheme),
+give more detail about the semantics:
+COPY must produce new one, MOVE must maintain the same one
+Cross-server MOVE would have to fail if can't do that?  Yes.
+For cross-server MOVE, source must pass the guid to the destination.  
+Probably the destination server would have distinct internal and external
+identifiers for the resource, since it might want its own URI scheme for
+internal use.
+(it's a live property)
+PUT that creates a resource makes a new one, update does not.
+It's a required property (The reason we introduced it was so that you could
+determine whether two URIs are mapped to the same resource.)
+
+CHECKING DESCENDENTS
+Judy: Maybe we should take out the (recently added) language in DELETE / MOVE
+that says you have to check the lock and acl state of all descendents to
+determine whether to allow the DELETE / MOVE of a collection.  We were careful
+to remove all other statements about locking, and let the locking proposal
+determine what behavior will be.
+Geoff: Agrees. Let locking define this, don't have statements about locking 
+here.
+Chuck:  The language implies protecting the URI of any locked resource 
+that might conflict with the MOVE.  We should just let the general decision
+about whether to protect URIs determine this, and not say anything here.
+Jim: Agrees.
+Kevin: Agrees.  It's a given that you need to check locks, acls.  We don't 
+need to say this.
+Agreed.
+
+DEFINITION OF DELETE / HTTP
+We keep as is, including the statement about the relation of our definition
+to HTTP.
+
+COPY
+Is this section really needed? Does it say anything beyond what you would
+infer from reading RFC 2518?
+Judy: At least the last paragraph is needed.  It would be confusing reading
+RFC 2518 together with the binding spec, and trying to figure out whether
+the bindings get copied with a Depth: 0 copy of a collection.
+Geoff: Thinks it's actually clear from RFC 2518 what you should do, though
+it's the wrong thing to do. 
+Chuck: The paragraph is needed for clarification.
+Jim: It adds to 8.8.3 of RFC 2518 the explicit discuss of the divergence 
+between RFC 2518 and the data model of the bindings spec.
+Jim: We also need 1st paragraph, since it introduces a new abstraction. 
+It's useful if you are just approaching bindings for the first time. 
+Geoff: Agrees.  It also makes clear that you have to copy the children
+of a collection, not just create new bindings to existing children.
+Kevin: It also makes clear to everybody that we at least thought about
+issues related to COPY.
+Agreed: Keep the whole section.
+
+BINDINGS AND OTHER METHODS
+Jim: Fix the bullet to be an ascii character.
+Geoff: Now that we define the DAV:resourceid property, that may subsume 
+our intent here. Maybe we don't need this section.
+Kevin: Keep it. It shows that you at least thought about it.
+Say that everything else works the way you would expect except for 
+dynamic resources.
+Jim: Keep.
+Geoff: Maybe it could be removed if / when we fold bindings into RFC 2518.
+The only methods we don't mention anywhere are LOCK, UNLOCK. Add them to
+the list in this section.
+Chuck: Adding the qualifier "on success" was to get around cases like
+failure through one binding because of some access control constraint?
+Is there anything that could cause you to get different results from
+a successful request on a static resource, depending on the binding used?
+No. This is the definition of the difference between static / dynamic. (So
+this section is circular.)
+
+WEAK BINDINGS AND CYCLES
+Is any change to the spec needed as a result of this discussion on the
+mailing list?
+Geoff - No. To do anything else would favor one platform over others.
+Jim - Eric's comments on accounting for quotas are interesting.
+Kevin - If a client creates a binding, do you count that for accounting purposes?
+Geoff - Don't go there.  Don't standardize stuff related to accounting / 
+charging for bindings.
+
+Chuck - What about the issues around delete and garbage collection? 
+If you just get rid of a binding, you can't
+find the resource through the namespace, but you can find it through properties.
+Maybe I make a guarantee to my customers that if they delete all bindings, 
+it won't be possible to find the resource.
+Geoff: CM systems also have the strong / weak distinction, but it's done 
+differently than Oracle has done it.  Standardizing on one way of doing it 
+would be difficult.  For example, some servers leave dangling weak references
+while others garbage collect them.
+Jim - Having a deleted file appear in a search is not so terrible.
+Kevin - yes it is.  You can prevent that, though.  You just have to do more 
+work to prevent it.  You can have a "deleted" property that you include in
+all search conditions.
+
+THE REDIRECT REFERENCES SPEC
+COMMENTS
+
+MKRESOURCE AND DELTAV
+Judy: We need to make sure the text in DeltaV and bindings is identical.
+Eventually, whichever spec is complete first keeps the text, and the other
+spec just references it.
+Geoff will send Judy the current language from DeltaV.
+
+MKRESOURCE WITH OVERWRITE: T
+Judy: Overwrite creates issues about atomicity that were discussed 
+at IETF.  Maybe we just shouldn't support the Overwrite header with
+MKRESOURCE.
+Geoff - Do support overwrite, because it makes sense, not because there is
+a strong need for it.
+Geoff: Versioning is not using collections for much, so atomicity is not
+a big issue.
+Judy: Atomicity is a problem even for non-collection resources, because
+if Overwrite: T, and the delete succeeds but the write fails, we have to
+decide whether to require rollback of the delete.
+Kevin: MKCOL does not support Overwrite.  It fails if there's a resource
+already at the Request-URI.
+So there is no precedent for supporting Overwrite on a creation method.  Just
+fail if something is there already.
+Jim: Overwrite was intended only for the Destination of methods that take
+2 URIs as operands.  The plan was to use If-Match: * or If-None-Match: * for
+other methods.
+Judy: So the atomicity question is still there for If-None-Match.
+Agreed: MKRESOURCE will not allow the Overwrite header.  It will fail if a 
+resource already exists at the Request-URI.
+
+REDIRECT REFERENCES TO COLLECTIONS
+Jim will talk to Yaron.
+
+MOVE, DELETE, AND ATOMICITY
+Leave as is for now.  (Atomicity is assumed.)

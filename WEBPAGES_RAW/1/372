@@ -1,0 +1,151 @@
+Union find problem:
+	maintain partition of some elements into sets
+	each set has "id" by which it can be identified
+	operations:
+	    - add new element in its own set
+	    - find id of set containing given element: find(x)
+		- test if two elements are in same set (find(x)==find(y))
+		- test if element belongs to set (find(x)==setid)
+	    - merge two sets: union(x,y)
+
+Applications:
+    - Prim's minimum spanning tree algorithm
+
+	for each edge (u,v) in G, in sorted order by weight
+		if u and v are in different components
+			add (u,v) to T and merge their components
+
+	partition into sets = connected components of partial tree
+	test if in different components = find
+	add and merge = union
+
+	note in general more finds than unions
+
+    - "Blossom contraction" method for finding maximum matchings
+	in arbitrary graphs (see e.g. web site for Python impl)
+
+    - Image segmentation (scan image in preferred pixel or quadtree
+	order, find connected components, instead of DFS or BFS
+	orders with messier memory access patterns)
+
+    - Offline LCA:
+	given T, set of LCA queries, answer all queries
+	    depth first traversal of tree
+	    at each step, maintain set of off-path descs of each path node
+	    handle query lca(u,v) when visiting second of two vertices
+
+Analysis parameters
+	n elements per set
+	so < n unions
+
+	m finds (possibly m >> n)
+
+
+Solution 1: fast queries
+    each node stores id of the set containing it
+    union: change stored ids in one of two sets
+
+    so also need list of objects in each set
+
+    find = O(1) time
+    how to make unions efficient?
+	union by size:
+	    change ids in the smaller of the two sets
+	    node id changes => node becomes member of set >=2*size
+		so <= log_2 n changes per node
+
+    amortized time: O(m + n log n)
+
+
+Solution 2: fast finds
+    store each set in the partition as a rooted tree
+	id of set = tree root (one of the elements in the set)
+
+    find(x): trace path from x to its root
+    union(x,y): add tree edge from find(x) to find(y)
+
+    so we want the tree to be short
+    union by size again: add edge from find(x)->find(y) or vice versa,
+	smaller subtree root to larger subtree root
+    then, each step up tree doubles size of subtree
+	=> path lengths <= log_2 n
+
+    amortized time: O(m log n)
+
+Further improvement: path compression
+
+    union changes sets
+    find is just a query
+
+    but what if (like splay) we allow finds to change the trees?
+
+    when we find a long path from node to root,
+	don't want to repeat all that work again
+		=> change all parent pointers along path to point to root
+
+Path compression analysis
+
+    define rank(x) = log_2 # descs(x)
+	in tree formed by performing all unions but no path compressions
+	so at most n/2^r nodes have rank r
+
+    time for m unions on n items can be split into three parts:
+	find steps from one high rank element to another (HH)
+	find steps from one low rank element to another (LL)
+	find steps from low to high rank and union steps (LH+X)
+
+    also note that each element has at most one find that includes
+    both LL and HH steps (after that all LL ancestor edges are compressed out)
+
+    Let
+	m_0 = # finds that have HH steps
+        n_i = # elements in i'th group of low-rank items
+	m_i = # finds in i'th group of low-rank items that have no HH steps
+		(i > 0)
+    so sum m_i = m, sum n_i = n, n_i < 2^r
+
+    Then
+	#(LH+X) = O(m+n)	(obvious, one per update or query)
+	#(HH) = T(m_0,n/2^r)
+	#(LL in group i) = T(m_i + n_i, n_i)  (m_i + one LLHH find per item)
+
+    It will turn out that smaller groups of low-rank items only make
+    the algorithm run faster, so in the worst case we can assume n_i = 2^r
+
+    Putting this together into a recurrence describing the total time:
+	T(m,n) = O(m + n) + T(m_0, n/2^r) + sum T(m_i + 2^r, 2^r)
+
+    example of playing with this recurrence:
+
+	start from
+	T(m,n) = O(m + n log n) (total # compresses per item <= depth)
+
+	    substitute in recurrence, using r = log log n
+	    second term becomes linear
+	    =>  T(m,n) = O(m + n) + sum T(m_i,log n) = O(m log^* n)
+
+        log^*(n) = min_i i{2^(2^(2^...)) >= n
+
+        very slowly growing
+
+    actual solution to the recurrence:
+	T(m,n) = O(m alpha(m,n))
+    where
+	A(1,j) = 2j
+	A(j,1) = 2
+	A(i,j) = A(i-1,A(i,j-1)) for i,j>1
+
+	2   4   6   8  10  12  14  16
+	2   4   8  16  32  64 128 256
+	2   4  16 2^16...
+
+	alpha(m,n) = min { i >= 1 | A(i,floor(m/n)) >= m }
+
+	incredibly slowly growing...
+
+So union find takes very close to constant time per operation
+    but not constant!
+    can find sequences of operations causing it to take
+    Omega(m alpha(m,n)) time
+
+    more, Omega(m alpha(m,n)) is lower bound in natural models of computation

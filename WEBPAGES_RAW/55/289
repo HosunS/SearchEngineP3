@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Shakespeare Sentiment Explorer</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.15/jquery-ui.min.js"></script>
+        <script type="text/javascript" src="d3/d3.v3.min.js"></script>
+        <style>
+            body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.area.above {
+  fill: rgb(255,182,193);
+}
+
+.area.below {
+  fill: rgb(40,255,194);
+}
+
+.line {
+  fill: none;
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+
+           .link {
+            stroke: #ccc;
+            }
+
+            .node text {
+                pointer-events: none;
+                font: 10px sans-serif;
+            }
+            
+            
+            
+        </style>
+    </head>
+    
+    <body style="width: 1000px; margin: 0 auto">
+        <script type="text/javascript">
+            var h = 790;
+            var w = 1000;
+            var n = 10;
+            var svg = 0;
+            var totalpts = 37;
+            var clicked = -1;
+            var initLocation = [[60,60],[60,80],[60,100],[60,120],[60,140],[60,160],[60,180],[60,200],[60,220],
+            [60,240],[60,260],[60,280],[60,300],[60,320],[60,340],[60,360],[60,380],[60,400],
+            [60,420],[60,440],[60,460],[60,480],[60,500],[60,520],[60,540],[60,560],[60,580],
+            [60,600],[60,620],[60,640],[60,660],[60,680],[60,700],[60,720],[60,740],[60,760]];
+            
+            var books = ["All's Well That Ends Well","As You Like It","Antony and Cleopatra","A Comedy of Errors","Coriolanus","Cymbeline",
+                        "A Midsummer Night's Dream","Hamlet","Henry IV, Part 1","Henry IV, Part 2","Henry V","Henry VIII","Henry VI, Part 1",
+                        "Henry VI, Part 2","Henry VI, Part 3","The Life and Death of King John","Julius Caesar","King Lear","Love's Labor's Lost",
+                        "Macbeth","The Merchant of Venice","Much Ado About Nothing","Measure for Measure","The Merry Wives of Windsor","Othello",
+                        "Pericles","Richard II","Richard III","Romeo and Juliet","The Taming of the Shrew","The Tempest","Timon of Athens",
+                        "Titus Andronicus","Troilus and Cressida","Two Gentlemen of Verona","Twelfth Night","A Winter's Tale"];  
+            var playFiles = ['all_well','as_you','a_and_c','com_err','coriolan','cymbelin', 'dream','hamlet',
+                'hen_iv_1','hen_iv_2','hen_v','hen_viii','hen_vi_1','hen_vi_2','hen_vi_3','john','j_caesar',
+                'lear','lll','macbeth','merchant','much_ado', 'm_for_m','m_wives','othello','pericles',
+                'rich_ii','rich_iii','r_and_j','taming','tempest','timon','titus','troilus','two_gent','t_night', 
+                'win_tale'];
+            
+            function keys(obj){
+                var keys = [];
+                for(var key in obj)
+                {
+                    if(obj.hasOwnProperty(key))
+                {
+                    keys.push(key);
+                }
+                 }
+                return keys;
+               }
+               
+            function renderLineGraph(namea, name2, file, classname){
+                name1 = namea.replace(/\s/g, "");
+                name2 = name2.replace(/\s/g, "");
+                                console.log(name1);
+                console.log(name2);
+                var margin = {top: 480, right: 20, bottom: 30, left: 350},
+    width = 840 - margin.left - margin.right,
+    height = 730 - margin.top - margin.bottom;
+
+
+var x = d3.scale.linear()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var line = d3.svg.area()
+    .interpolate("basis")
+    .x(function(d) { return x(d["lineNo"]); })
+    .y(function(d) { return y(d[name1+"2"+name2]); });
+
+var area = d3.svg.area()
+    .interpolate("basis")
+    .x(function(d) { return x(d["lineNo"]); })
+    .y1(function(d) { return y(d[name1+"2"+name2]); });
+    
+    var lgraph = d3.select("#nets")
+                    .append("svg:g")
+                    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+                    .attr("class", classname)
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.csv("timeSeries/"+file, function(error, data) {
+  data.forEach(function(d) {
+    d["lineNo"] = +d["lineNo"];
+    d[name1+"2"+name2]= +d[name1+"2"+name2];
+    d[name2+"2"+name1] = +d[name2+"2"+name1];
+  });
+
+  x.domain(d3.extent(data, function(d) { return d['lineNo']; }));
+
+  y.domain([
+    d3.min(data, function(d) { return Math.min(d[name1+"2"+name2], d[name2+"2"+name1]); }),
+    d3.max(data, function(d) { return Math.max(d[name1+"2"+name2], d[name2+"2"+name1]); })
+  ]);
+
+  lgraph.datum(data);
+
+  lgraph.append("clipPath")
+      .attr("id", "clip-below")
+    .append("path")
+      .attr("d", area.y0(height));
+
+    lgraph.append("clipPath")
+      .attr("id", "clip-above")
+    .append("path")
+      .attr("d", area.y0(0));
+
+  lgraph.append("path")
+      .attr("class", "area above")
+      .attr("clip-path", "url(#clip-above)")
+      .attr("d", area.y0(function(d) { return y(d[name2+"2"+name1]); }));
+
+  lgraph.append("path")
+  .attr("id", "s3")
+      .attr("class", "area below")
+      .attr("clip-path", "url(#clip-below)")
+      .attr("d", area);
+
+ lgraph.append("path")
+      .attr("class", "line")
+      .attr("d", line);
+
+  lgraph.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + (height+17) + ")")
+      .call(xAxis)
+      .append("text")
+      .attr("y", 20)
+      .attr("x", 60)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Line Number");
+
+  lgraph.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Sentiment Valence");
+      
+      var thing = lgraph.append("g")
+    .attr("id", "thing")
+    .style("fill", "black");
+ 
+thing.append("text")
+    .style("font-size", "12px")
+    .attr("x", 18)
+      .attr("dy", ".99em")
+      .style("text-anchor", "start")
+  .append("textPath")
+    .attr("xlink:href", "#s3")
+    .text(namea);
+ 
+
+    
+});
+
+            }
+               
+            function lineGraphHelper(name, play, people, classname){
+                var opposChar = 0
+                return function(d,i) {
+                    d3.select(".sentTable").remove();
+                    opposChar = people[i][0];
+                    renderLineGraph(name, opposChar, play+".csv", classname)
+                };
+            }
+            
+            function renderTable(name, play, sentiment, placements, people,classname){
+                var table = d3.select("#nets")
+                    .append("svg:g")
+                    .attr("class", classname)
+                    .attr("transform", "translate(" + 370 + "," + 440 + ")");
+                
+                var chars = table.selectAll('text')
+                .data(placements)
+                .enter()
+                .append("text")
+                .text(function(d, i) {return people[i][0]+":        "+people[i][1];})
+		.attr("x", function(d) {return d[0];})
+		.attr("y", function(d) {return d[1]+5;})
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "12px")
+		.attr("fill", "gray")
+                .attr("text-anchor", "left")
+                .on("mouseover", function(){d3.select(this).attr("fill", "red");})
+                .on("mouseout", function(d,i){
+                        d3.select(this).attr("fill", "gray");
+                })
+                .on('click',lineGraphHelper(name, play, people, "lineGraph"));
+                
+            }
+            
+             function tableHelper(play, sentiment) {
+                return function(d) {
+                    d3.select(".sentTable").remove();
+                    d3.select(".lineGraph").remove();
+                    var people = [];
+                    keys(sentiment).forEach(function(k) {
+                        if (k in sentiment[d.name]){
+                            if(sentiment[d.name][k]!=0 && k!=d.name){
+                            people.push([k,sentiment[d.name][k]]);
+                            }
+                        }
+                    });
+                    var placements = [];
+                    var yVar = 10;
+                    var xVar = 0;
+                    for (i=0; i<people.length; i++){
+                        if (yVar>290){
+                            yVar = 10;
+                            xVar = 170;
+                        }
+                        placements.push([xVar,yVar+20])
+                        yVar+=20;
+                    };
+                    people.sort(function(a, b) { 
+                           return b[1] > a[1]?1:-1;
+                        });
+                    renderTable(d.name, play, sentiment, placements, people, "sentTable");
+                    
+            }
+             }
+            
+            function fade(node, opacity, linkedByIndex, link, sentiment) {
+                return function(d) {
+                    node.style("stroke-opacity", function(o) {
+                        thisOpacity = isConnected(d, o, linkedByIndex) ? 1 : opacity;
+                        this.setAttribute('fill-opacity', thisOpacity);
+                        return thisOpacity;
+                    });
+                    link.style("stroke-opacity", opacity).style("stroke-opacity", function(o) {
+                        return o.source === d || o.target === d ? 1 : opacity;
+                    });
+                    if (opacity==0.1 || opacity==0.101){
+                        node.style("stroke", function(o) {
+                        var nodeColor = "none"
+                        if (isConnected(d, o, linkedByIndex) & d.name!=o.name){
+                            if (sentiment[d.name][o.name]>0){
+                              nodeColor = "green";  
+                            }
+                            else if (sentiment[d.name][o.name]<0){
+                                nodeColor = "red";
+                            };
+                        };
+                        this.setAttribute('fill', nodeColor);
+                        return nodeColor;
+                    });
+                    }
+                    else{
+                        node.style("stroke", function(o) {
+                        this.setAttribute('fill', "none");
+                        return "none";
+                    });
+                    };
+                };
+                
+            }
+            
+            function isConnected(a, b, linkedByIndex) {
+                return linkedByIndex[a.index + "," + b.index] || linkedByIndex[b.index + "," + a.index] || a.index == b.index;
+            }
+            
+            
+            function renderNetwork(classname, play){
+                var width = 300;
+                var height = 300;
+                var color = d3.scale.category20();
+                var force = d3.layout.force()
+                    .charge(-220)
+                    .linkDistance(100)
+                    .size([width, height]);
+                    
+                var net = d3.select("#nets")
+                    .append("svg:g")
+                    .attr("class", classname)
+                    .attr("transform", "translate(" + 380 + "," + 100 + ")");
+                
+                d3.json("networks/"+play+".json", function(error, graph) {
+                    d3.json("sentiment/"+play+".json", function(error,sentiment){
+                    force
+                        .nodes(graph.nodes)
+                        .links(graph.links)
+                        .start();
+ 
+                   var linkedByIndex = {};
+                        graph.links.forEach(function(d) {
+                        linkedByIndex[d.source.index + "," + d.target.index] = 1;
+                        });
+
+
+                    var link = net.selectAll("line.link")
+                        .data(graph.links)
+                        .enter().append("line")
+                        .attr("class", "link");
+
+                    var node = net.selectAll(".circle")
+                        .data(graph.nodes)
+                        .enter().append("g")
+                        .attr("class", "node")
+                        .call(force.drag);
+                    
+                    node.append("circle")
+                        .attr("r", 7)
+                        .style("fill", "black")
+                        .on("mouseover", fade(node, .1, linkedByIndex, link, sentiment))
+                        .on("mouseout", fade(node, 1, linkedByIndex, link, sentiment))
+                        .on("click", tableHelper(play,sentiment));
+                    
+                    node.append("text")
+                        .attr("dx", 12)
+                        .attr("dy", ".35em")
+                        .attr("font-family", "sans-serif")
+                        .attr("font-size", "12px")
+                        .attr("fill", "black")
+                        .text(function(d) { return d.name });
+                    
+                    node.append("title")
+                        .text(function(d) { return d.name; });
+
+                    force.on("tick", function() {
+                        link.attr("x1", function(d) { return d.source.x; })
+                            .attr("y1", function(d) { return d.source.y; })
+                            .attr("x2", function(d) { return d.target.x; })
+                            .attr("y2", function(d) { return d.target.y; });
+
+                            node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+                    });
+                });
+                });
+            }
+            
+            svg = d3.select("body")
+                        .append("svg")
+                        .attr("width", w)
+                        .attr("height", h)
+                        .attr('id', 'nets');    
+            
+            svg.selectAll("text")
+                .data(initLocation)
+                .enter()
+                .append("text")
+                .text(function(d, i) {return books[i];})
+		.attr("x", function(d) {return d[0];})
+		.attr("y", function(d) {return d[1]+5;})
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "12px")
+		.attr("fill", "gray")
+                .attr("text-anchor", "left")
+                .on("mouseover", function(){d3.select(this).attr("fill", "red");})
+                .on("mouseout", function(d,i){
+                    if (clicked!=i){
+                        d3.select(this).attr("fill", "gray");
+                    }
+                })
+                .on('click', function(d,i){
+                    if (clicked==-1){
+                        d3.select(this).attr("fill", "red");
+                        renderNetwork("network1", playFiles[i]);
+                        clicked = i;
+                    }
+                    else if (clicked == i){
+                        clicked = -1;
+                        d3.select(".network1").remove();
+                        d3.select(".sentTable").remove();
+                        d3.select(".lineGraph").remove();
+                        d3.select(this).attr("fill", "gray");
+                    }
+                    else if (clicked != i){
+                        d3.select(".network1").remove();
+                        d3.select(".lineGraph").remove();
+                        d3.select(".sentTable").remove();
+                        svg.selectAll("text").attr("fill", "gray");
+                        d3.select(this).attr("fill", "red");
+                        renderNetwork("network1", playFiles[i]);
+                        clicked = i;
+                    };
+                });
+              
+        </script>
+        <p align="center" style="width:1000px;font-family:sans-serif; font-size: 12px;"><i>Shakespeare Sentiment Explorer (Eric Nalisnick, 2013)</i></p>
+    </body>
+</html>

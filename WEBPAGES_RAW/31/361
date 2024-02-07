@@ -1,0 +1,20 @@
+model{
+	for(i in 1:324){
+		SEARCH[i] ~ dlnorm(mean[i],tau)I(LOWER[i],)
+		mean[i] <-mu+delta[ID[i]]
+		dummy[i] <- FIRSTLAST[i]+AGE[i]  # not used in simple analysis
+     }
+     for(i in 1:15){ delta[i] ~ dnorm(0,tau.d) }  # delta[15] is predictive
+	mu ~ dnorm(4.5,10)
+	tau <- 1/(sigma*sigma)
+	tau.d <- 1/(sigma.d*sigma.d)
+	sigma ~ dgamma(2.29,2.92)
+	sigma.d ~ dgamma(8.1,24.5)
+	mean.pred <- mu+delta[15]
+	t.pred ~ dlnorm(mean.pred,tau)
+	for(i in 2:100){ grid[i] <- i*2 }
+	grid[1] <- 0.01
+	for(i in 1:100){ d[i] <- exp(-0.5*pow(log(grid[i])-mean.pred,2)*tau)/(sqrt(2*3.14159/tau)*grid[i]) }
+}
+
+list(mu = 4, sigma=1, sigma.d=1);

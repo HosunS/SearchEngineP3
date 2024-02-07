@@ -1,0 +1,180 @@
+// Test of closest pair algorithms
+// David Eppstein, UC Irvine, 19 Apr 1997
+//
+// Quadtree closest pair algorithm
+// Maintains a sequence of matrices where the outer one stores all distances,
+// and each successive one stores a minimum of four entries from the previous.
+// The parent of square (i,j) in one matrix (where i>j) is the square
+// (ceil(i/2),floor(j/2)) in a smaller matrix. Note the asymmetry between
+// i and j due to our matrices being triangular; we don't store entries for i<=j.
+//
+// Total space: 2/3 n^2 + O(n)
+// Time per insertion or single distance update: O(Dn)
+// Time per deletion or point update: O(n)
+// Time per closest pair: O(log n)
+
+#include "Quadtree.h"
+#include "Error.h"
+
+// Perform indexing into distance matrices
+// Taking account of symmetry to avoid storing each distance twice
+//
+// assumes first arg is greater than second; results undefined otherwise
+//
+static inline point HalfArray(point i, point j)
+{
+	return (i*(i-1))/2 + j;
+}
+
+// Pretend that a distance matrix is a set of half as many points
+// with distance = min of four adjacent distances
+class QuadTreeDist : public PointSet {
+	double * child_dist;
+ public:
+ 	QuadTreeDist(unsigned long np, double * cd) : PointSet(np) {
+ 		child_dist = cd;
+ 	}
+	double operator() (point i, point j);
+};
+
+// Find minimum value in a single quadtree square
+// Note we don't do gDistances++ since this is not a real distance computation
+double QuadTreeDist::operator() (point i, point j)
+{
+	if (i < j) return (*this)(j,i);
+	double d = child_dist[HalfArray(2*i-1,2*j)];
+	double dd = child_dist[HalfArray(2*i,2*j)];
+	if (dd < d) d = dd;
+	dd = child_dist[HalfArray(2*i,2*j+1)];
+	if (dd < d) d = dd;
+	if (i > j+1) {
+		dd = child_dist[HalfArray(2*i-1,2*j+1)];
+		if (dd < d) d = dd;
+	}
+	return d;
+}
+
+// Initialize quadtree
+QuadTreeCP::QuadTreeCP(long np, long mp, Distance & d)
+	: ClosestPairs(np, mp, d), dist(d)
+{
+	gInsertions += np;
+	maxpts = mp;
+
+	// initialize distance matrix
+	// to keep our code simple we make sure that, if recursing, mp is odd
+	if (mp > 2 && (mp & 01) == 0) mp++;
+	distances = new double[(mp*(mp-1)/2)];
+	if (distances == 0) error("QuadTreeCP: unable to create distance matrix");
+	active = new int[mp];
+	if (active == 0) error("QuadTreeCP: unable to create table of active points");
+	unsigned long i, j;
+	for (i = 0; i < np; i++) active[i] = 1;
+	for (i = np; i < mp; i++) active[i] = 0;
+	for (i = 1; i < np; i++) for (j = 0; j < i; j++)
+		distances[HalfArray(i,j)] = dist(i,j);
+	for (i = np; i < mp; i++) for (j = 0; j < i; j++)
+		distances[HalfArray(i,j)] = MAX_DISTANCE;
+
+	// initialize parent
+	if (mp <= 2) {
+		parent_dist = 0;
+		parent = 0;
+	} else {
+		unsigned long pp = (mp+1)/2;
+		parent_dist = new QuadTreeDist(pp, distances);
+		if (parent_dist == 0) error("QuadTreeCP: unable to create quadtree squares");
+		parent = new QuadTreeCP(pp, pp, *parent_dist);
+		if (parent == 0) error("QuadTreeCP: unable to create parent");
+		gInsertions -= pp;	// keep insertion count sane
+	}
+}
+
+// Get rid of used quadtree
+QuadTreeCP::~QuadTreeCP() {
+	delete distances;
+	delete active;
+	if (parent_dist != 0) delete parent_dist;
+	if (parent != 0) delete parent;
+}
+
+// add a point by making it active and updating
+void QuadTreeCP::operator += (point p)
+{
+	gInsertions++;
+	active[p] = 1;
+	UpdatePoint(p);
+}
+
+// remove a point by making it inactive and updating
+void QuadTreeCP::operator -= (point p)
+{
+	gDeletions++;
+	active[p] = 0;
+	UpdatePoint(p);
+}
+
+// find closest pair by recursing through quadtree levels
+double QuadTreeCP::operator () (point & a, point & b)
+{
+	// base case. only one distance in array; just return it.
+	if (parent == 0) {
+		a = 1;
+		b = 0;
+		gPairs++;		// only do in base case so total count stays sane
+		return distances[0];
+	}
+	
+	// recursive case. find min in parent then determine which of
+	// four possibilities it is in our distance matrix.
+	point i,j;
+	double d = (*parent)(i,j);
+	for (int x = 0; x < 2; x++)
+		for (int y = 0; y < 2; y++)
+			if (d == distances[HalfArray(2*i-x,2*j+y)]) {
+				a = 2*i-x;
+				b = 2*j+y;
+				return d;
+			}
+			
+	error("QuadTreeCP: unable to find distance matching parent");
+}
+
+void QuadTreeCP::UpdateRow(point i)
+{
+	for (point j = 0; j < i; j++)
+		if (active[i] && active[j])
+			distances[HalfArray(i,j)] = dist(i,j);
+			else distances[HalfArray(i,j)] = MAX_DISTANCE;
+	
+	if (parent != 0) parent->UpdateRow((i+1)/2);
+}
+
+void QuadTreeCP::UpdateCol(point j)
+{
+	for (point i = j+1; i < maxpts; i++)
+		if (active[i] && active[j])
+			distances[HalfArray(i,j)] = dist(i,j);
+			else distances[HalfArray(i,j)] = MAX_DISTANCE;
+	
+	if (parent != 0) parent->UpdateCol(j/2);
+}
+
+void QuadTreeCP::UpdatePoint(point p)
+{
+	UpdateRow(p);
+	UpdateCol(p);
+}
+
+void QuadTreeCP::UpdateDistance(point i, point j)
+{
+	if (i < j) {
+		UpdateDistance(j, i);
+		return;
+	}
+	if (active[i] && active[j])
+		distances[HalfArray(i,j)] = dist(i,j);
+		else distances[HalfArray(i,j)] = MAX_DISTANCE;
+
+	if (parent != 0) parent->UpdateDistance((i+1)/2, j/2);
+}

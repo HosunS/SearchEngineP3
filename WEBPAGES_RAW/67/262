@@ -1,0 +1,314 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>Minimum spanning trees</title>
+<meta name="Owner" value="eppstein">
+<meta name="Reply-To" value="eppstein@ics.uci.edu">
+</head>
+<body>
+<h1>ICS 161: Design and Analysis of Algorithms<br>
+Lecture notes for February 6, 1996</h1>
+
+<!--#config timefmt="%d %h %Y, %T %Z" -->
+<hr>
+<p></p>
+
+<h1>Minimum Spanning Trees</h1>
+
+<h2>Spanning trees</h2>
+
+A <i>spanning tree</i> of a graph is just a subgraph that contains
+all the vertices and is a tree. A graph may have many spanning
+trees; for instance the complete graph on four vertices 
+
+<pre>
+    o---o
+    |\ /|
+    | X |
+    |/ \|
+    o---o
+</pre>
+
+has sixteen spanning trees: 
+
+<pre>
+    o---o    o---o    o   o    o---o
+    |   |    |        |   |        |
+    |   |    |        |   |        |
+    |   |    |        |   |        |
+    o   o    o---o    o---o    o---o
+
+    o---o    o   o    o   o    o   o
+     \ /     |\ /      \ /      \ /|
+      X      | X        X        X |
+     / \     |/ \      / \      / \|
+    o   o    o   o    o---o    o   o
+
+    o   o    o---o    o   o    o---o
+    |\  |       /     |  /|     \
+    | \ |      /      | / |      \
+    |  \|     /       |/  |       \
+    o   o    o---o    o   o    o---o
+
+    o---o    o   o    o   o    o---o
+    |\       |  /      \  |       /|
+    | \      | /        \ |      / |
+    |  \     |/          \|     /  |
+    o   o    o---o    o---o    o   o
+</pre>
+
+<h2>Minimum spanning trees</h2>
+
+Now suppose the edges of the graph have weights or lengths. The
+weight of a tree is just the sum of weights of its edges.
+Obviously, different trees have different lengths. The problem: how
+to find the minimum length spanning tree? 
+
+<p>This problem can be solved by many different algorithms. It is
+the topic of some very recent research. There are several "best"
+algorithms, depending on the assumptions you make:</p>
+
+<ul>
+<li>A randomized algorithm can solve it in linear expected time.
+[Karger, Klein, and Tarjan, "A randomized linear-time algorithm to
+find minimum spanning trees", J. ACM, vol. 42, 1995, pp.
+321-328.]</li>
+
+<li>It can be solved in linear worst case time if the weights are
+small integers. [Fredman and Willard, "Trans-dichotomous algorithms
+for minimum spanning trees and shortest paths", 31st IEEE Symp.
+Foundations of Comp. Sci., 1990, pp. 719--725.] <a name="beta">
+</a></li>
+
+<li>Otherwise, the best solution is very close to linear but not
+exactly linear. The exact bound is O(m log beta(m,n)) where the
+beta function has a complicated definition: the smallest i such
+that log(log(log(...log(n)...))) is less than m/n, where the logs
+are nested i times. [Gabow, Galil, Spencer, and Tarjan, Efficient
+algorithms for finding minimum spanning trees in undirected and
+directed graphs. Combinatorica, vol. 6, 1986, pp. 109--122.]</li>
+</ul>
+
+These algorithms are all quite complicated, and probably not that
+great in practice unless you're looking at really huge graphs. The
+book tries to keep things simpler, so it only describes one
+algorithm but (in my opinion) doesn't do a very good job of it.
+I'll go through three simple classical algorithms (spending not so
+much time on each one). 
+
+<h2>Why minimum spanning trees?</h2>
+
+<a name="phone">The standard application is to a problem like phone
+network design. You have a business with several offices; you want
+to lease phone lines to connect them up with each other; and the
+phone company charges different amounts of money to connect
+different pairs of cities. You want a set of lines that connects
+all your offices with a minimum total cost. It should be a spanning
+tree, since if a network isn't a tree you can always remove some
+edges and save money.</a> 
+
+<p><a name="tsp">A less obvious application is that the minimum
+spanning tree can be used to approximately solve the traveling
+salesman problem. A convenient formal way of defining this problem
+is to find the shortest path that visits each point at least
+once.</a></p>
+
+<p>Note that if you have a path visiting all points exactly once,
+it's a special kind of tree. For instance in the example above,
+twelve of sixteen spanning trees are actually paths. If you have a
+path visiting some vertices more than once, you can always drop
+some edges to get a tree. So in general the MST weight is less than
+the TSP weight, because it's a minimization over a strictly larger
+set.</p>
+
+<p><a name="chris">On the other hand, if you draw a path tracing
+around the minimum spanning tree, you trace each edge twice and
+visit all points, so the TSP weight is less than twice the MST
+weight. Therefore this tour is within a factor of two of optimal.
+There is a more complicated way (<i><a href= 
+"people.html#christofides">Christofides</a>' heuristic</i>) of
+using minimum spanning trees to find a tour within a factor of 1.5
+of optimal; I won't describe this here but it might be covered in
+ICS 163 (graph algorithms) next year.</a></p>
+
+<h2>How to find minimum spanning tree?</h2>
+
+The stupid method is to list all spanning trees, and find minimum
+of list. We already know how to find minima... But there are far
+too many trees for this to be efficient. It's also not really an
+algorithm, because you'd still need to know how to list all the
+trees. 
+
+<p>A better idea is to find some key property of the MST that lets
+us be sure that some edge is part of it, and use this property to
+build up the MST one edge at a time.</p>
+
+<p>For simplicity, we assume that there is a unique minimum
+spanning tree. (Problem 4.3 of Baase is related to this
+assumption). You can get ideas like this to work without this
+assumption but it becomes harder to state your theorems or write
+your algorithms precisely.</p>
+
+<blockquote>Lemma: Let X be any subset of the vertices of G, and
+let edge e be the smallest edge connecting X to G-X. Then e is part
+of the minimum spanning tree. 
+
+<p>Proof: Suppose you have a tree T not containing e; then I want
+to show that T is not the MST. Let e=(u,v), with u in X and v not
+in X. Then because T is a spanning tree it contains a unique path
+from u to v, which together with e forms a cycle in G. This path
+has to include another edge f connecting X to G-X. T+e-f is another
+spanning tree (it has the same number of edges, and remains
+connected since you can replace any path containing f by one going
+the other way around the cycle). It has smaller weight than t since
+e has smaller weight than f. So T was not minimum, which is what we
+wanted to prove.</p>
+</blockquote>
+
+<h2>Kruskal's algorithm</h2>
+
+We'll start with <a href="people.html#kruskal">Kruskal</a>'s
+algorithm, which is easiest to understand and probably the best one
+for solving problems by hand. 
+
+<pre>
+    Kruskal's algorithm:
+    sort the edges of G in increasing order by length
+    keep a subgraph S of G, initially empty
+    for each edge e in sorted order
+        if the endpoints of e are disconnected in S
+        add e to S
+    return S
+</pre>
+
+Note that, whenever you add an edge (u,v), it's always the smallest
+connecting the part of S reachable from u with the rest of G, so by
+the lemma it must be part of the MST. 
+
+<p>This algorithm is known as a <i>greedy algorithm</i>, because it
+chooses at each step the cheapest edge to add to S. You should be
+very careful when trying to use greedy algorithms to solve other
+problems, since it usually doesn't work. E.g. if you want to find a
+shortest path from a to b, it might be a bad idea to keep taking
+the shortest edges. The greedy idea only works in Kruskal's
+algorithm because of the key property we proved.</p>
+
+<p><a name="uf">Analysis: The line testing whether two endpoints
+are disconnected looks like it should be slow (linear time per
+iteration, or O(mn) total). But actually there are some complicated
+data structures that let us perform each test in close to constant
+time; this is known as the <i>union-find</i> problem and is
+discussed in Baase section 8.5 (I won't get to it in this class,
+though). The slowest part turns out to be the sorting step, which
+takes O(m log n) time.</a></p>
+
+<h2>Prim's algorithm</h2>
+
+Rather than build a subgraph one edge at a time, <a href= 
+"people.html#prim">Prim</a>'s algorithm builds a tree one vertex at
+a time. 
+
+<pre>
+    Prim's algorithm:
+    let T be a single vertex x
+    while (T has fewer than n vertices)
+    {
+        find the smallest edge connecting T to G-T
+        add it to T
+    }
+</pre>
+
+Since each edge added is the smallest connecting T to G-T, the
+lemma we proved shows that we only add edges that should be part of
+the MST. 
+
+<p>Again, it looks like the loop has a slow step in it. But again,
+some data structures can be used to speed this up. The idea is to
+use a <a href="960116.html#binheap">heap</a> to remember, for each
+vertex, the smallest edge connecting T with that vertex.</p>
+
+<pre>
+    Prim with heaps:
+    make a heap of values (vertex,edge,weight(edge))
+        initially (v,-,infinity) for each vertex
+        let tree T be empty
+    while (T has fewer than n vertices)
+    {
+        let (v,e,weight(e)) have the smallest weight in the heap
+        remove (v,e,weight(e)) from the heap
+        add v and e to T
+        for each edge f=(u,v)
+        if u is not already in T
+            find value (u,g,weight(g)) in heap
+            if weight(f) &lt; weight(g)
+            replace (u,g,weight(g)) with (u,f,weight(f))
+    }
+</pre>
+
+<a name="fib">Analysis: We perform n steps in which we remove the
+smallest element in the heap, and at most 2m steps in which we
+examine an edge f=(u,v). For each of those steps, we might replace
+a value on the heap, reducing it's weight. (You also have to find
+the right value on the heap, but that can be done easily enough by
+keeping a pointer from the vertices to the corresponding values.) I
+haven't described how to reduce the weight of an element of a
+binary heap, but it's easy to do in O(log n) time. Alternately by
+using a more complicated data structure known as a Fibonacci heap,
+you can reduce the weight of an element in constant time. The
+result is a total time bound of O(m + n log n).</a>
+<h2>Boruvka's algorithm</h2>
+
+(Actually <a href="people.html#boruvka">Boruvka</a> should be
+spelled with a small raised circle accent over the "u".) Although
+this seems a little complicated to explain, it's probably the
+easiest one for computer implementation since it doesn't require
+any complicated data structures. The idea is to do steps like
+Prim's algorithm, in parallel all over the graph at the same time. 
+
+<pre>
+    Boruvka's algorithm:
+    make a list L of n trees, each a single vertex
+    while (L has more than one tree)
+        for each T in L, find the smallest edge connecting T to G-T
+        add all those edges to the MST
+        (causing pairs of trees in L to merge)
+</pre>
+
+As we saw in Prim's algorithm, each edge you add must be part of
+the MST, so it must be ok to add them all at once. 
+
+<p>Analysis: This is similar to merge sort. Each pass reduces the
+number of trees by a factor of two, so there are O(log n) passes.
+Each pass takes time O(m) (first figure out which tree each vertex
+is in, then for each edge test whether it connects two trees and is
+better than the ones seen before for the trees on either endpoint)
+so the total is O(m log n).</p>
+
+<h2>A hybrid algorithm</h2>
+
+This isn't really a separate algorithm, but you can combine two of
+the classical algorithms and do better than either one alone. The
+idea is to do O(log log n) passes of Boruvka's algorithm, then
+switch to Prim's algorithm. Prim's algorithm then builds one large
+tree by connecting it with the small trees in the list L built by
+Boruvka's algorithm, keeping a heap which stores, for each tree in
+L, the best edge that can be used to connect it to the large tree.
+Alternately, you can think of collapsing the trees found by
+Boruvka's algorithm into "supervertices" and running Prim's
+algorithm on the resulting smaller graph. The point is that this
+reduces the number of remove min operations in the heap used by
+Prim's algorithm, to equal the number of trees left in L after
+Boruvka's algorithm, which is O(n / log n). 
+
+<p>Analysis: O(m log log n) for the first part, O(m + (n/log n) log
+n) = O(m + n) for the second, so O(m log log n) total.</p>
+
+<hr>
+<p><a href="/~eppstein/161/">ICS 161</a> -- <a href="/">Dept.
+Information &amp; Computer Science</a> -- <a href= 
+"http://www.uci.edu/">UC Irvine</a><br>
+<small>Last update: 
+<!--#flastmod file="960206.html" --></small></p>
+</body>
+</html>
+

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC
+ "-//W3C//DTD XHTML 1.1//EN"
+ "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<link rel="stylesheet" href="../../course.css" type="text/css" />
+
+<title>ICS 46 Spring 2016, Notes and Examples: Graphs: Topological Ordering</title>
+
+</head>
+
+<body>
+
+<div class="navbar">
+
+<p>
+ICS 46 Spring 2016 |
+<a href="../../index.html">News</a> |
+<a href="../../CourseReference.html">Course Reference</a> |
+<a href="../../Schedule.html">Schedule</a> |
+<a href="../../ProjectGuide">Project Guide</a> |
+<a href="../../Notes">Notes and Examples</a> |
+<a href="http://www.ics.uci.edu/~thornton/">About Alex</a>
+</p>
+
+<hr />
+
+</div>
+
+<div class="header">
+
+<p>ICS 46 Spring 2016<br />
+   Notes and Examples: Graphs: Topological Ordering</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Task networks</p>
+
+<p>Graphs are a fairly general data structure, able to represent things and the direct relationships between those things.  For this reason, graphs are used in the solution to many different kinds of real-world problems; understanding graphs and being familiar with some basic graph algorithms is surprisingly useful in practice.</p>
+
+<p>Suppose you had a directed acyclic graph, where the vertices represented tasks that needed to be completed, and the edges connecting those vertices represented dependencies between those tasks (i.e., if the edge <i>v</i> &rarr; <i>w</i> is present, the task <i>w</i> cannot be started until the task <i>v</i> is completed).  Many kinds of real-world problems can be thought of this way, such as the order in which source code is built and/or linked, the order in which instructions can be executed by a processor (somewhat independent of the order in which they're written, a trick that processors play to fill the time waiting for slower instructions to complete), or the order in which programming tasks can be completed by a team developing a software product.  In any case, you might call such a graph a <i>task network</i>, describing the set of tasks that need to be done and the dependencies between those tasks.</p>
+
+<p>For example, consider the directed acyclic graph below, which we'll think of as one of these task networks.</p>
+
+<p class="center"><img src="Graphs_TopologicalExample.png" alt="Example task network for topological ordering" /></p>
+
+<p>To clarify what this task network means, we'd say that the task <i>c</i> cannot be started until the tasks <i>a</i> and <i>b</i> are completed, that the task <i>f</i> cannot be started until the task <i>d</i> is completed, and so on.  Only the tasks <i>a</i> and <i>b</i> can be started initially; all of the others depend on at least one other.</p>
+
+<p>It's important to note that task networks must be directed acyclic graphs:</p>
+
+<ul>
+  <li>They must be <i>directed</i>, because the notion of dependency is one-way: If the task <i>c</i> is dependent on the task <i>a</i>, that doesn't make the task <i>a</i> dependent on the task <i>c</i>.</li>
+  <li>They must be <i>acyclic</i>, because a circular dependency between tasks simply doesn't make any sense.  The task <i>a</i> can't depend on the task <i>b</i> while the task <i>b</i> simultaneously depends on the task <i>a</i>; in that scenario, neither of the tasks could ever be started.</li>
+</ul>
+
+<p>Given a task network, you can answer some interesting questions:</p>
+
+<ul>
+  <li>In what order could the tasks be done, so that no task is started until all of the ones its dependent on have been finished already?</li>
+  <li>Are the dependencies reasonable?  For example, does it contain any cycles?</li>
+  <li>When augmented with additional information specifying how long each task might take, which tasks are on the <i>critical path</i>?  In other words, which tasks, if their schedule slips, would cause the entire set of tasks to take longer to complete?  This kind of analysis is done by project management tools, so that the most important tasks can be identified and managed more carefully &mdash; assigned to the most experienced people, watched the most keenly for any signs they might slip, and so on.</li>
+</ul>
+
+<p>We'll focus on just the first of these here, which is called a <i>topological ordering</i> of the task network.</p>
+
+</div>
+
+<div class="section">
+
+<hr />
+
+<p class="title">Topological ordering</p>
+
+<blockquote>
+A <i>topological ordering</i> of the vertices of a directed acyclic graph is a sequence of its vertices in which each vertex appears exactly once.  For every pair of distinct vertices <i>v</i> and <i>w</i> in the sequence, if the edge <i>v</i> &rarr; <i>w</i> exists, then <i>v</i> appears earlier in the sequence than <i>w</i>.
+</blockquote>
+
+<p>In other words, if we think of a directed acyclic graph as representing a task network, a topological ordering of a directed acyclic graph is an order in which those tasks could be completed while respecting all of the dependencies between tasks; no task will appear before the tasks on which it depends.</p>
+
+<p>There may be more than one valid topological ordering for a directed acyclic graph.  For example, in the graph above, there are a number of valid topological orderings, two of which are <i>abcedgfh</i> and <i>bacdfegh</i>; there are others, as well.</p>
+
+<p class="subtitle">An algorithm for determining a topological ordering</p>
+
+<p>A straightforward algorithm for determining a valid topological ordering of a directed acyclic graph follows from the definition of topological ordering.</p>
+
+<blockquote><pre>
+FindTopologicalOrdering(DAG g):
+    while g is not empty:
+        let v be a vertex in g with in-degree zero
+        visit(v)
+        remove from the graph, along with all of its outgoing edges
+</pre></blockquote>
+
+<p>Run this algorithm on the example graph above and convince yourself that  it works.  What you'll see is that this algorithm is very nice, except for one problem: You can only run it once, because it destroys the graph you run it on.  We could tweak the algorithm to account for this &mdash; by simulating the removal of the vertices, rather than removing them outright &mdash; but a simpler approach is to lightly modify the depth-first traversal algorithm we've used before.</p>
+
+<p>To do this, we'll separate the notion of <i>reaching</i> a vertex from the notion of <i>visiting</i> it.  We'll mark a vertex as having been reached the first time we see it, but we won't visit it until we're finished with it (i.e., we've already reached all of the vertices it leads to).</p>
+
+<blockquote><pre>
+FindTopologicalOrdering(DAG g):
+    for each vertex v in g:
+        v.reached = false
+
+    for each vertex v in g:
+        if not v.reached:
+            TopoDFTr(g, v)
+
+
+TopoDFTr(DAG g, Vertex v):
+    v.reached = true
+
+    for each vertex w such that the edge v &rarr; w exists:
+        if not w.reached:
+            TopoDFTr(g, w)
+
+    visit(v)
+</pre></blockquote>
+
+<p>Compare this to the depth-first graph traversal algorithm we saw previously and you'll find that it's almost identical; other than a few name changes, the algorithm is identical <i>except</i> that the <b>visit</b> step has been moved to the end.</p>
+
+<p>This algorithm will visit the vertices of a directed acyclic graph in the <i>reverse</i> of a topological ordering.  Now run this algorithm on the example graph above and you'll quickly see the key insight behind why this is true: We only visit a vertex when we can't reach another vertex from it that we haven't reached already, all of which will be "downstream" tasks that depend on this one (and which we will have already visited).</p>
+
+<p>Note, too, that this algorithm operates under the assumption that the graph has no cycles.  If you weren't already sure about this, you could add the tweaks we learned previously to do cycle-checking simultaneously.</p>
+
+<p class="subtitle">Asymptotic analysis</p>
+
+<p>The asymptotic analysis here is simply the same one we saw previously when we learned about depth-first traversals: <i>O</i>(<i>v</i><sup><small>2</small></sup>) or <i>O</i>(<i>v</i> + <i>e</i>), depending on which graph implementation technique (adjacency matrix or adjacency lists) is being used.</p>
+
+</div>
+
+</body>
+</html>

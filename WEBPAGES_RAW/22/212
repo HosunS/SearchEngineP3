@@ -1,0 +1,220 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>5.3 Dereferencing the Iterator</title>
+<META NAME="description" CONTENT="5.3 Dereferencing the Iterator">
+<META NAME="keywords" CONTENT="cplusprog">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="STYLESHEET" href="cplusprog.css">
+<link rel="first" href="cplusprog.html">
+<link rel="contents" href="contents.html" title="Contents">
+
+<LINK REL="next" HREF="node46.html">
+<LINK REL="previous" HREF="node44.html">
+<LINK REL="up" HREF="node42.html">
+<LINK REL="next" HREF="node46.html">
+</head>
+<body>
+<DIV CLASS="navigation">
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node44.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node42.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node46.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node44.html">5.2 Looping over the</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node42.html">5. Traversing the Atoms,</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node46.html">5.4 Looping over the</A>
+<br><hr>
+</DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION008300000000000000000">
+5.3 Dereferencing the Iterator</A>
+</H1>
+
+<P>
+The example above shows how to use an OEChem iterator to loop over
+objects, but didn't actually use them.  OEChem iterators provide four
+operators to allow the user to access the object at the current
+iterator position. Implicit casting or the operator <code>-&gt;</code> can be used
+to get a pointer to the current object, and implicit casting or the
+operator <code>*</code> can be used to get a reference to a given object.
+I.e. if variable <var>iter</var> has type <code>OEIter&lt;T&gt;</code> then <code>(T*)iter</code> is a
+pointer to the current item, and <code>*iter</code> and <code>(T&amp;)iter</code> are of type
+<code>T&amp;</code>.  These operators mean than in most cases an OEChem iterator
+<code>OEIter&lt;T&gt;</code> behaves identically to a <code>T*</code>.
+
+<P>
+For example, to list the atomic numbers of atoms in a molecule:
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+
+using namespace OESystem;
+using namespace OEChem;
+using namespace std;
+
+void ListAtomicNumbers(OEMolBase &amp;mol)
+{
+  OEIter&lt;OEAtomBase&gt; atom;
+
+  for (atom=mol.GetAtoms(); atom; ++atom)
+    cout &lt;&#60; atom-&gt;GetAtomicNum() &lt;&#60; endl;
+}
+
+int main()
+{
+  OEMol mol;
+  OEParseSmiles(mol, "c1ccccc1");
+  ListAtomicNumbers(mol);
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch6-2.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+This routine could also be written with an explicit assignment to an
+OEAtomBase*.
+
+<P>
+<dl><dd><pre class="verbatim">#include "oechem.h"
+#include &lt;iostream&gt;
+
+using namespace OESystem;
+using namespace OEChem;
+using namespace std;
+
+void ListAtomicNumbers(OEMolBase &amp;mol)
+{
+  OEIter&lt;OEAtomBase&gt; atom;
+  OEAtomBase *aptr;
+
+  for (atom=mol.GetAtoms(); atom; ++atom)
+  {
+    aptr = atom;
+    cout &lt;&#60; aptr-&gt;GetAtomicNum() &lt;&#60; endl;
+  }
+}
+
+int main()
+{
+  OEMol mol;
+  OEParseSmiles(mol, "c1ccccc1");
+  ListAtomicNumbers(mol);
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch6-3.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+Comparing these two examples shows how iterators and pointers behave
+similarly.  The OEAtomBase method, GetAtomicNum, that returns the
+atomic number of the given atom, will be described later.
+
+<P>
+The implicit casts of <code>OEIter&lt;T&gt;</code> to either a <code>T&amp;</code> or
+<code>T*</code> are most useful when passing the object to a function which
+takes T by reference or by pointer.
+
+<P>
+<dl><dd><pre class="verbatim">#include "openeye.h"
+#include &lt;iostream&gt;
+#include "oeplatform.h"
+#include "oesystem.h"
+#include "oechem.h"
+
+using namespace OESystem;
+using namespace OEChem;
+using namespace std;
+
+void PrintAtomicNumber(const OEAtomBase *atom)
+{
+  cout &lt;&#60; atom-&gt;GetAtomicNum() &lt;&#60; endl;
+}
+
+void PrintAromatic(const OEAtomBase &amp;atom)
+{
+  if(atom.IsAromatic())
+    cout &lt;&#60; "Is Aromatic" &lt;&#60; endl;
+  else
+    cout &lt;&#60; "Isn't Aromatic" &lt;&#60; endl;
+}
+
+int main()
+{
+  OEMol mol;
+  OEParseSmiles(mol, "c1ccccc1");
+
+  OEIter&lt;OEAtomBase&gt; atom;
+  for(atom = mol.GetAtoms();atom;++atom)
+  {
+    PrintAtomicNumber(atom);
+    PrintAromatic(atom);
+  }
+
+  return 0;
+}
+</pre>
+<div class="verbatiminput-footer">
+<a href="ch6-7.txt" type="text/plain">Download as text.</a>
+</div>
+</dd></dl>
+
+<P>
+
+<DIV CLASS="navigation">
+<p><hr>
+<table align="center" border="0" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td rowspan=2><A HREF="node44.html"><img src="../icons/previous.gif"
+  border="0" alt="Previous Page"></A></td>
+<td rowspan=2><A HREF="node42.html"><img src="../icons/up.gif"
+  border="0" alt="Up One Level"></A></td>
+<td rowspan=2><A HREF="node46.html"><img src="../icons/next.gif"
+  border="0" alt="Next Page"></A></td><td width="100%" rowspan="2"> </td>
+<td valign="center" align="right" height="56" background="../icons/title_bkgd.gif" colspan=4 class="navigation">OEChem - C++ Theory Manual
+<BR>
+Version 1.3.1</td></tr>
+<tr><td><img src="../icons/spacer_1.gif"
+  border="0" alt=""></td>
+<td><A href="contents.html"><img src="../icons/contents.gif"
+  border="0" alt="Contents"></A></td>
+<td><img src="../icons/spacer_2.gif"
+  border="0" alt=""></td>
+<td><img src="../icons/blank_4.gif"
+  border="0" alt=""></td>
+</tr></table>
+<b class="navlabel">Previous:</b> <a class="sectref" HREF="node44.html">5.2 Looping over the</A>
+<b class="navlabel">Up:</b> <a class="sectref" HREF="node42.html">5. Traversing the Atoms,</A>
+<b class="navlabel">Next:</b> <a class="sectref" HREF="node46.html">5.4 Looping over the</A>
+<hr>
+<span class="release-info">Documentation released on July 30, 2004.</span>
+</DIV>
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>
