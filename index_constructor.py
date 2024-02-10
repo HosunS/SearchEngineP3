@@ -6,22 +6,37 @@
 import json
 from lxml import html
 import os.path
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+# run these downloads below to be able to use nltk for tokenize/lemmatize
+# nltk.download('punkt')
+# nltk.download('wordnet')
+# nltk.download('stopwords')
+
 
 class index_constructor():
     webpages_path = "WEBPAGES_RAW"
     index_dict = {}
-
+        
     def __init__(self):
         pass
 
     #tokenize text content
     #also remove stop words here??
-    def tokenize(self):
-        pass
+    def tokenize(self, text):
+        text = text.lower()
+        tokens = word_tokenize(text)
+        tokens = [word for word in tokens if word.isalpha() and word not in stopwords.words('english')]
+        return tokens
+        
 
     #apply lemmatization on input
-    def lemmatize(self):
-        pass
+    def lemmatize(self,tokens):
+        lemmatizer = WordNetLemmatizer()
+        lemmatized_tokens = [lemmatizer.lemmatize(token) for token in tokens]
+        return lemmatized_tokens
 
     #parse given html file and extract the text content
     def parse_and_extract_text(self, html_file_location):
@@ -52,8 +67,10 @@ class index_constructor():
             folder,file_name = file_location.split("/")
             html_text = self.parse_and_extract_text(os.path.join(self.webpages_path,folder,file_name))
             #do tokenization and lemmatization on text next
-
-        
+            tokens = self.tokenize(html_text)
+            lemmatized_tokens = self.lemmatize(tokens)
+            print(tokens)
+            # print(lemmatized_tokens)
 
 
 test = index_constructor()
