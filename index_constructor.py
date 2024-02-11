@@ -24,7 +24,6 @@ class index_constructor():
         pass
 
     #tokenize text content
-    #also remove stop words here??
     def tokenize(self, text):
         text = text.lower()
         tokens = word_tokenize(text)
@@ -62,18 +61,22 @@ class index_constructor():
         for key in key_list:
             if key not in self.index_dict:
                 self.index_dict[key] = []
-                self.index_dict[key].append(document_ID)
+                self.index_dict[key].append([document_ID,1])
                 
             else:
-                #check if doc id is already in list 
-                if document_ID in self.index_dict[key]:
-                    pass
-                else:
-                  self.index_dict[key].append(document_ID)
+                doc_id_in_list = False
+                #check if doc id is already in list
+                for doc in self.index_dict[key]:
+                    if doc[0] == document_ID:
+                        doc[1] += 1
+                        doc_id_in_list = True
+                        break
+                if (doc_id_in_list == False):
+                    self.index_dict[key].append([document_ID,1])
         
     def create_index_file(self,file_name = "indexing_report.txt"):
         report = self.index_dict
-        with open(file_name, "w") as file:
+        with open(file_name, "w", encoding='utf-8') as file:
             for key, value in report.items():
                 file.write(f"{key}: {value}\n\n")
             file.write("\n")

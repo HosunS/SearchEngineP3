@@ -13,10 +13,10 @@ def read_files(index):
         tokens = index.tokenize(html_text)
         lemmatized_tokens = index.lemmatize(tokens)
         index.indexing(lemmatized_tokens, file_location)
-        # print(tokens)
-        # print(lemmatized_tokens)
-        # print(file_location)
-        # print(index.index_dict)
+        #print(tokens)
+        #print(lemmatized_tokens)
+        #print(file_location)
+        #print(index.index_dict)
         index.create_index_file()
 
 if __name__ == "__main__":
