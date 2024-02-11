@@ -3,7 +3,7 @@
 #use lmxl to parse html and extract text + handle broken html
 #use nltk for tokenization and lemmatization
 
-import json
+# import json
 from lxml import html
 import os.path
 import nltk
@@ -56,27 +56,23 @@ class index_constructor():
         except:
             return ""
         return text_content
-
-    #maybe should be moved to main.py???
-    #go through bookkeeping.json and extract text from each html file for now
-    def read_files(self):
-        f = open(os.path.join(self.webpages_path,"bookkeeping.json"))
-        file_dict = json.load(f)
-        f.close()
-        for file_location in file_dict.keys():
-            folder,file_name = file_location.split("/")
-            html_text = self.parse_and_extract_text(os.path.join(self.webpages_path,folder,file_name))
-            #do tokenization and lemmatization on text next
-            tokens = self.tokenize(html_text)
-            lemmatized_tokens = self.lemmatize(tokens)
-            print(tokens)
-            # print(lemmatized_tokens)
-
-
-test = index_constructor()
-test.read_files()
-
-
+    
+    #creates index with lemmatized_tokens and file_location(Doc ID)
+    def indexing(self,key_list, document_ID):
+        for key in key_list:
+            if key not in self.index_dict:
+                self.index_dict[key] = []
+                self.index_dict[key].append(document_ID)
+                
+            else:
+                #check if doc id is already in list 
+                if document_ID in self.index_dict[key]:
+                    pass
+                else:
+                  self.index_dict[key].append(document_ID)
+        
+    def create_index_file(index_dictionary):
+        return 
 
 
 
