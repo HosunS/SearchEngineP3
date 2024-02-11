@@ -16,7 +16,8 @@ def read_files(index):
         # print(tokens)
         # print(lemmatized_tokens)
         # print(file_location)
-        print(index.index_dict)
+        # print(index.index_dict)
+        index.create_index_file()
 
 if __name__ == "__main__":
     test = index_constructor()

@@ -71,8 +71,12 @@ class index_constructor():
                 else:
                   self.index_dict[key].append(document_ID)
         
-    def create_index_file(index_dictionary):
-        return 
+    def create_index_file(self,file_name = "indexing_report.txt"):
+        report = self.index_dict
+        with open(file_name, "w") as file:
+            for key, value in report.items():
+                file.write(f"{key}: {value}\n\n")
+            file.write("\n")
 
 
 
