@@ -120,8 +120,8 @@ class index_constructor():
                 if token not in final_index:
                     final_index[token] = doc_ids
                 else:
-                    final_index[token].extend(doc_ids)
-                    final_index[token] = list(set(final_index[token]))  # Remove duplicates
+                    final_index[token].update(doc_ids)
+                    #final_index[token] = list(set(final_index[token]))  # Remove duplicates
         with open(final_index_file, "w", encoding="utf-8") as file:
             json.dump(final_index, file, indent=4)               
                     

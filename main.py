@@ -19,7 +19,7 @@ def read_files(index):
             documents.append((file_location, html_text, tags_with_text))
 
         # check if current block is full
-        if len(documents) >= index.block_size:  
+        if len(documents) >= index.block_size:
             index.process_block(documents, block_id)
 
             #reset documents for the next block
@@ -31,7 +31,7 @@ def read_files(index):
         index.process_block(documents, block_id)
 
     # blocks are processed merge them into the final index
-    #index.merge_blocks()
+    index.merge_blocks()
     
 
 if __name__ == "__main__":
