@@ -64,6 +64,7 @@ class index_constructor():
             text_with_tags = []
             for element in html_page.iter():
                 if element.tag in ["title", "strong","h1", "h2", "h3"]:
+                    # text_with_tags.append((element.tag, element.text_content()))
                     text_with_tags.append((element.tag, element.text_content()))
 
 
@@ -87,9 +88,12 @@ class index_constructor():
                 else:
                     block_index[token] = {doc_id:[1,""]}
 
-                # not getting the right tag for this token need to fix it 
+                #not getting the right tag for this token need to fix it 
                 # if any(token in tag[1] for tag in tags_with_text):
                 #     block_index[token][doc_id][self.HTML_TAG] = tags_with_text
+                relevant_tags = [(tag[0], tag[1]) for tag in tags_with_text if token in tag[1]]
+                if relevant_tags:
+                    block_index[token][doc_id][self.HTML_TAG] = relevant_tags[0][0]
 
         self.save_block(block_index, block_id)
     
