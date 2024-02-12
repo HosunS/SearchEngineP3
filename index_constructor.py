@@ -45,6 +45,8 @@ class index_constructor():
         lemmatized_tokens = [lemmatizer.lemmatize(token) for token in tokens]
         return lemmatized_tokens
 
+    
+
     #parse given html file and extract the text content
     def parse_and_extract_text(self, html_file_location):
         #skip non html file
@@ -64,9 +66,12 @@ class index_constructor():
             text_with_tags = []
             for element in html_page.iter():
                 if element.tag in ["title", "strong","h1", "h2", "h3"]:
-                    # text_with_tags.append((element.tag, element.text_content()))
-                    text_with_tags.append((element.tag, element.text_content()))
-
+                    #needed to tokenize/lemmatize the tag_content we extracted first
+                    tag_text = element.text_content().lower() 
+                    tag_tokens = self.tokenize(tag_text)
+                    tag_lemmas = self.lemmatize(tag_tokens)
+                    text_with_tags.append((element.tag, " ".join(tag_lemmas)))
+                    # print(element.text_content())
 
         except:
             return "", []
@@ -91,6 +96,7 @@ class index_constructor():
                 #not getting the right tag for this token need to fix it 
                 # if any(token in tag[1] for tag in tags_with_text):
                 #     block_index[token][doc_id][self.HTML_TAG] = tags_with_text
+                # print(tags_with_text)
                 relevant_tags = [(tag[0], tag[1]) for tag in tags_with_text if token in tag[1]]
                 if relevant_tags:
                     block_index[token][doc_id][self.HTML_TAG] = relevant_tags[0][0]
