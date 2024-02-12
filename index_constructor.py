@@ -59,13 +59,22 @@ class index_constructor():
             html_page = html.fromstring(page)
             
             text_content = html_page.text_content()
+
+            #creates the list of text with important tags 
+            text_with_tags = []
+            for element in html_page.iter():
+                if element.tag in ["title", "strong","h1", "h2", "h3"]:
+                    text_with_tags.append((element.tag, element.text_content()))
+
+
         except:
-            return ""
-        return text_content
+            return "", []
+        return text_content,text_with_tags
+
     
     def process_block(self,documents,block_id):
         block_index = {}
-        for doc_id, text in documents:
+        for doc_id, text, tags_with_text in documents:
             tokens = self.tokenize(text)
             lemmatized_tokens = self.lemmatize(tokens)
             #helps avoid duplicates by using a set
@@ -77,6 +86,11 @@ class index_constructor():
                         block_index[token][doc_id] = [1,""]
                 else:
                     block_index[token] = {doc_id:[1,""]}
+
+                # not getting the right tag for this token need to fix it 
+                # if any(token in tag[1] for tag in tags_with_text):
+                #     block_index[token][doc_id][self.HTML_TAG] = tags_with_text
+
         self.save_block(block_index, block_id)
     
     # saves processed block to its own id
