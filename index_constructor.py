@@ -11,6 +11,7 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 import json
+from collections import defaultdict
 # run these downloads below to be able to use nltk for tokenize/lemmatize
 # nltk.download('punkt')
 # nltk.download('wordnet')
@@ -19,6 +20,9 @@ import json
 
 class index_constructor():
     index_dict = {}
+    FREQUENCY = 0
+    HTML_TAG = 1
+
         
     def __init__(self):
         self.webpages_path = "WEBPAGES_RAW"
@@ -65,11 +69,14 @@ class index_constructor():
             tokens = self.tokenize(text)
             lemmatized_tokens = self.lemmatize(tokens)
             #helps avoid duplicates by using a set
-            for token in set(lemmatized_tokens):
+            for token in lemmatized_tokens:
                 if token in block_index:
-                    block_index[token].append(doc_id)
+                    if doc_id in block_index[token]:
+                        block_index[token][doc_id][self.FREQUENCY] += 1
+                    else:
+                        block_index[token][doc_id] = [1,""]
                 else:
-                    block_index[token] = [doc_id]
+                    block_index[token] = {doc_id:[1,""]}
         self.save_block(block_index, block_id)
     
     # saves processed block to its own id
@@ -129,6 +136,5 @@ class index_constructor():
     #     existing_index.update(self.index_dict)
     #     with open(file_name, "w", encoding='utf-8') as file:
     #         json.dump(existing_index, file, ensure_ascii=False, indent=4)
-
 
 
