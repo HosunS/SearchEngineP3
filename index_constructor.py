@@ -76,30 +76,41 @@ class index_constructor():
         except:
             return "", []
         return text_content,text_with_tags
-
     
+    # calculates the TF
+    def calculate_TF(self, FREQUENCY, TOTALS):
+        if TOTALS != 0:
+            return FREQUENCY/TOTALS
+        else:
+            return FREQUENCY
+
     def process_block(self,documents,block_id):
-        block_index = {}
+        block_index =  defaultdict(lambda: defaultdict(lambda:[0,""]))
+        
         for doc_id, text, tags_with_text in documents:
             tokens = self.tokenize(text)
             lemmatized_tokens = self.lemmatize(tokens)
+            #count total words in doc
+            total_words = len(lemmatized_tokens)
             #helps avoid duplicates by using a set
             for token in lemmatized_tokens:
                 if token in block_index:
+                    #if document is associated with the token
                     if doc_id in block_index[token]:
                         block_index[token][doc_id][self.FREQUENCY] += 1
                     else:
                         block_index[token][doc_id] = [1,""]
+                #if the token is not in the block yet
                 else:
                     block_index[token] = {doc_id:[1,""]}
 
-                #not getting the right tag for this token need to fix it 
-                # if any(token in tag[1] for tag in tags_with_text):
-                #     block_index[token][doc_id][self.HTML_TAG] = tags_with_text
-                # print(tags_with_text)
                 relevant_tags = [(tag[0], tag[1]) for tag in tags_with_text if token in tag[1]]
                 if relevant_tags:
                     block_index[token][doc_id][self.HTML_TAG] = relevant_tags[0][0]
+
+            #using frequency saved in index, go through again and convert into TF
+            for token in lemmatized_tokens:
+                block_index[token][doc_id][self.FREQUENCY] = self.calculate_TF(block_index[token][doc_id][self.FREQUENCY],total_words)
 
         self.save_block(block_index, block_id)
     

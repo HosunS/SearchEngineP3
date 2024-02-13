@@ -30,7 +30,7 @@ def read_files(index):
     if documents:
         index.process_block(documents, block_id)
 
-    # blocks are processed merge them into the final index
+    # blocks are processed, merge them into the final index
     index.merge_blocks()
     
 
