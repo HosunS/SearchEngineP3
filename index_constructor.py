@@ -22,6 +22,8 @@ class index_constructor():
     index_dict = {}
     FREQUENCY = 0
     HTML_TAG = 1
+    unique_docids = set()
+
 
         
     def __init__(self):
@@ -83,7 +85,7 @@ class index_constructor():
         for doc_id, text, tags_with_text in documents:
             tokens = self.tokenize(text)
             lemmatized_tokens = self.lemmatize(tokens)
-            #helps avoid duplicates by using a set
+
             for token in lemmatized_tokens:
                 if token in block_index:
                     if doc_id in block_index[token]:
@@ -92,6 +94,7 @@ class index_constructor():
                         block_index[token][doc_id] = [1,""]
                 else:
                     block_index[token] = {doc_id:[1,""]}
+                self.unique_docids.add(doc_id)
 
                 #not getting the right tag for this token need to fix it 
                 # if any(token in tag[1] for tag in tags_with_text):

@@ -32,6 +32,9 @@ def read_files(index):
 
     # blocks are processed merge them into the final index
     index.merge_blocks()
+
+    #print number of unique doc_ids in index
+    print(index.unique_docids)
     
 
 if __name__ == "__main__":
