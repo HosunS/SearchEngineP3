@@ -22,7 +22,6 @@ class index_constructor():
     index_dict = {}
     FREQUENCY = 0
     HTML_TAG = 1
-    unique_docids = set()
 
 
         
@@ -32,6 +31,7 @@ class index_constructor():
         self.blocks_dir = "blocks"
         if not os.path.exists(self.blocks_dir):
             os.makedirs(self.blocks_dir)
+        self.unique_docids = set()
        
     #tokenize text content
     def tokenize(self, text):
