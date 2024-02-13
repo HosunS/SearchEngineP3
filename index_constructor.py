@@ -22,6 +22,8 @@ class index_constructor():
     index_dict = {}
     FREQUENCY = 0
     HTML_TAG = 1
+    unique_docids = set()
+
 
         
     def __init__(self):
@@ -103,6 +105,7 @@ class index_constructor():
                 #if the token is not in the block yet
                 else:
                     block_index[token] = {doc_id:[1,""]}
+                self.unique_docids.add(doc_id)
 
                 relevant_tags = [(tag[0], tag[1]) for tag in tags_with_text if token in tag[1]]
                 if relevant_tags:
