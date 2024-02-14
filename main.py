@@ -43,10 +43,6 @@ def enter_search_query(basic_query):
     basic_query.print_out_query_links(search_query,link_list)
 
 
-
-
-    return
-
 if __name__ == "__main__":
     index = index_constructor()
     read_files(index)

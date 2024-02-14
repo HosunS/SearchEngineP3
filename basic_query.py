@@ -51,15 +51,17 @@ class basic_query():
 # write output into file (I just use it to see return value for each function)  
   def write_ouput_file(self,list):
     file_name = "search_query.txt"
-    length = 0
+    # length = 0
     with open(file_name, "w", encoding='utf-8') as file:
+      file.write(f"Number of List: {len(list)}\n\n")
 
       for dict in list:
           file.write(f"{dict}\n\n")
-          length+=1
+          # length+=1
       file.write("\n")
-    print("from ouput file funtion: ")
-    print( length)
+      
+    # print("from ouput file funtion: ")
+    # print( length)
 
 test = basic_query()
 DocID = test.search_query_term_from_index("informatics")
