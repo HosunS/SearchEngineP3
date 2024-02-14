@@ -1,6 +1,7 @@
 import os
 import json
 from index_constructor import index_constructor
+from basic_query import basic_query
 
 def read_files(index):
     
@@ -34,6 +35,21 @@ def read_files(index):
     index.merge_blocks()
     print(len(index.unique_docids))
 
+
+def enter_search_query(basic_query):
+    search_query = input("Enter:") #gets search query from input ( not sure this is the right way to implemet this )
+    docID_list = basic_query.search_query_term_from_index(search_query)
+    link_list = basic_query.get_link_from_docID_list(docID_list)
+    basic_query.print_out_query_links(search_query,link_list)
+
+
+
+
+    return
+
 if __name__ == "__main__":
-    test = index_constructor()
-    read_files(test)
+    index = index_constructor()
+    read_files(index)
+
+    # query = basic_query()
+    # enter_search_query(query)
