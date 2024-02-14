@@ -36,16 +36,27 @@ def read_files(index):
     print(len(index.unique_docids))
 
 
-def enter_search_query(basic_query):
-    search_query = input("Enter:") #gets search query from input ( not sure this is the right way to implemet this )
-    docID_list = basic_query.search_query_term_from_index(search_query)
-    link_list = basic_query.get_link_from_docID_list(docID_list)
-    basic_query.print_out_query_links(search_query,link_list)
+def enter_search_query():
+    query = basic_query()
+    while(True):
+        query.get_query()
+        docID_list = query.search_query_term_from_index()
+        link_list = query.get_link_from_docID_list(docID_list)
+        query.print_out_20_query_links(link_list)
+
+        cont = input("Search again? y/n: ")
+        while(cont.lower() != "y" and cont.lower() != "n"):
+            cont = input("Invalid input. Search again? y/n: ")
+        if cont.lower() == "n":
+            break
+
 
 
 if __name__ == "__main__":
-    index = index_constructor()
-    read_files(index)
 
-    # query = basic_query()
-    # enter_search_query(query)
+    #only create index if it doesn't exist in the directory
+    if os.path.isfile("final_index.json") == False:
+        index = index_constructor()
+        read_files(index)
+    enter_search_query()
+        

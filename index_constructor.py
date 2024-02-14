@@ -6,12 +6,9 @@
 # import json
 from lxml import html
 import os.path
-import nltk
-from nltk.tokenize import word_tokenize
-from nltk.stem import WordNetLemmatizer
-from nltk.corpus import stopwords
 import json
 from collections import defaultdict
+from format_text import tokenize, lemmatize
 # run these downloads below to be able to use nltk for tokenize/lemmatize
 # nltk.download('punkt')
 # nltk.download('wordnet')
@@ -33,19 +30,19 @@ class index_constructor():
             os.makedirs(self.blocks_dir)
         self.unique_docids = set()
        
-    #tokenize text content
-    def tokenize(self, text):
-        text = text.lower()
-        tokens = word_tokenize(text)
-        tokens = [word for word in tokens if word.isalpha() and word not in stopwords.words('english')]
-        return tokens
+    # #tokenize text content
+    # def tokenize(self, text):
+    #     text = text.lower()
+    #     tokens = word_tokenize(text)
+    #     tokens = [word for word in tokens if word.isalpha() and word not in stopwords.words('english')]
+    #     return tokens
         
 
-    #apply lemmatization on input
-    def lemmatize(self,tokens):
-        lemmatizer = WordNetLemmatizer()
-        lemmatized_tokens = [lemmatizer.lemmatize(token) for token in tokens]
-        return lemmatized_tokens
+    # #apply lemmatization on input
+    # def lemmatize(self,tokens):
+    #     lemmatizer = WordNetLemmatizer()
+    #     lemmatized_tokens = [lemmatizer.lemmatize(token) for token in tokens]
+    #     return lemmatized_tokens
 
     
 
@@ -70,8 +67,8 @@ class index_constructor():
                 if element.tag in ["title", "strong","h1", "h2", "h3"]:
                     #needed to tokenize/lemmatize the tag_content we extracted first
                     tag_text = element.text_content().lower() 
-                    tag_tokens = self.tokenize(tag_text)
-                    tag_lemmas = self.lemmatize(tag_tokens)
+                    tag_tokens = tokenize(tag_text)
+                    tag_lemmas = lemmatize(tag_tokens)
                     text_with_tags.append((element.tag, " ".join(tag_lemmas)))
                     # print(element.text_content())
 
@@ -90,8 +87,8 @@ class index_constructor():
         block_index =  defaultdict(lambda: defaultdict(lambda:[0,""]))
         
         for doc_id, text, tags_with_text in documents:
-            tokens = self.tokenize(text)
-            lemmatized_tokens = self.lemmatize(tokens)
+            tokens = tokenize(text)
+            lemmatized_tokens = lemmatize(tokens)
             #count total words in doc
             total_words = len(lemmatized_tokens)
             #helps avoid duplicates by using a set
