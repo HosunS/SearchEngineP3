@@ -33,7 +33,10 @@ def read_files(index):
 
     # blocks are processed merge them into the final index
     index.merge_blocks()
+    print(f"# of documents: {len(index.unique_docids)}\n")
+    print(f"Index file size: {len(index.unique_words)}\n")
     print(len(index.unique_docids))
+    print(len(index.unique_words))
 
 
 def enter_search_query():

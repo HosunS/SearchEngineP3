@@ -12,6 +12,11 @@ import os.path
 import json
 from collections import defaultdict
 from format_text import tokenize, lemmatize
+import math
+import warnings
+
+#ignore bs4 warnings
+warnings.filterwarnings("ignore", category=UserWarning, module='bs4')
 # run these downloads below to be able to use nltk for tokenize/lemmatize
 # nltk.download('punkt')
 # nltk.download('wordnet')
@@ -32,6 +37,7 @@ class index_constructor():
         if not os.path.exists(self.blocks_dir):
             os.makedirs(self.blocks_dir)
         self.unique_docids = set()
+        self.unique_words = set()
        
     # #tokenize text content
     # def tokenize(self, text):
@@ -79,6 +85,7 @@ class index_constructor():
     #         return "", []
     #     return text_content,text_with_tags
 
+    #There are also markup/txt files in the crawled pages, we parse through but will not grab any tag information from these.
     #parse given html/xml file and extract the text content
     def parse_and_extract_text(self, html_file_location):
         try:
@@ -112,11 +119,11 @@ class index_constructor():
         return text_content, text_with_tags
     
     # calculates the TF
-    def calculate_TF(self, FREQUENCY, TOTALS):
-        if TOTALS != 0:
-            return FREQUENCY/TOTALS
-        else:
-            return FREQUENCY
+    def calculate_TF(self, FREQUENCY):
+            if(FREQUENCY > 0):
+                return 1 + math.log10(FREQUENCY)
+            else:
+                return 0
 
     def process_block(self,documents,block_id):
         block_index =  defaultdict(lambda: defaultdict(lambda:[0,""]))
@@ -124,28 +131,30 @@ class index_constructor():
         for doc_id, text, tags_with_text in documents:
             tokens = tokenize(text)
             lemmatized_tokens = lemmatize(tokens)
-            #count total words in doc
-            total_words = len(lemmatized_tokens)
-            #helps avoid duplicates by using a set
+            
+            # #count total words in doc
+            # total_words = len(lemmatized_tokens)
+            
+            #counter for each document and also adds unique tokens for final analytic
+            term_frequencies = defaultdict(int)
             for token in lemmatized_tokens:
-                if token in block_index:
-                    #if document is associated with the token
-                    if doc_id in block_index[token]:
-                        block_index[token][doc_id][self.FREQUENCY] += 1
-                    else:
-                        block_index[token][doc_id] = [1,""]
-                #if the token is not in the block yet
+                term_frequencies[token] += 1
+                self.unique_words.add(token)
+            
+            #helps avoid duplicates by using a set
+            for token , freq in term_frequencies.items():
+                #calculate TF here
+                tf = self.calculate_TF(freq)
+                #if document is associated with the token
+                if doc_id in block_index[token]:
+                    block_index[token][doc_id][self.FREQUENCY] = tf
                 else:
-                    block_index[token] = {doc_id:[1,""]}
-                self.unique_docids.add(doc_id)
-
+                    block_index[token][doc_id] = [tf,""]
+                    self.unique_docids.add(doc_id)
+                
                 relevant_tags = [(tag[0], tag[1]) for tag in tags_with_text if token in tag[1]]
                 if relevant_tags:
                     block_index[token][doc_id][self.HTML_TAG] = relevant_tags[0][0]
-
-            #using frequency saved in index, go through again and convert into TF
-            for token in lemmatized_tokens:
-                block_index[token][doc_id][self.FREQUENCY] = self.calculate_TF(block_index[token][doc_id][self.FREQUENCY],total_words)
 
         self.save_block(block_index, block_id)
     
@@ -169,7 +178,23 @@ class index_constructor():
                     final_index[token].update(doc_ids)
                     #final_index[token] = list(set(final_index[token]))  # Remove duplicates
         with open(final_index_file, "w", encoding="utf-8") as file:
-            json.dump(final_index, file, indent=4)               
+            json.dump(final_index, file, indent=4)
+        
+        file_size_bytes = os.path.getsize(final_index_file)
+        file_size_kb = file_size_bytes / 1024
+        print(f"Index file size: {file_size_kb:.2f} KB\n")     
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     
     #creates index with lemmatized_tokens and file_location(Doc ID)
     # def indexing(self,key_list, document_ID):
