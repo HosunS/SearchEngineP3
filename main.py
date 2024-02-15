@@ -58,5 +58,6 @@ if __name__ == "__main__":
     if os.path.isfile("final_index.json") == False:
         index = index_constructor()
         read_files(index)
+        
     enter_search_query()
         

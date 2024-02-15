@@ -4,7 +4,10 @@
 #use nltk for tokenization and lemmatization
 
 # import json
+from bs4 import BeautifulSoup
 from lxml import html
+import lxml
+import os
 import os.path
 import json
 from collections import defaultdict
@@ -46,35 +49,67 @@ class index_constructor():
 
     
 
-    #parse given html file and extract the text content
-    def parse_and_extract_text(self, html_file_location):
-        #skip non html file
-        try:
-            #get file
-            f = open(html_file_location, "r")
+    # #parse given html file and extract the text content
+    # def parse_and_extract_text(self, html_file_location):
+    #     #skip non html file
+    #     try:
+    #         #get file
+    #         f = open(html_file_location, "r")
 
-            page = f.read()
-            f.close()
+    #         page = f.read()
+    #         f.close()
 
-            #parse html
-            html_page = html.fromstring(page)
+    #         #parse html
+    #         html_page = html.fromstring(page)
             
-            text_content = html_page.text_content()
+    #         text_content = html_page.text_content()
 
-            #creates the list of text with important tags 
+    #         #creates the list of text with important tags 
+    #         text_with_tags = []
+    #         for element in html_page.iter():
+    #             if element.tag in ["title", "strong","h1", "h2", "h3"]:
+    #                 #needed to tokenize/lemmatize the tag_content we extracted first
+    #                 tag_text = element.text_content().lower() 
+    #                 tag_tokens = tokenize(tag_text)
+    #                 tag_lemmas = lemmatize(tag_tokens)
+    #                 text_with_tags.append((element.tag, " ".join(tag_lemmas)))
+    #                 # print(element.text_content())
+
+    #     except:
+    #         return "", []
+    #     return text_content,text_with_tags
+
+    #parse given html/xml file and extract the text content
+    def parse_and_extract_text(self, html_file_location):
+        try:
+             # determine the file type based on its extension
+            _, file_extension = os.path.splitext(html_file_location)
+            is_xml = file_extension.lower() in ['.xml']
+            parser_type = "lxml-xml" if is_xml else "lxml"
+            
+            #open and read 
+            with open(html_file_location, "r", encoding="utf-8") as f:
+                page = f.read()
+
+            #parse using lxml-xml for xml , or lxml for html
+            soup = BeautifulSoup(page, parser_type)  
+
+            # extract text content
+            text_content = soup.get_text(separator=' ', strip=True)
+
+            # creates the list of text with important tags
             text_with_tags = []
-            for element in html_page.iter():
-                if element.tag in ["title", "strong","h1", "h2", "h3"]:
-                    #needed to tokenize/lemmatize the tag_content we extracted first
-                    tag_text = element.text_content().lower() 
+            for tag_name in ["title", "strong", "h1", "h2", "h3"]:
+                for element in soup.find_all(tag_name):
+                    tag_text = element.get_text().lower()
                     tag_tokens = tokenize(tag_text)
                     tag_lemmas = lemmatize(tag_tokens)
-                    text_with_tags.append((element.tag, " ".join(tag_lemmas)))
-                    # print(element.text_content())
+                    text_with_tags.append((tag_name, " ".join(tag_lemmas)))
 
-        except:
+        except Exception as e:
             return "", []
-        return text_content,text_with_tags
+        
+        return text_content, text_with_tags
     
     # calculates the TF
     def calculate_TF(self, FREQUENCY, TOTALS):
