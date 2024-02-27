@@ -2,6 +2,7 @@ import os
 import json
 from index_constructor import index_constructor
 from basic_query import basic_query
+from math import log10
 
 def read_files(index):
     
@@ -53,6 +54,21 @@ def enter_search_query():
         if cont.lower() == "n":
             break
 
+def calculate_idf():
+    index_dict = {}
+    file_path = "final_index.json"
+    with open(file_path, "r", encoding="utf-8") as file:
+       index_dict = json.load(file)
+    file.close()
+    for token in index_dict:
+        for doc in index_dict[token]:
+            index_dict[token][doc][0] = index_dict[token][doc][0]*log10(36614/len(index_dict[token]))
+            
+
+    with open(file_path, "w", encoding="utf-8") as file:
+       index_dict = json.dump(index_dict, file)
+    file.close()
+
 
 
 if __name__ == "__main__":
@@ -61,6 +77,10 @@ if __name__ == "__main__":
     if os.path.isfile("final_index.json") == False:
         index = index_constructor()
         read_files(index)
+    
+    #run this like this the first time but once you've run it once 
+    #you can move this to inside the if statement above so it doesn't run every time
+    calculate_idf()
         
     enter_search_query()
         
