@@ -27,8 +27,6 @@ class index_constructor():
     index_dict = {}
     FREQUENCY = 0
     HTML_TAG = 1
-
-
         
     def __init__(self):
         self.webpages_path = "WEBPAGES_RAW"
@@ -39,57 +37,13 @@ class index_constructor():
         self.unique_docids = set()
         self.unique_words = set()
        
-    # #tokenize text content
-    # def tokenize(self, text):
-    #     text = text.lower()
-    #     tokens = word_tokenize(text)
-    #     tokens = [word for word in tokens if word.isalpha() and word not in stopwords.words('english')]
-    #     return tokens
-        
-
-    # #apply lemmatization on input
-    # def lemmatize(self,tokens):
-    #     lemmatizer = WordNetLemmatizer()
-    #     lemmatized_tokens = [lemmatizer.lemmatize(token) for token in tokens]
-    #     return lemmatized_tokens
-
-    
-
-    # #parse given html file and extract the text content
-    # def parse_and_extract_text(self, html_file_location):
-    #     #skip non html file
-    #     try:
-    #         #get file
-    #         f = open(html_file_location, "r")
-
-    #         page = f.read()
-    #         f.close()
-
-    #         #parse html
-    #         html_page = html.fromstring(page)
-            
-    #         text_content = html_page.text_content()
-
-    #         #creates the list of text with important tags 
-    #         text_with_tags = []
-    #         for element in html_page.iter():
-    #             if element.tag in ["title", "strong","h1", "h2", "h3"]:
-    #                 #needed to tokenize/lemmatize the tag_content we extracted first
-    #                 tag_text = element.text_content().lower() 
-    #                 tag_tokens = tokenize(tag_text)
-    #                 tag_lemmas = lemmatize(tag_tokens)
-    #                 text_with_tags.append((element.tag, " ".join(tag_lemmas)))
-    #                 # print(element.text_content())
-
-    #     except:
-    #         return "", []
-    #     return text_content,text_with_tags
 
     #There are also markup/txt files in the crawled pages, we parse through but will not grab any tag information from these.
     #parse given html/xml file and extract the text content
     def parse_and_extract_text(self, html_file_location):
         try:
-             # determine the file type based on its extension
+            # print(html_file_location)
+            # determine the file type based on its extension
             _, file_extension = os.path.splitext(html_file_location)
             is_xml = file_extension.lower() in ['.xml']
             parser_type = "lxml-xml" if is_xml else "lxml"
@@ -103,21 +57,64 @@ class index_constructor():
 
             # extract text content
             text_content = soup.get_text(separator=' ', strip=True)
+            # text_content = soup.get_text()
 
-            # creates the list of text with important tags
-            text_with_tags = []
+
+            # # creates the list of text with important tagsç
+            text_with_tags = {}
             for tag_name in ["title", "strong", "h1", "h2", "h3"]:
-                for element in soup.find_all(tag_name):
-                    tag_text = element.get_text().lower()
-                    tag_tokens = tokenize(tag_text)
-                    tag_lemmas = lemmatize(tag_tokens)
-                    text_with_tags.append((tag_name, " ".join(tag_lemmas)))
+                if tag_name  == 'title':
+                    titleList = soup.find_all(tag_name)
+                if tag_name == 'strong':
+                    boldList = soup.find_all(tag_name)
+                if tag_name == 'h1':
+                    h1List = soup.find_all(tag_name)
+                if tag_name == 'h2':
+                    h2List= soup.find_all(tag_name)
+                if tag_name == 'h3':
+                    h3List = soup.find_all(tag_name)
+
+
+            titleList = " ".join([element.get_text() for element in titleList])
+            boldList = " ".join([element.get_text() for element in boldList])
+            h1List = " ".join([element.get_text() for element in h1List])
+            h2List = " ".join([element.get_text() for element in h2List])
+            h3List = " ".join([element.get_text() for element in h3List])
+
+
+            titleToken = tokenize(titleList)
+            boldToken = tokenize(boldList)
+            h1Token = tokenize(h1List)
+            h2Token = tokenize(h2List)
+            h3Token = tokenize(h3List)
+
+            text_with_tags['title'] = lemmatize(titleToken)
+            text_with_tags['bold']= lemmatize(boldToken)
+            text_with_tags['h1'] = lemmatize(h1Token)
+            text_with_tags['h2'] = lemmatize(h2Token)
+            text_with_tags['h3'] = lemmatize(h3Token)
 
         except Exception as e:
-            return "", []
+            return "", {}
         
         return text_content, text_with_tags
     
+    #used to compare current word to lists of words in specific tags and give a score
+    def calculateTagImportance(self, token, lemTitle, lemBold,lemH1,lemH2,lemH3):
+        score = 0.0
+        if token in lemTitle:
+            score += .09
+        if token in lemH1:
+            score += .04
+        if token in lemH2:
+            score += .03
+        if token in lemH3:
+            score += .02
+        if token in lemBold:
+            score += .01
+        return score
+    
+
     # calculates the TF
     def calculate_TF(self, FREQUENCY):
             if(FREQUENCY > 0):
@@ -126,7 +123,7 @@ class index_constructor():
                 return 0
 
     def process_block(self,documents,block_id):
-        block_index =  defaultdict(lambda: defaultdict(lambda:[0,""]))
+        block_index =  defaultdict(lambda: defaultdict(lambda:[0,0]))
         
         for doc_id, text, tags_with_text in documents:
             tokens = tokenize(text)
@@ -152,9 +149,10 @@ class index_constructor():
                     block_index[token][doc_id] = [tf,""]
                     self.unique_docids.add(doc_id)
                 
-                relevant_tags = [(tag[0], tag[1]) for tag in tags_with_text if token in tag[1]]
-                if relevant_tags:
-                    block_index[token][doc_id][self.HTML_TAG] = relevant_tags[0][0]
+                block_index[token][doc_id][self.HTML_TAG] = self.calculateTagImportance(token, tags_with_text['title'], tags_with_text['bold'], tags_with_text['h1'], tags_with_text['h2'], tags_with_text['h3'])
+                # relevant_tags = [(tag[0], tag[1]) for tag in tags_with_text if token in tag[1]]
+                # if relevant_tags:
+                #     block_index[token][doc_id][self.HTML_TAG] = relevant_tags[0][0]
 
         self.save_block(block_index, block_id)
     
@@ -178,58 +176,9 @@ class index_constructor():
                     final_index[token].update(doc_ids)
                     #final_index[token] = list(set(final_index[token]))  # Remove duplicates
         with open(final_index_file, "w", encoding="utf-8") as file:
-            json.dump(final_index, file, indent=4)
+            # json.dump(final_index, file, indent=4)
+            json.dump(final_index, file)
         
         file_size_bytes = os.path.getsize(final_index_file)
         file_size_kb = file_size_bytes / 1024
         print(f"Index file size: {file_size_kb:.2f} KB\n")     
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-    #creates index with lemmatized_tokens and file_location(Doc ID)
-    # def indexing(self,key_list, document_ID):
-        # for key in key_list:
-        #     if key not in self.index_dict:
-        #         self.index_dict[key] = []
-        #         self.index_dict[key].append([document_ID,1])
-                
-        #     else:
-        #         doc_id_in_list = False
-        #         #check if doc id is already in list
-        #         for doc in self.index_dict[key]:
-        #             if doc[0] == document_ID:
-        #                 doc[1] += 1
-        #                 doc_id_in_list = True
-        #                 break
-        #         if (doc_id_in_list == False):
-        #             self.index_dict[key].append([document_ID,1])
-    
-        
-    # def create_index_file(self,file_name = "indexing_report.json"):
-    #     # report = self.index_dict
-    #     # with open(file_name, "w", encoding='utf-8') as file:
-    #     #     for key, value in report.items():
-    #     #         file.write(f"{key}: {value}\n\n")
-    #     #     file.write("\n")
-    #     try:
-    #         with open(file_name, "r", encoding='utf-8') as file:
-    #             existing_index = json.load(file)
-    #     except FileNotFoundError:
-    #         existing_index = {}
-            
-    #     #update index with new data
-    #     existing_index.update(self.index_dict)
-    #     with open(file_name, "w", encoding='utf-8') as file:
-    #         json.dump(existing_index, file, ensure_ascii=False, indent=4)
-
-
