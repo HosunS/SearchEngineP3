@@ -66,7 +66,7 @@ def calculate_idf():
             
 
     with open(file_path, "w", encoding="utf-8") as file:
-       index_dict = json.dump(index_dict, file)
+       index_dict = json.dump(index_dict, file, indent=4)
     file.close()
 
 
@@ -77,10 +77,10 @@ if __name__ == "__main__":
     if os.path.isfile("final_index.json") == False:
         index = index_constructor()
         read_files(index)
+        calculate_idf()
     
-    #run this like this the first time but once you've run it once 
-    #you can move this to inside the if statement above so it doesn't run every time
-    calculate_idf()
+    #uncomment if the index on your computer doesn't have idf calculated
+    #calculate_idf
         
     enter_search_query()
         

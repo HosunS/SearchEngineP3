@@ -2,8 +2,10 @@
 import json
 import os
 from format_text import tokenize, lemmatize
+from collections import defaultdict
 
 class basic_query():
+  htmlTagScore = {"title":3, "strong":2, "h1":1, "h2":0.7, "h3":0.5, "":0}
 
   def __init__(self):
     #input given by user
@@ -32,7 +34,7 @@ class basic_query():
 
 
   def search_query_term_from_index(self):
-    docID_list = []
+    docID_dict = defaultdict(int)
     temp_list = []
     
     
@@ -43,37 +45,48 @@ class basic_query():
       for index in self.index_dict.keys():
         if index == search_query_token:
           temp_list[-1] = self.index_dict[index]
-    
-    #if search query was only 1 word long
-    if len(temp_list) == 1:
-      for dict in temp_list[0]:
-        docID_list.append(dict)
 
-    #if search query was more than 1 word
-    #find token that had the most urls by sorting
-    elif len(temp_list) > 1:
-      temp_list.sort(key=lambda x: len(x), reverse=True)
-      #iterate over the urls in the longest url list
-      for url in temp_list[0]:
-        in_all_dicts = True
-        #check that url is in other url list for other tokens in search query as well
-        for dict in temp_list[1:]:
-          if url not in dict:
-            in_all_dicts = False
-            break
-        if (in_all_dicts):
-          docID_list.append(url)
-      
-
+    #add tf idf for each token + give points for html tag
+    for docList in temp_list:
+      for doc in docList.keys():
+        docID_dict[doc] += docList[doc][0] + self.htmlTagScore[docList[doc][1]]
         
+    
+    # #if search query was only 1 word long
+    # if len(temp_list) == 1:
+    #   for dict in temp_list[0]:
+    #     docID_list.append(dict)
+
+    # #if search query was more than 1 word
+    # #find token that had the most urls by sorting
+    # elif len(temp_list) > 1:
+    #   temp_list.sort(key=lambda x: len(x), reverse=True)
+    #   #iterate over the urls in the longest url list
+    #   for url in temp_list[0]:
+    #     in_all_dicts = True
+    #     #check that url is in other url list for other tokens in search query as well
+    #     for dict in temp_list[1:]:
+    #       if url not in dict:
+    #         in_all_dicts = False
+    #         break
+    #     if (in_all_dicts):
+    #       docID_list.append(url)
+    
+        
+
+
+    #print(docID_dict)
+
+    #sort docs by score
+    sorted_docs = [i[0] for i in sorted(docID_dict.items(), key=lambda x:x[1], reverse=True)]
+
+    #print(sorted_docs[0:21])
+
     print("from search query function: ")
-    print(f"total urls found for {self.original_query}: {len(docID_list)}")
+    print(f"total urls found for {self.original_query}: {len(sorted_docs)}")
 
 
-    # print(docID_list)
-    # print()
-    # self.write_ouput_file(docID_list)
-    return docID_list
+    return sorted_docs
       
   
 #returns list of links from docID_list
@@ -83,10 +96,13 @@ class basic_query():
     with open(os.path.join(file_path, "bookkeeping.json")) as f:
         file_dict = json.load(f)
     
-    for file_location in file_dict.keys():
-      for doc_id in docID_list:
-        if(file_location == doc_id):
-          link_list.append(file_dict[doc_id])
+    # for file_location in file_dict.keys():
+    #   for doc_id in docID_list:
+    #     if(file_location == doc_id):
+    #       link_list.append(file_dict[doc_id])
+        
+    for doc in docID_list:
+      link_list.append(file_dict[doc])
     
     self.write_ouput_file(link_list)
     return link_list
@@ -102,7 +118,7 @@ class basic_query():
   def print_out_20_query_links(self, link_list):
     print(self.original_query)
     print("First 20 (or less) links: ")
-    for link in range(0,min(len(link_list),20)):
+    for link in range(0,min(len(link_list),21)):
       print(link_list[link] + "\n")
     
 # write output into file (I just use it to see return value for each function)  
