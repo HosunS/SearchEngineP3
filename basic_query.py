@@ -5,7 +5,6 @@ from format_text import tokenize, lemmatize
 from collections import defaultdict
 
 class basic_query():
-  htmlTagScore = {"title":3, "strong":2, "h1":1, "h2":0.7, "h3":0.5, "":0}
 
   def __init__(self):
     #input given by user
@@ -46,10 +45,10 @@ class basic_query():
         if index == search_query_token:
           temp_list[-1] = self.index_dict[index]
 
-    #add tf idf for each token + give points for html tag
+    #add tf idf and html tag score for each token
     for docList in temp_list:
       for doc in docList.keys():
-        docID_dict[doc] += docList[doc][0] + self.htmlTagScore[docList[doc][1]]
+        docID_dict[doc] += docList[doc][0] + docList[doc][1]
         
     
     # #if search query was only 1 word long
