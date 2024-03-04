@@ -3,6 +3,9 @@ import json
 import os
 from format_text import tokenize, lemmatize
 from collections import defaultdict
+from math import log10
+import math
+
 
 class basic_query():
 
@@ -12,6 +15,9 @@ class basic_query():
 
     #tokenized input
     self.search_query = []
+
+    #query_index
+    self.query_tfidf_scores = []
 
     #index
     file_path = "final_index.json"
@@ -105,6 +111,23 @@ class basic_query():
     
     self.write_ouput_file(link_list)
     return link_list
+  
+  # calculate query tf-dif score
+  def calculate_query_tfidf(self):
+      scores = []
+      for term in self.search_query:
+        tf= self.search_query.count(term) / len(self.search_query)
+        idf = log10(36614/ len(self.index_dict[term]))
+        scores.append(tf*idf)
+
+      self.query_tfidf_scores = scores
+
+  # calcualte cosine similarity between query and doc
+  def calculate_cosine_similarity(self):
+    similarity_scores = {}
+
+    return similarity_scores
+
 
 #prints out related links for search query 
   def print_out_query_links(self, link_list):

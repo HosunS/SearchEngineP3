@@ -4,6 +4,8 @@ from index_constructor import index_constructor
 from basic_query import basic_query
 from math import log10
 
+index_dict = {}
+
 def read_files(index):
     
     with open(os.path.join(index.webpages_path, "bookkeeping.json")) as f:
@@ -44,6 +46,7 @@ def enter_search_query():
     query = basic_query()
     while(True):
         query.get_query()
+        # query_tfidf = query.calculate_query_tfidf() #calculate query tf-idf here?? 
         docID_list = query.search_query_term_from_index()
         link_list = query.get_link_from_docID_list(docID_list)
         query.print_out_20_query_links(link_list)
@@ -55,7 +58,7 @@ def enter_search_query():
             break
 
 def calculate_idf():
-    index_dict = {}
+    # index_dict = {} put it at the beginning
     file_path = "final_index.json"
     with open(file_path, "r", encoding="utf-8") as file:
        index_dict = json.load(file)
@@ -70,7 +73,6 @@ def calculate_idf():
     file.close()
 
 
-
 if __name__ == "__main__":
 
     #only create index if it doesn't exist in the directory
@@ -80,7 +82,6 @@ if __name__ == "__main__":
         calculate_idf()
     
     #uncomment if the index on your computer doesn't have idf calculated
-    #calculate_idf
-        
+    # calculate_idf()
     enter_search_query()
         
