@@ -39,9 +39,15 @@ class basic_query():
 
 
   def search_query_term_from_index(self):
-    docID_dict = defaultdict(int)
+    docID_dict = defaultdict(float)
     temp_list = []
+    docID_set = set()
     
+    for search_query_token in self.search_query:
+      if search_query_token in self.index_dict:
+        docID_set.update(self.index_dict[search_query_token].keys())
+    
+    docID_list = list(docID_set)
     
 
     #create list of list, where each inner list is the urls for 1 word in the query
@@ -50,12 +56,16 @@ class basic_query():
       for index in self.index_dict.keys():
         if index == search_query_token:
           temp_list[-1] = self.index_dict[index]
-
-    #add tf idf and html tag score for each token
+          
+          
+    docID_dict = self.calculate_cosine_similarity(docID_list)
+    # print(docID_dict) 
+    #add cosine_similarity value for the docs to the html tag scores
     for docList in temp_list:
       for doc in docList.keys():
-        docID_dict[doc] += docList[doc][0] + docList[doc][1]
-        
+        docID_dict[doc] += docList[doc][1]
+    
+    # print(docID_dict) 
     
     # #if search query was only 1 word long
     # if len(temp_list) == 1:
@@ -77,8 +87,6 @@ class basic_query():
     #     if (in_all_dicts):
     #       docID_list.append(url)
     
-        
-
 
     #print(docID_dict)
 
@@ -123,9 +131,36 @@ class basic_query():
       self.query_tfidf_scores = scores
 
   # calcualte cosine similarity between query and doc
-  def calculate_cosine_similarity(self):
+  def calculate_cosine_similarity(self,docID_list):
+    self.calculate_query_tfidf()
     similarity_scores = {}
+    query_vector = self.query_tfidf_scores
+    
+    for doc_id in docID_list:
+      # for ids in doc_id:
+      doc_vector = []
+      for term in self.search_query:
+        if term in self.index_dict and doc_id in self.index_dict[term]:
+          doc_tfidf = self.index_dict[term][doc_id][0]
+          doc_vector.append(doc_tfidf)
+        else:
+          print("ELSELSE")
+          doc_vector.append(0)
 
+
+      dot_product = sum([v1 * v2 for v1, v2 in zip(doc_vector, query_vector)])
+      normalized_query = math.sqrt(sum([v ** 2 for v in query_vector]))
+      normalized_doc = math.sqrt(sum([v ** 2 for v in doc_vector]))
+      normalized_product = normalized_query * normalized_doc
+      
+      # print(normalized_product)
+      if normalized_product == 0:
+        similarity = 0
+      else:
+        similarity = dot_product/normalized_product
+        
+      similarity_scores[doc_id] = similarity
+    # print(similarity_scores)
     return similarity_scores
 
 
