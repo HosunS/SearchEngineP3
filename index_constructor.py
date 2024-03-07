@@ -103,15 +103,15 @@ class index_constructor():
     def calculateTagImportance(self, token, lemTitle, lemBold,lemH1,lemH2,lemH3):
         score = 0.0
         if token in lemTitle:
-            score += 2
+            score += .9
         if token in lemH1:
-            score += 1.5
+            score += .7
         if token in lemH2:
-            score += 1
-        if token in lemH3:
             score += .5
+        if token in lemH3:
+            score += .4
         if token in lemBold:
-            score += 1
+            score += .3
         return score
     
 

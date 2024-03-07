@@ -144,7 +144,7 @@ class basic_query():
           doc_tfidf = self.index_dict[term][doc_id][0]
           doc_vector.append(doc_tfidf)
         else:
-          print("ELSELSE")
+          # print("ELSELSE")
           doc_vector.append(0)
 
 
