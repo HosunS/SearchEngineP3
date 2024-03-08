@@ -1,6 +1,14 @@
 import tkinter as tk
 import webbrowser
 from basic_query import basic_query
+from bs4 import BeautifulSoup
+from lxml import html
+import lxml
+import os
+import os.path
+import json
+from collections import defaultdict
+from format_text import tokenize, lemmatize
 
 class SearchEngineGUI:
     def __init__(self, master):
@@ -52,20 +60,61 @@ class SearchEngineGUI:
         self.query_processor.search_query = self.query_processor.tokenize_and_lemmatize_search_query()
         docIDs = self.query_processor.search_query_term_from_index()
         links = self.query_processor.get_link_from_docID_list(docIDs)
-        
-        for link in links:
-            self.insert_clickable_link(link)
+
+        for link in range(0,min(len(links),20)):
+            self.insert_clickable_link(links[link], docIDs[link])
+        self.link_count = 0
         self.results_text.config(state='disabled')
 
         self.results_canvas.update_idletasks()
         self.on_canvas_configure(None)
+
+    #get title for page
+    def extract_title(self, html_file_location):
+        try:
+            # determine the file type based on its extension
+            _, file_extension = os.path.splitext(html_file_location)
+            is_xml = file_extension.lower() in ['.xml']
+            parser_type = "lxml-xml" if is_xml else "lxml"
+            
+            #open and read 
+            with open(html_file_location, "r", encoding="utf-8") as f:
+                page = f.read()
+
+            #parse using lxml-xml for xml , or lxml for html
+            soup = BeautifulSoup(page, parser_type)  
+
+            title_text = ""
+
+            for title in soup.find_all('title'):
+                title_text += title.get_text()
+
+
+        except Exception as e:
+            print(e)
+            return ""
+        
+        return title_text
+
     #inserting 'hyperlink'
-    def insert_clickable_link(self, link):
+    def insert_clickable_link(self, link, docID):
         self.link_count += 1
         tag_name = f"link{self.link_count}"
-        self.results_text.insert(tk.END, link + "\n", tag_name)
+
+        folder, file_name = docID.split("/")
+        html_file_path = os.path.join("WEBPAGES_RAW", folder, file_name)
+
+        title = self.extract_title(html_file_path)
+
+        #no title found
+        if (title == ""):
+            self.results_text.insert(tk.END, str(self.link_count) + ". " + link + "\n", tag_name)
+        #title found
+        else:
+            self.results_text.insert(tk.END, str(self.link_count) + ". " + title + "\n", tag_name)
         self.results_text.tag_config(tag_name, foreground="blue", underline=True)
         self.results_text.tag_bind(tag_name, "<Button-1>", lambda event, url=link: self.on_url_click(url))
+        
 
     def on_url_click(self, url):
         webbrowser.open(url)

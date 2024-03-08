@@ -48,6 +48,12 @@ class basic_query():
         docID_set.update(self.index_dict[search_query_token].keys())
     
     docID_list = list(docID_set)
+
+    if (len(docID_list) == 0):
+      print("from search query function: ")
+      print(f"total urls found for {self.original_query}: 0")
+      print("No results found! Try again with a different query")
+      return []
     
 
     #create list of list, where each inner list is the urls for 1 word in the query
@@ -64,36 +70,10 @@ class basic_query():
     for docList in temp_list:
       for doc in docList.keys():
         docID_dict[doc] += docList[doc][1]
-    
-    # print(docID_dict) 
-    
-    # #if search query was only 1 word long
-    # if len(temp_list) == 1:
-    #   for dict in temp_list[0]:
-    #     docID_list.append(dict)
-
-    # #if search query was more than 1 word
-    # #find token that had the most urls by sorting
-    # elif len(temp_list) > 1:
-    #   temp_list.sort(key=lambda x: len(x), reverse=True)
-    #   #iterate over the urls in the longest url list
-    #   for url in temp_list[0]:
-    #     in_all_dicts = True
-    #     #check that url is in other url list for other tokens in search query as well
-    #     for dict in temp_list[1:]:
-    #       if url not in dict:
-    #         in_all_dicts = False
-    #         break
-    #     if (in_all_dicts):
-    #       docID_list.append(url)
-    
-
-    #print(docID_dict)
 
     #sort docs by score
     sorted_docs = [i[0] for i in sorted(docID_dict.items(), key=lambda x:x[1], reverse=True)]
 
-    #print(sorted_docs[0:21])
 
     print("from search query function: ")
     print(f"total urls found for {self.original_query}: {len(sorted_docs)}")
@@ -122,18 +102,29 @@ class basic_query():
   
   # calculate query tf-dif score
   def calculate_query_tfidf(self):
-      scores = []
-      for term in self.search_query:
-        tf= self.search_query.count(term) / len(self.search_query)
-        idf = log10(36614/ len(self.index_dict[term]))
-        scores.append(tf*idf)
+      try:
+        scores = []
+        for term in self.search_query:
+          tf= self.search_query.count(term) / len(self.search_query)
+          idf = log10(36614/ len(self.index_dict[term]))
+          scores.append(tf*idf)
 
-      self.query_tfidf_scores = scores
+        self.query_tfidf_scores = scores
+      except Exception as e:
+        self.query_tfidf_scores = []
 
   # calcualte cosine similarity between query and doc
   def calculate_cosine_similarity(self,docID_list):
     self.calculate_query_tfidf()
+
+    
+
     similarity_scores = {}
+
+    #if nothing found
+    if (self.query_tfidf_scores == []):
+      return similarity_scores
+    
     query_vector = self.query_tfidf_scores
     
     for doc_id in docID_list:
@@ -175,7 +166,7 @@ class basic_query():
   def print_out_20_query_links(self, link_list):
     print(self.original_query)
     print("First 20 (or less) links: ")
-    for link in range(0,min(len(link_list),21)):
+    for link in range(0,min(len(link_list),20)):
       print(link_list[link] + "\n")
     
 # write output into file (I just use it to see return value for each function)  

@@ -46,10 +46,10 @@ def enter_search_query():
     query = basic_query()
     while(True):
         query.get_query()
-        # query_tfidf = query.calculate_query_tfidf() #calculate query tf-idf here?? 
         docID_list = query.search_query_term_from_index()
-        link_list = query.get_link_from_docID_list(docID_list)
-        query.print_out_20_query_links(link_list)
+        if (len(docID_list) > 0):
+            link_list = query.get_link_from_docID_list(docID_list)
+            query.print_out_20_query_links(link_list)
 
         cont = input("Search again? y/n: ")
         while(cont.lower() != "y" and cont.lower() != "n"):
