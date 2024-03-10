@@ -59,6 +59,10 @@ class index_constructor():
             text_content = soup.get_text(separator=' ', strip=True)
             # text_content = soup.get_text()
             
+            # extract anchor text from links and include it as part of the text content
+            for a_tag in soup.find_all('a'):
+                anchor_text = a_tag.get_text(separator=' ', strip=True)
+                text_content += f" {anchor_text}"
 
             # # creates the list of text with important tagsç
             text_with_tags = {}
