@@ -58,7 +58,7 @@ class index_constructor():
             # extract text content
             text_content = soup.get_text(separator=' ', strip=True)
             # text_content = soup.get_text()
-
+            
 
             # # creates the list of text with important tagsç
             text_with_tags = {}
@@ -93,6 +93,8 @@ class index_constructor():
             text_with_tags['h1'] = lemmatize(h1Token)
             text_with_tags['h2'] = lemmatize(h2Token)
             text_with_tags['h3'] = lemmatize(h3Token)
+
+
 
         except Exception as e:
             return "", {}

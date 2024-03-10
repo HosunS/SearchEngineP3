@@ -70,7 +70,7 @@ class SearchEngineGUI:
         self.on_canvas_configure(None)
 
     #get title for page
-    def extract_title(self, html_file_location):
+    def extract_title_and_description(self, html_file_location):
         try:
             # determine the file type based on its extension
             _, file_extension = os.path.splitext(html_file_location)
@@ -88,13 +88,27 @@ class SearchEngineGUI:
 
             for title in soup.find_all('title'):
                 title_text += title.get_text()
+            
+            description = ""
+            description_tag = soup.find('meta', attrs={'name': 'description'})
+            if not description_tag:
+                description_tag = soup.find('meta', attrs={'property': 'og:description'})
+
+            if description_tag:
+                description = description_tag.get('content')
+
+            if description:
+                description = description.strip()
+            else:
+                description = "N/A"
+
 
 
         except Exception as e:
             print(e)
             return ""
         
-        return title_text
+        return title_text,description
 
     #inserting 'hyperlink'
     def insert_clickable_link(self, link, docID):
@@ -104,7 +118,7 @@ class SearchEngineGUI:
         folder, file_name = docID.split("/")
         html_file_path = os.path.join("WEBPAGES_RAW", folder, file_name)
 
-        title = self.extract_title(html_file_path)
+        title, description = self.extract_title_and_description(html_file_path)
 
         #no title found
         if (title == ""):
@@ -112,6 +126,9 @@ class SearchEngineGUI:
         #title found
         else:
             self.results_text.insert(tk.END, str(self.link_count) + ". " + title + "\n", tag_name)
+
+            if description:
+                self.results_text.insert(tk.END, "   Description: " + description + "\n")
         self.results_text.tag_config(tag_name, foreground="blue", underline=True)
         self.results_text.tag_bind(tag_name, "<Button-1>", lambda event, url=link: self.on_url_click(url))
         
